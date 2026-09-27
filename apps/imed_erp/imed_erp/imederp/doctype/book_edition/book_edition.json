@@ -1,0 +1,151 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "field:edition_name",
+ "creation": "2026-09-26 18:03:08.094242",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "edition_name",
+  "agreement",
+  "period",
+  "pages",
+  "doctor_qty",
+  "extra_qty",
+  "sold_qty",
+  "unit_cost",
+  "owner_share",
+  "doctor_share",
+  "calculated_price",
+  "selling_price",
+  "rounding_diff",
+  "status",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "edition_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Edition Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "agreement",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Agreement",
+   "options": "Doctor Agreement",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period",
+   "fieldtype": "Link",
+   "label": "Academic Period",
+   "options": "Academic Period"
+  },
+  {
+   "fieldname": "pages",
+   "fieldtype": "Int",
+   "label": "Pages per Copy"
+  },
+  {
+   "fieldname": "doctor_qty",
+   "fieldtype": "Int",
+   "label": "Doctor Requested Qty"
+  },
+  {
+   "fieldname": "extra_qty",
+   "fieldtype": "Int",
+   "label": "Library Extra Qty"
+  },
+  {
+   "fieldname": "sold_qty",
+   "fieldtype": "Int",
+   "label": "Sold Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "unit_cost",
+   "fieldtype": "Currency",
+   "label": "Manufacturing Cost per Page"
+  },
+  {
+   "fieldname": "owner_share",
+   "fieldtype": "Currency",
+   "label": "Owner Share per Page"
+  },
+  {
+   "fieldname": "doctor_share",
+   "fieldtype": "Currency",
+   "label": "Doctor Share per Page"
+  },
+  {
+   "fieldname": "calculated_price",
+   "fieldtype": "Currency",
+   "label": "Calculated Price",
+   "read_only": 1
+  },
+  {
+   "fieldname": "selling_price",
+   "fieldtype": "Currency",
+   "label": "Final Selling Price"
+  },
+  {
+   "fieldname": "rounding_diff",
+   "fieldtype": "Currency",
+   "label": "Rounding to Owner",
+   "read_only": 1
+  },
+  {
+   "default": "Active",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Active\nCarried Forward\nCancelled"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Book Edition",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-09-26 18:03:08.094242",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Book Edition",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
