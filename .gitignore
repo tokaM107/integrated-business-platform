@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+env/
+
+# Frappe / bench runtime (sites hold the database config and uploaded files)
+sites/
+logs/
+*.log
+node_modules/
+
+# Secrets
+.env
+*.env
+!example.env
+
+# Backups and editor leftovers
+*.bak
+*.orig
+*.swp
+*~
+*.sql
+*.sql.gz
+.DS_Store
+.idea/
