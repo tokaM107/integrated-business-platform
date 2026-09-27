@@ -1,0 +1,115 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "hash",
+ "creation": "2026-09-26 18:52:27.289660",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "branch",
+  "machine",
+  "reading_date",
+  "opening_reading",
+  "closing_reading",
+  "consumed",
+  "sold_sheets",
+  "variance",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Cost Center",
+   "options": "Cost Center",
+   "reqd": 1
+  },
+  {
+   "fieldname": "machine",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Machine",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reading_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "opening_reading",
+   "fieldtype": "Int",
+   "label": "Opening",
+   "reqd": 1
+  },
+  {
+   "fieldname": "closing_reading",
+   "fieldtype": "Int",
+   "label": "Closing",
+   "reqd": 1
+  },
+  {
+   "fieldname": "consumed",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Consumed Sheets",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sold_sheets",
+   "fieldtype": "Int",
+   "label": "Sold Sheets"
+  },
+  {
+   "fieldname": "variance",
+   "fieldtype": "Int",
+   "label": "Variance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Printer Reading",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-09-26 18:52:27.289660",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Printer Reading",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
