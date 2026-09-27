@@ -1,0 +1,220 @@
+# Master data setup for Mohamed Mamdouh group (cost centers, accounts, warehouses, UOMs, items).
+#
+# Run from bench console:
+#   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_master.py").read(), {"frappe": frappe})
+#
+# Idempotent: anything that already exists is skipped. Safe to run again.
+
+import frappe
+
+# Hardcoded on purpose: the site also has "Mohamed Mamdouh group (Demo)" (abbr MMGD),
+# which a loose get_value("Company", ...) lookup can pick up by mistake.
+COMPANY = "Mohamed Mamdouh group"
+ABBR = "MMG"
+
+# Tree roots, built by name. Filtering on parent = "" returns nothing because the root's parent is NULL.
+ROOT_CC = f"{COMPANY} - {ABBR}"
+ROOT_WH = f"All Warehouses - {ABBR}"
+
+
+def acc(name):
+	return f"{name} - {ABBR}"
+
+
+def make_cost_center(name, parent, is_group=0):
+	full = acc(name)
+	if frappe.db.exists("Cost Center", full):
+		if frappe.db.get_value("Cost Center", full, "is_group") != is_group:
+			print(f"WARN   Cost Center {full}: exists but is_group should be {is_group} (not changed)")
+		else:
+			print(f"exists Cost Center {full}")
+		return full
+	if not frappe.db.exists("Cost Center", parent):
+		print(f"SKIP   Cost Center {full}: parent {parent} not found")
+		return None
+	doc = frappe.get_doc(
+		{
+			"doctype": "Cost Center",
+			"cost_center_name": name,
+			"parent_cost_center": parent,
+			"is_group": is_group,
+			"company": COMPANY,
+		}
+	).insert()
+	print(f"create Cost Center {doc.name}")
+	return doc.name
+
+
+def make_account(name, parent, account_type=None):
+	full = acc(name)
+	if frappe.db.exists("Account", full):
+		print(f"exists Account {full}")
+		return full
+	if not frappe.db.exists("Account", parent):
+		print(f"SKIP   Account {full}: parent {parent} not found")
+		return None
+	doc = frappe.get_doc(
+		{
+			"doctype": "Account",
+			"account_name": name,
+			"parent_account": parent,
+			"account_type": account_type,
+			"is_group": 0,
+			"company": COMPANY,
+		}
+	).insert()
+	print(f"create Account {doc.name}")
+	return doc.name
+
+
+def make_warehouse(name, parent, is_group=0):
+	full = acc(name)
+	if frappe.db.exists("Warehouse", full):
+		print(f"exists Warehouse {full}")
+		return full
+	if not frappe.db.exists("Warehouse", parent):
+		print(f"SKIP   Warehouse {full}: parent {parent} not found")
+		return None
+	doc = frappe.get_doc(
+		{
+			"doctype": "Warehouse",
+			"warehouse_name": name,
+			"parent_warehouse": parent,
+			"is_group": is_group,
+			"company": COMPANY,
+		}
+	).insert()
+	print(f"create Warehouse {doc.name}")
+	return doc.name
+
+
+def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None):
+	income_account = acc(income)
+	if not frappe.db.exists("Account", income_account):
+		print(f"SKIP   Item {code}: income account {income_account} not found")
+		return None
+
+	if frappe.db.exists("Item", code):
+		# Only fill a missing income default for this company; everything else is left as is.
+		item = frappe.get_doc("Item", code)
+		row = next((d for d in item.item_defaults if d.company == COMPANY), None)
+		if row and row.income_account:
+			print(f"exists Item {code}")
+		else:
+			if row:
+				row.income_account = income_account
+			else:
+				item.append("item_defaults", {"company": COMPANY, "income_account": income_account})
+			item.save()
+			print(f"fixed  Item {code}: default income account set to {income_account}")
+		return code
+
+	doc = frappe.get_doc(
+		{
+			"doctype": "Item",
+			"item_code": code,
+			"item_name": item_name,
+			"item_group": item_group,
+			"stock_uom": "Nos",
+			"is_stock_item": is_stock_item,
+			"include_item_in_manufacturing": 0,
+			"standard_rate": rate,
+			"uoms": [{"uom": "Nos", "conversion_factor": 1}] + (conversions or []),
+			"item_defaults": [{"company": COMPANY, "income_account": income_account}],
+		}
+	).insert()
+	print(f"create Item {doc.name}")
+	return doc.name
+
+
+def run():
+	# Safety check: stop if the company is missing or its abbreviation differs.
+	if frappe.db.get_value("Company", COMPANY, "abbr") != ABBR:
+		print(f"STOP   Company '{COMPANY}' with abbr '{ABBR}' not found. Nothing was changed.")
+		return
+
+	# ---------- 1) Cost centers ----------
+	# Imed Center and X Studio share premises, so they sit under one group.
+	# Shared rent/electricity is booked to "Center Shared Expenses" (a leaf, so it can
+	# be used in transactions) and then allocated to Imed Halls / X Studio.
+	center = make_cost_center("Imed Center", ROOT_CC, is_group=1)
+	if center:
+		make_cost_center("Imed Halls", center)
+		make_cost_center("X Studio", center)
+		make_cost_center("Center Shared Expenses", center)
+
+	libraries = make_cost_center("Libraries", ROOT_CC, is_group=1)
+	if libraries:
+		make_cost_center("2Be Doctor Azarita", libraries)
+		make_cost_center("2Be Doctor Mawasah", libraries)
+
+	make_cost_center("BA Plus App", ROOT_CC)
+
+	# ---------- 2) Accounts ----------
+	for name in ["Cash Azarita", "Cash Mawasah", "Cash Center", "Cash Studio"]:
+		make_account(name, acc("Cash In Hand"), "Cash")
+
+	for name in ["InstaPay Wallet", "Vodafone Cash Wallet"]:
+		make_account(name, acc("Bank Accounts"), "Bank")
+
+	make_account("Doctors Receivable - Platform Fees", acc("Accounts Receivable"), "Receivable")
+	make_account("Doctors Payable - Books", acc("Accounts Payable"), "Payable")
+	make_account("Inter Business Current Account", acc("Current Assets"))
+
+	for name in [
+		"Books Revenue",
+		"Printing Revenue",
+		"Studio Revenue",
+		"Halls Revenue",
+		"Platform Fees Revenue",
+		"Scrap Sales Revenue",
+	]:
+		make_account(name, acc("Direct Income"), "Income Account")
+
+	for name in ["Doctors Share Cost", "Manufacturing Cost", "Wastage and Scrap"]:
+		make_account(name, acc("Direct Expenses"), "Expense Account")
+
+	# ---------- 3) Warehouses ----------
+	# The group's only central store is at Mawasah; branch stores sit under it.
+	central = make_warehouse("Central Store Mawasah", ROOT_WH, is_group=1)
+	if central:
+		make_warehouse("Store Mawasah", central)
+		make_warehouse("Store Azarita", central)
+
+	# ---------- 4) UOMs ----------
+	for uom in ["Ream", "Box"]:
+		if frappe.db.exists("UOM", uom):
+			print(f"exists UOM {uom}")
+		else:
+			frappe.get_doc({"doctype": "UOM", "uom_name": uom}).insert()
+			print(f"create UOM {uom}")
+
+	# ---------- 5) Items ----------
+	for group in ["Library Products", "Services"]:
+		if frappe.db.exists("Item Group", group):
+			print(f"exists Item Group {group}")
+		else:
+			frappe.get_doc(
+				{"doctype": "Item Group", "item_group_name": group, "parent_item_group": "All Item Groups"}
+			).insert()
+			print(f"create Item Group {group}")
+
+	# A4 paper is stocked in sheets (Nos); purchases come in reams (500) or boxes (2500).
+	make_item(
+		"A4-PAPER",
+		"A4 Paper",
+		"Library Products",
+		1,
+		"Printing Revenue",
+		conversions=[{"uom": "Ream", "conversion_factor": 500}, {"uom": "Box", "conversion_factor": 2500}],
+	)
+	make_item("PRINT-SVC", "Printing Service", "Library Products", 0, "Printing Revenue", rate=1)
+	make_item("BINDING-SVC", "Binding Service", "Library Products", 0, "Printing Revenue")
+	make_item("STUDIO-HOUR", "Studio Hour", "Services", 0, "Studio Revenue")
+	make_item("HALL-HOUR", "Hall Hour", "Services", 0, "Halls Revenue")
+
+	frappe.db.commit()
+	print(f"DONE   Master setup finished for {COMPANY} ({ABBR}).")
+
+
+run()
