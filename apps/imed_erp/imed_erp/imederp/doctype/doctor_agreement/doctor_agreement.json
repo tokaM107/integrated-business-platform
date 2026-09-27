@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "field:agreement_name",
+ "creation": "2026-09-26 15:06:56.144233",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "agreement_name",
+  "doctor",
+  "agreement_type",
+  "share_type",
+  "share_value",
+  "settlement_cycle",
+  "balance",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "agreement_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Agreement Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "doctor",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Doctor",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "agreement_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Type",
+   "options": "Books\nApp",
+   "reqd": 1
+  },
+  {
+   "fieldname": "share_type",
+   "fieldtype": "Select",
+   "label": "Share Type",
+   "options": "Percentage\nFixed"
+  },
+  {
+   "fieldname": "share_value",
+   "fieldtype": "Currency",
+   "label": "Share Value"
+  },
+  {
+   "fieldname": "settlement_cycle",
+   "fieldtype": "Select",
+   "label": "Settlement Cycle",
+   "options": "Module\nRound\nTerm"
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "label": "Balance",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Doctor Agreement",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-09-26 15:06:56.144233",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Doctor Agreement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
