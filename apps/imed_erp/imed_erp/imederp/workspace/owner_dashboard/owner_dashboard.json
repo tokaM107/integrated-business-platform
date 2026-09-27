@@ -1,0 +1,129 @@
+{
+ "app": "imed_erp",
+ "charts": [
+  {
+   "chart_name": "Sales Trend",
+   "label": "Sales Trend"
+  },
+  {
+   "chart_name": "Revenue by Business",
+   "label": "Revenue by Business"
+  },
+  {
+   "chart_name": "Stock Value by Warehouse",
+   "label": "Stock Value by Warehouse"
+  }
+ ],
+ "content": "[\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Key Numbers</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Sales\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Invoices Count\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Outstanding from Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Purchases\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Charts</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Sales Trend\",\n   \"col\": 12\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Revenue by Business\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Stock Value by Warehouse\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Reports & Modules</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Profit per Business\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock & Paper\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Cash Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Who Owes Us\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Book Editions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Paper Counters\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"App Subscriptions\"\n  },\n  \"type\": \"shortcut\"\n }\n]",
+ "creation": "2026-09-26 19:06:10.314197",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "dashboard",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Owner Dashboard",
+ "link_type": "DocType",
+ "links": [],
+ "modified": "2026-09-26 19:06:10.314197",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Owner Dashboard",
+ "number_cards": [
+  {
+   "label": "Total Sales",
+   "number_card_name": "Total Sales"
+  },
+  {
+   "label": "Invoices Count",
+   "number_card_name": "Invoices Count"
+  },
+  {
+   "label": "Outstanding from Customers",
+   "number_card_name": "Outstanding from Customers"
+  },
+  {
+   "label": "Total Purchases",
+   "number_card_name": "Total Purchases"
+  },
+  {
+   "label": "Customers",
+   "number_card_name": "Customers"
+  },
+  {
+   "label": "Doctor Agreements",
+   "number_card_name": "Doctor Agreements"
+  }
+ ],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 1.0,
+ "shortcuts": [
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Profit per Business",
+   "link_to": "Profit and Loss Statement",
+   "report_ref_doctype": "GL Entry",
+   "type": "Report"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Stock & Paper",
+   "link_to": "Stock Balance",
+   "report_ref_doctype": "Stock Ledger Entry",
+   "type": "Report"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "",
+   "label": "Cash Movements",
+   "link_to": "General Ledger",
+   "report_ref_doctype": "GL Entry",
+   "type": "Report"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "",
+   "label": "Who Owes Us",
+   "link_to": "Accounts Receivable",
+   "report_ref_doctype": "Sales Invoice",
+   "type": "Report"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "label": "Doctor Agreements",
+   "link_to": "Doctor Agreement",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "",
+   "label": "Book Editions",
+   "link_to": "Book Edition",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "",
+   "label": "Paper Counters",
+   "link_to": "Printer Reading",
+   "type": "DocType"
+  },
+  {
+   "color": "Pink",
+   "doc_view": "",
+   "label": "App Subscriptions",
+   "link_to": "App Subscription",
+   "type": "DocType"
+  }
+ ],
+ "title": "Owner Dashboard",
+ "type": "Workspace"
+}
