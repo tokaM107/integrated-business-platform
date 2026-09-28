@@ -1,4 +1,5 @@
-# Regional settings for Mohamed Mamdouh group: currency, fiscal year, date format, number format.
+# Regional settings for Mohamed Mamdouh group: currency, fiscal years, date and number formats,
+# interface language (Arabic for users, English for Administrator).
 #
 # Run from bench console:
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional.py").read(), {"frappe": frappe})
@@ -13,13 +14,21 @@ COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
 CURRENCY = "EGP"
 
-# Fiscal year follows the academic year (September to August).
-FISCAL_YEAR = "2026-2027"
-FY_START = "2026-09-01"
-FY_END = "2027-08-31"
+# Fiscal years follow the academic year (September to August). The next year is created ahead of
+# time so nothing stops on 1 September; add a line here each year.
+FISCAL_YEARS = [
+	("2026-2027", "2026-09-01", "2027-08-31"),
+	("2027-2028", "2027-09-01", "2028-08-31"),
+]
+
+# Interface language: Arabic for everyone who uses the system, English for Administrator only.
+# "language" in System Settings is the default for new users and the login page.
+USER_LANGUAGE = "ar"
+ADMIN_LANGUAGE = "en"
 
 SYSTEM_SETTINGS = {
 	"country": "Egypt",
+	"language": USER_LANGUAGE,
 	"time_zone": "Africa/Cairo",
 	"currency": CURRENCY,
 	"date_format": "dd-mm-yyyy",
@@ -78,32 +87,45 @@ def run():
 		# ERPNext locks the company currency once transactions exist, so only report it.
 		print(f"WARN   Company.default_currency is {company_currency}, expected {CURRENCY} (not changed)")
 
-	# ---------- 2) Fiscal year ----------
-	if frappe.db.exists("Fiscal Year", FISCAL_YEAR):
-		fy = frappe.get_doc("Fiscal Year", FISCAL_YEAR)
-		if (getdate(fy.year_start_date), getdate(fy.year_end_date)) != (getdate(FY_START), getdate(FY_END)):
-			print(f"WARN   Fiscal Year {FISCAL_YEAR} runs {fy.year_start_date} to {fy.year_end_date}, expected {FY_START} to {FY_END} (not changed)")
+	# ---------- 2) Fiscal years ----------
+	for name, start, end in FISCAL_YEARS:
+		if frappe.db.exists("Fiscal Year", name):
+			fy = frappe.get_doc("Fiscal Year", name)
+			if (getdate(fy.year_start_date), getdate(fy.year_end_date)) != (getdate(start), getdate(end)):
+				print(f"WARN   Fiscal Year {name} runs {fy.year_start_date} to {fy.year_end_date}, expected {start} to {end} (not changed)")
+			else:
+				print(f"exists Fiscal Year {name} ({start} to {end})")
 		else:
-			print(f"exists Fiscal Year {FISCAL_YEAR} ({FY_START} to {FY_END})")
-	else:
-		fy = frappe.get_doc(
-			{"doctype": "Fiscal Year", "year": FISCAL_YEAR, "year_start_date": FY_START, "year_end_date": FY_END}
-		).insert()
-		print(f"create Fiscal Year {FISCAL_YEAR} ({FY_START} to {FY_END})")
+			fy = frappe.get_doc(
+				{"doctype": "Fiscal Year", "year": name, "year_start_date": start, "year_end_date": end}
+			).insert()
+			print(f"create Fiscal Year {name} ({start} to {end})")
 
-	# Link the year to the company explicitly (an empty list means "all companies").
-	if COMPANY in [d.company for d in fy.companies]:
-		print(f"exists Fiscal Year {FISCAL_YEAR} -> {COMPANY}")
-	else:
-		fy.append("companies", {"company": COMPANY})
-		fy.save()
-		print(f"set    Fiscal Year {FISCAL_YEAR} -> {COMPANY}")
+		# Link the year to the company explicitly (an empty list means "all companies").
+		if COMPANY in [d.company for d in fy.companies]:
+			print(f"exists Fiscal Year {name} -> {COMPANY}")
+		else:
+			fy.append("companies", {"company": COMPANY})
+			fy.save()
+			print(f"set    Fiscal Year {name} -> {COMPANY}")
 
-	for other in frappe.get_all("Fiscal Year", filters={"name": ["!=", FISCAL_YEAR], "disabled": 0}, pluck="name"):
+	known = [name for name, _, _ in FISCAL_YEARS]
+	for other in frappe.get_all("Fiscal Year", filters={"name": ["not in", known], "disabled": 0}, pluck="name"):
 		print(f"note   Another active Fiscal Year exists: {other}")
 
 	# ---------- 3) Date, time and number formats ----------
 	apply(frappe.get_single("System Settings"), SYSTEM_SETTINGS, "System Settings")
+
+	# ---------- 4) Interface language per user ----------
+	for user in frappe.get_all("User", filters={"user_type": "System User"}, fields=["name", "language"]):
+		if user.name == "Guest":
+			continue
+		wanted = ADMIN_LANGUAGE if user.name == "Administrator" else USER_LANGUAGE
+		if user.language == wanted:
+			print(f"exists User {user.name}.language = {wanted}")
+		else:
+			frappe.db.set_value("User", user.name, "language", wanted)
+			print(f"set    User {user.name}.language: {user.language!r} -> {wanted!r}")
 
 	frappe.db.commit()
 	frappe.clear_cache()
