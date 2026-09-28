@@ -22,7 +22,7 @@ SYSTEM_SETTINGS = {
 	"country": "Egypt",
 	"time_zone": "Africa/Cairo",
 	"currency": CURRENCY,
-	"date_format": "dd/mm/yyyy",
+	"date_format": "dd-mm-yyyy",
 	"time_format": "HH:mm",
 	"first_day_of_the_week": "Saturday",
 	# 1,234,567.89: comma groups thousands, dot separates decimals.
