@@ -80,7 +80,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.p
 | Script | What it does |
 |---|---|
 | `setup_master.py` | Cost center tree, accounts, warehouses, UOMs (Ream, Box) and items. |
-| `setup_users.py` | Branch Manager role, 8 users (`name@imed.local`), and User Permissions that restrict each branch manager to their own cost center and warehouse. Prints a summary table. |
+| `setup_users.py` | Branch Manager role, 8 users (`name@imed.local`), and User Permissions that restrict each branch manager to their own cost center and warehouse. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace. Deletes and recreates them each run. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 
@@ -88,7 +88,26 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.p
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 
-New users get the temporary password printed by `setup_users.py`. Change it after first login.
+### Users and initial passwords
+
+`USERS` at the top of `setup_users.py` is the single source of truth for the users, their roles and
+their cost centers / warehouses (keep the copy in `verify_setup.py` in sync). The script stops before
+writing anything if the company, a role, a cost center or a warehouse it needs is missing.
+
+No password is stored in the repository. Passwords are only set when a user is **created**; existing
+users' passwords are never touched. Either:
+
+- pass one initial password through the environment (never commit it):
+
+  ```bash
+  docker exec -it -e IMED_INITIAL_PASSWORD='<choose-a-strong-one>' frappe_docker-backend-1 bench --site frontend console
+  ```
+
+- or leave `IMED_INITIAL_PASSWORD` unset: each new user gets a random password, printed once at the
+  end of the run. Hand each one over privately and have the user change it at first login.
+
+`apply_strict_user_permissions` is kept **off** on purpose: with it on, branch managers cannot read
+any Item and the store managers cannot read any Warehouse (tested on ERPNext v16).
 
 The `setup/` folder deliberately has no `__init__.py`: the scripts write to the database as soon as
 they are executed, so they must never be imported as a Python module.

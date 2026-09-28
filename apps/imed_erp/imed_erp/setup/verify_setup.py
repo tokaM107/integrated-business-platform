@@ -76,18 +76,27 @@ ITEMS = [
 	("HALL-HOUR", 0, "Halls Revenue", {}),
 ]
 
-# (email, roles, cost centers, warehouses) - must match setup_users.py
+# (email, first name, roles, cost centers, warehouses) - must match setup_users.py.
+# All of these users must be enabled, have exactly these roles and exactly these
+# Company / Cost Center / Warehouse User Permissions.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 USERS = [
-	("owner@imed.local", ["System Manager", "Accounts Manager"], [], []),
-	("nour@imed.local", BRANCH_ROLES, ["Imed Halls"], []),
-	("gilan@imed.local", BRANCH_ROLES, ["X Studio"], []),
-	("menna@imed.local", BRANCH_ROLES, ["BA Plus App"], []),
-	("raghad@imed.local", [*BRANCH_ROLES, "Stock User"], ["2Be Doctor Mawasah"], ["Central Store Mawasah"]),
-	("sara@imed.local", [*BRANCH_ROLES, "Stock User"], ["2Be Doctor Azarita"], ["Store Azarita"]),
-	("accountant@imed.local", ["Accounts User", "Accounts Manager"], [], []),
-	("hr@imed.local", ["HR Manager"], [], []),
+	("owner@imed.local", "Owner", ["System Manager", "Accounts Manager"], [], []),
+	("nour@imed.local", "Nour", BRANCH_ROLES, ["Imed Halls"], []),
+	("gilan@imed.local", "Gilan", BRANCH_ROLES, ["X Studio"], []),
+	("menna@imed.local", "Menna", BRANCH_ROLES, ["BA Plus App"], []),
+	(
+		"raghad@imed.local",
+		"Raghad",
+		[*BRANCH_ROLES, "Stock User"],
+		["2Be Doctor Mawasah"],
+		["Central Store Mawasah"],
+	),
+	("sara@imed.local", "Sara", [*BRANCH_ROLES, "Stock User"], ["2Be Doctor Azarita"], ["Store Azarita"]),
+	("accountant@imed.local", "Accountant", ["Accounts User", "Accounts Manager"], [], []),
+	("hr@imed.local", "HR", ["HR Manager"], [], []),
 ]
+AUTOMATIC_ROLES = {"Administrator", "Guest", "All", "Desk User"}
 
 counts = {}
 problems = []
@@ -187,23 +196,39 @@ def run():
 		report("Item", code, errors)
 
 	# ---------- Users and User Permissions ----------
-	for email, roles, cost_centers, warehouses in USERS:
+	for email, first_name, roles, cost_centers, warehouses in USERS:
 		if not frappe.db.exists("User", email):
 			report("User", email, ["missing"])
 			continue
 		errors = []
-		if not frappe.db.get_value("User", email, "enabled"):
+		user = frappe.db.get_value("User", email, ["enabled", "first_name"], as_dict=True)
+		if not user.enabled:
 			errors.append("disabled")
-		has_roles = set(frappe.get_roles(email))
+		if user.first_name != first_name:
+			errors.append(f"first name is {user.first_name}, expected {first_name}")
+		has_roles = set(frappe.get_roles(email)) - AUTOMATIC_ROLES
 		missing_roles = [r for r in roles if r not in has_roles]
 		if missing_roles:
 			errors.append(f"missing roles {', '.join(missing_roles)}")
+		extra_roles = sorted(has_roles - set(roles))
+		if extra_roles:
+			errors.append(f"unexpected roles {', '.join(extra_roles)}")
 		expected = [("Cost Center", acc(c)) for c in cost_centers] + [("Warehouse", acc(w)) for w in warehouses]
 		if expected:
 			expected.append(("Company", COMPANY))
+		actual = {
+			(p.allow, p.for_value)
+			for p in frappe.get_all(
+				"User Permission",
+				filters={"user": email, "allow": ["in", ["Company", "Cost Center", "Warehouse"]]},
+				fields=["allow", "for_value"],
+			)
+		}
 		for allow, value in expected:
-			if not frappe.db.exists("User Permission", {"user": email, "allow": allow, "for_value": value}):
+			if (allow, value) not in actual:
 				errors.append(f"no User Permission for {allow} {value}")
+		for allow, value in sorted(actual - set(expected)):
+			errors.append(f"unexpected User Permission for {allow} {value}")
 		report("User", email, errors)
 
 	# ---------- Leaf / group misuse ----------
@@ -230,9 +255,10 @@ def run():
 		problems.append(f"Company default cost center {default_cc} is a group")
 		print(f"WRONG   Company      default cost center {default_cc} is a group")
 
-	if not frappe.db.get_single_value("System Settings", "apply_strict_user_permissions"):
-		problems.append("System Settings: apply_strict_user_permissions is off")
-		print("WRONG   Settings     apply_strict_user_permissions is off (restricted users see untagged records)")
+	# See setup_users.py: strict mode locks branch managers out of Items and Warehouses.
+	if frappe.db.get_single_value("System Settings", "apply_strict_user_permissions"):
+		problems.append("System Settings: apply_strict_user_permissions is on")
+		print("WRONG   Settings     apply_strict_user_permissions is on (branch managers cannot read Items)")
 
 	# ---------- Summary ----------
 	print()
