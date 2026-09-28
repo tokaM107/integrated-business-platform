@@ -76,19 +76,32 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py"
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_financial.py").read(), {"frappe": frappe})
 ```
 
 | Script | What it does |
 |---|---|
-| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal year 2026-2027 (1 Sep – 31 Aug, linked to the company), date format `dd/mm/yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
+| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal year 2026-2027 (1 Sep – 31 Aug, linked to the company), date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_core.py` | Company (MMG, EGP), cost center tree, accounts, warehouses, UOMs (Ream = 500 sheets, Box = 5 Reams = 2500 sheets) and items. |
 | `setup_users.py` | Branch Manager role, 8 users (`name@imed.local`), and User Permissions that restrict each branch manager to their own cost center and warehouse. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace. Deletes and recreates them each run. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
+| `check_financial.py` | Test, rolled back afterwards. Checks EGP on the company and Global Defaults, the fiscal year, `dd-mm-yyyy` dates, number format, that a printed invoice (HTML and PDF) shows `EGP` and not `£`, and that a closed accounting period blocks invoices and journal entries (CORE-09). |
+| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with all 18 posting document types closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
 `setup_regional.py`, `setup_core.py`, `setup_users.py` and `verify_setup.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
+
+To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
+document types to allow (or tick **Disabled** to reopen everything).
+
+Invoice PDFs need the site's `host_name` to point at the web server inside Docker, otherwise
+wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
+
+```bash
+docker exec frappe_docker-backend-1 bench --site frontend set-config host_name "http://frontend:8080"
+```
 
 ### Users and initial passwords
 
