@@ -1,16 +1,18 @@
-# Master data setup for Mohamed Mamdouh group (cost centers, accounts, warehouses, UOMs, items).
+# Core setup for Mohamed Mamdouh group: company, cost centers, accounts, warehouses, UOMs, items.
 #
 # Run from bench console:
-#   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_master.py").read(), {"frappe": frappe})
+#   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py").read(), {"frappe": frappe})
 #
-# Idempotent: anything that already exists is skipped. Safe to run again.
+# Idempotent: every step is guarded by frappe.db.exists, so anything that already exists is skipped.
+# Safe to run again.
 
 import frappe
 
-# Hardcoded on purpose: the site also has "Mohamed Mamdouh group (Demo)" (abbr MMGD),
-# which a loose get_value("Company", ...) lookup can pick up by mistake.
+# Hardcoded on purpose: a demo company "Mohamed Mamdouh group (Demo)" (abbr MMGD) can exist on
+# the site, and a loose get_value("Company", ...) lookup can pick it up by mistake.
 COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
+CURRENCY = "EGP"
 
 # Tree roots, built by name. Filtering on parent = "" returns nothing because the root's parent is NULL.
 ROOT_CC = f"{COMPANY} - {ABBR}"
@@ -127,10 +129,38 @@ def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conver
 	return doc.name
 
 
+def ensure_company():
+	"""Create the company if missing; stop if an existing one has another abbreviation."""
+	if not frappe.db.exists("Company", COMPANY):
+		# ERPNext also creates the standard chart of accounts, root cost center and default warehouses.
+		frappe.get_doc(
+			{
+				"doctype": "Company",
+				"company_name": COMPANY,
+				"abbr": ABBR,
+				"default_currency": CURRENCY,
+				"country": "Egypt",
+				"chart_of_accounts": "Standard",
+			}
+		).insert()
+		print(f"create Company {COMPANY} ({ABBR}, {CURRENCY})")
+		return True
+
+	company = frappe.db.get_value("Company", COMPANY, ["abbr", "default_currency"], as_dict=True)
+	if company.abbr != ABBR:
+		print(f"STOP   Company '{COMPANY}' has abbr '{company.abbr}', expected '{ABBR}'. Nothing was changed.")
+		return False
+	if company.default_currency != CURRENCY:
+		# ERPNext locks the currency once transactions exist, so only report it.
+		print(f"WARN   Company currency is {company.default_currency}, expected {CURRENCY} (not changed)")
+	else:
+		print(f"exists Company {COMPANY} ({ABBR}, {CURRENCY})")
+	return True
+
+
 def run():
-	# Safety check: stop if the company is missing or its abbreviation differs.
-	if frappe.db.get_value("Company", COMPANY, "abbr") != ABBR:
-		print(f"STOP   Company '{COMPANY}' with abbr '{ABBR}' not found. Nothing was changed.")
+	# ---------- 0) Company ----------
+	if not ensure_company():
 		return
 
 	# ---------- 1) Cost centers ----------
@@ -199,7 +229,7 @@ def run():
 			).insert()
 			print(f"create Item Group {group}")
 
-	# A4 paper is stocked in sheets (Nos); purchases come in reams (500) or boxes (2500).
+	# A4 paper is stocked in sheets (Nos): 1 Ream = 500 sheets, 1 Box = 5 Reams = 2500 sheets.
 	make_item(
 		"A4-PAPER",
 		"A4 Paper",
@@ -214,7 +244,7 @@ def run():
 	make_item("HALL-HOUR", "Hall Hour", "Services", 0, "Halls Revenue")
 
 	frappe.db.commit()
-	print(f"DONE   Master setup finished for {COMPANY} ({ABBR}).")
+	print(f"DONE   Core setup finished for {COMPANY} ({ABBR}).")
 
 
 run()
