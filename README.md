@@ -71,6 +71,7 @@ docker exec -it frappe_docker-backend-1 bench --site frontend console
 Then, in this order:
 
 ```python
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_master.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
@@ -79,12 +80,13 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.p
 
 | Script | What it does |
 |---|---|
+| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal year 2026-2027 (1 Sep – 31 Aug, linked to the company), date format `dd/mm/yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_master.py` | Cost center tree, accounts, warehouses, UOMs (Ream, Box) and items. |
 | `setup_users.py` | Branch Manager role, 8 users (`name@imed.local`), and User Permissions that restrict each branch manager to their own cost center and warehouse. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace. Deletes and recreates them each run. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 
-`setup_master.py`, `setup_users.py` and `verify_setup.py` are idempotent, so they can be re-run
+`setup_regional.py`, `setup_master.py`, `setup_users.py` and `verify_setup.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 
