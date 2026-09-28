@@ -24,6 +24,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Cost Center",
+   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
    "options": "Cost Center",
    "reqd": 1
   },
@@ -86,7 +87,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-28 17:34:16.922754",
+ "modified": "2026-09-28 17:44:43.851385",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printer Reading",
