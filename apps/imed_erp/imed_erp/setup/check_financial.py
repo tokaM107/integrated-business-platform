@@ -97,10 +97,25 @@ def run():
 		# ---------- 4) Invoice comes out in EGP, not £ ----------
 		si = make_invoice(customer, nowdate())
 		check("Invoice currency is EGP", si.currency == CURRENCY, si.currency)
+		check("Invoice is not rounded: amount due is 3,703.50", si.outstanding_amount == 3703.5, si.outstanding_amount)
+		fmt = frappe.get_meta("Sales Invoice").default_print_format
+		check("Invoices print with MMG Sales Invoice by default", fmt == "MMG Sales Invoice", fmt)
 		html = frappe.get_print("Sales Invoice", si.name)
 		check("Printed invoice shows 'EGP 3,703.50'", "EGP 3,703.50" in html)
 		check("Printed invoice has no £ sign", "£" not in html)
 		check("Printed invoice has no Arabic currency symbol", "ج.م" not in html)
+
+		# Arabic print: every label in Arabic, amount in words equal to the total (not rounded to 3,704).
+		lang = frappe.local.lang
+		try:
+			frappe.local.lang = "ar"
+			html_ar = frappe.get_print("Sales Invoice", si.name)
+		finally:
+			frappe.local.lang = lang
+		words = "فقط ثلاثة آلاف و سبعمائة و ثلاثة جنيه مصري وخمسون قرشًا لا غير"
+		check("Arabic amount in words matches 3,703.50", words in html_ar)
+		english = [w for w in ("Invoice Number", "Customer Name", "Grand Total", "In Words", "Amount") if w in html_ar]
+		check("Arabic invoice has no English labels", not english, english or "")
 		try:
 			pdf = frappe.get_print("Sales Invoice", si.name, as_pdf=True)
 			check("Invoice PDF is generated", pdf[:4] == b"%PDF", f"{len(pdf)} bytes")
