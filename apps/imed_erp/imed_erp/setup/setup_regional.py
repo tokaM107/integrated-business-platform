@@ -43,6 +43,10 @@ SYSTEM_SETTINGS = {
 	"rounding_method": "Commercial Rounding",
 }
 
+# Invoices print with the app's own format (imederp/print_format/mmg_sales_invoice): fully Arabic for
+# Arabic users, English for Administrator, amount in words always equal to the printed total.
+INVOICE_PRINT_FORMAT = "MMG Sales Invoice"
+
 # Latin symbol: the default Arabic one breaks PDF export.
 CURRENCY_SETTINGS = {
 	"enabled": 1,
@@ -78,7 +82,13 @@ def run():
 
 	# ---------- 1) Currency ----------
 	apply(frappe.get_doc("Currency", CURRENCY), CURRENCY_SETTINGS, "Currency EGP")
-	apply(frappe.get_single("Global Defaults"), {"default_currency": CURRENCY, "country": "Egypt"}, "Global Defaults")
+	# disable_rounded_total: invoices are payable to the piastre (3,703.50 stays 3,703.50, not 3,704),
+	# so the total, the amount due and the amount in words are the same number.
+	apply(
+		frappe.get_single("Global Defaults"),
+		{"default_currency": CURRENCY, "country": "Egypt", "disable_rounded_total": 1},
+		"Global Defaults",
+	)
 
 	company_currency = frappe.db.get_value("Company", COMPANY, "default_currency")
 	if company_currency == CURRENCY:
@@ -116,7 +126,20 @@ def run():
 	# ---------- 3) Date, time and number formats ----------
 	apply(frappe.get_single("System Settings"), SYSTEM_SETTINGS, "System Settings")
 
-	# ---------- 4) Interface language per user ----------
+	# ---------- 4) Default invoice print format ----------
+	if not frappe.db.exists("Print Format", INVOICE_PRINT_FORMAT):
+		print(f"SKIP   Print Format {INVOICE_PRINT_FORMAT} not found (run bench migrate to load it from the app)")
+	elif frappe.get_meta("Sales Invoice").default_print_format == INVOICE_PRINT_FORMAT:
+		print(f"exists Sales Invoice default print format = {INVOICE_PRINT_FORMAT}")
+	else:
+		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+		make_property_setter(
+			"Sales Invoice", None, "default_print_format", INVOICE_PRINT_FORMAT, "Data", for_doctype=True
+		)
+		print(f"set    Sales Invoice default print format = {INVOICE_PRINT_FORMAT}")
+
+	# ---------- 5) Interface language per user ----------
 	for user in frappe.get_all("User", filters={"user_type": "System User"}, fields=["name", "language"]):
 		if user.name == "Guest":
 			continue
