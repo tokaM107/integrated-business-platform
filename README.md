@@ -27,38 +27,48 @@ frappe_docker/          Upstream frappe/frappe_docker, used to run ERPNext local
 
 ```bash
 cd frappe_docker
-docker compose -f pwd.yml up -d
+docker compose -p frappe_docker -f pwd.yml up -d
 ```
 
 The site is `frontend` and is served at http://localhost:8080.
 
-## Installing the imed_erp app
+## How the imed_erp app is loaded
 
-In `pwd.yml` only `sites/` and `logs/` are Docker volumes. The `apps/` folder lives inside the
-container, so **`imed_erp` is lost whenever the backend container is recreated** (for example after
-`docker compose down`). This repository is the copy that survives. To put the app back into the
-container:
+`pwd.yml` mounts this repository's `apps/imed_erp` folder into the backend, worker, scheduler and
+setup containers, and sets `PYTHONPATH` so Python can import it. So:
 
-```bash
-docker cp apps/imed_erp frappe_docker-backend-1:/home/frappe/frappe-bench/apps/
-docker exec -u root frappe_docker-backend-1 chown -R frappe:frappe /home/frappe/frappe-bench/apps/imed_erp
-docker exec frappe_docker-backend-1 bash -c "cd /home/frappe/frappe-bench && env/bin/pip install -e apps/imed_erp"
-```
+- The app **survives** `docker compose down` / container rebuilds; there is nothing to copy back.
+- Editing a file in `apps/imed_erp` changes it on the site immediately (restart `backend` for Python
+  changes to controllers: `docker compose -p frappe_docker -f pwd.yml restart backend`).
+- Changes made in the ERPNext UI in developer mode (doctypes, workspace) are written straight into
+  this folder, ready to commit.
 
-Then, on a new site only:
+On a new site only, install the app once:
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend install-app imed_erp
 ```
 
-After changing doctypes, run `bench --site frontend migrate` inside the container.
+After changing a doctype's JSON by hand, run `bench --site frontend migrate` inside the container.
+If a script says "Module ImedERP not found" after a rebuild, clear the cache:
+`docker exec frappe_docker-backend-1 bench --site frontend clear-cache`.
 
-Edits made in the ERPNext UI while developer mode is on are saved inside the container. Copy them back
-into this repo before committing:
+## Permissions on the ImedERP doctypes
 
-```bash
-docker exec frappe_docker-backend-1 tar -C /home/frappe/frappe-bench/apps -cf - --exclude=.git --exclude=__pycache__ imed_erp | tar -C apps -xf -
-```
+| DocType | Accounts Manager | Accounts User / Branch Manager |
+|---|---|---|
+| Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
+| Book Edition, Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
+
+Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
+here. Agreements and the doctors' ledger are managed by Accounts Manager (Owner, Accountant).
+Printer Reading is limited per branch by its Cost Center link; the other doctypes have no cost center
+field, so every branch manager sees all of them.
+
+## Language
+
+Everyone who uses the system gets the Arabic interface; Administrator stays in English
+(`setup_regional.py`). Account, item, cost center and warehouse **names** stay in English on purpose.
 
 ## Setup scripts
 
@@ -81,7 +91,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_financia
 
 | Script | What it does |
 |---|---|
-| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal year 2026-2027 (1 Sep – 31 Aug, linked to the company), date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
+| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company), Arabic interface for users / English for Administrator, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_core.py` | Company (MMG, EGP), cost center tree, accounts, warehouses, UOMs (Ream = 500 sheets, Box = 5 Reams = 2500 sheets) and items. |
 | `setup_users.py` | Branch Manager role, 8 users (`name@imed.local`), and User Permissions that restrict each branch manager to their own cost center and warehouse. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace. Deletes and recreates them each run. |
