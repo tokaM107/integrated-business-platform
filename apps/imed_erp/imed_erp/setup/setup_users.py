@@ -1,6 +1,6 @@
 # Users, roles and User Permissions for Mohamed Mamdouh group.
 #
-# Run from bench console (after setup_master.py):
+# Run from bench console (after setup_core.py):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
 #
 # Idempotent and declarative: USERS below is the source of truth for these users. Each run creates
@@ -92,7 +92,7 @@ def preflight():
 				problems.append(f"Role {role} (for {email_of(spec)}) does not exist on this site")
 		for allow, value, _ in desired_permissions(spec):
 			if not frappe.db.exists(allow, value):
-				problems.append(f"{allow} {value} (for {email_of(spec)}) not found; run setup_master.py first")
+				problems.append(f"{allow} {value} (for {email_of(spec)}) not found; run setup_core.py first")
 			elif allow == "Cost Center" and frappe.db.get_value("Cost Center", value, "is_group"):
 				print(f"WARN   {value} is a group cost center; it cannot be used in transactions")
 	return problems
