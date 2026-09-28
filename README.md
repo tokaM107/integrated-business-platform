@@ -62,13 +62,29 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here. Agreements and the doctors' ledger are managed by Accounts Manager (Owner, Accountant).
-Printer Reading is limited per branch by its Cost Center link; the other doctypes have no cost center
-field, so every branch manager sees all of them.
 
-## Language
+Book Edition and App Subscription have a required **Cost Center** field (Printer Reading has its
+**Branch** field). Only leaf cost centers can be picked, and saving with a group (e.g. "Libraries") is
+rejected. Through the User Permissions, each branch manager sees only their own records: Sara sees only
+Azarita's editions, Raghad only Mawasah's, Menna only the app's subscriptions.
+
+## Language and invoice printing
 
 Everyone who uses the system gets the Arabic interface; Administrator stays in English
 (`setup_regional.py`). Account, item, cost center and warehouse **names** stay in English on purpose.
+
+Sales invoices print with the app's own format, **MMG Sales Invoice**
+(`imederp/print_format/mmg_sales_invoice`), set as the default by `setup_regional.py`:
+
+- Printed in Arabic: every label in Arabic, right-to-left, units as وحدة / رزمة / كرتونة. Printed in
+  English (Administrator): the same layout in English. ERPNext's own format hardcodes several English
+  labels and mistranslates others ("Amount", "Nos"), so it cannot be fixed with translations alone.
+- Amount in words always matches the printed total, to the piastre:
+  `فقط ثلاثة آلاف و سبعمائة و ثلاثة جنيه مصري وخمسون قرشًا لا غير` for EGP 3,703.50.
+  Rounded totals are switched off (`Global Defaults > Disable Rounded Total`), so the amount due is
+  the exact total, not rounded to the pound.
+- It draws its own header (logo, company, title, number) instead of the site letter head, which
+  prints the English doctype name.
 
 ## Setup scripts
 
@@ -91,7 +107,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_financia
 
 | Script | What it does |
 |---|---|
-| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company), Arabic interface for users / English for Administrator, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
+| `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_core.py` | Company (MMG, EGP), cost center tree, accounts, warehouses, UOMs (Ream = 500 sheets, Box = 5 Reams = 2500 sheets) and items. |
 | `setup_users.py` | Branch Manager role, 8 users (`name@imed.local`), and User Permissions that restrict each branch manager to their own cost center and warehouse. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace. Deletes and recreates them each run. |
