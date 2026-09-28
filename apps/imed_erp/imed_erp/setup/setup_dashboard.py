@@ -2,7 +2,7 @@
 # The workspace JSON in imederp/workspace/ references these cards and charts, but they
 # live only in the database, so this script is what recreates them on a new site.
 #
-# Run from bench console (after setup_master.py):
+# Run from bench console (after setup_core.py):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
 #
 # Note: unlike the other setup scripts, this one deletes and recreates the cards, charts and workspace.
