@@ -1,4 +1,4 @@
-# Read-only check of what setup_master.py and setup_users.py should have created.
+# Read-only check of what setup_core.py and setup_users.py should have created.
 #
 # Run from bench console:
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
