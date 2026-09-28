@@ -10,6 +10,7 @@
  "field_order": [
   "student",
   "agreement",
+  "cost_center",
   "course",
   "period",
   "subscription_date",
@@ -80,13 +81,24 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "description": "The business this record belongs to. Branch managers only see their own.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cost Center",
+   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
+   "options": "Cost Center",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-28 17:34:17.027019",
+ "modified": "2026-09-28 17:46:43.264927",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Subscription",
