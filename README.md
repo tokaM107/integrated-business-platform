@@ -147,6 +147,61 @@ Book Edition and App Subscription have a required **Cost Center** field (Printer
 rejected. Through the User Permissions, each branch manager sees only their own records: Sara sees only
 Azarita's editions, Raghad only Mawasah's, Menna only the app's subscriptions.
 
+## Interface theme (IMED ERP)
+
+The desk has its own look, **without changing Frappe or ERPNext**: a CSS layer that re-maps Frappe v16's
+design tokens and refines a few components. It is loaded from `hooks.py` and needs no build step.
+
+| File (in `apps/imed_erp/imed_erp/public`) | What it is |
+|---|---|
+| `css/imed_theme.css` | The desk theme: colour, type and shape tokens (light and dark), then sidebar, page head, buttons, inputs, forms, lists, dashboards, home screen, dialogs, toasts, empty states, small screens. |
+| `css/imed_web.css` | The login page only (every rule is scoped to `#page-login`). |
+| `js/imed_home.js` | Home screen: a greeting band (greeting, today's date, company) with quick actions, each shown only if the user has the permission for it. Hooks into Frappe's `desktop_screen` event and only adds elements; the app grid and its edit mode are Frappe's own. |
+| `js/imed_theme_toggle.js` | One-click light / dark switch next to the notifications (beside the bell on the home screen, under "Notification" in the sidebar). Uses Frappe's own theme setting, so the choice is saved to the user. |
+| `css/imed_fonts.css`, `fonts/` | IBM Plex Sans Arabic (SIL OFL, licence in `fonts/OFL.txt`), bundled so it works without internet. Only Arabic text uses it; Latin stays on Inter. |
+| `images/imed-mark.svg` | Logo and favicon. |
+| `icons/desktop_icons/{solid,subtle}/owner_dashboard.svg` | The Owner Dashboard icon on the home screen. |
+
+- **Colours:** teal (`--imed-teal-600` = `#0f766e`) is the primary colour, amber is a rare accent. On the
+  dashboard, colour has a meaning: teal = income, amber = needs attention, slate = neutral counts. To change
+  the brand colour, change the `--imed-teal-*` scale at the top of `imed_theme.css`.
+- **Arabic / RTL:** every left/right spacing uses logical properties (`inline-start` / `inline-end`), so the
+  Arabic interface mirrors correctly.
+- **Dark mode** (user menu > Toggle Theme) is fully themed.
+- **Serving the files:** `pwd.yml` mounts `public/` at `/assets/imed_erp` in the frontend (nginx) and backend
+  containers. Without that mount the browser gets 404 for the theme.
+- **After editing a CSS file:** reload the page (Ctrl+Shift+R). After changing `hooks.py`: restart the backend
+  and run `bench --site frontend clear-cache`.
+
+## AI assistant (chat window, not connected to a model yet)
+
+The owner sees an animated character at the bottom corner of the home screen. Clicking it opens a chat
+panel at the side: type a question or record a voice message. Until a model is connected, an offline
+placeholder answers that the assistant is not connected yet, so the window, voice and permissions can
+already be used and tested.
+
+| File | What it is |
+|---|---|
+| `public/js/imed_assistant.js`, `public/css/imed_assistant.css` | The character and the chat panel. The conversation stays in the browser tab and is sent with each message. |
+| `imed_erp/assistant/api.py` | `get_status` and `send_message` (text, or base64 audio up to 10 MB). Checks who may use it. |
+| `imed_erp/assistant/providers.py` | **The one place a model plugs in.** `AssistantProvider.reply(messages, context)` and `transcribe(audio, mime_type, context)`. |
+
+- **Who can use it:** Super Admin (the owner) and System Manager (developers), per the permissions matrix
+  and open question 22. Others do not see the character, and the server refuses their requests
+  (`ALLOWED_ROLES` in `api.py`).
+- **Read only (AI-02):** the assistant answers questions; it must never create, change or delete records. A
+  provider reads data as the current user (their permissions apply), never with `ignore_permissions`.
+- **Connecting a model later:** write a subclass of `AssistantProvider` (e.g. `imed_erp/assistant/claude.py`)
+  and set it for the site; the chat window and API do not change:
+
+  ```bash
+  docker exec frappe_docker-backend-1 bench --site frontend set-config imed_assistant_provider "imed_erp.assistant.claude.ClaudeProvider"
+  ```
+
+  `messages` arrive as `[{"role": "user" | "assistant", "content": "..."}]`, oldest first, the shape model
+  APIs take. Voice needs a speech-to-text service in `transcribe()`; the language model itself does not
+  transcribe audio. Keep API keys in `site_config.json` (never in the repository).
+
 ## Language and invoice printing
 
 Everyone who uses the system gets the Arabic interface; Administrator stays in English
@@ -194,7 +249,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, accounts, warehouses, UOMs (Ream = 500 sheets, Box = carton = 5 Reams = 2500 sheets) and items. |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff), 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
-| `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace. Deletes and recreates them each run. |
+| `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
 | `check_financial.py` | Test, rolled back afterwards. Checks EGP on the company and Global Defaults, the fiscal year, `dd-mm-yyyy` dates, number format, that a printed invoice (HTML and PDF) shows `EGP` and not `£`, and that a closed accounting period blocks invoices and journal entries (CORE-09). |

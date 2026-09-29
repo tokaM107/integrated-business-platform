@@ -25,12 +25,31 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/imed_erp/css/imed_erp.css"
-# app_include_js = "/assets/imed_erp/js/imed_erp.js"
+# IMED ERP theme: plain CSS (no build step), served from imed_erp/public at /assets/imed_erp.
+app_include_css = [
+	"/assets/imed_erp/css/imed_fonts.css",
+	"/assets/imed_erp/css/imed_theme.css",
+	"/assets/imed_erp/css/imed_assistant.css",
+]
+# Home screen: greeting band and quick actions; the AI assistant character + chat panel; a light/dark
+# switch next to the notifications
+# (all only add elements, see the files).
+app_include_js = [
+	"/assets/imed_erp/js/imed_home.js",
+	"/assets/imed_erp/js/imed_assistant.js",
+	"/assets/imed_erp/js/imed_theme_toggle.js",
+]
 
-# include js, css files in header of web template
-# web_include_css = "/assets/imed_erp/css/imed_erp.css"
+# include js, css files in header of web template (the theme there only touches the login page)
+web_include_css = ["/assets/imed_erp/css/imed_fonts.css", "/assets/imed_erp/css/imed_web.css"]
 # web_include_js = "/assets/imed_erp/js/imed_erp.js"
+
+# Branding: logo on the home screen and the login page, and the browser tab icon.
+app_logo_url = "/assets/imed_erp/images/imed-mark.svg"
+website_context = {
+	"favicon": "/assets/imed_erp/images/imed-mark.svg",
+	"splash_image": "/assets/imed_erp/images/imed-mark.svg",
+}
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "imed_erp/public/scss/website"
