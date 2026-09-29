@@ -1,7 +1,7 @@
 # Regional settings for Mohamed Mamdouh group: currency, fiscal years, date and number formats,
 # interface language (Arabic for users, English for Administrator).
 #
-# Run from bench console:
+# Run from bench console (after setup_core.py, which creates the company):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional.py").read(), {"frappe": frappe})
 #
 # Idempotent: prints "exists" for values already set and "set" with old -> new for changes.
@@ -74,10 +74,44 @@ def apply(doc, values, label):
 		doc.save()
 
 
+def clear_conflicting_fiscal_years(name, start, end):
+	"""Delete fiscal years that have our name with other dates, or overlap ours, if nothing is posted
+	in them. Returns the companies they applied to, so the new year keeps them, or None (and changes
+	nothing) if one of them already has ledger entries."""
+	conflicts = frappe.get_all(
+		"Fiscal Year",
+		filters={"year_start_date": ["<=", end], "year_end_date": [">=", start], "disabled": 0},
+		fields=["name", "year_start_date", "year_end_date"],
+	)
+	if frappe.db.exists("Fiscal Year", name):
+		conflicts.append(frappe.db.get_value("Fiscal Year", name, ["name", "year_start_date", "year_end_date"], as_dict=True))
+
+	wrong = {
+		fy.name: fy
+		for fy in conflicts
+		if (getdate(fy.year_start_date), getdate(fy.year_end_date)) != (getdate(start), getdate(end))
+	}
+	for fy in wrong.values():
+		posted = frappe.db.exists("GL Entry", {"fiscal_year": fy.name}) or frappe.db.exists(
+			"GL Entry", {"posting_date": ["between", [fy.year_start_date, fy.year_end_date]]}
+		)
+		if posted:
+			print(f"WARN   Fiscal Year {fy.name} ({fy.year_start_date} to {fy.year_end_date}) conflicts with {name} ({start} to {end}) but has ledger entries; fix it by hand (not changed)")
+			return None
+	carried = set()
+	for fy in wrong.values():
+		linked = frappe.get_all("Fiscal Year Company", filters={"parent": fy.name}, pluck="company")
+		# An empty list means the year applied to every company.
+		carried.update(linked or frappe.get_all("Company", pluck="name"))
+		frappe.delete_doc("Fiscal Year", fy.name, ignore_permissions=True)
+		print(f"delete Fiscal Year {fy.name} ({fy.year_start_date} to {fy.year_end_date}): conflicts with {name} ({start} to {end}), nothing posted in it")
+	return carried
+
+
 def run():
 	# Safety check: stop if the company is missing or its abbreviation differs.
 	if frappe.db.get_value("Company", COMPANY, "abbr") != ABBR:
-		print(f"STOP   Company '{COMPANY}' with abbr '{ABBR}' not found. Nothing was changed.")
+		print(f"STOP   Company '{COMPANY}' with abbr '{ABBR}' not found; run setup_core.py first. Nothing was changed.")
 		return
 
 	# ---------- 1) Currency ----------
@@ -99,25 +133,31 @@ def run():
 
 	# ---------- 2) Fiscal years ----------
 	for name, start, end in FISCAL_YEARS:
+		# The browser setup wizard creates a Jul-Jun year for Egypt, which overlaps ours and would leave
+		# a gap (e.g. Jul-Aug 2027 in no year). ERPNext cannot change a saved year's dates, so a wrong
+		# year is deleted and recreated, but only while nothing has been posted in it.
+		carried = clear_conflicting_fiscal_years(name, start, end)
+		if carried is None:
+			continue
+
 		if frappe.db.exists("Fiscal Year", name):
 			fy = frappe.get_doc("Fiscal Year", name)
-			if (getdate(fy.year_start_date), getdate(fy.year_end_date)) != (getdate(start), getdate(end)):
-				print(f"WARN   Fiscal Year {name} runs {fy.year_start_date} to {fy.year_end_date}, expected {start} to {end} (not changed)")
-			else:
-				print(f"exists Fiscal Year {name} ({start} to {end})")
+			print(f"exists Fiscal Year {name} ({start} to {end})")
 		else:
 			fy = frappe.get_doc(
 				{"doctype": "Fiscal Year", "year": name, "year_start_date": start, "year_end_date": end}
 			).insert()
 			print(f"create Fiscal Year {name} ({start} to {end})")
 
-		# Link the year to the company explicitly (an empty list means "all companies").
-		if COMPANY in [d.company for d in fy.companies]:
-			print(f"exists Fiscal Year {name} -> {COMPANY}")
-		else:
-			fy.append("companies", {"company": COMPANY})
-			fy.save()
-			print(f"set    Fiscal Year {name} -> {COMPANY}")
+		# Link the year to the company explicitly (an empty list means "all companies"), plus any
+		# company that used a year replaced above.
+		for company in [COMPANY, *sorted(carried - {COMPANY})]:
+			if company in [d.company for d in fy.companies]:
+				print(f"exists Fiscal Year {name} -> {company}")
+			else:
+				fy.append("companies", {"company": company})
+				fy.save()
+				print(f"set    Fiscal Year {name} -> {company}")
 
 	known = [name for name, _, _ in FISCAL_YEARS]
 	for other in frappe.get_all("Fiscal Year", filters={"name": ["not in", known], "disabled": 0}, pluck="name"):
