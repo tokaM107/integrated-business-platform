@@ -81,7 +81,7 @@ ITEMS = [
 # Company / Cost Center / Warehouse User Permissions.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 USERS = [
-	("owner@imed.local", "Owner", ["System Manager", "Accounts Manager"], [], []),
+	("owner@imed.local", "Owner", ["Super Admin", "System Manager", "Accounts Manager"], [], []),
 	("nour@imed.local", "Nour", BRANCH_ROLES, ["Imed Halls"], []),
 	("gilan@imed.local", "Gilan", BRANCH_ROLES, ["X Studio"], []),
 	("menna@imed.local", "Menna", BRANCH_ROLES, ["BA Plus App"], []),
@@ -93,8 +93,8 @@ USERS = [
 		["Central Store Mawasah"],
 	),
 	("sara@imed.local", "Sara", [*BRANCH_ROLES, "Stock User"], ["2Be Doctor Azarita"], ["Store Azarita"]),
-	("accountant@imed.local", "Accountant", ["Accounts User", "Accounts Manager"], [], []),
-	("hr@imed.local", "HR", ["HR Manager"], [], []),
+	("accountant@imed.local", "Accountant", ["Accountant", "Accounts User", "Accounts Manager"], [], []),
+	("hr@imed.local", "HR", ["HR", "HR Manager"], [], []),
 ]
 AUTOMATIC_ROLES = {"Administrator", "Guest", "All", "Desk User"}
 
