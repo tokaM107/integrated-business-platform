@@ -40,5 +40,5 @@ Each item should have a GitHub issue; put its number in the last column once cre
 | BA+ app subscriptions and platform fees | APP | Started: *App Subscription* |
 | Integrations with the library system, studio booking system and BA+ app | INT | Not started (open questions ★ 10, 27, 28) |
 | Mobile application | — | Not started |
-| AI assistant (owner only, read only) | AI | Not started |
+| AI assistant (owner only, read only) | AI | Chat window, voice and permissions done; model not connected yet (`imed_erp/assistant/providers.py`) |
 | Unified notifications (WhatsApp / SMS / in-app) | CORE-10 | Skeleton: `imed_erp/notification_service.py` |
