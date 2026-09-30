@@ -135,3 +135,13 @@ def block_manual_current_account(doc, method=None):
                 f"Row {row.idx}: {row.account} cannot be used in a manual entry. "
                 "Create an Inter Business Transfer instead."
             )
+
+
+def block_current_account_in_payment(doc, method=None):
+    """Payment Entry validate hook: the current account moves only through an Inter Business Transfer."""
+    # A payment holds its accounts in two fields, plus the rows of the deductions table.
+    accounts = [doc.paid_from, doc.paid_to, *(row.account for row in doc.deductions)]
+
+    for account in accounts:
+        if account and frappe.db.get_value("Account", account, "account_name") == CURRENT_ACCOUNT:
+            frappe.throw(f"{account} cannot be used in a payment. Create an Inter Business Transfer instead.")
