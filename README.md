@@ -234,7 +234,9 @@ Then, in this order:
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_library.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_users.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_financial.py").read(), {"frappe": frappe})
@@ -249,6 +251,8 @@ without changing anything if they do not (so a user is never created without the
 | `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, accounts, warehouses, UOMs (Ream = 500 sheets, Box = carton = 5 Reams = 2500 sheets) and items. |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff), 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
+| `setup_library.py` | Libraries (LIB). Item groups Library Products → Books, Memos, Library Services; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC; the stock items BOOK and MEMO; item defaults (revenue account, cost center 2Be Doctor Mawasah, central store); one POS Profile per library branch, which gives each sale its own warehouse and cost center. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `check_library.py` | Test, rolled back afterwards. Creates a test book and memo, receives them in the central store, issues books to Azarita, then sells through each branch's POS Profile and through a plain sales invoice, and checks that the revenue account, cost center and warehouse were filled in without being typed. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
@@ -258,6 +262,24 @@ without changing anything if they do not (so a user is never created without the
 `setup_core.py`, `setup_regional.py`, `setup_users.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
+
+### Library products (LIB-06)
+
+| Requirement | Where it is in ERPNext |
+|---|---|
+| Name | Item Name |
+| ISBN | A row in the item's **Barcodes** table with type `ISBN` (so it can be scanned at the POS) |
+| Author | **Author** field on the item (`custom_author`) |
+| Category | Item Group: Books or Memos |
+| Cost price | Valuation Rate |
+| Selling price | Item Price in the `Standard Selling` price list |
+| Quantity | Stock balance per warehouse (Store Mawasah is the central store, Store Azarita the branch) |
+
+The revenue account comes from the item. The warehouse and cost center come from the branch's POS
+Profile; without one, from the item's defaults (Store Mawasah and 2Be Doctor Mawasah). An item has
+only one default per company and both branches sell the same book, so Azarita must sell through its
+POS Profile. A sales invoice row created through the API without a cost center gets the company's
+default cost center, not the item's, so an integration must send the cost center itself.
 
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
 document types to allow (or tick **Disabled** to reopen everything).
