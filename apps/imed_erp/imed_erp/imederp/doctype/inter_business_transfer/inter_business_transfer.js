@@ -13,4 +13,19 @@ frappe.ui.form.on("Inter Business Transfer", {
 			}));
 		}
 	},
+
+	refresh(frm) {
+		// The server checks the role again; hiding the button only keeps the form clean.
+		if (frm.doc.docstatus === 1 && frm.doc.status === "Sent" && frappe.user.has_role("Accounts Manager")) {
+			frm.add_custom_button(__("Confirm Receipt"), () => {
+				frappe.confirm(
+					__("Confirm that {0} was received in {1}?", [
+						format_currency(frm.doc.amount),
+						frm.doc.to_treasury,
+					]),
+					() => frm.call("confirm_receipt").then(() => frm.reload_doc())
+				);
+			}).addClass("btn-primary");
+		}
+	},
 });

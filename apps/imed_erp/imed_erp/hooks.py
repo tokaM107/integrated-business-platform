@@ -152,6 +152,12 @@ app_license = "mit"
 # 	}
 # }
 
+doc_events = {
+	"Journal Entry": {
+		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
+	},
+}
+
 # Scheduled Tasks
 # ---------------
 
