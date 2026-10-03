@@ -69,25 +69,28 @@ def make_warehouse(name, parent, is_group=0):
 	return doc.name
 
 
-def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None):
+def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None, expense=None):
 	income_account = acc(income)
-	if not frappe.db.exists("Account", income_account):
-		print(f"SKIP   Item {code}: income account {income_account} not found")
-		return None
+	expense_account = acc(expense) if expense else None
+	for account in filter(None, (income_account, expense_account)):
+		if not frappe.db.exists("Account", account):
+			print(f"SKIP   Item {code}: account {account} not found")
+			return None
+	wanted = {"income_account": income_account, "expense_account": expense_account}
 
 	if frappe.db.exists("Item", code):
-		# Only fill a missing income default for this company; everything else is left as is.
+		# Only fill missing defaults for this company; anything already set is left as is.
 		item = frappe.get_doc("Item", code)
 		row = next((d for d in item.item_defaults if d.company == COMPANY), None)
-		if row and row.income_account:
+		if not row:
+			row = item.append("item_defaults", {"company": COMPANY})
+		missing = {field: value for field, value in wanted.items() if value and not row.get(field)}
+		if not missing:
 			print(f"exists Item {code}")
 		else:
-			if row:
-				row.income_account = income_account
-			else:
-				item.append("item_defaults", {"company": COMPANY, "income_account": income_account})
+			row.update(missing)
 			item.save()
-			print(f"fixed  Item {code}: default income account set to {income_account}")
+			print(f"fixed  Item {code}: default {', '.join(f'{k} = {v}' for k, v in missing.items())}")
 		return code
 
 	doc = frappe.get_doc(
@@ -101,7 +104,7 @@ def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conver
 			"include_item_in_manufacturing": 0,
 			"standard_rate": rate,
 			"uoms": [{"uom": "Nos", "conversion_factor": 1}] + (conversions or []),
-			"item_defaults": [{"company": COMPANY, "income_account": income_account}],
+			"item_defaults": [{"company": COMPANY, **{k: v for k, v in wanted.items() if v}}],
 		}
 	).insert()
 	print(f"create Item {doc.name}")
@@ -200,6 +203,8 @@ def run():
 	# Library items default to Mawasah; imederp/library_revenue.py moves each invoice row to the revenue
 	# account of the library it is sold in.
 	# A4 paper is stocked in sheets (Nos): 1 Ream = 500 sheets, 1 Box = 5 Reams = 2500 sheets.
+	# Paper used up printing and photocopying for customers is a cost of what was sold (decided with the
+	# owner); without this default, issuing it from stock would land on stock differences.
 	make_item(
 		"A4-PAPER",
 		"ورق A4 80 جرام",
@@ -207,6 +212,7 @@ def run():
 		1,
 		"إيراد مكتبة المواساة",
 		conversions=[{"uom": "رزمة", "conversion_factor": 500}, {"uom": "كرتونة", "conversion_factor": 2500}],
+		expense="تكلفة البضاعة المباعة",
 	)
 	make_item("PRINT-SVC", "تصوير وطباعة", "منتجات المكتبات", 0, "إيراد مكتبة المواساة", rate=1)
 	make_item("BINDING-SVC", "تجليد", "منتجات المكتبات", 0, "إيراد مكتبة المواساة")
