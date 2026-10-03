@@ -66,7 +66,7 @@
    "fieldname": "amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Amount",
+   "label": "Transfer Amount",
    "reqd": 1
   },
   {
@@ -85,7 +85,7 @@
   {
    "fieldname": "receipt_section",
    "fieldtype": "Section Break",
-   "label": "Receipt"
+   "label": "Receipt Details"
   },
   {
    "default": "Draft",
@@ -109,7 +109,7 @@
   {
    "fieldname": "received_on",
    "fieldtype": "Datetime",
-   "label": "Received On",
+   "label": "Receipt Confirmed On",
    "no_copy": 1,
    "read_only": 1
   },
@@ -147,7 +147,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-30 16:30:00.000000",
+ "modified": "2026-10-03 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Inter Business Transfer",
