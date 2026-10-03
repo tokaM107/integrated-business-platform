@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 
 
 def execute(filters=None):
@@ -12,19 +13,19 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        {"label": "Transfer", "fieldname": "name", "fieldtype": "Link", "options": "Inter Business Transfer", "width": 150},
-        {"label": "Posting Date", "fieldname": "posting_date", "fieldtype": "Date", "width": 110},
-        {"label": "Period", "fieldname": "period", "fieldtype": "Link", "options": "Academic Period", "width": 120},
-        {"label": "From Business", "fieldname": "from_business", "fieldtype": "Link", "options": "Cost Center", "width": 180},
-        {"label": "From Treasury", "fieldname": "from_treasury", "fieldtype": "Link", "options": "Account", "width": 170},
+        {"label": _("Transfer No."), "fieldname": "name", "fieldtype": "Link", "options": "Inter Business Transfer", "width": 150},
+        {"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 110},
+        {"label": _("Period"), "fieldname": "period", "fieldtype": "Link", "options": "Academic Period", "width": 120},
+        {"label": _("From Business"), "fieldname": "from_business", "fieldtype": "Link", "options": "Cost Center", "width": 180},
+        {"label": _("From Treasury"), "fieldname": "from_treasury", "fieldtype": "Link", "options": "Account", "width": 170},
         # Data, not Link: Frappe drops report rows whose Link values fall outside the user's User Permissions,
         # and the receiving business is never the branch manager's own.
-        {"label": "To Business", "fieldname": "to_business", "fieldtype": "Data", "width": 180},
-        {"label": "To Treasury", "fieldname": "to_treasury", "fieldtype": "Link", "options": "Account", "width": 170},
-        {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency", "width": 120},
-        {"label": "Status", "fieldname": "status", "fieldtype": "Data", "width": 100},
-        {"label": "Received By", "fieldname": "received_by", "fieldtype": "Link", "options": "User", "width": 160},
-        {"label": "Reason", "fieldname": "reason", "fieldtype": "Data", "width": 220},
+        {"label": _("To Business"), "fieldname": "to_business", "fieldtype": "Data", "width": 180},
+        {"label": _("To Treasury"), "fieldname": "to_treasury", "fieldtype": "Link", "options": "Account", "width": 170},
+        {"label": _("Transfer Amount"), "fieldname": "amount", "fieldtype": "Currency", "width": 120},
+        {"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 100},
+        {"label": _("Received By"), "fieldname": "received_by", "fieldtype": "Link", "options": "User", "width": 160},
+        {"label": _("Reason"), "fieldname": "reason", "fieldtype": "Data", "width": 220},
     ]
 
 
@@ -42,10 +43,14 @@ def get_data(filters):
 
     # get_list (not get_all) applies User Permissions, so a branch manager sees only their own business.
     # The fields are the column fieldnames, so each value lands under its column.
-    return frappe.get_list(
+    rows = frappe.get_list(
         "Inter Business Transfer",
         filters=conditions,
         or_filters=either_side,
         fields=[column["fieldname"] for column in get_columns()],
         order_by="posting_date desc, name desc",
     )
+    # Status is stored in English (the filter matches on it); show it in the user's language.
+    for row in rows:
+        row.status = _(row.status)
+    return rows
