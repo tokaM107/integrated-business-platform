@@ -92,13 +92,13 @@ WAREHOUSE_ACCOUNTS = {
 
 UOMS = ["Nos", "رزمة", "كرتونة"]
 
-# (code, is_stock_item, income account, extra UOM conversions)
+# (code, is_stock_item, income account, extra UOM conversions, expense account or None)
 ITEMS = [
-	("A4-PAPER", 1, "إيراد مكتبة المواساة", {"رزمة": 500, "كرتونة": 2500}),
-	("PRINT-SVC", 0, "إيراد مكتبة المواساة", {}),
-	("BINDING-SVC", 0, "إيراد مكتبة المواساة", {}),
-	("STUDIO-HOUR", 0, "إيراد X Studio", {}),
-	("HALL-HOUR", 0, "إيراد القاعات", {}),
+	("A4-PAPER", 1, "إيراد مكتبة المواساة", {"رزمة": 500, "كرتونة": 2500}, "تكلفة البضاعة المباعة"),
+	("PRINT-SVC", 0, "إيراد مكتبة المواساة", {}, None),
+	("BINDING-SVC", 0, "إيراد مكتبة المواساة", {}, None),
+	("STUDIO-HOUR", 0, "إيراد X Studio", {}, None),
+	("HALL-HOUR", 0, "إيراد القاعات", {}, None),
 ]
 
 # (email, first name, roles, cost centers, warehouses) - must match setup_users.py.
@@ -218,7 +218,7 @@ def run():
 		report("UOM", uom, [] if frappe.db.exists("UOM", uom) else ["missing"])
 
 	# ---------- Items ----------
-	for code, is_stock_item, income, conversions in ITEMS:
+	for code, is_stock_item, income, conversions, expense in ITEMS:
 		if not frappe.db.exists("Item", code):
 			report("Item", code, ["missing"])
 			continue
@@ -230,6 +230,9 @@ def run():
 		if not default or default.income_account != acc(income):
 			found = default.income_account if default else None
 			errors.append(f"default income account is {found}, expected {acc(income)}")
+		if expense and (not default or default.expense_account != acc(expense)):
+			found = default.expense_account if default else None
+			errors.append(f"default expense account is {found}, expected {acc(expense)}")
 		factors = {d.uom: d.conversion_factor for d in item.uoms}
 		for uom, factor in conversions.items():
 			if factors.get(uom) != factor:
