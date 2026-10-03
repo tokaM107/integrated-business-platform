@@ -2,6 +2,7 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
@@ -10,7 +11,7 @@ TREASURY_TYPES = ("Cash", "Bank")
 
 # Holds the money between the two steps: sent by one business, not yet received by the other.
 # A balance sheet account, so a transfer never reaches the P&L of either business.
-CURRENT_ACCOUNT = "Inter Business Current Account"
+CURRENT_ACCOUNT = "الجاري بين الأنشطة"
 
 # Only this role may confirm that the money arrived.
 RECEIVER_ROLE = "Accounts Manager"
@@ -25,29 +26,29 @@ class InterBusinessTransfer(Document):
 
     def validate_amount(self):
         if flt(self.amount) <= 0:
-            frappe.throw(f"Amount must be greater than zero, got {self.amount}.")
+            frappe.throw(_("Amount must be greater than zero, got {0}.").format(self.amount))
 
     def validate_businesses(self):
         if self.from_business == self.to_business:
-            frappe.throw("From Business and To Business must be different.")
+            frappe.throw(_("From Business and To Business must be different."))
 
         # Transfers are posted to one business; group cost centers cannot hold transactions.
         for business in (self.from_business, self.to_business):
             if frappe.db.get_value("Cost Center", business, "is_group"):
-                frappe.throw(f"Cost Center {business} is a group. Choose a business under it.")
+                frappe.throw(_("Cost Center {0} is a group. Choose a business under it.").format(business))
 
     def validate_treasuries(self):
         if self.from_treasury == self.to_treasury:
-            frappe.throw("From Treasury and To Treasury must be different.")
+            frappe.throw(_("From Treasury and To Treasury must be different."))
 
         for treasury in (self.from_treasury, self.to_treasury):
             account = frappe.db.get_value("Account", treasury, ["account_type", "is_group"], as_dict=True)
             if not account or account.is_group or account.account_type not in TREASURY_TYPES:
-                frappe.throw(f"{treasury} is not a treasury. Choose a cash or wallet account.")
+                frappe.throw(_("{0} is not a treasury. Choose a cash or wallet account.").format(treasury))
 
     def validate_period(self):
         if frappe.db.get_value("Academic Period", self.period, "is_closed"):
-            frappe.throw(f"Period {self.period} is closed. Choose an open period.")
+            frappe.throw(_("Period {0} is closed. Choose an open period.").format(self.period))
 
     def on_submit(self):
         # Step 1, the sender hands the money over: it leaves the sending treasury and waits in the current account.
@@ -56,7 +57,9 @@ class InterBusinessTransfer(Document):
             credit=self.from_treasury,
             cost_center=self.from_business,
             posting_date=self.posting_date,
-            remark=f"Inter Business Transfer {self.name}: sent from {self.from_business} to {self.to_business}",
+            remark=_("Inter Business Transfer {0}: sent from {1} to {2}").format(
+                self.name, self.from_business, self.to_business
+            ),
         )
         self.db_set({"send_journal_entry": entry, "status": "Sent"})
 
@@ -64,16 +67,20 @@ class InterBusinessTransfer(Document):
     def confirm_receipt(self):
         # Step 2, the receiver confirms: the money leaves the current account and enters the receiving treasury.
         if RECEIVER_ROLE not in frappe.get_roles():
-            frappe.throw(f"Only a user with the {RECEIVER_ROLE} role can confirm receipt.", frappe.PermissionError)
+            frappe.throw(
+                _("Only a user with the {0} role can confirm receipt.").format(_(RECEIVER_ROLE)), frappe.PermissionError
+            )
         if self.docstatus != 1 or self.status != "Sent":
-            frappe.throw(f"{self.name} is {self.status}. Only a Sent transfer can be received.")
+            frappe.throw(_("{0} is {1}. Only a Sent transfer can be received.").format(self.name, _(self.status)))
 
         entry = self.make_journal_entry(
             debit=self.to_treasury,
             credit=self.get_current_account(),
             cost_center=self.to_business,
             posting_date=today(),
-            remark=f"Inter Business Transfer {self.name}: received by {self.to_business} from {self.from_business}",
+            remark=_("Inter Business Transfer {0}: received by {1} from {2}").format(
+                self.name, self.to_business, self.from_business
+            ),
         )
         self.db_set(
             {
@@ -99,7 +106,7 @@ class InterBusinessTransfer(Document):
         company = self.get_company()
         account = frappe.db.get_value("Account", {"account_name": CURRENT_ACCOUNT, "company": company})
         if not account:
-            frappe.throw(f"Account '{CURRENT_ACCOUNT}' does not exist for {company}. Run setup_core.py first.")
+            frappe.throw(_("Account '{0}' does not exist for {1}. Run setup_coa.py first.").format(CURRENT_ACCOUNT, company))
         return account
 
     def make_journal_entry(self, debit, credit, cost_center, posting_date, remark):
@@ -132,8 +139,9 @@ def block_manual_current_account(doc, method=None):
     for row in doc.accounts:
         if frappe.db.get_value("Account", row.account, "account_name") == CURRENT_ACCOUNT:
             frappe.throw(
-                f"Row {row.idx}: {row.account} cannot be used in a manual entry. "
-                "Create an Inter Business Transfer instead."
+                _("Row {0}: {1} cannot be used in a manual entry. Create an Inter Business Transfer instead.").format(
+                    row.idx, row.account
+                )
             )
 
 
@@ -144,4 +152,4 @@ def block_current_account_in_payment(doc, method=None):
 
     for account in accounts:
         if account and frappe.db.get_value("Account", account, "account_name") == CURRENT_ACCOUNT:
-            frappe.throw(f"{account} cannot be used in a payment. Create an Inter Business Transfer instead.")
+            frappe.throw(_("{0} cannot be used in a payment. Create an Inter Business Transfer instead.").format(account))
