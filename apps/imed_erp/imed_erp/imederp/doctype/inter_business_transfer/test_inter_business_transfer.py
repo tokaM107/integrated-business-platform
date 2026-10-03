@@ -1,7 +1,7 @@
 # Copyright (c) 2026, toka mohamed and Contributors
 # See license.txt
 
-# Runs against the real chart of accounts and cost centers made by setup/setup_core.py.
+# Runs against the real chart of accounts and cost centers made by setup/setup_coa.py and setup/setup_core.py.
 # Every check compares balances before and after, so existing data on the site does not matter,
 # and everything a test creates is rolled back when the tests finish.
 #
@@ -26,10 +26,10 @@ IGNORE_TEST_RECORD_DEPENDENCIES = [
 ]
 
 ABBR = "MMG"
-LIBRARY = f"2Be Doctor Azarita - {ABBR}"
-CENTER = f"Imed Halls - {ABBR}"
-LIBRARY_CASH = f"Cash Azarita - {ABBR}"
-CENTER_CASH = f"Cash Center - {ABBR}"
+LIBRARY = f"مكتبة الأزاريطة - {ABBR}"
+CENTER = f"قاعات Imed - {ABBR}"
+LIBRARY_CASH = f"خزينة مكتبة الأزاريطة - {ABBR}"
+CENTER_CASH = f"خزينة سنتر Imed - {ABBR}"
 CURRENT = f"{CURRENT_ACCOUNT} - {ABBR}"
 BRANCH_USER = "test-branch-manager@imed.local"
 
@@ -162,8 +162,8 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 			"zero amount": {"amount": 0},
 			"same business": {"to_business": LIBRARY},
 			"same treasury": {"to_treasury": LIBRARY_CASH},
-			"group business": {"to_business": f"Libraries - {ABBR}"},
-			"expense account as treasury": {"to_treasury": f"Doctors Share Cost - {ABBR}"},
+			"group business": {"to_business": f"مكتبات 2Be Doctor - {ABBR}"},
+			"expense account as treasury": {"to_treasury": f"حصة الأطباء - {ABBR}"},
 		}
 		for label, change in cases.items():
 			with self.subTest(label):
