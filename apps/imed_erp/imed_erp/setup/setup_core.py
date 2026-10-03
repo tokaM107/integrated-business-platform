@@ -197,8 +197,8 @@ def run():
 			print(f"create Item Group {group}")
 
 	# Library revenue is split by library, but an item has one default income account per company.
-	# Until invoices pick the account from their cost center, library items default to Mawasah and an
-	# Azarita invoice needs its income account changed by hand.
+	# Library items default to Mawasah; imederp/library_revenue.py moves each invoice row to the revenue
+	# account of the library it is sold in.
 	# A4 paper is stocked in sheets (Nos): 1 Ream = 500 sheets, 1 Box = 5 Reams = 2500 sheets.
 	make_item(
 		"A4-PAPER",
