@@ -31,28 +31,30 @@ CUSTOM_ROLES = ["Branch Manager"]
 
 # Each branch manager is restricted to the company plus their own cost center / warehouse.
 # Users without cost_centers / warehouses get no User Permissions: their roles alone decide access.
-# Raghad's "Central Store Mawasah" is a group warehouse: the permission also covers its
-# children (Store Mawasah and Store Azarita) so she can transfer stock to Azarita.
+# Raghad's "المخزن المركزي بالمواساة" is a group warehouse: the permission also covers its
+# children (both libraries' stores and editions) so she can transfer stock to Azarita.
 # "enabled" defaults to 1.
 USERS = [
-	{"first_name": "Owner", "roles": ["System Manager", "Accounts Manager"]},
-	{"first_name": "Nour", "roles": BRANCH_ROLES, "cost_centers": ["Imed Halls"]},
-	{"first_name": "Gilan", "roles": BRANCH_ROLES, "cost_centers": ["X Studio"]},
-	{"first_name": "Menna", "roles": BRANCH_ROLES, "cost_centers": ["BA Plus App"]},
+	{"email": "owner", "first_name": "المالك", "roles": ["System Manager", "Accounts Manager"]},
+	{"email": "nour", "first_name": "نور", "roles": BRANCH_ROLES, "cost_centers": ["قاعات Imed"]},
+	{"email": "gilan", "first_name": "جيلان", "roles": BRANCH_ROLES, "cost_centers": ["استوديو X"]},
+	{"email": "menna", "first_name": "منة", "roles": BRANCH_ROLES, "cost_centers": ["تطبيق BA Plus"]},
 	{
-		"first_name": "Raghad",
+		"email": "raghad",
+		"first_name": "رغد",
 		"roles": LIBRARY_ROLES,
-		"cost_centers": ["2Be Doctor Mawasah"],
-		"warehouses": ["Central Store Mawasah"],
+		"cost_centers": ["مكتبة المواساة"],
+		"warehouses": ["المخزن المركزي بالمواساة"],
 	},
 	{
-		"first_name": "Sara",
+		"email": "sara",
+		"first_name": "سارة",
 		"roles": LIBRARY_ROLES,
-		"cost_centers": ["2Be Doctor Azarita"],
-		"warehouses": ["Store Azarita"],
+		"cost_centers": ["مكتبة الأزاريطة"],
+		"warehouses": ["خامات الأزاريطة", "إصدارات الأطباء — الأزاريطة"],
 	},
-	{"first_name": "Accountant", "roles": ["Accounts User", "Accounts Manager"]},
-	{"first_name": "HR", "roles": ["HR Manager"]},
+	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accounts User", "Accounts Manager"]},
+	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR Manager"]},
 ]
 
 # User Permission doctypes this script owns for the users above. Rows on other doctypes are left alone.
@@ -65,7 +67,8 @@ INITIAL_PASSWORD = os.environ.get("IMED_INITIAL_PASSWORD")
 
 
 def email_of(spec):
-	return f"{spec['first_name'].lower()}@{EMAIL_DOMAIN}"
+	# Names are Arabic, so the address comes from its own English key, not from the name.
+	return f"{spec['email']}@{EMAIL_DOMAIN}"
 
 
 def desired_permissions(spec):
