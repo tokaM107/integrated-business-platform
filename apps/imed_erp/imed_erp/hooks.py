@@ -188,6 +188,12 @@ doc_events = {
 # 	],
 # }
 
+scheduler_events = {
+	"daily": [
+		"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily",
+	],
+}
+
 # Testing
 # -------
 
