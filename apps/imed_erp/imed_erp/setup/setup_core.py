@@ -1,4 +1,5 @@
-# Core setup for Mohamed Mamdouh group: company, cost centers, accounts, warehouses, UOMs, items.
+# Core setup for Mohamed Mamdouh group: company, cost centers, warehouses, accounts, UOMs, items.
+# The accounts themselves live in setup_coa.py, which this script runs after the warehouses.
 #
 # Run from bench console (first of the setup scripts):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py").read(), {"frappe": frappe})
@@ -24,7 +25,7 @@ FISCAL_YEAR_END = "2027-08-31"
 
 # Tree roots, built by name. Filtering on parent = "" returns nothing because the root's parent is NULL.
 ROOT_CC = f"{COMPANY} - {ABBR}"
-ROOT_WH = f"All Warehouses - {ABBR}"
+ROOT_WH = f"كل المخازن - {ABBR}"
 
 
 def acc(name):
@@ -55,28 +56,6 @@ def make_cost_center(name, parent, is_group=0):
 	return doc.name
 
 
-def make_account(name, parent, account_type=None):
-	full = acc(name)
-	if frappe.db.exists("Account", full):
-		print(f"exists Account {full}")
-		return full
-	if not frappe.db.exists("Account", parent):
-		print(f"SKIP   Account {full}: parent {parent} not found")
-		return None
-	doc = frappe.get_doc(
-		{
-			"doctype": "Account",
-			"account_name": name,
-			"parent_account": parent,
-			"account_type": account_type,
-			"is_group": 0,
-			"company": COMPANY,
-		}
-	).insert()
-	print(f"create Account {doc.name}")
-	return doc.name
-
-
 def make_warehouse(name, parent, is_group=0):
 	full = acc(name)
 	if frappe.db.exists("Warehouse", full):
@@ -98,32 +77,35 @@ def make_warehouse(name, parent, is_group=0):
 	return doc.name
 
 
-def item_default(income_account):
+def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None, expense=None):
+	income_account = acc(income)
+	expense_account = acc(expense) if expense else None
+	for account in filter(None, (income_account, expense_account)):
+		if not frappe.db.exists("Account", account):
+			print(f"SKIP   Item {code}: account {account} not found")
+			return None
 	# The warehouse is set explicitly: otherwise Frappe fills it from the site-wide default warehouse,
 	# which belongs to another company when one exists (e.g. "Stores - I"), and the item is rejected.
-	# Store Mawasah holds the central stock.
-	return {"company": COMPANY, "income_account": income_account, "default_warehouse": acc("Store Mawasah")}
-
-
-def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None):
-	income_account = acc(income)
-	if not frappe.db.exists("Account", income_account):
-		print(f"SKIP   Item {code}: income account {income_account} not found")
-		return None
+	# خامات المواساة holds the central stock of raw materials.
+	wanted = {
+		"income_account": income_account,
+		"expense_account": expense_account,
+		"default_warehouse": acc("خامات المواساة"),
+	}
 
 	if frappe.db.exists("Item", code):
-		# Only fill a missing income default for this company; everything else is left as is.
+		# Only fill missing defaults for this company; anything already set is left as is.
 		item = frappe.get_doc("Item", code)
 		row = next((d for d in item.item_defaults if d.company == COMPANY), None)
-		if row and row.income_account:
+		if not row:
+			row = item.append("item_defaults", {"company": COMPANY})
+		missing = {field: value for field, value in wanted.items() if value and not row.get(field)}
+		if not missing:
 			print(f"exists Item {code}")
 		else:
-			if row:
-				row.income_account = income_account
-			else:
-				item.append("item_defaults", item_default(income_account))
+			row.update(missing)
 			item.save()
-			print(f"fixed  Item {code}: default income account set to {income_account}")
+			print(f"fixed  Item {code}: default {', '.join(f'{k} = {v}' for k, v in missing.items())}")
 		return code
 
 	doc = frappe.get_doc(
@@ -137,7 +119,7 @@ def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conver
 			"include_item_in_manufacturing": 0,
 			"standard_rate": rate,
 			"uoms": [{"uom": "Nos", "conversion_factor": 1}] + (conversions or []),
-			"item_defaults": [item_default(income_account)],
+			"item_defaults": [{"company": COMPANY, **{k: v for k, v in wanted.items() if v}}],
 		}
 	).insert()
 	print(f"create Item {doc.name}")
@@ -208,56 +190,44 @@ def run():
 	if not ensure_company():
 		return
 
+	# ERPNext creates the company's accounts and warehouses in English; rename them before anything
+	# below looks them up by their Arabic names.
+	exec(open(frappe.get_app_path("imed_erp", "setup", "setup_arabic_names.py")).read(), {"frappe": frappe})
+
 	# ---------- 1) Cost centers ----------
 	# Imed Center and X Studio share premises, so they sit under one group.
-	# Shared rent/electricity is booked to "Center Shared Expenses" (a leaf, so it can
+	# Shared rent/electricity is booked to "مصروفات المقر المشتركة" (a leaf, so it can
 	# be used in transactions) and then allocated to Imed Halls / X Studio.
-	center = make_cost_center("Imed Center", ROOT_CC, is_group=1)
+	center = make_cost_center("سنتر Imed", ROOT_CC, is_group=1)
 	if center:
-		make_cost_center("Imed Halls", center)
-		make_cost_center("X Studio", center)
-		make_cost_center("Center Shared Expenses", center)
+		make_cost_center("قاعات Imed", center)
+		make_cost_center("استوديو X", center)
+		make_cost_center("مصروفات المقر المشتركة", center)
 
-	libraries = make_cost_center("Libraries", ROOT_CC, is_group=1)
+	libraries = make_cost_center("مكتبات 2Be Doctor", ROOT_CC, is_group=1)
 	if libraries:
-		make_cost_center("2Be Doctor Azarita", libraries)
-		make_cost_center("2Be Doctor Mawasah", libraries)
+		make_cost_center("مكتبة الأزاريطة", libraries)
+		make_cost_center("مكتبة المواساة", libraries)
 
-	make_cost_center("BA Plus App", ROOT_CC)
+	make_cost_center("تطبيق BA Plus", ROOT_CC)
 
-	# ---------- 2) Accounts ----------
-	for name in ["Cash Azarita", "Cash Mawasah", "Cash Center", "Cash Studio"]:
-		make_account(name, acc("Cash In Hand"), "Cash")
-
-	for name in ["InstaPay Wallet", "Vodafone Cash Wallet"]:
-		make_account(name, acc("Bank Accounts"), "Bank")
-
-	make_account("Doctors Receivable - Platform Fees", acc("Accounts Receivable"), "Receivable")
-	make_account("Doctors Payable - Books", acc("Accounts Payable"), "Payable")
-	make_account("Inter Business Current Account", acc("Current Assets"))
-
-	for name in [
-		"Books Revenue",
-		"Printing Revenue",
-		"Studio Revenue",
-		"Halls Revenue",
-		"Platform Fees Revenue",
-		"Scrap Sales Revenue",
-	]:
-		make_account(name, acc("Direct Income"), "Income Account")
-
-	for name in ["Doctors Share Cost", "Manufacturing Cost", "Wastage and Scrap"]:
-		make_account(name, acc("Direct Expenses"), "Expense Account")
-
-	# ---------- 3) Warehouses ----------
+	# ---------- 2) Warehouses ----------
 	# The group's only central store is at Mawasah; branch stores sit under it.
-	central = make_warehouse("Central Store Mawasah", ROOT_WH, is_group=1)
+	# Each library keeps raw materials (paper, ink, binding supplies) apart from doctors' editions,
+	# the only goods sold; setup_coa.py gives each warehouse its own stock account.
+	central = make_warehouse("المخزن المركزي بالمواساة", ROOT_WH, is_group=1)
 	if central:
-		make_warehouse("Store Mawasah", central)
-		make_warehouse("Store Azarita", central)
+		make_warehouse("خامات المواساة", central)
+		make_warehouse("إصدارات الأطباء — المواساة", central)
+		make_warehouse("خامات الأزاريطة", central)
+		make_warehouse("إصدارات الأطباء — الأزاريطة", central)
+
+	# ---------- 3) Accounts ----------
+	# Needs the company and the warehouses above; the items below need its income accounts.
+	exec(open(frappe.get_app_path("imed_erp", "setup", "setup_coa.py")).read(), {"frappe": frappe})
 
 	# ---------- 4) UOMs ----------
-	for uom in ["Ream", "Box"]:
+	for uom in ["رزمة", "كرتونة"]:
 		if frappe.db.exists("UOM", uom):
 			print(f"exists UOM {uom}")
 		else:
@@ -265,7 +235,7 @@ def run():
 			print(f"create UOM {uom}")
 
 	# ---------- 5) Items ----------
-	for group in ["Library Products", "Services"]:
+	for group in ["منتجات المكتبات", "الخدمات"]:
 		if frappe.db.exists("Item Group", group):
 			print(f"exists Item Group {group}")
 		else:
@@ -274,19 +244,25 @@ def run():
 			).insert()
 			print(f"create Item Group {group}")
 
+	# Library revenue is split by library, but an item has one default income account per company.
+	# Library items default to Mawasah; imederp/library_revenue.py moves each invoice row to the revenue
+	# account of the library it is sold in.
 	# A4 paper is stocked in sheets (Nos): 1 Ream = 500 sheets, 1 Box = 5 Reams = 2500 sheets.
+	# Paper used up printing and photocopying for customers is a cost of what was sold (decided with the
+	# owner); without this default, issuing it from stock would land on stock differences.
 	make_item(
 		"A4-PAPER",
-		"A4 Paper",
-		"Library Products",
+		"ورق A4 80 جرام",
+		"منتجات المكتبات",
 		1,
-		"Printing Revenue",
-		conversions=[{"uom": "Ream", "conversion_factor": 500}, {"uom": "Box", "conversion_factor": 2500}],
+		"إيراد مكتبة المواساة",
+		conversions=[{"uom": "رزمة", "conversion_factor": 500}, {"uom": "كرتونة", "conversion_factor": 2500}],
+		expense="تكلفة البضاعة المباعة",
 	)
-	make_item("PRINT-SVC", "Printing Service", "Library Products", 0, "Printing Revenue", rate=1)
-	make_item("BINDING-SVC", "Binding Service", "Library Products", 0, "Printing Revenue")
-	make_item("STUDIO-HOUR", "Studio Hour", "Services", 0, "Studio Revenue")
-	make_item("HALL-HOUR", "Hall Hour", "Services", 0, "Halls Revenue")
+	make_item("PRINT-SVC", "تصوير وطباعة", "منتجات المكتبات", 0, "إيراد مكتبة المواساة", rate=1)
+	make_item("BINDING-SVC", "تجليد", "منتجات المكتبات", 0, "إيراد مكتبة المواساة")
+	make_item("STUDIO-HOUR", "ساعة استوديو", "الخدمات", 0, "إيراد X Studio")
+	make_item("HALL-HOUR", "ساعة قاعة", "الخدمات", 0, "إيراد القاعات")
 
 	frappe.db.commit()
 	print(f"DONE   Core setup finished for {COMPANY} ({ABBR}).")

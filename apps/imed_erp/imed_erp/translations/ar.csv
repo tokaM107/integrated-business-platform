@@ -1,0 +1,78 @@
+Inter Business Transfer,تحويل بين الأنشطة
+Inter Business Transfers,التحويلات بين الأنشطة
+New Inter Business Transfer,تحويل جديد بين الأنشطة
+From Business,من نشاط
+From Treasury,من خزينة
+To Business,إلى نشاط
+To Treasury,إلى خزينة
+Received By,استلمه
+Send Journal Entry,قيد الإرسال
+Receipt Journal Entry,قيد الاستلام
+Business,النشاط
+The cash or wallet account the money leaves.,الخزينة أو المحفظة اللي الفلوس بتخرج منها.
+The cash or wallet account the money arrives in.,الخزينة أو المحفظة اللي الفلوس بتوصلها.
+Confirm Receipt,تأكيد الاستلام
+Confirm that {0} was received in {1}?,تأكيد استلام {0} في {1}؟
+"Amount must be greater than zero, got {0}.",المبلغ لازم يكون أكبر من صفر، والمكتوب {0}.
+From Business and To Business must be different.,النشاط المرسل والنشاط المستلم لازم يكونوا مختلفين.
+Cost Center {0} is a group. Choose a business under it.,{0} مجموعة وليس نشاط. اختار نشاط من اللي تحتها.
+From Treasury and To Treasury must be different.,الخزينة المرسلة والخزينة المستلمة لازم يكونوا مختلفين.
+{0} is not a treasury. Choose a cash or wallet account.,{0} ليس خزينة. اختار خزينة نقدية أو محفظة.
+Period {0} is closed. Choose an open period.,الفترة {0} مقفولة. اختار فترة مفتوحة.
+Inter Business Transfer {0}: sent from {1} to {2},تحويل بين الأنشطة {0}: مُرسل من {1} إلى {2}
+Inter Business Transfer {0}: received by {1} from {2},تحويل بين الأنشطة {0}: استلمه {1} من {2}
+Only a user with the {0} role can confirm receipt.,تأكيد الاستلام لمستخدم معاه صلاحية {0} بس.
+{0} is {1}. Only a Sent transfer can be received.,{0} حالته {1}. التأكيد بيكون للتحويل المُرسل بس.
+Account '{0}' does not exist for {1}. Run setup_coa.py first.,الحساب '{0}' مش موجود في {1}. شغّل setup_coa.py الأول.
+Row {0}: {1} cannot be used in a manual entry. Create an Inter Business Transfer instead.,سطر {0}: مينفعش تستخدم {1} في قيد يدوي. اعمل تحويل بين الأنشطة بدل كده.
+{0} cannot be used in a payment. Create an Inter Business Transfer instead.,مينفعش تستخدم {0} في دفعة. اعمل تحويل بين الأنشطة بدل كده.
+Academic Period,الفترة الأكاديمية
+Total Sales,إجمالي المبيعات
+Invoices Count,عدد الفواتير
+Outstanding from Customers,المستحق على العملاء
+Total Purchases,إجمالي المشتريات
+Doctor Agreements,اتفاقيات الأطباء
+Sales Trend,اتجاه المبيعات
+Revenue by Business,الإيراد حسب النشاط
+Stock Value by Warehouse,قيمة المخزون حسب المخزن
+Profit per Business,الربح حسب النشاط
+Stock & Paper,المخزون والورق
+Cash Movements,حركة الخزائن
+Who Owes Us,المستحق لنا
+Owner Dashboard,لوحة المالك
+Transfer Amount,مبلغ التحويل
+Receipt Confirmed On,تاريخ تأكيد الاستلام
+Receipt Details,بيانات الاستلام
+Transfer No.,رقم التحويل
+New Expense,مصروف جديد
+Expense Category,تصنيف المصروف
+Expense Categories,تصنيفات المصروفات
+Expense Category Name,اسم تصنيف المصروف
+Parent Expense Category,التصنيف الرئيسي
+Expense Report,تقرير المصروفات
+Expense No.,رقم المصروف
+Expense Amount,مبلغ المصروف
+Total Expenses,إجمالي المصروفات
+Number of Expenses,عدد المصروفات
+Receipt Attachment,صورة الإيصال
+Group Totals By,تجميع الإجماليات حسب
+Activity and Expense Category,النشاط وتصنيف المصروف
+"Month, Activity and Expense Category",الشهر والنشاط وتصنيف المصروف
+The business the expense is charged to.,النشاط اللي المصروف بيتحمّل عليه.
+The cash or wallet account the money is paid from.,الخزينة أو المحفظة اللي الفلوس بتتدفع منها.
+"A photo or PDF of the receipt. Required before submitting.",صورة أو PDF للإيصال. لازم تكون موجودة قبل الاعتماد.
+Taken from the expense category.,بيتاخد من تصنيف المصروف.
+"A group only gathers other categories; expenses are recorded under the categories inside it.",المجموعة بتجمع تصنيفات تانية بس، والمصروفات بتتسجل على التصنيفات اللي جواها.
+"The expense account this category is posted to. Leave empty to use the parent category's account.",حساب المصروف اللي التصنيف ده بيترحّل عليه. سيبه فاضي عشان يستخدم حساب التصنيف الرئيسي.
+Attach the receipt before submitting this expense.,ارفق الإيصال قبل اعتماد المصروف.
+Receipt attachment is required before submitting this expense.,لازم ترفق صورة الإيصال قبل اعتماد المصروف.
+Receipt Missing,الإيصال مش موجود
+Receipt {0} was not found. Attach the receipt again.,الإيصال {0} مش موجود. ارفق الإيصال تاني.
+"Receipt must be an image or a PDF file, got {0}.",الإيصال لازم يكون صورة أو ملف PDF، والمرفق {0}.
+Expense Category {0} is a group. Choose a category under it.,{0} مجموعة وليس تصنيف. اختار تصنيف من اللي تحتها.
+"Expense Category {0} has no expense account, and neither do its parents.",تصنيف المصروف {0} ملوش حساب مصروف، ولا التصنيفات اللي فوقه.
+"{0} does not belong to {1}, the company of {2}.",{0} مش تابع لـ {1}، شركة {2}.
+Expense {0}: {1},مصروف {0}: {1}
+{0} is not a group. Only a group category can have categories under it.,{0} مش مجموعة. التصنيف المجموعة بس هو اللي ينفع يكون تحته تصنيفات.
+{0} is not an expense account. Choose an account under Expenses.,{0} مش حساب مصروف. اختار حساب من تحت المصروفات.
+{0} has expenses recorded under it and cannot be deleted.,{0} عليه مصروفات متسجلة ومينفعش يتمسح.

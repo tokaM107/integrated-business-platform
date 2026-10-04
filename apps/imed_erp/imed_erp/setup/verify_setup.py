@@ -1,4 +1,4 @@
-# Read-only check of what setup_core.py and setup_users.py should have created.
+# Read-only check of what setup_core.py, setup_coa.py and setup_users.py should have created.
 #
 # Run from bench console:
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
@@ -13,7 +13,7 @@ ABBR = "MMG"
 CURRENCY = "EGP"
 
 ROOT_CC = f"{COMPANY} - {ABBR}"
-ROOT_WH = f"All Warehouses - {ABBR}"
+ROOT_WH = f"كل المخازن - {ABBR}"
 
 
 def acc(name):
@@ -22,58 +22,83 @@ def acc(name):
 
 # (name, parent, is_group)
 COST_CENTERS = [
-	("Imed Center", ROOT_CC, 1),
-	("Imed Halls", acc("Imed Center"), 0),
-	("X Studio", acc("Imed Center"), 0),
-	("Center Shared Expenses", acc("Imed Center"), 0),
-	("Libraries", ROOT_CC, 1),
-	("2Be Doctor Azarita", acc("Libraries"), 0),
-	("2Be Doctor Mawasah", acc("Libraries"), 0),
-	("BA Plus App", ROOT_CC, 0),
+	("سنتر Imed", ROOT_CC, 1),
+	("قاعات Imed", acc("سنتر Imed"), 0),
+	("استوديو X", acc("سنتر Imed"), 0),
+	("مصروفات المقر المشتركة", acc("سنتر Imed"), 0),
+	("مكتبات 2Be Doctor", ROOT_CC, 1),
+	("مكتبة الأزاريطة", acc("مكتبات 2Be Doctor"), 0),
+	("مكتبة المواساة", acc("مكتبات 2Be Doctor"), 0),
+	("تطبيق BA Plus", ROOT_CC, 0),
 ]
 
-# (name, parent, account_type)
+# (name, parent, account_type, is_group) - must match setup_coa.py.
 ACCOUNTS = (
-	[(n, acc("Cash In Hand"), "Cash") for n in ["Cash Azarita", "Cash Mawasah", "Cash Center", "Cash Studio"]]
-	+ [(n, acc("Bank Accounts"), "Bank") for n in ["InstaPay Wallet", "Vodafone Cash Wallet"]]
+	[(n, acc("النقدية بالخزائن"), "Cash", 0) for n in ["خزينة مكتبة الأزاريطة", "خزينة مكتبة المواساة", "خزينة سنتر Imed", "خزينة X Studio"]]
+	+ [(n, acc("الحسابات البنكية"), "Bank", 0) for n in ["محفظة InstaPay", "محفظة Vodafone Cash"]]
 	+ [
-		("Doctors Receivable - Platform Fees", acc("Accounts Receivable"), "Receivable"),
-		("Doctors Payable - Books", acc("Accounts Payable"), "Payable"),
-		("Inter Business Current Account", acc("Current Assets"), ""),
+		("مستحقات على الأطباء — رسوم المنصة", acc("الذمم المدينة"), "Receivable", 0),
+		("مديونيات الأطباء — الكتب", acc("الذمم المدينة"), "Receivable", 0),
+		("الجاري بين الأنشطة", acc("الأصول المتداولة"), "", 0),
+		("مخزون مكتبة المواساة", acc("المخزون"), "Stock", 1),
+		("مخزون المواساة — الخامات", acc("مخزون مكتبة المواساة"), "Stock", 0),
+		("مخزون المواساة — إصدارات الأطباء", acc("مخزون مكتبة المواساة"), "Stock", 0),
+		("مخزون مكتبة الأزاريطة", acc("المخزون"), "Stock", 1),
+		("مخزون الأزاريطة — الخامات", acc("مخزون مكتبة الأزاريطة"), "Stock", 0),
+		("مخزون الأزاريطة — إصدارات الأطباء", acc("مخزون مكتبة الأزاريطة"), "Stock", 0),
+		("مستحقات للأطباء — الكتب", acc("الذمم الدائنة"), "Payable", 0),
+		("مستحقات للمحاضرين", acc("الذمم الدائنة"), "Payable", 0),
 	]
 	+ [
-		(n, acc("Direct Income"), "Income Account")
+		(n, acc("الإيرادات المباشرة"), "Income Account", 0)
 		for n in [
-			"Books Revenue",
-			"Printing Revenue",
-			"Studio Revenue",
-			"Halls Revenue",
-			"Platform Fees Revenue",
-			"Scrap Sales Revenue",
+			"إيراد مكتبة الأزاريطة",
+			"إيراد مكتبة المواساة",
+			"إيراد X Studio",
+			"إيراد القاعات",
+			"إيراد رسوم المنصة",
+			"إيراد بيع التالف بالوزن",
 		]
 	]
 	+ [
-		(n, acc("Direct Expenses"), "Expense Account")
-		for n in ["Doctors Share Cost", "Manufacturing Cost", "Wastage and Scrap"]
+		(n, acc("التكاليف المباشرة"), "Expense Account", 0)
+		for n in ["تكلفة التصنيع", "حصة الأطباء", "حصة المحاضرين", "الهالك والتالف"]
+	]
+	+ [
+		(n, acc("المصروفات غير المباشرة"), "Expense Account", 0)
+		for n in ["الخامات والمستهلكات", "فروقات الخزينة", "الخصومات الممنوحة"]
 	]
 )
 
+# Replaced by one revenue account per library; setup_coa.py deletes them.
+REMOVED_ACCOUNTS = ["Books Revenue", "Printing Revenue"]
+
 # (name, parent, is_group)
 WAREHOUSES = [
-	("Central Store Mawasah", ROOT_WH, 1),
-	("Store Mawasah", acc("Central Store Mawasah"), 0),
-	("Store Azarita", acc("Central Store Mawasah"), 0),
+	("المخزن المركزي بالمواساة", ROOT_WH, 1),
+	("خامات المواساة", acc("المخزن المركزي بالمواساة"), 0),
+	("إصدارات الأطباء — المواساة", acc("المخزن المركزي بالمواساة"), 0),
+	("خامات الأزاريطة", acc("المخزن المركزي بالمواساة"), 0),
+	("إصدارات الأطباء — الأزاريطة", acc("المخزن المركزي بالمواساة"), 0),
 ]
 
-UOMS = ["Nos", "Ream", "Box"]
+# warehouse -> stock account it posts to - must match setup_coa.py.
+WAREHOUSE_ACCOUNTS = {
+	"خامات المواساة": "مخزون المواساة — الخامات",
+	"إصدارات الأطباء — المواساة": "مخزون المواساة — إصدارات الأطباء",
+	"خامات الأزاريطة": "مخزون الأزاريطة — الخامات",
+	"إصدارات الأطباء — الأزاريطة": "مخزون الأزاريطة — إصدارات الأطباء",
+}
 
-# (code, is_stock_item, income account, extra UOM conversions)
+UOMS = ["Nos", "رزمة", "كرتونة"]
+
+# (code, is_stock_item, income account, extra UOM conversions, expense account or None)
 ITEMS = [
-	("A4-PAPER", 1, "Printing Revenue", {"Ream": 500, "Box": 2500}),
-	("PRINT-SVC", 0, "Printing Revenue", {}),
-	("BINDING-SVC", 0, "Printing Revenue", {}),
-	("STUDIO-HOUR", 0, "Studio Revenue", {}),
-	("HALL-HOUR", 0, "Halls Revenue", {}),
+	("A4-PAPER", 1, "إيراد مكتبة المواساة", {"رزمة": 500, "كرتونة": 2500}, "تكلفة البضاعة المباعة"),
+	("PRINT-SVC", 0, "إيراد مكتبة المواساة", {}, None),
+	("BINDING-SVC", 0, "إيراد مكتبة المواساة", {}, None),
+	("STUDIO-HOUR", 0, "إيراد X Studio", {}, None),
+	("HALL-HOUR", 0, "إيراد القاعات", {}, None),
 ]
 
 # (email, first name, roles, cost centers, warehouses) - must match setup_users.py.
@@ -81,20 +106,26 @@ ITEMS = [
 # Company / Cost Center / Warehouse User Permissions.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 USERS = [
-	("owner@imed.local", "Owner", ["Super Admin", "System Manager", "Accounts Manager"], [], []),
-	("nour@imed.local", "Nour", BRANCH_ROLES, ["Imed Halls"], []),
-	("gilan@imed.local", "Gilan", BRANCH_ROLES, ["X Studio"], []),
-	("menna@imed.local", "Menna", BRANCH_ROLES, ["BA Plus App"], []),
+	("owner@imed.local", "المالك", ["Super Admin", "System Manager", "Accounts Manager"], [], []),
+	("nour@imed.local", "نور", BRANCH_ROLES, ["قاعات Imed"], []),
+	("gilan@imed.local", "جيلان", BRANCH_ROLES, ["استوديو X"], []),
+	("menna@imed.local", "منة", BRANCH_ROLES, ["تطبيق BA Plus"], []),
 	(
 		"raghad@imed.local",
-		"Raghad",
+		"رغد",
 		[*BRANCH_ROLES, "Stock User"],
-		["2Be Doctor Mawasah"],
-		["Central Store Mawasah"],
+		["مكتبة المواساة"],
+		["المخزن المركزي بالمواساة"],
 	),
-	("sara@imed.local", "Sara", [*BRANCH_ROLES, "Stock User"], ["2Be Doctor Azarita"], ["Store Azarita"]),
-	("accountant@imed.local", "Accountant", ["Accountant", "Accounts User", "Accounts Manager"], [], []),
-	("hr@imed.local", "HR", ["HR", "HR Manager"], [], []),
+	(
+		"sara@imed.local",
+		"سارة",
+		[*BRANCH_ROLES, "Stock User"],
+		["مكتبة الأزاريطة"],
+		["خامات الأزاريطة", "إصدارات الأطباء — الأزاريطة"],
+	),
+	("accountant@imed.local", "المحاسب", ["Accountant", "Accounts User", "Accounts Manager"], [], []),
+	("hr@imed.local", "شؤون الموظفين", ["HR", "HR Manager"], [], []),
 ]
 AUTOMATIC_ROLES = {"Administrator", "Guest", "All", "Desk User"}
 
@@ -150,7 +181,7 @@ def run():
 	check_tree("Cost Center", "Cost Center", "parent_cost_center", COST_CENTERS)
 
 	# ---------- Accounts ----------
-	for name, parent, account_type in ACCOUNTS:
+	for name, parent, account_type, is_group in ACCOUNTS:
 		full = acc(name)
 		row = frappe.db.get_value(
 			"Account", full, ["parent_account", "account_type", "is_group", "company"], as_dict=True
@@ -163,21 +194,31 @@ def run():
 			errors.append(f"parent is {row.parent_account}, expected {parent}")
 		if (row.account_type or "") != account_type:
 			errors.append(f"type is '{row.account_type or ''}', expected '{account_type}'")
-		if row.is_group:
-			errors.append("is a group, must be a ledger")
+		if row.is_group != is_group:
+			errors.append("should be a group" if is_group else "is a group, must be a ledger")
 		if row.company != COMPANY:
 			errors.append(f"belongs to company {row.company}")
 		report("Account", full, errors)
 
+	for name in REMOVED_ACCOUNTS:
+		if frappe.db.exists("Account", acc(name)):
+			report("Account", acc(name), ["should be deleted (replaced by per-library revenue)"])
+
 	# ---------- Warehouses ----------
 	check_tree("Warehouse", "Warehouse", "parent_warehouse", WAREHOUSES)
+	for warehouse, account in WAREHOUSE_ACCOUNTS.items():
+		current = frappe.db.get_value("Warehouse", acc(warehouse), "account")
+		if current != acc(account):
+			report("Stock link", acc(warehouse), [f"posts to {current}, expected {acc(account)}"])
+		else:
+			report("Stock link", acc(warehouse), [])
 
 	# ---------- UOMs ----------
 	for uom in UOMS:
 		report("UOM", uom, [] if frappe.db.exists("UOM", uom) else ["missing"])
 
 	# ---------- Items ----------
-	for code, is_stock_item, income, conversions in ITEMS:
+	for code, is_stock_item, income, conversions, expense in ITEMS:
 		if not frappe.db.exists("Item", code):
 			report("Item", code, ["missing"])
 			continue
@@ -189,6 +230,9 @@ def run():
 		if not default or default.income_account != acc(income):
 			found = default.income_account if default else None
 			errors.append(f"default income account is {found}, expected {acc(income)}")
+		if expense and (not default or default.expense_account != acc(expense)):
+			found = default.expense_account if default else None
+			errors.append(f"default expense account is {found}, expected {acc(expense)}")
 		factors = {d.uom: d.conversion_factor for d in item.uoms}
 		for uom, factor in conversions.items():
 			if factors.get(uom) != factor:

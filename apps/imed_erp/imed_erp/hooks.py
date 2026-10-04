@@ -171,6 +171,21 @@ website_context = {
 # 	}
 # }
 
+doc_events = {
+	"Journal Entry": {
+		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
+	},
+	"Payment Entry": {
+		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+	},
+	"Sales Invoice": {
+		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+	},
+	"POS Invoice": {
+		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+	},
+}
+
 # Scheduled Tasks
 # ---------------
 

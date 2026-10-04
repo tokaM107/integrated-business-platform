@@ -48,8 +48,8 @@ def make_invoice(customer, posting_date):
 			"set_posting_time": 1,
 			"posting_date": posting_date,
 			"due_date": posting_date,
-			"cost_center": f"Imed Halls - {ABBR}",
-			"items": [{"item_code": "HALL-HOUR", "qty": 3, "rate": 1234.5, "cost_center": f"Imed Halls - {ABBR}"}],
+			"cost_center": f"قاعات Imed - {ABBR}",
+			"items": [{"item_code": "HALL-HOUR", "qty": 3, "rate": 1234.5, "cost_center": f"قاعات Imed - {ABBR}"}],
 		}
 	).insert()
 	si.submit()
@@ -161,8 +161,8 @@ def run():
 						"company": COMPANY,
 						"posting_date": start,
 						"accounts": [
-							{"account": f"Cash Center - {ABBR}", "debit_in_account_currency": 10, "cost_center": f"Imed Halls - {ABBR}"},
-							{"account": f"Halls Revenue - {ABBR}", "credit_in_account_currency": 10, "cost_center": f"Imed Halls - {ABBR}"},
+							{"account": f"خزينة سنتر Imed - {ABBR}", "debit_in_account_currency": 10, "cost_center": f"قاعات Imed - {ABBR}"},
+							{"account": f"إيراد القاعات - {ABBR}", "credit_in_account_currency": 10, "cost_center": f"قاعات Imed - {ABBR}"},
 						],
 					}
 				).insert()

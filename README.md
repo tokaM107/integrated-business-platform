@@ -18,7 +18,8 @@ Project files: https://drive.google.com/drive/folders/1kYML83xHgfcTFBl0uctAHT_Ej
 ```
 apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
   imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
-                        Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard
+                        Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
+                        Expense, Expense Category, Expense Report
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
 frappe_docker/          Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
 ```
@@ -101,6 +102,8 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
 | Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
+| Expense | full | create, edit, submit (no cancel/delete) |
+| Expense Category | full | read only |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
@@ -234,10 +237,13 @@ Then, in this order:
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_users.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_financial.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_library.py").read(), {"frappe": frappe})
 ```
 
 `setup_core.py` must run first: it creates the company that every other script needs.
@@ -246,18 +252,59 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, accounts, warehouses, UOMs (Ream = 500 sheets, Box = carton = 5 Reams = 2500 sheets) and items. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (raw materials and doctors' editions per library), UOMs (Ream = 500 sheets, Box = carton = 5 Reams = 2500 sheets) and items. Runs `setup_coa.py` itself, after the warehouses. |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff), 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
+| `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
+| `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries, one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
+| `setup_library.py` | Libraries (LIB). Makes `منتجات المكتبات` a parent group with `كتب`, `مذكرات` and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
 | `check_financial.py` | Test, rolled back afterwards. Checks EGP on the company and Global Defaults, the fiscal year, `dd-mm-yyyy` dates, number format, that a printed invoice (HTML and PDF) shows `EGP` and not `£`, and that a closed accounting period blocks invoices and journal entries (CORE-09). |
+| `check_library.py` | Test, rolled back afterwards. Creates a test book and memo, receives them in Mawasah's store, issues books to Azarita, then sells through each library's POS Profile and through a plain sales invoice, and checks that the revenue account (Azarita's sales moved to `إيراد مكتبة الأزاريطة` by `imederp/library_revenue.py`), cost center and warehouse were filled in without being typed. |
+| `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق` and `الهالك والتالف` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with all 18 posting document types closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
-`setup_core.py`, `setup_regional.py`, `setup_users.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
+`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
+
+### Expenses (EXP-01/02, EXP-07)
+
+An **Expense** records one payment: Activity (a leaf cost center), Expense Category, Expense Amount,
+Cash/Bank Account (a leaf cash or wallet account), Supplier (optional: salaries have none) and
+Receipt Attachment. A draft can be saved without the receipt, but submitting is refused until one is
+attached. The check is in the controller's `before_submit`, so it also holds for the API; the receipt
+must be an uploaded image or PDF. Submitting posts a journal entry: debit the category's expense
+account, credit the treasury, both on the activity's cost center. Cancelling reverses it.
+
+**Expense Category** is a tree (ImedERP > Expense Category > Tree view). Expenses are recorded on the
+categories inside a group, not on the group. A category without its own expense account is posted to its
+nearest parent's, so a sub-category such as `كهرباء` under `المرافق` needs no account of its own.
+
+The **Expense Report** lists submitted expenses filtered by period, activity, category, supplier and
+treasury. Choosing a group activity (e.g. `مكتبات 2Be Doctor`) or a group category includes everything
+under it. **Group Totals By** gives one total per category, activity, month, or their combinations.
+
+### Library products (LIB-06)
+
+| Requirement | Where it is in ERPNext |
+|---|---|
+| Name | Item Name |
+| ISBN | A row in the item's **Barcodes** table with type `ISBN` (so it can be scanned at the POS) |
+| Author | **Author** field on the item (`custom_author`) |
+| Category | Item Group: `كتب` or `مذكرات` |
+| Cost price | Valuation Rate |
+| Selling price | Item Price in the `Standard Selling` price list |
+| Quantity | Stock balance per warehouse (`إصدارات الأطباء — المواساة` under the central store, `إصدارات الأطباء — الأزاريطة` for the branch) |
+
+The warehouse and cost center come from the library's POS Profile; without one, from the item's
+defaults (Mawasah). The revenue account comes from the item and is then moved to the selling
+library's account by `imederp/library_revenue.py`. An item has only one default per company and both
+libraries sell the same book, so Azarita must sell through its POS Profile. A sales invoice row
+created through the API without a cost center gets the company's default cost center, not the item's,
+so an integration must send the cost center itself.
 
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
 document types to allow (or tick **Disabled** to reopen everything).
