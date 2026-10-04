@@ -1,0 +1,88 @@
+{
+ "actions": [],
+ "creation": "2026-10-04 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "approval_section",
+  "approval_threshold",
+  "reminders_section",
+  "reminder_days_before",
+  "column_break_reminders",
+  "overdue_reminder_every_days"
+ ],
+ "fields": [
+  {
+   "fieldname": "approval_section",
+   "fieldtype": "Section Break",
+   "label": "Approval"
+  },
+  {
+   "description": "An expense whose actual amount is above this needs approval before it is posted. Leave empty to approve nothing.",
+   "fieldname": "approval_threshold",
+   "fieldtype": "Currency",
+   "label": "Approval Threshold"
+  },
+  {
+   "fieldname": "reminders_section",
+   "fieldtype": "Section Break",
+   "label": "Recurring Expense Reminders"
+  },
+  {
+   "default": "3",
+   "description": "Remind the owner and the accountant this many days before a recurring expense is due.",
+   "fieldname": "reminder_days_before",
+   "fieldtype": "Int",
+   "label": "Remind Days Before",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_reminders",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "2",
+   "description": "While a generated recurring expense is still a draft after its date, remind again every this many days.",
+   "fieldname": "overdue_reminder_every_days",
+   "fieldtype": "Int",
+   "label": "Repeat Overdue Reminder Every (Days)",
+   "reqd": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-04 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Expense Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts User"
+  },
+  {
+   "read": 1,
+   "role": "Branch Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
