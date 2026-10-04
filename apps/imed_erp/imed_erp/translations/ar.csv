@@ -76,3 +76,14 @@ Expense {0}: {1},مصروف {0}: {1}
 {0} is not a group. Only a group category can have categories under it.,{0} مش مجموعة. التصنيف المجموعة بس هو اللي ينفع يكون تحته تصنيفات.
 {0} is not an expense account. Choose an account under Expenses.,{0} مش حساب مصروف. اختار حساب من تحت المصروفات.
 {0} has expenses recorded under it and cannot be deleted.,{0} عليه مصروفات متسجلة ومينفعش يتمسح.
+Expense Records,المصروفات
+Expense List,قائمة المصروفات
+Doctors and Editions,الأطباء والإصدارات
+Doctors Ledger,دفتر حسابات الأطباء
+Book Editions,إصدارات الكتب
+Academic Periods,الفترات الأكاديمية
+Business Operations,عمليات الأنشطة
+Paper Counters,عدادات الورق
+App Subscriptions,اشتراكات التطبيق
+{0} has expenses recorded under it and cannot become a group.,{0} عليه مصروفات متسجلة ومينفعش يتحول لمجموعة.
+{0} was posted by Expense {1}. Cancel the expense instead.,{0} اترحّل من المصروف {1}. الغي المصروف بدل كده.

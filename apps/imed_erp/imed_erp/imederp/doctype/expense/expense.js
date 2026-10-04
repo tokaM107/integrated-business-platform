@@ -6,8 +6,13 @@ frappe.ui.form.on("Expense", {
 		// Same rules as the server-side validate, so wrong choices are not offered at all.
 		frm.set_query("activity", () => ({ filters: { is_group: 0 } }));
 		frm.set_query("expense_category", () => ({ filters: { is_group: 0 } }));
+		// Company is fetched from the activity, so only that company's treasuries are offered.
 		frm.set_query("treasury", () => ({
-			filters: { account_type: ["in", ["Cash", "Bank"]], is_group: 0 },
+			filters: {
+				account_type: ["in", ["Cash", "Bank"]],
+				is_group: 0,
+				...(frm.doc.company ? { company: frm.doc.company } : {}),
+			},
 		}));
 	},
 

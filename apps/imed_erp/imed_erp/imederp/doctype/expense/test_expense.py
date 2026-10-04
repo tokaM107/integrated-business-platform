@@ -271,6 +271,19 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 			with self.subTest(label):
 				self.assertRaises(frappe.ValidationError, self.new_expense(**change).insert)
 
+	def test_entry_is_cancelled_only_through_the_expense(self):
+		# Cancelling the entry alone would put the money back in the treasury while the report still counts it.
+		expense = self.submit_expense(amount=300)
+		journal_entry = frappe.get_doc("Journal Entry", expense.journal_entry)
+		self.assertRaisesRegex(frappe.ValidationError, "Cancel the expense instead", journal_entry.cancel)
+		self.assertEqual(frappe.db.get_value("Journal Entry", expense.journal_entry, "docstatus"), 1)
+
+	def test_category_with_expenses_cannot_become_a_group(self):
+		self.submit_expense(expense_category=self.rent, amount=50)
+		rent = frappe.get_doc("Expense Category", self.rent)
+		rent.is_group = 1
+		self.assertRaises(frappe.ValidationError, rent.save)
+
 	def test_supplier_is_optional(self):
 		# Salaries and petty cash have no supplier.
 		expense = self.submit_expense(supplier=None)

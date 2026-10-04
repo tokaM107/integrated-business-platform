@@ -95,4 +95,15 @@ class Expense(Document):
         if self.journal_entry and frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
             journal_entry = frappe.get_doc("Journal Entry", self.journal_entry)
             journal_entry.flags.ignore_permissions = True
+            journal_entry.flags.from_expense = True
             journal_entry.cancel()
+
+
+def block_cancel_of_expense_entry(doc, method=None):
+    """Journal Entry before_cancel hook: an expense's entry is reversed only by cancelling the expense,
+    otherwise the expense would still be counted while its money is back in the treasury."""
+    if doc.flags.from_expense:
+        return
+    expense = frappe.db.get_value("Expense", {"journal_entry": doc.name, "docstatus": 1})
+    if expense:
+        frappe.throw(_("{0} was posted by Expense {1}. Cancel the expense instead.").format(doc.name, expense))

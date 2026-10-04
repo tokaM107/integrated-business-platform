@@ -42,6 +42,12 @@ class IntegrationTestExpenseCategory(IntegrationTestCase):
 		leaf = make_category("_Test Cat Not Group").name
 		self.assertRaises(frappe.ValidationError, make_category, "_Test Cat Child", leaf)
 
+	def test_group_with_children_stays_a_group(self):
+		group = make_category("_Test Cat Has Children", is_group=1)
+		make_category("_Test Cat Its Child", group.name)
+		group.is_group = 0
+		self.assertRaises(frappe.ValidationError, group.save)
+
 	def test_account_must_be_an_expense_account(self):
 		income = frappe.get_all("Account", filters={"root_type": "Income", "is_group": 0}, limit=1, pluck="name")[0]
 		self.assertRaises(frappe.ValidationError, make_category, "_Test Cat Income", expense_account=income)

@@ -174,6 +174,7 @@ website_context = {
 doc_events = {
 	"Journal Entry": {
 		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
+		"before_cancel": "imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
 	},
 	"Payment Entry": {
 		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
