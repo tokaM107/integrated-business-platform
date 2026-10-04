@@ -34,6 +34,8 @@ ACCOUNTS = [
 	("خزينة مكتبة المواساة", "النقدية بالخزائن", "Cash", 0),
 	("خزينة سنتر Imed", "النقدية بالخزائن", "Cash", 0),
 	("خزينة X Studio", "النقدية بالخزائن", "Cash", 0),
+	# The app is paid and pays online, so its treasury is a bank-type account, not a cash box.
+	("خزينة تطبيق BA Plus", "الحسابات البنكية", "Bank", 0),
 	("محفظة InstaPay", "الحسابات البنكية", "Bank", 0),
 	("محفظة Vodafone Cash", "الحسابات البنكية", "Bank", 0),
 	# ---- Assets: owed to us ----
@@ -72,6 +74,8 @@ ACCOUNTS = [
 	("الخامات والمستهلكات", "المصروفات غير المباشرة", "Expense Account", 0),
 	("فروقات الخزينة", "المصروفات غير المباشرة", "Expense Account", 0),
 	("الخصومات الممنوحة", "المصروفات غير المباشرة", "Expense Account", 0),
+	# The app's server and AI subscriptions.
+	("الاشتراكات والسيرفرات", "المصروفات غير المباشرة", "Expense Account", 0),
 ]
 
 # Each warehouse (made by setup_core.py) posts its stock to this account.
