@@ -35,7 +35,7 @@ COST_CENTERS = [
 # (name, parent, account_type, is_group) - must match setup_coa.py.
 ACCOUNTS = (
 	[(n, acc("النقدية بالخزائن"), "Cash", 0) for n in ["خزينة مكتبة الأزاريطة", "خزينة مكتبة المواساة", "خزينة سنتر Imed", "خزينة X Studio"]]
-	+ [(n, acc("الحسابات البنكية"), "Bank", 0) for n in ["محفظة InstaPay", "محفظة Vodafone Cash"]]
+	+ [(n, acc("الحسابات البنكية"), "Bank", 0) for n in ["محفظة InstaPay", "محفظة Vodafone Cash", "خزينة تطبيق BA Plus"]]
 	+ [
 		("مستحقات على الأطباء — رسوم المنصة", acc("الذمم المدينة"), "Receivable", 0),
 		("مديونيات الأطباء — الكتب", acc("الذمم المدينة"), "Receivable", 0),
@@ -66,7 +66,7 @@ ACCOUNTS = (
 	]
 	+ [
 		(n, acc("المصروفات غير المباشرة"), "Expense Account", 0)
-		for n in ["الخامات والمستهلكات", "فروقات الخزينة", "الخصومات الممنوحة"]
+		for n in ["الخامات والمستهلكات", "فروقات الخزينة", "الخصومات الممنوحة", "الاشتراكات والسيرفرات"]
 	]
 )
 
@@ -106,7 +106,7 @@ ITEMS = [
 # Company / Cost Center / Warehouse User Permissions.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 USERS = [
-	("owner@imed.local", "المالك", ["Super Admin", "System Manager", "Accounts Manager"], [], []),
+	("owner@imed.local", "المالك", ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"], [], []),
 	("nour@imed.local", "نور", BRANCH_ROLES, ["قاعات Imed"], []),
 	("gilan@imed.local", "جيلان", BRANCH_ROLES, ["استوديو X"], []),
 	("menna@imed.local", "منة", BRANCH_ROLES, ["تطبيق BA Plus"], []),
