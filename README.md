@@ -18,7 +18,8 @@ Project files: https://drive.google.com/drive/folders/1kYML83xHgfcTFBl0uctAHT_Ej
 ```
 apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
   imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
-                        Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard
+                        Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
+                        Expense, Expense Category, Expense Report
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
 frappe_docker/          Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
 ```
@@ -59,6 +60,8 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 |---|---|---|
 | Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
 | Book Edition, Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
+| Expense | full | create, edit, submit (no cancel/delete) |
+| Expense Category | full | read only |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here. Agreements and the doctors' ledger are managed by Accounts Manager (Owner, Accountant).
@@ -101,6 +104,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_financial.py").read(), {"frappe": frappe})
@@ -119,11 +123,29 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_library.
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `check_financial.py` | Test, rolled back afterwards. Checks EGP on the company and Global Defaults, the fiscal year, `dd-mm-yyyy` dates, number format, that a printed invoice (HTML and PDF) shows `EGP` and not `£`, and that a closed accounting period blocks invoices and journal entries (CORE-09). |
 | `check_library.py` | Test, rolled back afterwards. Creates a test book and memo, receives them in Mawasah's store, issues books to Azarita, then sells through each library's POS Profile and through a plain sales invoice, and checks that the revenue account (Azarita's sales moved to `إيراد مكتبة الأزاريطة` by `imederp/library_revenue.py`), cost center and warehouse were filled in without being typed. |
+| `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق` and `الهالك والتالف` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with all 18 posting document types closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
 `setup_regional.py`, `setup_core.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py` and `verify_setup.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
+
+### Expenses (EXP-01/02, EXP-07)
+
+An **Expense** records one payment: Activity (a leaf cost center), Expense Category, Expense Amount,
+Cash/Bank Account (a leaf cash or wallet account), Supplier (optional: salaries have none) and
+Receipt Attachment. A draft can be saved without the receipt, but submitting is refused until one is
+attached. The check is in the controller's `before_submit`, so it also holds for the API; the receipt
+must be an uploaded image or PDF. Submitting posts a journal entry: debit the category's expense
+account, credit the treasury, both on the activity's cost center. Cancelling reverses it.
+
+**Expense Category** is a tree (ImedERP > Expense Category > Tree view). Expenses are recorded on the
+categories inside a group, not on the group. A category without its own expense account is posted to its
+nearest parent's, so a sub-category such as `كهرباء` under `المرافق` needs no account of its own.
+
+The **Expense Report** lists submitted expenses filtered by period, activity, category, supplier and
+treasury. Choosing a group activity (e.g. `مكتبات 2Be Doctor`) or a group category includes everything
+under it. **Group Totals By** gives one total per category, activity, month, or their combinations.
 
 ### Library products (LIB-06)
 

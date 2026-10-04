@@ -44,3 +44,35 @@ Transfer Amount,مبلغ التحويل
 Receipt Confirmed On,تاريخ تأكيد الاستلام
 Receipt Details,بيانات الاستلام
 Transfer No.,رقم التحويل
+New Expense,مصروف جديد
+Expense Category,تصنيف المصروف
+Expense Categories,تصنيفات المصروفات
+Expense Category Name,اسم تصنيف المصروف
+Parent Expense Category,التصنيف الرئيسي
+Expense Report,تقرير المصروفات
+Expense No.,رقم المصروف
+Expense Amount,مبلغ المصروف
+Total Expenses,إجمالي المصروفات
+Number of Expenses,عدد المصروفات
+Receipt Attachment,صورة الإيصال
+Group Totals By,تجميع الإجماليات حسب
+Activity and Expense Category,النشاط وتصنيف المصروف
+"Month, Activity and Expense Category",الشهر والنشاط وتصنيف المصروف
+The business the expense is charged to.,النشاط اللي المصروف بيتحمّل عليه.
+The cash or wallet account the money is paid from.,الخزينة أو المحفظة اللي الفلوس بتتدفع منها.
+"A photo or PDF of the receipt. Required before submitting.",صورة أو PDF للإيصال. لازم تكون موجودة قبل الاعتماد.
+Taken from the expense category.,بيتاخد من تصنيف المصروف.
+"A group only gathers other categories; expenses are recorded under the categories inside it.",المجموعة بتجمع تصنيفات تانية بس، والمصروفات بتتسجل على التصنيفات اللي جواها.
+"The expense account this category is posted to. Leave empty to use the parent category's account.",حساب المصروف اللي التصنيف ده بيترحّل عليه. سيبه فاضي عشان يستخدم حساب التصنيف الرئيسي.
+Attach the receipt before submitting this expense.,ارفق الإيصال قبل اعتماد المصروف.
+Receipt attachment is required before submitting this expense.,لازم ترفق صورة الإيصال قبل اعتماد المصروف.
+Receipt Missing,الإيصال مش موجود
+Receipt {0} was not found. Attach the receipt again.,الإيصال {0} مش موجود. ارفق الإيصال تاني.
+"Receipt must be an image or a PDF file, got {0}.",الإيصال لازم يكون صورة أو ملف PDF، والمرفق {0}.
+Expense Category {0} is a group. Choose a category under it.,{0} مجموعة وليس تصنيف. اختار تصنيف من اللي تحتها.
+"Expense Category {0} has no expense account, and neither do its parents.",تصنيف المصروف {0} ملوش حساب مصروف، ولا التصنيفات اللي فوقه.
+"{0} does not belong to {1}, the company of {2}.",{0} مش تابع لـ {1}، شركة {2}.
+Expense {0}: {1},مصروف {0}: {1}
+{0} is not a group. Only a group category can have categories under it.,{0} مش مجموعة. التصنيف المجموعة بس هو اللي ينفع يكون تحته تصنيفات.
+{0} is not an expense account. Choose an account under Expenses.,{0} مش حساب مصروف. اختار حساب من تحت المصروفات.
+{0} has expenses recorded under it and cannot be deleted.,{0} عليه مصروفات متسجلة ومينفعش يتمسح.
