@@ -20,12 +20,14 @@ from frappe.utils import flt
 # "_Test ..." records for every linked doctype and commit them.
 IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"Account",
+	"Recurring Expense",
 	"Company",
 	"Cost Center",
 	"Expense",
 	"Expense Category",
 	"Journal Entry",
 	"Supplier",
+	"User",
 ]
 
 COMPANY = "Mohamed Mamdouh group"
@@ -275,3 +277,118 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 		# Salaries and petty cash have no supplier.
 		expense = self.submit_expense(supplier=None)
 		self.assertEqual(expense.docstatus, 1)
+
+	def test_new_monthly_expense_is_added_to_the_places_bills(self):
+		expense = self.submit_expense(expense_type="Every Month")
+
+		bill = frappe.get_doc("Recurring Expense", expense.recurring_expense)
+		self.assertEqual(bill.activity, self.activity)
+		self.assertEqual(bill.expense_category, self.electricity)
+		self.assertEqual(bill.treasury, self.treasury)
+		self.assertEqual(bill.day_of_month, 15)
+
+		# Next month the same bill is picked up, not added again.
+		again = self.submit_expense(expense_type="Every Month", posting_date="2026-10-15")
+		self.assertEqual(again.recurring_expense, bill.name)
+
+	def test_one_time_expense_is_not_a_monthly_bill(self):
+		bills = frappe.db.count("Recurring Expense")
+		expense = self.submit_expense(activity=self.other_activity, expense_category=self.water)
+		self.assertEqual(expense.expense_type, "This Month Only")
+		self.assertFalse(expense.recurring_expense)
+		self.assertEqual(frappe.db.count("Recurring Expense"), bills)
+
+	def test_monthly_bill_must_be_the_places_own(self):
+		other_place = self.submit_expense(expense_type="Every Month", activity=self.other_activity)
+
+		expense = self.new_expense(expense_type="Every Month", recurring_expense=other_place.recurring_expense)
+		self.assertRaises(frappe.ValidationError, expense.insert)
+
+
+OWNER = "owner@imed.local"
+ACCOUNTANT = "accountant@imed.local"
+
+
+class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
+	"""Expenses above the threshold in Expense Settings are posted only once the owner approves them."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.make_fixtures()
+		settings = frappe.get_single("Expense Settings")
+		settings.approval_threshold = 5000
+		settings.save()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.remove_fixture_files()
+		super().tearDownClass()
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+
+	def draft(self, amount, user=ACCOUNTANT):
+		receipt = self.upload()
+		frappe.set_user(user)
+		return self.new_expense(amount=amount, receipt=receipt).insert()
+
+	def as_user(self, user, expense):
+		frappe.set_user(user)
+		return frappe.get_doc("Expense", expense.name)
+
+	def test_below_threshold_is_submitted_directly(self):
+		expense = self.draft(5000)
+		expense.submit()
+		self.assertEqual(expense.docstatus, 1)
+		self.assertFalse(expense.approval_status)
+
+	def test_above_threshold_needs_the_owners_approval(self):
+		expense = self.draft(46000)
+		self.assertRaises(frappe.ValidationError, expense.submit)
+		# A refused submit leaves the copy in memory marked as submitted; the form reloads it too.
+		expense.reload()
+
+		expense.request_approval()
+		self.assertEqual(expense.approval_status, "Pending Approval")
+		self.assertTrue(
+			frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": OWNER, "type": "Alert"})
+		)
+		# The accountant cannot approve his own request.
+		self.assertRaises(frappe.PermissionError, expense.approve)
+
+		expense = self.as_user(OWNER, expense)
+		expense.approve()
+		expense.reload()
+		self.assertEqual(expense.docstatus, 1)
+		self.assertEqual(expense.approval_status, "Approved")
+		self.assertEqual(expense.approved_by, OWNER)
+		self.assertTrue(expense.journal_entry)
+
+	def test_rejected_expense_is_closed(self):
+		expense = self.draft(46000)
+		expense.request_approval()
+
+		expense = self.as_user(OWNER, expense)
+		expense.reject("الإيصال مش واضح")
+		expense = self.as_user(ACCOUNTANT, expense)
+		self.assertEqual(expense.approval_status, "Rejected")
+		self.assertEqual(expense.rejection_reason, "الإيصال مش واضح")
+
+		expense.amount = 40000
+		self.assertRaises(frappe.ValidationError, expense.save)
+		self.assertRaises(frappe.ValidationError, frappe.get_doc("Expense", expense.name).submit)
+
+	def test_changing_the_amount_needs_approval_again(self):
+		expense = self.draft(46000)
+		expense.request_approval()
+		expense.amount = 60000
+		expense.save()
+		self.assertFalse(expense.approval_status)
+		self.assertRaises(frappe.ValidationError, expense.submit)
+
+	def test_owners_own_expense_needs_no_approval(self):
+		expense = self.draft(46000, user=OWNER)
+		expense.submit()
+		self.assertEqual(expense.docstatus, 1)
+		self.assertEqual(expense.approval_status, "Approved")
