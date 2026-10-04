@@ -5,8 +5,10 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "posting_date",
   "activity",
+  "expense_type",
+  "recurring_expense",
+  "posting_date",
   "expense_category",
   "amount",
   "column_break_main",
@@ -15,6 +17,11 @@
   "description",
   "receipt_section",
   "receipt",
+  "approval_section",
+  "approval_status",
+  "approved_by",
+  "column_break_approval",
+  "rejection_reason",
   "accounting_section",
   "company",
   "expense_account",
@@ -24,14 +31,6 @@
  ],
  "fields": [
   {
-   "default": "Today",
-   "fieldname": "posting_date",
-   "fieldtype": "Date",
-   "in_list_view": 1,
-   "label": "Posting Date",
-   "reqd": 1
-  },
-  {
    "description": "The business the expense is charged to.",
    "fieldname": "activity",
    "fieldtype": "Link",
@@ -39,6 +38,35 @@
    "in_standard_filter": 1,
    "label": "Activity",
    "options": "Cost Center",
+   "reqd": 1
+  },
+  {
+   "default": "This Month Only",
+   "description": "Every Month: pick one of this place's monthly bills. If the bill is not there, fill it in yourself; it is added to the place's monthly bills when this expense is submitted.",
+   "fieldname": "expense_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Repeats",
+   "options": "This Month Only\nEvery Month",
+   "reqd": 1
+  },
+  {
+   "fieldname": "recurring_expense",
+   "fieldtype": "Link",
+   "label": "Monthly Bill",
+   "no_copy": 1,
+   "options": "Recurring Expense",
+   "print_hide": 1,
+   "description": "Fills in the category and treasury. Only this place's bills are listed.",
+   "depends_on": "eval:doc.expense_type=='Every Month'"
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
    "reqd": 1
   },
   {
@@ -90,7 +118,44 @@
    "description": "A photo or PDF of the receipt. Required before submitting.",
    "fieldname": "receipt",
    "fieldtype": "Attach",
-   "label": "Receipt Attachment"
+   "label": "Receipt Attachment",
+   "no_copy": 1
+  },
+  {
+   "depends_on": "approval_status",
+   "fieldname": "approval_section",
+   "fieldtype": "Section Break",
+   "label": "Approval"
+  },
+  {
+   "fieldname": "approval_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Approval Status",
+   "no_copy": 1,
+   "options": "\nPending Approval\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Decided By",
+   "no_copy": 1,
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_approval",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.approval_status=='Rejected'",
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "collapsible": 1,
