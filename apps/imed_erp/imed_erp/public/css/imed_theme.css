@@ -1,0 +1,1455 @@
+/*
+ * IMED ERP desk theme.
+ *
+ * A layer on top of Frappe v16's own design tokens (Espresso): it re-maps the colour, type and
+ * shape tokens first, then refines a small set of components. No Frappe markup or behaviour is
+ * changed. Directional spacing uses logical properties (inline-start / inline-end) so the Arabic
+ * (RTL) interface mirrors correctly. Loaded by hooks.py (app_include_css).
+ */
+
+/* ------------------------------------------------------------------ */
+/* 1. Tokens, light                                                   */
+/* ------------------------------------------------------------------ */
+/* Brand scale: the same in both themes. */
+:root {
+	/* Nile teal, with a warm amber accent used sparingly. */
+	--imed-teal-50: #effaf8;
+	--imed-teal-100: #d7f1ec;
+	--imed-teal-200: #ade2d9;
+	--imed-teal-300: #78cbbf;
+	--imed-teal-400: #40aea1;
+	--imed-teal-500: #1d9386;
+	--imed-teal-600: #0f766e;
+	--imed-teal-700: #0f625b;
+	--imed-teal-800: #104e49;
+	--imed-teal-900: #0f3f3b;
+	--imed-amber-100: #fdf1d6;
+	--imed-amber-400: #f4b942;
+	--imed-amber-700: #9a6212;
+}
+
+/* Light theme. Scoped with :not([data-theme="dark"]) on purpose: a plain :root block would come after
+   Frappe's own [data-theme="dark"] block with the same specificity and override its dark values. */
+:root:not([data-theme="dark"]),
+[data-theme="light"] {
+	/* Surfaces: a cool canvas under white sheets. */
+	--imed-canvas: #f3f6f7;
+	--imed-sheet: #ffffff;
+	--imed-sidebar: #f7f9fa;
+	--imed-border: #e3e9ec;
+	--imed-border-strong: #d2dbe0;
+	--imed-ring: 0 0 0 3px rgba(15, 118, 110, 0.18);
+	--imed-shadow-sheet: 0 1px 2px rgba(16, 34, 42, 0.04), 0 0 0 1px var(--imed-border);
+	--imed-shadow-raised: 0 8px 24px -12px rgba(16, 34, 42, 0.22), 0 0 0 1px var(--imed-border);
+
+	/* Frappe's neutral gray scale, re-tinted to cool slate so every gray in the UI matches. */
+	--gray-50: #f7f9fa;
+	--gray-100: #eff3f5;
+	--gray-200: #e5eaed;
+	--gray-300: #d4dce1;
+	--gray-400: #b3bfc6;
+	--gray-500: #8795a0;
+	--gray-600: #677680;
+	--gray-700: #48565f;
+	--gray-800: #2c3940;
+	--gray-900: #15222a;
+
+	--ink-gray-4: #8795a0;
+	--ink-gray-5: #677680;
+	--ink-gray-6: #48565f;
+	--ink-gray-7: #48565f;
+	--ink-gray-8: #2c3940;
+	--ink-gray-9: #15222a;
+	--surface-gray-1: #f7f9fa;
+	--surface-gray-2: #eff3f5;
+	--surface-gray-3: #e5eaed;
+	--surface-gray-4: #d4dce1;
+	--surface-menu-bar: var(--imed-sidebar);
+	--outline-gray-1: #e5eaed;
+	--outline-gray-2: #d4dce1;
+	--outline-gray-3: #b3bfc6;
+	--outline-gray-modals: #e5eaed;
+
+	/* Primary everywhere Frappe asks for it. */
+	--primary: var(--imed-teal-600);
+	--primary-color: var(--imed-teal-600);
+	--brand-color: var(--imed-teal-600);
+	--btn-primary: var(--imed-teal-600);
+	--border-primary: var(--imed-teal-600);
+	--progress-bar-bg: var(--imed-teal-500);
+	--date-active-bg: var(--imed-teal-600);
+	--date-active-text: #ffffff;
+	--checkbox-color: var(--imed-teal-600);
+	--checkbox-gradient: linear-gradient(180deg, var(--imed-teal-500) -124.51%, var(--imed-teal-600) 100%);
+	--checkbox-focus-shadow: var(--imed-ring);
+	--focus-default: var(--imed-ring);
+	--focus-blue: var(--imed-ring);
+	--highlight-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
+	--ink-blue-link: var(--imed-teal-600);
+
+	/* Layout */
+	/* --bg-color stays the sheet colour: Frappe paints rows, grids and panels with it. The canvas is
+	   applied per page type in section 4. */
+	--bg-color: var(--imed-sheet);
+	--fg-color: var(--imed-sheet);
+	--card-bg: var(--imed-sheet);
+	--navbar-bg: var(--imed-sheet);
+	--modal-bg: var(--imed-sheet);
+	--popover-bg: var(--imed-sheet);
+	--subtle-accent: var(--gray-50);
+	--subtle-fg: var(--gray-100);
+	--fg-hover-color: var(--gray-100);
+	--control-bg: #ffffff;
+	--control-bg-on-gray: #ffffff;
+	--disabled-control-bg: var(--gray-50);
+	--input-disabled-bg: var(--gray-100);
+	--awesomebar-focus-bg: #ffffff;
+	--sidebar-select-color: var(--imed-teal-50);
+	--border-color: var(--imed-border);
+	--dark-border-color: var(--imed-border-strong);
+	--table-border-color: var(--imed-border);
+	--btn-default-bg: #ffffff;
+	--btn-default-hover-bg: var(--gray-100);
+	--btn-ghost-hover-bg: var(--gray-100);
+	--scrollbar-thumb-color: var(--gray-300);
+	--scrollbar-track-color: transparent;
+
+	/* Type */
+	--font-stack: "InterVariable", "Inter", "IMED Arabic", -apple-system, BlinkMacSystemFont, "Segoe UI",
+		"Noto Sans Arabic", "Tahoma", sans-serif;
+	--heading-color: var(--gray-900);
+	--text-neutral: var(--gray-900);
+	--text-color: var(--gray-800);
+	--text-muted: var(--gray-600);
+	--text-light: var(--gray-500);
+
+	/* Shape */
+	--border-radius-sm: 7px;
+	--border-radius: 9px;
+	--border-radius-md: 10px;
+	--border-radius-lg: 12px;
+	--border-radius-xl: 14px;
+	--card-shadow: var(--imed-shadow-sheet);
+	--modal-shadow: 0 24px 60px -20px rgba(16, 34, 42, 0.35), 0 0 0 1px var(--imed-border);
+
+	/* Status colours */
+	--alert-bg-success: #eaf7f0;
+	--alert-text-success: #17754c;
+	--alert-bg-info: var(--imed-teal-50);
+	--alert-text-info: var(--imed-teal-700);
+	--alert-bg-warning: #fdf6e3;
+	--alert-text-warning: #8a5a0b;
+	--alert-bg-danger: #fdf0ef;
+	--alert-text-danger: #b42318;
+	--bg-blue: var(--imed-teal-50);
+	--text-on-blue: var(--imed-teal-700);
+	--bg-light-blue: var(--imed-teal-50);
+	--text-on-light-blue: var(--imed-teal-600);
+}
+
+/* ------------------------------------------------------------------ */
+/* 2. Tokens, dark                                                    */
+/* ------------------------------------------------------------------ */
+[data-theme="dark"] {
+	--imed-canvas: #0d1518;
+	--imed-sheet: #131e22;
+	--imed-sidebar: #10191c;
+	--imed-border: #22323a;
+	--imed-border-strong: #2d404a;
+	--imed-ring: 0 0 0 3px rgba(64, 174, 161, 0.3);
+	--imed-shadow-sheet: 0 0 0 1px var(--imed-border);
+	--imed-shadow-raised: 0 12px 28px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--imed-border);
+
+	--gray-50: #19252a;
+	--gray-100: #1d2a30;
+	--gray-200: #243339;
+	--gray-300: #2e3f47;
+	--gray-400: #52646d;
+	--gray-500: #7a8b94;
+	--gray-600: #97a6ae;
+	--gray-700: #1d2a30;
+	--gray-800: #172328;
+	--gray-900: #0f181b;
+
+	--primary: var(--imed-teal-400);
+	--primary-color: var(--imed-teal-400);
+	--btn-primary: var(--imed-teal-500);
+	--border-primary: var(--imed-teal-400);
+	--date-active-bg: var(--imed-teal-500);
+	--checkbox-gradient: linear-gradient(180deg, var(--imed-teal-400) -124.51%, var(--imed-teal-500) 100%);
+	--ink-blue-link: var(--imed-teal-300);
+
+	/* --bg-color stays the sheet colour: Frappe paints rows, grids and panels with it. The canvas is
+	   applied per page type in section 4. */
+	--bg-color: var(--imed-sheet);
+	--fg-color: var(--imed-sheet);
+	--card-bg: var(--imed-sheet);
+	--navbar-bg: var(--imed-sheet);
+	--modal-bg: var(--imed-sheet);
+	--popover-bg: var(--imed-sheet);
+	--control-bg: #0f181b;
+	--control-bg-on-gray: #0f181b;
+	--awesomebar-focus-bg: #0f181b;
+	--disabled-control-bg: #152025;
+	--input-disabled-bg: #152025;
+	--subtle-accent: #172328;
+	--subtle-fg: #1d2a30;
+	--fg-hover-color: #1d2a30;
+	--sidebar-select-color: rgba(64, 174, 161, 0.14);
+	--btn-default-bg: #1a272c;
+	--btn-default-hover-bg: #22323a;
+	--btn-ghost-hover-bg: #1d2a30;
+	--border-color: var(--imed-border);
+	--dark-border-color: var(--imed-border-strong);
+	--table-border-color: var(--imed-border);
+
+	--heading-color: #eef4f6;
+	--text-neutral: #eef4f6;
+	--text-color: #d9e3e7;
+	--text-muted: #97a6ae;
+	--text-light: #7a8b94;
+
+	--bg-blue: rgba(64, 174, 161, 0.14);
+	--text-on-blue: var(--imed-teal-300);
+	--alert-bg-info: rgba(64, 174, 161, 0.14);
+	--alert-text-info: var(--imed-teal-300);
+}
+
+/* ------------------------------------------------------------------ */
+/* 3. Base                                                            */
+/* ------------------------------------------------------------------ */
+body {
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+/* The canvas: lists, reports, workspaces and the home screen show their content as white sheets on
+   a cool gray canvas. Forms stay one white page (Frappe centres their content in a wide page). */
+body[data-route^="List/"],
+body[data-route^="List/"] .main-section,
+body[data-route^="List/"] .page-container,
+body[data-route^="List/"] .page-body,
+body[data-route^="Report/"],
+body[data-route^="Report/"] .main-section,
+body[data-route^="Report/"] .page-container,
+body[data-route^="Report/"] .page-body,
+body[data-route^="query-report/"],
+body[data-route^="query-report/"] .main-section,
+body[data-route^="query-report/"] .page-container,
+body[data-route^="query-report/"] .page-body,
+body[data-route^="Workspaces"],
+body[data-route^="Workspaces"] .main-section,
+body[data-route^="Workspaces"] .page-container,
+body[data-route^="Workspaces"] .page-body,
+body[data-route^="Workspaces"] .layout-main-section,
+body[data-route^="dashboard-view/"],
+body[data-route^="dashboard-view/"] .main-section,
+body[data-route^="dashboard-view/"] .page-container,
+body[data-route^="dashboard-view/"] .page-body {
+	background-color: var(--imed-canvas);
+}
+body[data-route^="Workspaces"] .layout-main-section {
+	border: 0;
+	box-shadow: none;
+}
+
+/* Arabic needs more line height than Latin to breathe. */
+html[dir="rtl"] body,
+html[lang="ar"] body {
+	line-height: 1.6;
+}
+html[dir="rtl"] .form-control,
+html[dir="rtl"] .btn {
+	line-height: 1.45;
+}
+
+::selection {
+	background: var(--imed-teal-100);
+	color: var(--imed-teal-900);
+}
+
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+[tabindex]:focus-visible {
+	outline: none;
+	box-shadow: var(--imed-ring);
+	border-radius: var(--border-radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	* {
+		transition: none !important;
+		animation: none !important;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* 4. App chrome: sidebar and page head                               */
+/* ------------------------------------------------------------------ */
+.body-sidebar {
+	background: var(--imed-sidebar);
+	border-inline-end: 1px solid var(--imed-border);
+}
+
+.body-sidebar .sidebar-header .header-title {
+	font-weight: 600;
+	color: var(--heading-color);
+	letter-spacing: -0.01em;
+}
+.body-sidebar .sidebar-header .header-subtitle {
+	color: var(--text-light);
+}
+/* Workspace letter tiles take the brand colour instead of plain gray. */
+.body-sidebar .sidebar-header .header-logo {
+	border-radius: 9px;
+}
+
+.body-sidebar .standard-sidebar-item {
+	border-radius: 8px;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+.body-sidebar .standard-sidebar-item:hover {
+	background: var(--gray-100);
+}
+.body-sidebar .standard-sidebar-item.active-sidebar,
+.body-sidebar .standard-sidebar-item.selected {
+	position: relative;
+	background: var(--imed-teal-50);
+	box-shadow: none;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label,
+.body-sidebar .standard-sidebar-item.selected .sidebar-item-label {
+	color: var(--imed-teal-700);
+	font-weight: 600;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-icon,
+.body-sidebar .standard-sidebar-item.selected .sidebar-item-icon {
+	color: var(--imed-teal-600);
+	--icon-stroke: var(--imed-teal-600);
+}
+.body-sidebar .standard-sidebar-item.active-sidebar::before,
+.body-sidebar .standard-sidebar-item.selected::before {
+	content: "";
+	position: absolute;
+	inset-block: 7px;
+	inset-inline-start: -8px;
+	width: 3px;
+	border-radius: 3px;
+	background: var(--imed-teal-600);
+}
+[data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar,
+[data-theme="dark"] .body-sidebar .standard-sidebar-item.selected {
+	background: rgba(64, 174, 161, 0.14);
+}
+[data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label,
+[data-theme="dark"] .body-sidebar .standard-sidebar-item.selected .sidebar-item-label {
+	color: var(--imed-teal-300);
+}
+
+.page-head {
+	background: color-mix(in srgb, var(--imed-sheet) 92%, transparent);
+	backdrop-filter: saturate(1.4) blur(8px);
+	border-bottom: 1px solid var(--imed-border);
+}
+.page-head .page-title .title-area .title-text,
+.page-head .navbar-breadcrumbs li:last-child a {
+	font-weight: 600;
+	color: var(--heading-color);
+	letter-spacing: -0.01em;
+}
+.page-head .navbar-breadcrumbs li a {
+	color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* 5. Buttons                                                         */
+/* ------------------------------------------------------------------ */
+.btn {
+	border-radius: var(--border-radius-sm);
+	font-weight: 500;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+.btn.btn-primary {
+	background-color: var(--btn-primary);
+	border-color: var(--btn-primary);
+	color: #ffffff;
+	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.btn.btn-primary:hover,
+.btn.btn-primary:focus {
+	background-color: var(--imed-teal-700);
+	border-color: var(--imed-teal-700);
+	color: #ffffff;
+}
+.btn.btn-primary:active {
+	background-color: var(--imed-teal-800);
+}
+[data-theme="dark"] .btn.btn-primary:hover,
+[data-theme="dark"] .btn.btn-primary:focus {
+	background-color: var(--imed-teal-400);
+	border-color: var(--imed-teal-400);
+}
+.btn.btn-default,
+.btn.btn-secondary {
+	background-color: var(--btn-default-bg);
+	border: 1px solid var(--imed-border-strong);
+	color: var(--text-color);
+	box-shadow: 0 1px 1px rgba(16, 34, 42, 0.04);
+}
+.btn.btn-default:hover,
+.btn.btn-secondary:hover {
+	background-color: var(--btn-default-hover-bg);
+	border-color: var(--gray-400);
+}
+.btn.btn-danger {
+	background-color: #c2352a;
+	border-color: #c2352a;
+	color: #ffffff;
+}
+.btn.btn-danger:hover {
+	background-color: #a52b22;
+	border-color: #a52b22;
+}
+/* Icon-only buttons in page heads stay light. */
+.page-head .btn.icon-btn,
+.page-head .btn.btn-default.icon-btn {
+	box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* 6. Form controls                                                   */
+/* ------------------------------------------------------------------ */
+.form-control,
+.frappe-control .form-control,
+.page-form .form-control,
+select.form-control {
+	background-color: var(--control-bg);
+	border: 1px solid var(--imed-border-strong);
+	border-radius: var(--border-radius-sm);
+	color: var(--text-color);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-control:hover:not(:disabled):not([readonly]) {
+	border-color: var(--gray-400);
+}
+.form-control:focus,
+.frappe-control .form-control:focus {
+	background-color: var(--control-bg);
+	border-color: var(--imed-teal-500);
+	box-shadow: var(--imed-ring);
+}
+.form-control::placeholder {
+	color: var(--text-light);
+}
+.form-control:disabled,
+.form-control[readonly],
+.like-disabled-input {
+	background-color: var(--input-disabled-bg);
+	border-color: var(--imed-border);
+	color: var(--text-muted);
+}
+.frappe-control.has-error .form-control {
+	border-color: #d64545;
+	box-shadow: 0 0 0 3px rgba(214, 69, 69, 0.14);
+}
+
+.control-label,
+.form-group .control-label {
+	color: var(--gray-700);
+	font-weight: 500;
+	font-size: var(--text-sm);
+}
+[data-theme="dark"] .control-label,
+[data-theme="dark"] .form-group .control-label {
+	color: var(--text-muted);
+}
+.control-label.reqd::after {
+	color: #d64545;
+}
+.frappe-control .help-box,
+.frappe-control .help {
+	color: var(--text-light);
+}
+
+/* Checkboxes follow the brand colour. */
+input[type="checkbox"]:checked {
+	background-color: var(--imed-teal-600);
+	border-color: var(--imed-teal-600);
+}
+
+/* ------------------------------------------------------------------ */
+/* 7. Forms: one white page, sections divided by hairlines            */
+/* ------------------------------------------------------------------ */
+.std-form-layout .form-section.card-section {
+	border-bottom-color: var(--imed-border);
+}
+.std-form-layout .form-section .section-head {
+	font-weight: 600;
+	color: var(--heading-color);
+	font-size: var(--text-base);
+	letter-spacing: -0.005em;
+}
+/* A short brand rule before each section title gives long forms a scannable rhythm. */
+.std-form-layout .form-section .section-head::before {
+	content: "";
+	display: inline-block;
+	width: 3px;
+	height: 0.95em;
+	margin-inline-end: 8px;
+	vertical-align: -0.12em;
+	border-radius: 3px;
+	background: var(--imed-teal-500);
+}
+.std-form-layout .form-section .section-head.collapsible:hover {
+	color: var(--imed-teal-700);
+}
+.form-section-description {
+	color: var(--text-muted);
+}
+
+/* Tabs */
+.form-tabs-list {
+	background: var(--imed-sheet);
+	border-bottom: 1px solid var(--imed-border);
+}
+.form-tabs-list .nav-link {
+	color: var(--text-muted);
+	font-weight: 500;
+}
+.form-tabs-list .nav-link:hover {
+	color: var(--heading-color);
+}
+.form-tabs-list .nav-link.active {
+	color: var(--imed-teal-700);
+	border-bottom-color: var(--imed-teal-600) !important;
+	font-weight: 600;
+}
+/* Frappe focuses the first tab on load; the underline already marks it, so no ring box. */
+.form-tabs-list .nav-link:focus,
+.form-tabs-list .nav-link:focus-visible {
+	box-shadow: none;
+	outline: none;
+}
+.form-tabs-list .nav-link:focus-visible {
+	color: var(--imed-teal-700);
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+[data-theme="dark"] .form-tabs-list .nav-link.active {
+	color: var(--imed-teal-300);
+}
+
+/* Messages above a form ("Submit this document to confirm") */
+.form-message {
+	border-radius: var(--border-radius-md);
+	margin: 12px var(--padding-md);
+	border: 0;
+	font-weight: 500;
+}
+.form-message.blue {
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-800);
+	box-shadow: inset 3px 0 0 var(--imed-teal-500);
+}
+html[dir="rtl"] .form-message.blue {
+	box-shadow: inset -3px 0 0 var(--imed-teal-500);
+}
+[data-theme="dark"] .form-message.blue {
+	background: rgba(64, 174, 161, 0.12);
+	color: var(--imed-teal-200);
+}
+
+/* Form sidebar (assign, attachments, tags, share) */
+.form-sidebar .sidebar-label,
+.form-sidebar .sidebar-section {
+	color: var(--text-muted);
+}
+
+/* Child tables */
+.form-grid {
+	border: 1px solid var(--imed-border);
+	border-radius: var(--border-radius-md);
+	overflow: hidden;
+}
+.form-grid .grid-heading-row {
+	background: var(--gray-50);
+	border-bottom: 1px solid var(--imed-border);
+	color: var(--text-muted);
+	font-weight: 600;
+	font-size: var(--text-xs);
+}
+.form-grid .grid-row:hover .data-row {
+	background: var(--gray-50);
+}
+.form-grid .grid-body .rows .grid-row .data-row {
+	border-bottom-color: var(--imed-border);
+}
+
+/* ------------------------------------------------------------------ */
+/* 8. Lists and reports                                               */
+/* ------------------------------------------------------------------ */
+.layout-main-list .frappe-list,
+.report-wrapper,
+.page-content .frappe-list {
+	background: var(--imed-sheet);
+	border-radius: var(--border-radius-lg);
+	box-shadow: var(--imed-shadow-sheet);
+}
+.frappe-list .result {
+	border-radius: var(--border-radius-lg);
+}
+.list-row-head,
+.list-row-head .list-row,
+.list-row-head .level-left,
+.list-row-head .level-right {
+	background: var(--gray-50);
+	border-bottom: 1px solid var(--imed-border);
+	border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+	color: var(--text-muted);
+	font-weight: 600;
+}
+.list-row-head .list-row-col,
+.list-row-head .level-left,
+.list-row-head .list-subject {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 600;
+}
+.list-row-container {
+	border-bottom: 1px solid var(--imed-border);
+}
+.list-row-container:hover .list-row,
+.list-row:hover {
+	background: color-mix(in srgb, var(--imed-teal-50) 55%, var(--imed-sheet));
+}
+[data-theme="dark"] .list-row-container:hover .list-row,
+[data-theme="dark"] .list-row:hover {
+	background: rgba(64, 174, 161, 0.07);
+}
+.list-row .list-subject a,
+.list-row .bold a {
+	color: var(--heading-color);
+}
+.list-row .list-row-col {
+	color: var(--text-color);
+}
+/* Money and numbers line up: tabular figures. */
+.list-row-col.text-right,
+.grid-static-col.text-right,
+.dt-cell__content--align-right,
+.widget .number {
+	font-variant-numeric: tabular-nums;
+}
+.list-paging-area {
+	border-top: 1px solid var(--imed-border);
+}
+.list-paging-area .btn-group .btn.btn-paging.btn-info {
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+	border-color: var(--imed-teal-200);
+}
+
+/* Filter bar above lists */
+.page-form {
+	background: transparent;
+	border-bottom: 0;
+}
+.layout-main-list .page-form {
+	margin-bottom: 4px;
+}
+
+/* Report view / datatable */
+.dt-header .dt-cell,
+.dt-header .dt-cell__content {
+	background: var(--gray-50);
+	color: var(--text-muted);
+	font-weight: 600;
+}
+.dt-row:hover .dt-cell {
+	background: color-mix(in srgb, var(--imed-teal-50) 55%, var(--imed-sheet));
+}
+
+/* Status pills: softer, pill-shaped, consistent weight. */
+.indicator-pill,
+.indicator-pill-right,
+.indicator-pill-round {
+	border-radius: 999px;
+	font-weight: 500;
+	padding-inline: 9px;
+	letter-spacing: 0;
+}
+.indicator-pill.blue,
+.indicator-pill-right.blue {
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+}
+.indicator-pill.blue::before {
+	background: var(--imed-teal-500);
+}
+
+/* ------------------------------------------------------------------ */
+/* 9. Workspaces and dashboards                                       */
+/* ------------------------------------------------------------------ */
+.widget {
+	background: var(--imed-sheet);
+	border-color: var(--imed-border);
+	border-radius: var(--border-radius-lg);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04);
+	transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.widget.widget-shadow:hover,
+.widget.shortcut-widget-box:hover,
+.widget.links-widget-box:hover {
+	box-shadow: 0 8px 24px -14px rgba(16, 34, 42, 0.28);
+	border-color: var(--imed-border-strong);
+}
+.widget .widget-head .widget-title {
+	color: var(--text-muted);
+	font-weight: 600;
+	font-size: var(--text-sm);
+}
+.widget .widget-subtitle {
+	color: var(--text-light);
+}
+
+/* Number cards: calm label, strong number, brand accent on the edge. */
+.widget.number-widget-box {
+	position: relative;
+	overflow: hidden;
+}
+.widget.number-widget-box::before {
+	content: "";
+	position: absolute;
+	inset-block: 14px;
+	inset-inline-start: 0;
+	width: 3px;
+	border-radius: 0 3px 3px 0;
+	background: var(--imed-teal-500);
+	opacity: 0.85;
+}
+html[dir="rtl"] .widget.number-widget-box::before {
+	border-radius: 3px 0 0 3px;
+}
+.widget.number-widget-box .widget-content .number {
+	font-size: 26px;
+	font-weight: 650;
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+.widget.number-widget-box .card-stats {
+	font-weight: 500;
+}
+
+/* Shortcuts */
+.widget.shortcut-widget-box .widget-title {
+	color: var(--heading-color);
+	font-weight: 500;
+	font-size: var(--text-base);
+}
+.widget.shortcut-widget-box:hover .widget-title {
+	color: var(--imed-teal-700);
+}
+[data-theme="dark"] .widget.shortcut-widget-box:hover .widget-title {
+	color: var(--imed-teal-300);
+}
+
+/* Section headers inside workspaces */
+.ce-header,
+.widget-group-title,
+.workspace-header h4 {
+	color: var(--heading-color);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+}
+
+/* Charts: brand-first palette is set on the charts; keep axis text quiet. */
+.frappe-chart .chart-label,
+.frappe-chart .x.axis text,
+.frappe-chart .y.axis text {
+	fill: var(--text-light);
+}
+
+/* ------------------------------------------------------------------ */
+/* 10. Home launcher (desktop)                                        */
+/* ------------------------------------------------------------------ */
+.desktop-wrapper {
+	background: var(--imed-canvas);
+	min-height: 100vh;
+}
+.desktop-wrapper .desktop-navbar {
+	background: var(--imed-sheet);
+	border-bottom: 1px solid var(--imed-border);
+}
+.desktop-wrapper #brand-logo {
+	border-radius: 9px;
+}
+/* The search box is the full-size search field (see section 18 for what happens on click). */
+.desktop-wrapper .desktop-navbar-modal-search {
+	align-items: center;
+	height: 38px;
+	padding-inline: 12px;
+	background: var(--control-bg);
+	border: 1px solid var(--imed-border-strong);
+	border-radius: 10px;
+	color: var(--text-light);
+	cursor: text;
+	transition: border-color 0.15s ease;
+}
+@media (min-width: 576px) {
+	.desktop-wrapper .desktop-navbar-modal-search {
+		width: clamp(260px, 38vw, 560px);
+	}
+}
+.desktop-wrapper .desktop-navbar-modal-search:hover {
+	border-color: var(--gray-400);
+}
+.desktop-wrapper .desktop-navbar-modal-search .desktop-search-icon {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	color: var(--text-light);
+	font-size: var(--text-base);
+}
+/* One line, cut with an ellipsis when the box is narrow (phones). */
+.desktop-wrapper .desktop-navbar-modal-search .desktop-search-icon {
+	min-width: 0;
+	overflow: hidden;
+}
+.desktop-wrapper .desktop-navbar-modal-search .imed-search-placeholder {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* No keyboard shortcut on phones (Frappe leaves the hint blank there): hide its frame. */
+@media (max-width: 575.98px) {
+	.desktop-wrapper .desktop-navbar-modal-search .desktop-keyboard-shortcut {
+		display: none;
+	}
+}
+.desktop-wrapper .desktop-navbar-modal-search .desktop-keyboard-shortcut {
+	padding: 1px 6px;
+	border: 1px solid var(--imed-border);
+	border-radius: 6px;
+	color: var(--text-light);
+	font-size: var(--text-xs);
+}
+/* Greeting band (added by public/js/imed_home.js): greeting, date, quick actions. */
+.imed-home-hero {
+	position: relative;
+	overflow: hidden;
+	max-width: 920px;
+	margin: 28px auto 0;
+	padding: 30px 34px 26px;
+	border-radius: 22px;
+	color: #ffffff;
+	background:
+		radial-gradient(520px 260px at 0% 0%, rgba(244, 185, 66, 0.18), transparent 65%),
+		linear-gradient(135deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
+	box-shadow: 0 18px 40px -24px rgba(15, 98, 91, 0.7);
+}
+html[dir="rtl"] .imed-home-hero {
+	background:
+		radial-gradient(520px 260px at 100% 0%, rgba(244, 185, 66, 0.18), transparent 65%),
+		linear-gradient(225deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
+}
+[data-theme="dark"] .imed-home-hero {
+	background:
+		radial-gradient(520px 260px at 0% 0%, rgba(244, 185, 66, 0.12), transparent 65%),
+		linear-gradient(135deg, #0f5a53 0%, #0e4541 55%, #0b2f2c 100%);
+	box-shadow: 0 0 0 1px rgba(64, 174, 161, 0.18);
+}
+/* The logo's motif (open book + dot), repeated large and faint on the far side. */
+.imed-home-hero__art {
+	position: absolute;
+	inset-block: -30px;
+	inset-inline-end: -40px;
+	width: 360px;
+	opacity: 0.16;
+	pointer-events: none;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='white' stroke-width='3' stroke-linejoin='round'%3E%3Cpath d='M60 96c-11-7-23-9-36-6V44c13-3 25-1 36 6z'/%3E%3Cpath d='M60 96c11-7 23-9 36-6V44c-13-3-25-1-36 6z'/%3E%3C/g%3E%3Ccircle cx='60' cy='26' r='9' fill='white'/%3E%3C/svg%3E")
+		center / contain no-repeat;
+	transform: rotate(-8deg);
+}
+html[dir="rtl"] .imed-home-hero__art {
+	transform: rotate(8deg) scaleX(-1);
+}
+.imed-home-hero__text {
+	position: relative;
+	max-width: 620px;
+}
+.imed-home-hero__eyebrow {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.14);
+	color: rgba(255, 255, 255, 0.92);
+	font-size: var(--text-sm);
+	font-weight: 500;
+}
+.imed-home-hero__eyebrow .icon {
+	--icon-stroke: currentColor;
+	stroke: currentColor;
+	color: var(--imed-amber-400);
+}
+.imed-home-hero__title {
+	margin: 14px 0 6px;
+	font-size: 30px;
+	line-height: 1.25;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: #ffffff;
+}
+.imed-home-hero__subtitle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	color: rgba(255, 255, 255, 0.82);
+	font-size: var(--text-base);
+}
+.imed-home-hero__company {
+	padding: 2px 10px;
+	border-radius: 999px;
+	border: 1px solid rgba(255, 255, 255, 0.28);
+	color: #ffffff;
+	font-size: var(--text-xs);
+	font-weight: 600;
+	letter-spacing: 0.01em;
+}
+.imed-home-hero__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 22px;
+}
+.imed-home-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 38px;
+	padding-inline: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.1);
+	color: #ffffff;
+	font-weight: 500;
+	font-size: var(--text-sm);
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.imed-home-action .icon {
+	--icon-stroke: currentColor;
+	stroke: currentColor;
+	opacity: 0.9;
+}
+.imed-home-action:hover {
+	background: rgba(255, 255, 255, 0.2);
+	border-color: rgba(255, 255, 255, 0.36);
+	transform: translateY(-1px);
+}
+/* The first action is the main one: solid white. */
+.imed-home-action:first-child {
+	background: #ffffff;
+	border-color: #ffffff;
+	color: var(--imed-teal-800);
+}
+.imed-home-action:first-child:hover {
+	background: var(--imed-teal-50);
+}
+.imed-home-action:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(244, 185, 66, 0.55);
+}
+
+/* App grid under the band: a heading, then each module as a small card. */
+.desktop-wrapper:has(.imed-home-hero) .desktop-container > .icons-container {
+	margin-top: 18px;
+}
+.imed-home-apps-title {
+	margin: 0 4px 2px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+.desktop-container .desktop-icon {
+	border-radius: 18px;
+	transition: background-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+.desktop-wrapper:not([data-mode="Edit"]) .desktop-container > .icons-container > .icons > .desktop-icon {
+	background: var(--imed-sheet);
+	border: 1px solid var(--imed-border);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04);
+}
+.desktop-wrapper:not([data-mode="Edit"]) .desktop-container > .icons-container > .icons > .desktop-icon:hover {
+	transform: translateY(-3px);
+	border-color: var(--imed-teal-200);
+	box-shadow: 0 14px 28px -18px rgba(15, 98, 91, 0.45);
+}
+[data-theme="dark"] .desktop-wrapper:not([data-mode="Edit"]) .desktop-container > .icons-container > .icons > .desktop-icon:hover {
+	border-color: rgba(64, 174, 161, 0.45);
+}
+.desktop-container .desktop-icon:focus-visible {
+	box-shadow: var(--imed-ring);
+}
+.desktop-container .desktop-icon .icon-container:hover {
+	transform: none;
+}
+.desktop-container .desktop-icon .icon-title {
+	color: var(--text-color);
+	font-weight: 500;
+}
+
+@media (max-width: 767.98px) {
+	.imed-home-hero {
+		margin: 16px 12px 0;
+		padding: 22px 20px 20px;
+		border-radius: 18px;
+	}
+	.imed-home-hero__title {
+		font-size: 24px;
+	}
+	.imed-home-hero__art {
+		width: 220px;
+		opacity: 0.12;
+	}
+	/* Quick actions scroll sideways instead of wrapping into many rows. */
+	.imed-home-hero__actions {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		margin-inline: -20px;
+		padding-inline: 20px;
+		scrollbar-width: none;
+	}
+	.imed-home-action {
+		flex: 0 0 auto;
+	}
+}
+/* Module icons appear on the home screen and at the top of each module's sidebar; both get the same
+   treatment. Letter tiles (modules without an icon) carry inline blue or gray styles: bring them into
+   the brand. */
+.desktop-container .desktop-icon .icon-container:has(.desktop-alphabet),
+.body-sidebar .sidebar-header .header-logo .icon-container:has(.desktop-alphabet) {
+	background-color: var(--imed-teal-100) !important;
+}
+.desktop-container .desktop-icon .desktop-alphabet,
+.body-sidebar .sidebar-header .header-logo .desktop-alphabet {
+	color: var(--imed-teal-600) !important;
+}
+[data-theme="dark"] .desktop-container .desktop-icon .icon-container:has(.desktop-alphabet),
+[data-theme="dark"] .body-sidebar .sidebar-header .header-logo .icon-container:has(.desktop-alphabet) {
+	background-color: rgba(64, 174, 161, 0.14) !important;
+}
+[data-theme="dark"] .desktop-container .desktop-icon .desktop-alphabet,
+[data-theme="dark"] .body-sidebar .sidebar-header .header-logo .desktop-alphabet {
+	color: var(--imed-teal-300) !important;
+}
+/* ERPNext's module icons are blue; shift them to the brand teal so they read as one set. Matched by
+   file path, so it covers every place Frappe shows them (home screen, sidebar header, onboarding panel).
+   IMED's own icons are already in brand colours and are left alone. */
+img[src*="/icons/desktop_icons/"]:not([src*="/imed_erp/"]) {
+	filter: hue-rotate(-34deg) saturate(0.8) brightness(0.86);
+}
+[data-theme="dark"] img[src*="/icons/desktop_icons/"]:not([src*="/imed_erp/"]) {
+	filter: hue-rotate(-34deg) saturate(0.8) brightness(1.05);
+}
+[data-theme="dark"] .desktop-container .desktop-icon .app-icon[src*="/imed_erp/"] {
+	filter: brightness(1.7) saturate(0.9);
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. Overlays: dropdowns, modals, toasts, alerts                    */
+/* ------------------------------------------------------------------ */
+.dropdown-menu {
+	border: 0;
+	border-radius: var(--border-radius-md);
+	box-shadow: var(--imed-shadow-raised);
+	padding: 6px;
+}
+.dropdown-menu .dropdown-item {
+	border-radius: 7px;
+}
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+	background: var(--gray-100);
+}
+
+.modal-content {
+	border: 0;
+	border-radius: var(--border-radius-xl);
+	box-shadow: var(--modal-shadow);
+}
+.modal-header {
+	border-bottom: 1px solid var(--imed-border);
+}
+.modal-header .modal-title {
+	font-weight: 600;
+	color: var(--heading-color);
+}
+.modal-footer {
+	border-top: 1px solid var(--imed-border);
+	background: var(--gray-50);
+	border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
+}
+.modal-backdrop.show {
+	opacity: 0.35;
+}
+
+/* Toasts: an accent edge tells success / error at a glance. */
+.desk-alert {
+	border: 0;
+	border-radius: var(--border-radius-md);
+	box-shadow: var(--imed-shadow-raised);
+	border-inline-start: 4px solid var(--gray-400);
+}
+.desk-alert.green {
+	border-inline-start-color: #1f8a5b;
+}
+.desk-alert.red {
+	border-inline-start-color: #d64545;
+}
+.desk-alert.orange,
+.desk-alert.yellow {
+	border-inline-start-color: #e0a020;
+}
+.desk-alert.blue {
+	border-inline-start-color: var(--imed-teal-500);
+}
+
+.alert {
+	border: 0;
+	border-radius: var(--border-radius-md);
+}
+
+/* Awesomebar (search) results */
+.awesomplete > ul {
+	border: 0;
+	border-radius: var(--border-radius-md);
+	box-shadow: var(--imed-shadow-raised);
+}
+.awesomplete > ul > li[aria-selected="true"],
+.awesomplete > ul > li:hover {
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-800);
+}
+[data-theme="dark"] .awesomplete > ul > li[aria-selected="true"],
+[data-theme="dark"] .awesomplete > ul > li:hover {
+	background: rgba(64, 174, 161, 0.14);
+	color: var(--imed-teal-200);
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. Empty and loading states                                       */
+/* ------------------------------------------------------------------ */
+.no-result,
+.msg-box.no-border {
+	color: var(--text-muted);
+}
+.no-result .no-result-message,
+.msg-box .no-result-message,
+.msg-box p {
+	color: var(--text-muted);
+	font-size: var(--text-base);
+}
+.no-result .btn-new-doc,
+.msg-box .btn-primary {
+	margin-top: 8px;
+}
+.widget .widget-body .chart-empty-state,
+.widget-body .chart-container .chart-empty-state {
+	background: repeating-linear-gradient(
+		135deg,
+		var(--gray-50),
+		var(--gray-50) 8px,
+		transparent 8px,
+		transparent 16px
+	);
+	border-radius: var(--border-radius-md);
+	color: var(--text-light);
+}
+.list-skeleton-box,
+.skeleton-bg {
+	background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
+	background-size: 200% 100%;
+	animation: imed-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes imed-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* 13. Scrollbars                                                     */
+/* ------------------------------------------------------------------ */
+* {
+	scrollbar-color: var(--gray-300) transparent;
+	scrollbar-width: thin;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--gray-300);
+	border-radius: 8px;
+	border: 3px solid transparent;
+	background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--gray-400);
+	background-clip: content-box;
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. Small screens                                                  */
+/* ------------------------------------------------------------------ */
+@media (max-width: 767.98px) {
+	.layout-main-list .frappe-list,
+	.widget {
+		border-radius: var(--border-radius-md);
+	}
+	.widget.number-widget-box .widget-content .number {
+		font-size: 22px;
+	}
+	.desktop-container .desktop-icon {
+		padding-block: 6px;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. Light / dark switch (public/js/imed_theme_toggle.js)            */
+/* ------------------------------------------------------------------ */
+/* While switching, colours fade together instead of snapping. */
+.imed-theme-switching,
+.imed-theme-switching *,
+.imed-theme-switching *::before {
+	transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease !important;
+}
+.imed-theme-toggle--home {
+	display: grid;
+	place-items: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+}
+.imed-theme-toggle--home:hover {
+	background: var(--gray-100);
+}
+.imed-theme-toggle .imed-theme-toggle__icon .icon {
+	--icon-stroke: currentColor;
+	stroke: currentColor;
+}
+.imed-theme-toggle__icon {
+	display: inline-flex;
+	animation: imed-theme-icon 0.35s ease;
+}
+[data-theme="dark"] .imed-theme-toggle .imed-theme-toggle__icon {
+	color: var(--imed-amber-400);
+}
+@keyframes imed-theme-icon {
+	from {
+		transform: rotate(-90deg) scale(0.6);
+		opacity: 0;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+.imed-sidebar-theme .item-anchor {
+	cursor: pointer;
+}
+
+/* ------------------------------------------------------------------ */
+/* 16. The signed-in user's avatar (home screen and sidebar)          */
+/* ------------------------------------------------------------------ */
+/* Frappe gives initials avatars a random colour inline; the user's own avatar takes the brand look
+   instead. Other people's avatars (comments, assignments) keep their colours so people stay easy to
+   tell apart. Uploaded photos are not affected (they are not .standard-image). */
+.desktop-avatar .avatar-frame.standard-image,
+.sidebar-user-button .avatar-frame.standard-image {
+	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700)) !important;
+	color: #ffffff !important;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+.desktop-avatar .avatar,
+.sidebar-user-button .avatar {
+	border-radius: 50%;
+	box-shadow: 0 0 0 2px var(--imed-sheet), 0 0 0 3.5px var(--imed-teal-200);
+	transition: box-shadow 0.15s ease;
+}
+.desktop-avatar:hover .avatar,
+.sidebar-user-button:hover .avatar {
+	box-shadow: 0 0 0 2px var(--imed-sheet), 0 0 0 3.5px var(--imed-teal-500);
+}
+[data-theme="dark"] .desktop-avatar .avatar,
+[data-theme="dark"] .sidebar-user-button .avatar {
+	box-shadow: 0 0 0 2px var(--imed-sheet), 0 0 0 3.5px rgba(64, 174, 161, 0.45);
+}
+[data-theme="dark"] .desktop-avatar:hover .avatar,
+[data-theme="dark"] .sidebar-user-button:hover .avatar {
+	box-shadow: 0 0 0 2px var(--imed-sheet), 0 0 0 3.5px var(--imed-teal-300);
+}
+/* Name under the avatar in the sidebar: capitalised, and spaced on the correct side in Arabic
+   (Frappe hard-codes margin-left). */
+.sidebar-user-button .avatar-name-email .d-block:first-child {
+	color: var(--heading-color);
+	font-weight: 600;
+	text-transform: capitalize;
+}
+html[dir="rtl"] .sidebar-user-button .avatar-name-email {
+	margin-left: 0 !important;
+	margin-inline-start: 10px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 17. "Search" button beside the home screen search box              */
+/* ------------------------------------------------------------------ */
+.desktop-wrapper .desktop-search-wrapper {
+	gap: 6px;
+	align-items: center;
+	flex-wrap: nowrap;
+	/* Frappe fixes this area at 300px; let it fit the full-size box plus the button. */
+	width: auto;
+	max-width: none;
+	/* The area stretches between the logo and the icons (.input-group); centre the box in it. */
+	justify-content: center;
+}
+.desktop-wrapper .desktop-search-wrapper .desktop-navbar-modal-search {
+	flex: 0 0 auto;
+}
+@media (max-width: 575.98px) {
+	.desktop-wrapper .desktop-search-wrapper {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.desktop-wrapper .desktop-search-wrapper .desktop-navbar-modal-search {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+}
+.imed-search-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex: 0 0 auto;
+	height: 32px;
+	padding-inline: 14px;
+	border: 1px solid var(--imed-teal-600);
+	border-radius: 10px;
+	background: var(--imed-teal-600);
+	color: #ffffff;
+	font-weight: 600;
+	font-size: var(--text-sm);
+	cursor: pointer;
+	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.imed-search-btn .icon {
+	--icon-stroke: currentColor;
+	stroke: currentColor;
+}
+/* Frappe colours text inside the search area; the button keeps white text. */
+.desktop-wrapper .desktop-search-wrapper .imed-search-btn,
+.desktop-wrapper .desktop-search-wrapper .imed-search-btn span {
+	color: #ffffff;
+}
+.imed-search-btn:hover {
+	background: var(--imed-teal-700);
+	border-color: var(--imed-teal-700);
+}
+.imed-search-btn:focus-visible {
+	outline: none;
+	box-shadow: var(--imed-ring);
+}
+[data-theme="dark"] .imed-search-btn {
+	background: var(--imed-teal-500);
+	border-color: var(--imed-teal-500);
+}
+[data-theme="dark"] .imed-search-btn:hover {
+	background: var(--imed-teal-400);
+	border-color: var(--imed-teal-400);
+}
+/* Phones: the button keeps only its icon. */
+@media (max-width: 575.98px) {
+	.imed-search-btn {
+		padding-inline: 9px;
+	}
+	.imed-search-btn span {
+		display: none;
+	}
+}
+
+/* ------------------------------------------------------------------ */
+/* 18. Home screen search, opened on the search box (imed_home.js)    */
+/* ------------------------------------------------------------------ */
+.modal.imed-search-anchored .modal-dialog {
+	position: fixed;
+	margin: 0;
+	max-width: none;
+	transform: none !important;
+}
+.modal.imed-search-anchored .modal-content {
+	border: 0;
+	border-radius: 10px;
+	background: var(--imed-sheet);
+	box-shadow: 0 24px 50px -22px rgba(16, 34, 42, 0.45), 0 0 0 1px var(--imed-border);
+}
+/* The typing row is the search box itself: same size, border, radius and background, now with a
+   cursor and a teal focus ring. */
+.modal.imed-search-anchored .navbar-modal-wrapper {
+	padding: 0 !important;
+}
+.modal.imed-search-anchored .modal-divider {
+	display: none;
+}
+.modal.imed-search-anchored .awesomebar-input-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 38px;
+	padding-inline: 12px;
+	border: 1px solid var(--imed-teal-500);
+	border-radius: 10px;
+	background: var(--control-bg);
+	box-shadow: var(--imed-ring);
+}
+.modal.imed-search-anchored .awesomebar-search-icon {
+	display: inline-flex;
+	color: var(--imed-teal-600);
+}
+.modal.imed-search-anchored #navbar-search,
+.modal.imed-search-anchored #navbar-search:focus {
+	height: 36px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	font-size: var(--text-base);
+}
+/* The results hang under the field as its dropdown. */
+.modal.imed-search-anchored .awesomplete > ul {
+	border-radius: 0;
+	box-shadow: none;
+	animation: imed-search-drop 0.16s ease;
+}
+/* A lighter backdrop: the page stays visible around the results. */
+body:has(.modal.imed-search-anchored.show) .modal-backdrop.show {
+	opacity: 0.12;
+}
+@keyframes imed-search-drop {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}

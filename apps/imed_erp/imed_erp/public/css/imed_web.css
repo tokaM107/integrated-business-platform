@@ -1,0 +1,154 @@
+/*
+ * IMED ERP login page. Everything is scoped to #page-login so other web pages (print view, web
+ * forms) are not affected. Loaded by hooks.py (web_include_css) after imed_fonts.css.
+ */
+
+#page-login,
+#page-login ~ .web-footer {
+	--imed-teal-50: #effaf8;
+	--imed-teal-500: #1d9386;
+	--imed-teal-600: #0f766e;
+	--imed-teal-700: #0f625b;
+	--imed-border: #e3e9ec;
+	--imed-border-strong: #d2dbe0;
+	--font-stack: "InterVariable", "Inter", "IMED Arabic", -apple-system, BlinkMacSystemFont, "Segoe UI",
+		"Noto Sans Arabic", "Tahoma", sans-serif;
+	font-family: var(--font-stack);
+}
+
+body:has(#page-login) {
+	min-height: 100vh;
+	background:
+		radial-gradient(900px 420px at 50% -120px, rgba(15, 118, 110, 0.14), transparent 70%),
+		radial-gradient(600px 300px at 100% 100%, rgba(244, 185, 66, 0.1), transparent 70%),
+		#f3f6f7;
+}
+
+#page-login .page-content-wrapper {
+	padding-top: min(12vh, 110px);
+}
+
+#page-login .login-content.page-card {
+	max-width: 400px;
+	margin-inline: auto;
+	padding: 36px 32px 28px;
+	background: #ffffff;
+	border: 0;
+	border-radius: 18px;
+	box-shadow:
+		0 24px 60px -28px rgba(16, 34, 42, 0.35),
+		0 0 0 1px var(--imed-border);
+}
+
+#page-login .page-card-head {
+	text-align: center;
+	margin-bottom: 20px;
+}
+#page-login .page-card-head .app-logo {
+	/* Frappe fixes the login logo at 32px high. */
+	width: 52px !important;
+	height: 52px !important;
+	max-height: none;
+	object-fit: contain;
+	border-radius: 14px;
+	margin-inline: auto;
+	margin-bottom: 14px;
+	box-shadow: 0 8px 18px -8px rgba(15, 118, 110, 0.55);
+}
+#page-login .page-card-head h4 {
+	font-size: 22px;
+	font-weight: 650;
+	letter-spacing: -0.02em;
+	color: #15222a;
+	text-align: center;
+}
+#page-login .page-card-head .page-card-subtitle {
+	color: #677680;
+	text-align: center;
+}
+/* Untranslated English lines inside the Arabic page take their direction from their own text, so
+   their punctuation stays at the end ("?Forgot password" shows as "Forgot password?"). */
+#page-login .page-card-head h4,
+#page-login .page-card-head .page-card-subtitle,
+#page-login .forgot-password-message a,
+#page-login .btn-login-option {
+	unicode-bidi: plaintext;
+}
+
+#page-login .form-label {
+	color: #48565f;
+	font-weight: 500;
+}
+#page-login .form-control {
+	height: 40px;
+	background: #ffffff;
+	border: 1px solid var(--imed-border-strong);
+	border-radius: 10px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+#page-login .form-control:focus {
+	border-color: var(--imed-teal-500);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+}
+#page-login .field-icon {
+	top: 12px;
+}
+
+#page-login .btn-login {
+	height: 40px;
+	background: var(--imed-teal-600);
+	border: 1px solid var(--imed-teal-600);
+	border-radius: 10px;
+	color: #ffffff;
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+#page-login .btn-login:hover,
+#page-login .btn-login:focus {
+	background: var(--imed-teal-700);
+	border-color: var(--imed-teal-700);
+	color: #ffffff;
+}
+#page-login .btn-login:focus-visible {
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.25);
+}
+#page-login .btn-login-option {
+	height: 40px;
+	background: #ffffff;
+	border: 1px solid var(--imed-border-strong);
+	border-radius: 10px;
+	color: #2c3940;
+	font-weight: 500;
+}
+#page-login .btn-login-option:hover {
+	background: #f7f9fa;
+}
+#page-login .forgot-password-message a,
+#page-login a {
+	color: var(--imed-teal-600);
+}
+
+#page-login ~ .web-footer {
+	background: transparent;
+	border-top: 0;
+}
+#page-login ~ .web-footer .footer-powered,
+#page-login ~ .web-footer .footer-powered a {
+	color: #8795a0;
+}
+
+@media (max-width: 480px) {
+	#page-login .page-content-wrapper {
+		padding-top: 24px;
+	}
+	#page-login .login-content.page-card {
+		/* The page container already pads 24px on each side. */
+		width: auto;
+		max-width: none;
+		margin-inline: 0;
+		padding: 28px 20px 22px;
+		/* Frappe stretches the card to the screen height on phones; let it fit its content. */
+		min-height: 0;
+		height: auto;
+	}
+}

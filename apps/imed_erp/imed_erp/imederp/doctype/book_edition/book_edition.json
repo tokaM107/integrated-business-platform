@@ -134,7 +134,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-28 17:46:43.056992",
+ "modified": "2026-09-29 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",
@@ -177,7 +177,6 @@
    "read": 1,
    "report": 1,
    "role": "Accounts User",
-   "submit": 1,
    "write": 1
   },
   {
@@ -187,7 +186,6 @@
    "read": 1,
    "report": 1,
    "role": "Branch Manager",
-   "submit": 1,
    "write": 1
   }
  ],

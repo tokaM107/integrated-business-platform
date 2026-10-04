@@ -106,7 +106,7 @@ ITEMS = [
 # Company / Cost Center / Warehouse User Permissions.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 USERS = [
-	("owner@imed.local", "المالك", ["System Manager", "Accounts Manager", "Expense Approver"], [], []),
+	("owner@imed.local", "المالك", ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"], [], []),
 	("nour@imed.local", "نور", BRANCH_ROLES, ["قاعات Imed"], []),
 	("gilan@imed.local", "جيلان", BRANCH_ROLES, ["استوديو X"], []),
 	("menna@imed.local", "منة", BRANCH_ROLES, ["تطبيق BA Plus"], []),
@@ -124,8 +124,8 @@ USERS = [
 		["مكتبة الأزاريطة"],
 		["خامات الأزاريطة", "إصدارات الأطباء — الأزاريطة"],
 	),
-	("accountant@imed.local", "المحاسب", ["Accounts User", "Accounts Manager"], [], []),
-	("hr@imed.local", "شؤون الموظفين", ["HR Manager"], [], []),
+	("accountant@imed.local", "المحاسب", ["Accountant", "Accounts User", "Accounts Manager"], [], []),
+	("hr@imed.local", "شؤون الموظفين", ["HR", "HR Manager"], [], []),
 ]
 AUTOMATIC_ROLES = {"Administrator", "Guest", "All", "Desk User"}
 

@@ -11,7 +11,15 @@ class ExpenseCategory(NestedSet):
 
     def validate(self):
         self.validate_parent()
+        self.validate_group()
         self.validate_expense_account()
+
+    def validate_group(self):
+        # A category with categories under it must stay a group (NestedSet's check), and a category that
+        # already has expenses cannot become one: groups cannot be chosen on an expense.
+        self.validate_ledger()
+        if self.is_group and frappe.db.exists("Expense", {"expense_category": self.name, "docstatus": ["<", 2]}):
+            frappe.throw(_("{0} has expenses recorded under it and cannot become a group.").format(self.name))
 
     def validate_parent(self):
         if self.parent_expense_category and not frappe.db.get_value(

@@ -1,4 +1,5 @@
-# Owner Dashboard: Number Cards, Dashboard Charts and the "Owner Dashboard" workspace.
+# Owner Dashboard: Number Cards, Dashboard Charts, the "Owner Dashboard" workspace, and the branding
+# settings the IMED ERP theme relies on (app name, launcher icon style, Owner Dashboard icon).
 # The workspace JSON in imederp/workspace/ references these cards and charts, but they
 # live only in the database, so this script is what recreates them on a new site.
 #
@@ -12,24 +13,30 @@ import frappe
 COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
 
+# IMED ERP palette (see public/css/imed_theme.css): colour carries meaning, not decoration.
+# Teal = income, amber = needs attention, slate = neutral counts.
+TEAL, TEAL_LIGHT, AMBER, SLATE = "#0f766e", "#1d9386", "#b7791f", "#48565f"
+
 # ---------------- Number Cards ----------------
+# full=1 shows the exact amount (EGP 92,437.50) instead of "92.44 K"; it also avoids Frappe showing
+# "EGP NaN" for a sum of zero (shorten_number(0) returns an empty string).
 cards = [
     dict(label="Total Sales", doc="Sales Invoice",
-         func="Sum", field="grand_total", color="#22c55e",
+         func="Sum", field="grand_total", color=TEAL, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
     dict(label="Invoices Count", doc="Sales Invoice",
-         func="Count", field="", color="#3b82f6",
+         func="Count", field="", color=SLATE,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
     dict(label="Outstanding from Customers", doc="Sales Invoice",
-         func="Sum", field="outstanding_amount", color="#f97316",
+         func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
     dict(label="Total Purchases", doc="Purchase Receipt",
-         func="Sum", field="grand_total", color="#a855f7",
+         func="Sum", field="grand_total", color=SLATE, full=1,
          filters=[["Purchase Receipt", "docstatus", "=", 1]]),
     dict(label="Customers", doc="Customer",
-         func="Count", field="", color="#06b6d4", filters=[]),
+         func="Count", field="", color=SLATE, filters=[]),
     dict(label="Doctor Agreements", doc="Doctor Agreement",
-         func="Count", field="", color="#ec4899", filters=[]),
+         func="Count", field="", color=SLATE, filters=[]),
 ]
 
 created_cards = []
@@ -49,6 +56,7 @@ for c in cards:
             "show_percentage_stats": 1,
             "stats_time_interval": "Monthly",
             "color": c["color"],
+            "show_full_number": c.get("full", 0),
         }).insert()
         c["real"] = doc.name
         created_cards.append(c)
@@ -62,15 +70,15 @@ frappe.db.commit()
 charts = [
     dict(label="Sales Trend", doc="Sales Invoice",
          based_on="posting_date", value_field="grand_total",
-         ctype="Line", color="#22c55e", timespan="Last Quarter", time_interval="Weekly",
+         ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
          parent_doc=None),
     dict(label="Revenue by Business", doc="Sales Invoice Item",
          based_on="cost_center", value_field="base_net_amount",
-         ctype="Bar", color="#3b82f6", timespan=None, time_interval=None,
+         ctype="Bar", color=TEAL_LIGHT, timespan=None, time_interval=None,
          parent_doc="Sales Invoice"),
     dict(label="Stock Value by Warehouse", doc="Bin",
          based_on="warehouse", value_field="stock_value",
-         ctype="Donut", color="#a855f7", timespan=None, time_interval=None,
+         ctype="Donut", color=TEAL, timespan=None, time_interval=None,
          parent_doc=None),
 ]
 
@@ -173,3 +181,27 @@ ws = frappe.get_doc({
 frappe.db.commit()
 print("\nWorkspace ready:", ws.name)
 print("Cards:", len(created_cards), "| Charts:", len(created_charts), "| Shortcuts:", len(shortcuts))
+
+# ---------------- Branding ----------------
+# Idempotent. The theme itself is CSS loaded by hooks.py; these are the settings it relies on.
+if frappe.db.get_single_value("System Settings", "app_name") != "IMED ERP":
+    frappe.db.set_single_value("System Settings", "app_name", "IMED ERP")
+    print("set    System Settings.app_name = IMED ERP")
+# The logo on the home screen and the login page comes from Navbar Settings (Frappe only falls back to
+# the first apps' app_logo_url hooks, never to a third app's).
+LOGO = "/assets/imed_erp/images/imed-mark.svg"
+if frappe.db.get_single_value("Navbar Settings", "app_logo") != LOGO:
+    frappe.db.set_single_value("Navbar Settings", "app_logo", LOGO)
+    print(f"set    Navbar Settings.app_logo = {LOGO}")
+# Subtle launcher icons (tinted tile, coloured glyph) read calmer than a wall of solid squares.
+if frappe.db.get_single_value("Desktop Settings", "icon_style") != "Subtle":
+    frappe.db.set_single_value("Desktop Settings", "icon_style", "Subtle")
+    print("set    Desktop Settings.icon_style = Subtle")
+# Linking the Owner Dashboard icon to this app makes Frappe use
+# public/icons/desktop_icons/<style>/owner_dashboard.svg instead of a gray letter tile.
+if frappe.db.exists("Desktop Icon", "Owner Dashboard") and frappe.db.get_value("Desktop Icon", "Owner Dashboard", "app") != "imed_erp":
+    frappe.db.set_value("Desktop Icon", "Owner Dashboard", "app", "imed_erp")
+    print("set    Desktop Icon Owner Dashboard.app = imed_erp")
+frappe.db.commit()
+frappe.clear_cache()
+print("Branding ready.")
