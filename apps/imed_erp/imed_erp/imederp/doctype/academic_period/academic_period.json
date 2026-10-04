@@ -10,6 +10,7 @@
  "field_order": [
   "period_name",
   "period_type",
+  "parent_period",
   "start_date",
   "end_date",
   "is_closed"
@@ -30,6 +31,16 @@
    "label": "Type",
    "options": "Term\nRound\nModule",
    "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.period_type != 'Term'",
+   "description": "A Round belongs to a Term, a Module to a Round.",
+   "fieldname": "parent_period",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Parent Period",
+   "mandatory_depends_on": "eval:doc.period_type != 'Term'",
+   "options": "Academic Period"
   },
   {
    "fieldname": "start_date",
@@ -55,7 +66,7 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-09-28 17:34:16.307221",
+ "modified": "2026-09-29 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Academic Period",

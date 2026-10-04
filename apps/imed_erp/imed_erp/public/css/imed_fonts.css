@@ -1,0 +1,30 @@
+/* IBM Plex Sans Arabic (SIL OFL 1.1, see ../fonts/OFL.txt), served from the app so it works offline.
+   Only Arabic code points use it; Latin text stays on Inter. Loaded on the desk and on web pages. */
+@font-face {
+	font-family: "IMED Arabic";
+	src: url("/assets/imed_erp/fonts/ibm-plex-sans-arabic-400.woff2") format("woff2");
+	font-weight: 100 449;
+	font-display: swap;
+	unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E;
+}
+@font-face {
+	font-family: "IMED Arabic";
+	src: url("/assets/imed_erp/fonts/ibm-plex-sans-arabic-500.woff2") format("woff2");
+	font-weight: 450 549;
+	font-display: swap;
+	unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E;
+}
+@font-face {
+	font-family: "IMED Arabic";
+	src: url("/assets/imed_erp/fonts/ibm-plex-sans-arabic-600.woff2") format("woff2");
+	font-weight: 550 649;
+	font-display: swap;
+	unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E;
+}
+@font-face {
+	font-family: "IMED Arabic";
+	src: url("/assets/imed_erp/fonts/ibm-plex-sans-arabic-700.woff2") format("woff2");
+	font-weight: 650 900;
+	font-display: swap;
+	unicode-range: U+0600-06FF, U+0750-077F, U+0870-08FF, U+FB50-FDFF, U+FE70-FEFF, U+200C-200E;
+}

@@ -3,6 +3,9 @@
 # without a pip install inside the container.
 x-imed-app-volume: &imed-app-volume ../apps/imed_erp:/home/frappe/frappe-bench/apps/imed_erp
 x-imed-pythonpath: &imed-pythonpath /home/frappe/frappe-bench/apps/imed_erp
+# The app's public folder (theme CSS, fonts, logo, icons), served by nginx at /assets/imed_erp.
+# sites/assets points at the image's own assets folder, so without this mount the browser gets 404.
+x-imed-assets-volume: &imed-assets-volume ../apps/imed_erp/imed_erp/public:/home/frappe/frappe-bench/assets/imed_erp:ro
 
 services:
   backend:
@@ -16,6 +19,7 @@ services:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
       - *imed-app-volume
+      - *imed-assets-volume
     environment:
       PYTHONPATH: *imed-pythonpath
       DB_HOST: db
@@ -144,6 +148,7 @@ services:
     volumes:
       - sites:/home/frappe/frappe-bench/sites
       - logs:/home/frappe/frappe-bench/logs
+      - *imed-assets-volume
     ports:
       - "8080:8080"
 

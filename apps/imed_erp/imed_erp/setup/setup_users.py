@@ -1,4 +1,5 @@
-# Users, roles and User Permissions for Mohamed Mamdouh group.
+# Users, roles, User Permissions and the permissions matrix (requirements section 3.2) for
+# Mohamed Mamdouh group.
 #
 # Run from bench console (after setup_core.py):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
@@ -23,11 +24,34 @@ COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
 EMAIL_DOMAIN = "imed.local"
 
-# "Branch Manager" is a custom marker role. It grants nothing by itself, so branch managers
-# also get the standard ERPNext roles they need to work; User Permissions below limit what they see.
+# The roles of the requirements document (sections 3.1 / 3.2) are custom roles with the same names.
+# Each user also gets the standard ERPNext roles they need to work; User Permissions below limit what
+# branch managers see. "Super Admin" and "Accountant" also carry the full rights on financial documents
+# (see FINANCIAL_DOCTYPES). "CRM Staff" has no user yet: nobody is named for it in the requirements.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 LIBRARY_ROLES = [*BRANCH_ROLES, "Stock User"]
-CUSTOM_ROLES = ["Branch Manager"]
+CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff"]
+
+# Permissions matrix, section 3.2: "only the owner and the accountant can edit, cancel or delete a
+# financial transaction". Branch managers keep create / edit draft / submit, but lose cancel, amend
+# and delete on these documents; Super Admin and Accountant get every right on them.
+FINANCIAL_DOCTYPES = [
+	"Sales Invoice",
+	"POS Invoice",
+	"Purchase Invoice",
+	"Payment Entry",
+	"Journal Entry",
+	"Stock Entry",
+	"Delivery Note",
+	"Purchase Receipt",
+	"Stock Reconciliation",
+]
+MANAGER_STANDARD_ROLES = ["Accounts User", "Sales User", "Stock User"]
+MANAGER_DENIED = {"cancel": 0, "amend": 0, "delete": 0}
+FULL_RIGHTS = {
+	p: 1
+	for p in ("read", "write", "create", "submit", "cancel", "amend", "delete", "report", "print", "email", "export", "share")
+}
 
 # Each branch manager is restricted to the company plus their own cost center / warehouse.
 # Users without cost_centers / warehouses get no User Permissions: their roles alone decide access.
@@ -35,7 +59,7 @@ CUSTOM_ROLES = ["Branch Manager"]
 # children (both libraries' stores and editions) so she can transfer stock to Azarita.
 # "enabled" defaults to 1.
 USERS = [
-	{"email": "owner", "first_name": "المالك", "roles": ["System Manager", "Accounts Manager"]},
+	{"email": "owner", "first_name": "المالك", "roles": ["Super Admin", "System Manager", "Accounts Manager"]},
 	{"email": "nour", "first_name": "نور", "roles": BRANCH_ROLES, "cost_centers": ["قاعات Imed"]},
 	{"email": "gilan", "first_name": "جيلان", "roles": BRANCH_ROLES, "cost_centers": ["استوديو X"]},
 	{"email": "menna", "first_name": "منة", "roles": BRANCH_ROLES, "cost_centers": ["تطبيق BA Plus"]},
@@ -53,8 +77,8 @@ USERS = [
 		"cost_centers": ["مكتبة الأزاريطة"],
 		"warehouses": ["خامات الأزاريطة", "إصدارات الأطباء — الأزاريطة"],
 	},
-	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accounts User", "Accounts Manager"]},
-	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR Manager"]},
+	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager"]},
+	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR", "HR Manager"]},
 ]
 
 # User Permission doctypes this script owns for the users above. Rows on other doctypes are left alone.
@@ -213,6 +237,50 @@ def sync_user_permissions(user, desired):
 		print(f"create User Permission {user} -> {allow} {value}")
 
 
+def ensure_docperm(doctype, role, rights, create):
+	"""Make the role's level-0 rule on `doctype` have `rights`. Creates the rule only if `create`."""
+	from frappe.permissions import add_permission, setup_custom_perms
+
+	# The first custom rule copies the doctype's standard rules, so nothing else is lost.
+	setup_custom_perms(doctype)
+	filters = {"parent": doctype, "role": role, "permlevel": 0, "if_owner": 0}
+	name = frappe.db.get_value("Custom DocPerm", filters)
+	if not name:
+		if not create:
+			return
+		name = add_permission(doctype, role, 0)
+		print(f"create Permission {doctype} -> {role}")
+
+	rule = frappe.get_doc("Custom DocPerm", name)
+	diff = {p: v for p, v in rights.items() if (rule.get(p) or 0) != v}
+	if diff:
+		rule.update(diff)
+		rule.save(ignore_permissions=True)
+		print(f"update Permission {doctype} -> {role}: {diff}")
+	else:
+		print(f"exists Permission {doctype} -> {role}")
+
+
+def apply_permission_matrix():
+	from frappe.core.doctype.doctype.doctype import validate_permissions_for_doctype
+
+	for doctype in FINANCIAL_DOCTYPES:
+		for role in ["Super Admin", "Accountant"]:
+			ensure_docperm(doctype, role, FULL_RIGHTS, create=True)
+		for role in MANAGER_STANDARD_ROLES:
+			ensure_docperm(doctype, role, MANAGER_DENIED, create=False)
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
+
+	# "Manage employees and payroll": Super Admin and HR manage, Accountant views.
+	# HR already has it through HR Manager.
+	manage = {p: 1 for p in ("read", "write", "create", "delete", "report", "print", "email", "export", "share")}
+	ensure_docperm("Employee", "Super Admin", manage, create=True)
+	ensure_docperm("Employee", "Accountant", {"read": 1, "report": 1}, create=True)
+	validate_permissions_for_doctype("Employee")
+	frappe.clear_cache(doctype="Employee")
+
+
 def run():
 	# Safety check: stop before writing anything if the company, a role, a cost center or a
 	# warehouse is missing. Otherwise a user could be created with roles but without restrictions.
@@ -245,7 +313,10 @@ def run():
 				)
 			)
 
-		# ---------- 4) Strict user permissions: OFF ----------
+		# ---------- 4) Permissions matrix (section 3.2) on financial documents ----------
+		apply_permission_matrix()
+
+		# ---------- 5) Strict user permissions: OFF ----------
 		# Strict mode hides every record that has an EMPTY Cost Center / Warehouse / Company link.
 		# Tested on ERPNext v16: with it on, branch managers cannot read any Item, and Raghad / Sara
 		# cannot read any Warehouse (Warehouse.default_in_transit_warehouse is empty). With it off,
@@ -263,7 +334,7 @@ def run():
 		print("FAILED Rolled back; nothing was changed.")
 		raise
 
-	# ---------- 5) Summary ----------
+	# ---------- 6) Summary ----------
 	print()
 	print(f"{'User':<24}{'On':<4}{'Roles':<56}Restrictions")
 	print("-" * 128)

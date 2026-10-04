@@ -25,3 +25,7 @@ node_modules/
 *.sql.gz
 .DS_Store
 .idea/
+
+# Empty npm lock files created by running npm outside a package
+/package-lock.json
+/frappe_docker/package-lock.json
