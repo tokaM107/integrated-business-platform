@@ -277,11 +277,18 @@ Cash/Bank Account (a leaf cash or wallet account), Supplier (optional: salaries 
 Receipt Attachment. A draft can be saved without the receipt, but submitting is refused until one is
 attached. The check is in the controller's `before_submit`, so it also holds for the API; the receipt
 must be an uploaded image or PDF. Submitting posts a journal entry: debit the category's expense
-account, credit the treasury, both on the activity's cost center. Cancelling reverses it.
+account, credit the treasury, both on the activity's cost center. Cancelling the expense reverses it;
+the journal entry itself cannot be cancelled on its own, or the report would still count money that is
+back in the treasury.
 
-**Expense Category** is a tree (ImedERP > Expense Category > Tree view). Expenses are recorded on the
+**Expense Category** is a tree (ImedERP > Expense Categories > Tree view). Expenses are recorded on the
 categories inside a group, not on the group. A category without its own expense account is posted to its
 nearest parent's, so a sub-category such as `كهرباء` under `المرافق` needs no account of its own.
+A group with categories under it cannot be turned back into a category, and a category that already has
+expenses cannot become a group.
+
+The ImedERP sidebar (`workspace_sidebar/imederp.json`) lists every screen of the app. Without it Frappe
+builds its own, which shows only the first three doctypes of the module.
 
 The **Expense Report** lists submitted expenses filtered by period, activity, category, supplier and
 treasury. Choosing a group activity (e.g. `مكتبات 2Be Doctor`) or a group category includes everything
