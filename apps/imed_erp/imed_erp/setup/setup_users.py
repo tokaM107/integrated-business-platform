@@ -27,7 +27,8 @@ EMAIL_DOMAIN = "imed.local"
 # also get the standard ERPNext roles they need to work; User Permissions below limit what they see.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 LIBRARY_ROLES = [*BRANCH_ROLES, "Stock User"]
-CUSTOM_ROLES = ["Branch Manager"]
+# "Expense Approver" approves expenses above the threshold in Expense Settings; only the owner has it.
+CUSTOM_ROLES = ["Branch Manager", "Expense Approver"]
 
 # Each branch manager is restricted to the company plus their own cost center / warehouse.
 # Users without cost_centers / warehouses get no User Permissions: their roles alone decide access.
@@ -35,7 +36,7 @@ CUSTOM_ROLES = ["Branch Manager"]
 # children (both libraries' stores and editions) so she can transfer stock to Azarita.
 # "enabled" defaults to 1.
 USERS = [
-	{"email": "owner", "first_name": "المالك", "roles": ["System Manager", "Accounts Manager"]},
+	{"email": "owner", "first_name": "المالك", "roles": ["System Manager", "Accounts Manager", "Expense Approver"]},
 	{"email": "nour", "first_name": "نور", "roles": BRANCH_ROLES, "cost_centers": ["قاعات Imed"]},
 	{"email": "gilan", "first_name": "جيلان", "roles": BRANCH_ROLES, "cost_centers": ["استوديو X"]},
 	{"email": "menna", "first_name": "منة", "roles": BRANCH_ROLES, "cost_centers": ["تطبيق BA Plus"]},
