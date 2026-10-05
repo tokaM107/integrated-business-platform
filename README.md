@@ -20,7 +20,7 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
   imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
                         Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
                         Expense, Expense Category, Expense Report, Recurring Expense,
-                        Expense Settings
+                        Expense Settings, Allocation Rule
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
 frappe_docker/          Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
 ```
@@ -107,6 +107,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Expense Category | full | read only |
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
 | Expense Settings | full | read only |
+| Allocation Rule | full | read only |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
@@ -246,6 +247,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_recurring_expenses.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_allocation_rules.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_users.py").read(), {"frappe": frappe})
@@ -272,9 +274,10 @@ without changing anything if they do not (so a user is never created without the
 | `check_library.py` | Test, rolled back afterwards. Creates a test book and memo, receives them in Mawasah's store, issues books to Azarita, then sells through each library's POS Profile and through a plain sales invoice, and checks that the revenue account (Azarita's sales moved to `إيراد مكتبة الأزاريطة` by `imederp/library_revenue.py`), cost center and warehouse were filled in without being typed. |
 | `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق`, `الهالك والتالف` and `الاشتراكات والسيرفرات` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). The monthly bills sit in two groups: `المرافق` (electricity, water, internet, gas, and rent, which keeps its own account) and `الاشتراكات والسيرفرات` (the app's server and AI subscriptions). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
+| `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
 | `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with all 18 posting document types closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
-`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
+`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 
@@ -357,6 +360,42 @@ The owner's own expenses above the threshold are approved as he submits them. Ap
 **Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
 
+### Splitting the shared premises' expenses (EXP-03/04)
+
+The halls and the studio share one building, so its rent, electricity, internet and gas are recorded on
+the shared cost center `مصروفات المقر المشتركة`. An **Allocation Rule** says how those expenses are
+split between the businesses from a given date:
+
+| Field | Example |
+|---|---|
+| Shared Cost Center | `مصروفات المقر المشتركة` |
+| Valid From | 1 Nov 2026 |
+| Businesses | `قاعات Imed` 60%, `استوديو X` 40% (must add up to 100%) |
+| Notes | Why these shares and who agreed to them |
+
+Submitting the rule makes an ERPNext **Cost Center Allocation** with the same shares and date, and from
+then on ERPNext splits every entry posted on the shared cost center as it is posted: a 10,000 electricity
+bill becomes 6,000 on the halls and 4,000 on the studio, on both the expense and the treasury side. The
+accountant records expenses as before. A bill paid in several parts is split part by part, which adds up
+to the same shares.
+
+- **Changing the shares** is a new rule with a later Valid From, never an edit: a submitted rule is
+  locked. Past expenses keep the split they were posted with.
+- **Valid From** must come after the last expense on the shared cost center and after the latest rule's
+  start, so a rule never reaches back over posted months. (ERPNext's own check looks at the ledger only,
+  which no longer shows the shared cost center once an expense is split; the rule checks the expenses.)
+- **Cancelling a rule** cancels its allocation. Expenses already split keep their split; later ones follow
+  the previous rule again, or stay on the shared cost center if there is none.
+- The shared cost center cannot be one of its own businesses, and a business cannot be a group (ERPNext
+  refuses both).
+
+The split shows in the ledger and in profit and loss by cost center. The **Expense Report** reads the
+expenses themselves, so it still shows them on the shared cost center.
+
+Shares are fixed percentages. Shares worked out from each business's area or revenue, also listed in the
+task, were left out on purpose: the owner chose a fixed 60/40 (8 halls, 4 of which also serve as the
+studio part of the time), and the rule's Notes record what the shares are based on.
+
 ### Library products (LIB-06)
 
 | Requirement | Where it is in ERPNext |
@@ -418,6 +457,7 @@ Each doctype has integration tests next to it; the expense reminders have their 
 docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests true
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 ```
 
