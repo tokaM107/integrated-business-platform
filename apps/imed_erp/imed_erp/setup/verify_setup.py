@@ -304,6 +304,28 @@ def run():
 		problems.append("System Settings: apply_strict_user_permissions is on")
 		print("WRONG   Settings     apply_strict_user_permissions is on (branch managers cannot read Items)")
 
+	# ---------- Allocation of the shared premises (setup_allocation_rules.py) ----------
+	shared = acc("مصروفات المقر المشتركة")
+	rule = frappe.db.get_value(
+		"Allocation Rule",
+		{"main_cost_center": shared, "docstatus": 1},
+		["name", "valid_from", "cost_center_allocation"],
+		order_by="valid_from desc",
+		as_dict=True,
+	)
+	if not rule:
+		report("Allocation", shared, ["missing"])
+	else:
+		errors = []
+		if frappe.db.get_value("Cost Center Allocation", rule.cost_center_allocation, "docstatus") != 1:
+			errors.append(f"rule {rule.name} has no submitted Cost Center Allocation")
+		total = sum(
+			frappe.get_all("Allocation Rule Business", filters={"parent": rule.name}, pluck="percentage")
+		)
+		if total != 100:
+			errors.append(f"rule {rule.name} shares add up to {total}%")
+		report("Allocation", f"{shared} from {rule.valid_from} ({rule.name})", errors)
+
 	# ---------- Summary ----------
 	print()
 	print(f"{'Category':<14}Found / Expected")
