@@ -116,6 +116,11 @@ Accountant), as in the permissions matrix.
 Academic Periods form a tree: a **Round** belongs to a **Term** and a **Module** to a **Round**
 (field *Parent Period*), and each period must fall inside its parent's dates.
 
+**Document numbers.** The app's doctypes are named with dot naming series, e.g. `EXP-.YYYY.-.#####` or
+`REC-.####`, which keep one counter per prefix. Do not use `format:EXP-{YYYY}-{#####}`: Frappe parses each
+braced part on its own, so every `format:` name with `{#...}` shares a single counter with an empty key,
+and expense numbers would jump whenever a bill or a rule is made.
+
 ## Roles and the permissions matrix (requirements §3.2)
 
 | Requirement role | Users | ERPNext roles it comes with |
