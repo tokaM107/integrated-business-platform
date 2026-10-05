@@ -143,3 +143,21 @@ Expense {0} of {1} for {2} ({3}) is waiting for your approval.,المصروف {0
 Expense {0} was approved and posted.,المصروف {0} اتوافق عليه واتسجل.
 Expense {0} was rejected.,المصروف {0} اترفض.
 Expense {0} is not waiting for approval.,المصروف {0} مش مستني اعتماد.
+Recurring Expenses,المصروفات المتكررة
+Allocation Rules,قواعد التوزيع
+Allocation Rule,قاعدة توزيع
+Allocation Rule Business,نشاط في قاعدة التوزيع
+Shared Cost Center,المركز المشترك
+"The shared cost center whose expenses are split, e.g. the center's shared premises.",المركز المشترك اللي مصروفاته بتتقسم، زي مصروفات المقر المشتركة.
+"Expenses dated from this day on are split by this rule. It cannot be on or before an expense already posted on the shared cost center, so past months stay as they are.",المصروفات اللي تاريخها من اليوم ده بتتقسم بالقاعدة دي. مينفعش يكون في يوم آخر مصروف اتسجل على المركز المشترك أو قبله، عشان الشهور اللي فاتت تفضل زي ما هي.
+Businesses,الأنشطة
+"Made when this rule is submitted; ERPNext splits the expenses by it.",بيتعمل لما القاعدة تتعتمد، وERPNext بيقسم المصروفات على أساسه.
+Share,النسبة
+Row {0}: {1} is already in the rule. Each business can appear only once.,السطر {0}: {1} موجود قبل كده في القاعدة. كل نشاط يتكتب مرة واحدة بس.
+Row {0}: the shared cost center {1} cannot share its own expenses.,السطر {0}: المركز المشترك {1} مينفعش يكون جوه توزيع مصروفاته.
+Row {0}: {1} is a group. Choose a business under it.,السطر {0}: {1} مجموعة. اختار نشاط من اللي تحتها.
+"The shares must add up to 100%, got {0}%.",مجموع النسب لازم يكون 100%، والمكتوب {0}%.
+"Valid From must be after {0}, the date of the last expense posted on {1}.",تاريخ السريان لازم يكون بعد {0}، تاريخ آخر مصروف اتسجل على {1}.
+"Why these shares, e.g. who agreed to them and what they are based on (usage, area, revenue).",ليه النسب دي، زي مين وافق عليها ومبنية على إيه (الاستخدام أو المساحة أو الإيراد).
+"Its share of the shared expenses, in %.",نصيبه من المصروفات المشتركة بالـ %.
+"Valid From must be after {0}, the date rule {1} starts on.",تاريخ السريان لازم يكون بعد {0}، اليوم اللي القاعدة {1} بتبدأ فيه.
