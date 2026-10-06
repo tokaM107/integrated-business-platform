@@ -35,6 +35,8 @@ app_include_css = [
 # switch next to the notifications
 # (all only add elements, see the files).
 app_include_js = [
+	# Reusable screen design standard (imed.screen.apply); loaded first so doctype scripts can use it.
+	"/assets/imed_erp/js/imed_form_standard.js",
 	"/assets/imed_erp/js/imed_home.js",
 	"/assets/imed_erp/js/imed_assistant.js",
 	"/assets/imed_erp/js/imed_theme_toggle.js",
@@ -62,7 +64,8 @@ website_context = {
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+# Screen design standard applied to a standard ERPNext doctype (see docs/SCREEN_DESIGN_STANDARD.md).
+doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}

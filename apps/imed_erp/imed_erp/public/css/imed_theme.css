@@ -1453,3 +1453,63 @@ body:has(.modal.imed-search-anchored.show) .modal-backdrop.show {
 		transform: none;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 19. Airy forms: one calm, readable rhythm on every form            */
+/* ------------------------------------------------------------------ */
+/* Frappe's forms are dense. These rules give every form across the system more breathing room and
+   clearer labels, so a first-time user is not faced with a wall of tightly packed fields. They work
+   WITH Frappe's layout (no reordering, no new markup) and apply to every doctype at once — part of the
+   screen design standard (docs/SCREEN_DESIGN_STANDARD.md), not a per-screen change. Directional spacing
+   uses logical properties so Arabic (RTL) mirrors correctly. The `> .frappe-control` child selector is
+   deliberate: it spaces the top-level fields of a column only, never the controls inside a child-table
+   grid (which would break the table layout). */
+
+/* More space between fields. (Frappe default: --margin-sm = 10px.) */
+.form-layout .form-column > .frappe-control {
+	margin-bottom: 18px;
+}
+
+/* Clearer labels: a little more air beneath, and never cramped against the field. */
+.form-layout .control-label {
+	margin-bottom: 8px;
+	line-height: 1.4;
+}
+
+/* Comfortable inputs: a touch taller and roomier, easier to read and tap. */
+.form-layout .form-control {
+	min-height: 32px;
+	padding-block: 7px;
+}
+
+/* Sections breathe: more room under each section title, and a clear gap between sections. */
+.form-layout .form-section .section-head:not(.collapsed) {
+	margin-bottom: 14px;
+}
+.form-layout .form-section + .form-section.card-section {
+	margin-top: 8px;
+	padding-top: 18px;
+}
+.form-layout .form-section .section-body {
+	padding-top: 14px;
+}
+
+/* A little more space between the two columns of a section, so fields do not crowd the divider. */
+.form-layout .form-section .section-body > .form-column {
+	padding-inline: 16px;
+}
+
+/* The first section of a form sits a little lower, away from the page head. */
+.form-layout .form-page > .form-section:first-child {
+	padding-top: 10px;
+}
+
+/* Phones: keep the extra air modest so short screens do not turn into long scrolls. */
+@media (max-width: 767.98px) {
+	.form-layout .form-column > .frappe-control {
+		margin-bottom: 14px;
+	}
+	.form-layout .form-section .section-body > .form-column {
+		padding-inline: 0;
+	}
+}
