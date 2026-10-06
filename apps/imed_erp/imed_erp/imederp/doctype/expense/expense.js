@@ -43,6 +43,22 @@ frappe.ui.form.on("Expense", {
 	},
 
 	refresh(frm) {
+		// Apply the screen design standard (see docs/SCREEN_DESIGN_STANDARD.md).
+		// Expense is a lean custom doctype with no tax / currency fields, so the standard here is
+		// about PROGRESSIVE DISCLOSURE, not hiding noise. Everyone fills the same few business fields
+		// (date, activity, category, amount, treasury, supplier, description, receipt). The derived
+		// "Accounting" section (company, expense account, journal entry) is all read-only and filled
+		// in automatically on save, so:
+		//   - branch staff (no accounting-manager role) never see it — a simpler screen;
+		//   - accountants / managers see it, collapsed on a new expense.
+		// This is UI only: the fields and the accounting logic are untouched (see the helper's SCOPE
+		// note). Field order is set in expense.json.
+		imed.screen.apply(frm, {
+			collapse_on_new: ["accounting_section"],
+			restrict: [
+				{ unless: imed.screen.ROLE_GROUPS.accounting_manager, hide: ["accounting_section"] },
+			],
+		});
 		frm.trigger("show_status");
 		frm.trigger("add_approval_buttons");
 	},

@@ -169,11 +169,12 @@ design tokens and refines a few components. It is loaded from `hooks.py` and nee
 
 | File (in `apps/imed_erp/imed_erp/public`) | What it is |
 |---|---|
-| `css/imed_theme.css` | The desk theme: colour, type and shape tokens (light and dark), then sidebar, page head, buttons, inputs, forms, lists, dashboards, home screen, dialogs, toasts, empty states, small screens. |
+| `css/imed_theme.css` | The desk theme: colour, type and shape tokens (light and dark), then sidebar, page head, buttons, inputs, forms, lists, dashboards, home screen, dialogs, toasts, empty states, small screens, and airy forms (§19: one calm spacing rhythm on every form). |
 | `css/imed_web.css` | The login page only (every rule is scoped to `#page-login`). |
 | `js/imed_home.js` | Home screen: a greeting band (greeting, today's date, company) with quick actions, each shown only if the user has the permission for it. Hooks into Frappe's `desktop_screen` event and only adds elements; the app grid and its edit mode are Frappe's own. |
 | `js/imed_theme_toggle.js` | One-click light / dark switch next to the notifications (beside the bell on the home screen, under "Notification" in the sidebar). Uses Frappe's own theme setting, so the choice is saved to the user. |
 | `css/imed_fonts.css`, `fonts/` | IBM Plex Sans Arabic (SIL OFL, licence in `fonts/OFL.txt`), bundled so it works without internet. Only Arabic text uses it; Latin stays on Inter. |
+| `js/imed_form_standard.js` | Reusable screen design standard (`imed.screen.apply`): hide unused standard-ERPNext fields (tax / ZATCA / international), collapse technical sections. Each doctype's own `.js` calls it. See [docs/SCREEN_DESIGN_STANDARD.md](docs/SCREEN_DESIGN_STANDARD.md). |
 | `images/imed-mark.svg` | Logo and favicon. |
 | `icons/desktop_icons/{solid,subtle}/owner_dashboard.svg` | The Owner Dashboard icon on the home screen. |
 
@@ -183,6 +184,8 @@ design tokens and refines a few components. It is loaded from `hooks.py` and nee
 - **Arabic / RTL:** every left/right spacing uses logical properties (`inline-start` / `inline-end`), so the
   Arabic interface mirrors correctly.
 - **Dark mode** (user menu > Toggle Theme) is fully themed.
+- **New screens:** follow [docs/SCREEN_DESIGN_STANDARD.md](docs/SCREEN_DESIGN_STANDARD.md) — field order,
+  which fields to hide, Arabic/RTL, fonts, buttons, status colours, and the reusable Client Script helper.
 - **Serving the files:** `pwd.yml` mounts `public/` at `/assets/imed_erp` in the frontend (nginx) and backend
   containers. Without that mount the browser gets 404 for the theme.
 - **After editing a CSS file:** reload the page (Ctrl+Shift+R). After changing `hooks.py`: restart the backend
