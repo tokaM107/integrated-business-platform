@@ -30,7 +30,8 @@ EMAIL_DOMAIN = "imed.local"
 # (see FINANCIAL_DOCTYPES). "CRM Staff" has no user yet: nobody is named for it in the requirements.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 LIBRARY_ROLES = [*BRANCH_ROLES, "Stock User"]
-CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff"]
+# "Expense Approver" approves expenses above the threshold in Expense Settings; only the owner has it.
+CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff", "Expense Approver"]
 
 # Permissions matrix, section 3.2: "only the owner and the accountant can edit, cancel or delete a
 # financial transaction". Branch managers keep create / edit draft / submit, but lose cancel, amend
@@ -59,7 +60,7 @@ FULL_RIGHTS = {
 # children (both libraries' stores and editions) so she can transfer stock to Azarita.
 # "enabled" defaults to 1.
 USERS = [
-	{"email": "owner", "first_name": "المالك", "roles": ["Super Admin", "System Manager", "Accounts Manager"]},
+	{"email": "owner", "first_name": "المالك", "roles": ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"]},
 	{"email": "nour", "first_name": "نور", "roles": BRANCH_ROLES, "cost_centers": ["قاعات Imed"]},
 	{"email": "gilan", "first_name": "جيلان", "roles": BRANCH_ROLES, "cost_centers": ["استوديو X"]},
 	{"email": "menna", "first_name": "منة", "roles": BRANCH_ROLES, "cost_centers": ["تطبيق BA Plus"]},

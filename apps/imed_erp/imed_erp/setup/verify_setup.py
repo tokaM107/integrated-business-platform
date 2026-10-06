@@ -35,7 +35,7 @@ COST_CENTERS = [
 # (name, parent, account_type, is_group) - must match setup_coa.py.
 ACCOUNTS = (
 	[(n, acc("النقدية بالخزائن"), "Cash", 0) for n in ["خزينة مكتبة الأزاريطة", "خزينة مكتبة المواساة", "خزينة سنتر Imed", "خزينة X Studio"]]
-	+ [(n, acc("الحسابات البنكية"), "Bank", 0) for n in ["محفظة InstaPay", "محفظة Vodafone Cash"]]
+	+ [(n, acc("الحسابات البنكية"), "Bank", 0) for n in ["محفظة InstaPay", "محفظة Vodafone Cash", "خزينة تطبيق BA Plus"]]
 	+ [
 		("مستحقات على الأطباء — رسوم المنصة", acc("الذمم المدينة"), "Receivable", 0),
 		("مديونيات الأطباء — الكتب", acc("الذمم المدينة"), "Receivable", 0),
@@ -66,7 +66,7 @@ ACCOUNTS = (
 	]
 	+ [
 		(n, acc("المصروفات غير المباشرة"), "Expense Account", 0)
-		for n in ["الخامات والمستهلكات", "فروقات الخزينة", "الخصومات الممنوحة"]
+		for n in ["الخامات والمستهلكات", "فروقات الخزينة", "الخصومات الممنوحة", "الاشتراكات والسيرفرات"]
 	]
 )
 
@@ -106,7 +106,7 @@ ITEMS = [
 # Company / Cost Center / Warehouse User Permissions.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 USERS = [
-	("owner@imed.local", "المالك", ["Super Admin", "System Manager", "Accounts Manager"], [], []),
+	("owner@imed.local", "المالك", ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"], [], []),
 	("nour@imed.local", "نور", BRANCH_ROLES, ["قاعات Imed"], []),
 	("gilan@imed.local", "جيلان", BRANCH_ROLES, ["استوديو X"], []),
 	("menna@imed.local", "منة", BRANCH_ROLES, ["تطبيق BA Plus"], []),
@@ -303,6 +303,28 @@ def run():
 	if frappe.db.get_single_value("System Settings", "apply_strict_user_permissions"):
 		problems.append("System Settings: apply_strict_user_permissions is on")
 		print("WRONG   Settings     apply_strict_user_permissions is on (branch managers cannot read Items)")
+
+	# ---------- Allocation of the shared premises (setup_allocation_rules.py) ----------
+	shared = acc("مصروفات المقر المشتركة")
+	rule = frappe.db.get_value(
+		"Allocation Rule",
+		{"main_cost_center": shared, "docstatus": 1},
+		["name", "valid_from", "cost_center_allocation"],
+		order_by="valid_from desc",
+		as_dict=True,
+	)
+	if not rule:
+		report("Allocation", shared, ["missing"])
+	else:
+		errors = []
+		if frappe.db.get_value("Cost Center Allocation", rule.cost_center_allocation, "docstatus") != 1:
+			errors.append(f"rule {rule.name} has no submitted Cost Center Allocation")
+		total = sum(
+			frappe.get_all("Allocation Rule Business", filters={"parent": rule.name}, pluck="percentage")
+		)
+		if total != 100:
+			errors.append(f"rule {rule.name} shares add up to {total}%")
+		report("Allocation", f"{shared} from {rule.valid_from} ({rule.name})", errors)
 
 	# ---------- Summary ----------
 	print()

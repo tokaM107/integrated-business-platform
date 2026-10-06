@@ -87,3 +87,77 @@ Paper Counters,عدادات الورق
 App Subscriptions,اشتراكات التطبيق
 {0} has expenses recorded under it and cannot become a group.,{0} عليه مصروفات متسجلة ومينفعش يتحول لمجموعة.
 {0} was posted by Expense {1}. Cancel the expense instead.,{0} اترحّل من المصروف {1}. الغي المصروف بدل كده.
+Expense Settings,إعدادات المصروفات
+Approval,الاعتماد
+Approval Threshold,حد الاعتماد
+An expense whose actual amount is above this needs approval before it is posted. Leave empty to approve nothing.,أي مصروف مبلغه الفعلي أكبر من الرقم ده محتاج اعتماد قبل ما يتسجل. سيبه فاضي لو مفيش مصروف محتاج اعتماد.
+Recurring Expense Reminders,تذكيرات المصروفات المتكررة
+Remind Days Before,التذكير قبلها بكام يوم
+Remind the owner and the accountant this many days before a recurring expense is due.,تذكير المالك والمحاسب قبل معاد المصروف المتكرر بالعدد ده من الأيام.
+Repeat Overdue Reminder Every (Days),تكرار تذكير المتأخر كل (يوم)
+"While a generated recurring expense is still a draft after its date, remind again every this many days.",طول ما المصروف المتكرر لسه مسودة بعد معاده، التذكير يتكرر كل العدد ده من الأيام.
+"Approval Threshold cannot be negative, got {0}.",حد الاعتماد مينفعش يكون بالسالب، والمكتوب {0}.
+"{0} must be at least 1 day, got {1}.",{0} لازم يكون يوم واحد على الأقل، والمكتوب {1}.
+"Recurring expense {0} ({1}) is due on {2}, expected {3}.",مصروف متكرر: {0} ({1}) معاده {2}، والمتوقع {3}.
+"Recurring expense {0} ({1}) was due on {2} and is still a draft, {3} days late. Enter the actual amount, attach the receipt and submit it.",مصروف متكرر: {0} ({1}) كان معاده {2} ولسه مسودة، متأخر {3} يوم. اكتب المبلغ الفعلي وارفع الإيصال واعتمده.
+Recurring Expense,مصروف متكرر
+Expected Amount,المبلغ المتوقع
+Day of Month,يوم الشهر
+Next Due Date,المعاد الجاي
+The place this bill is for.,المكان اللي الفاتورة دي بتاعته.
+The cash box or wallet this bill is paid from.,الخزنة أو المحفظة اللي الفاتورة بتتدفع منها.
+"In a shorter month, its last day.",لو الشهر أقصر، آخر يوم فيه.
+"When the next draft expense is made. Filled in from the day of the month; set it to start from another month.",إمتى تتعمل مسودة المصروف الجاية. بتتملى لوحدها من يوم الشهر؛ غيّرها لو عايز تبدأ من شهر تاني.
+Copied into each month's expense.,بيتنسخ في مصروف كل شهر.
+"Day of Month must be between 1 and 31, got {0}.",يوم الشهر لازم يكون من 1 لـ 31، والمكتوب {0}.
+Recurring Expense {0} could not make its expense,المصروف المتكرر {0} معرفش يعمل المصروف بتاعه
+Monthly Bill,الفاتورة الشهرية
+"What the bill usually comes to. When set, each month's expense is made as a draft with it, and the actual amount is entered there; changing it here changes the months to come. Leave empty to have the accountant enter the expense himself.",الفاتورة بتيجي كام في العادي. لو مكتوب، مصروف كل شهر بيتعمل لوحده كمسودة بالمبلغ ده والمبلغ الفعلي بيتكتب فيها؛ ولو غيرته هنا بيتغير في الشهور الجاية. سيبه فاضي لو المحاسب هيسجل المصروف بنفسه.
+"Expected Amount cannot be negative, got {0}.",المبلغ المتوقع مينفعش يكون بالسالب، والمكتوب {0}.
+"Recurring expense {0} ({1}) is due on {2}.",مصروف متكرر: {0} ({1}) معاده {2}.
+Repeats,بيتكرر؟
+This Month Only,الشهر ده بس
+Every Month,كل شهر
+"Every Month: pick one of this place's monthly bills. If the bill is not there, fill it in yourself; it is added to the place's monthly bills when this expense is submitted.",كل شهر: اختار فاتورة من فواتير المكان ده الشهرية. لو الفاتورة مش موجودة املاها بنفسك، وهتتضاف لفواتير المكان الشهرية لما المصروف يتعتمد.
+Fills in the category and treasury. Only this place's bills are listed.,بتملا التصنيف والخزنة لوحدها. القايمة فيها فواتير المكان ده بس.
+"Monthly bill {0} is for {1}, not {2}.",الفاتورة الشهرية {0} بتاعة {1}، مش {2}.
+Expense Approver,معتمد المصروفات
+Approval Status,حالة الاعتماد
+Pending Approval,مستني الاعتماد
+Approved,اتعتمد
+Rejected,اترفض
+Decided By,اللي قرر
+Rejection Reason,سبب الرفض
+Request Approval,اطلب الاعتماد
+Approve,اعتماد
+Reject,رفض
+Reject Expense,رفض المصروف
+Waiting for the owner's approval.,مستني موافقة المالك.
+This expense was rejected and is closed. Make a new expense if it is still needed.,المصروف ده اترفض واتقفل. اعمل مصروف جديد لو لسه محتاجه.
+Expense {0} was rejected and cannot be changed. Make a new expense instead.,المصروف {0} اترفض ومينفعش يتعدل. اعمل مصروف جديد بداله.
+This expense is above the approval threshold of {0}. Request the owner's approval first.,المصروف ده أكبر من حد الاعتماد ({0}). اطلب موافقة المالك الأول.
+Approval Needed,محتاج اعتماد
+Approval can only be requested for a draft that has not been sent yet.,طلب الاعتماد بيتعمل بس لمسودة لسه متبعتتش.
+This expense is not above the approval threshold. Submit it directly.,المصروف ده مش أكبر من حد الاعتماد. اعتمده على طول.
+Expense {0} of {1} for {2} ({3}) is waiting for your approval.,المصروف {0} بمبلغ {1} لـ {2} ({3}) مستني موافقتك.
+Expense {0} was approved and posted.,المصروف {0} اتوافق عليه واتسجل.
+Expense {0} was rejected.,المصروف {0} اترفض.
+Expense {0} is not waiting for approval.,المصروف {0} مش مستني اعتماد.
+Recurring Expenses,المصروفات المتكررة
+Allocation Rules,قواعد التوزيع
+Allocation Rule,قاعدة توزيع
+Allocation Rule Business,نشاط في قاعدة التوزيع
+Shared Cost Center,المركز المشترك
+"The shared cost center whose expenses are split, e.g. the center's shared premises.",المركز المشترك اللي مصروفاته بتتقسم، زي مصروفات المقر المشتركة.
+"Expenses dated from this day on are split by this rule. It cannot be on or before an expense already posted on the shared cost center, so past months stay as they are.",المصروفات اللي تاريخها من اليوم ده بتتقسم بالقاعدة دي. مينفعش يكون في يوم آخر مصروف اتسجل على المركز المشترك أو قبله، عشان الشهور اللي فاتت تفضل زي ما هي.
+Businesses,الأنشطة
+"Made when this rule is submitted; ERPNext splits the expenses by it.",بيتعمل لما القاعدة تتعتمد، وERPNext بيقسم المصروفات على أساسه.
+Share,النسبة
+Row {0}: {1} is already in the rule. Each business can appear only once.,السطر {0}: {1} موجود قبل كده في القاعدة. كل نشاط يتكتب مرة واحدة بس.
+Row {0}: the shared cost center {1} cannot share its own expenses.,السطر {0}: المركز المشترك {1} مينفعش يكون جوه توزيع مصروفاته.
+Row {0}: {1} is a group. Choose a business under it.,السطر {0}: {1} مجموعة. اختار نشاط من اللي تحتها.
+"The shares must add up to 100%, got {0}%.",مجموع النسب لازم يكون 100%، والمكتوب {0}%.
+"Valid From must be after {0}, the date of the last expense posted on {1}.",تاريخ السريان لازم يكون بعد {0}، تاريخ آخر مصروف اتسجل على {1}.
+"Why these shares, e.g. who agreed to them and what they are based on (usage, area, revenue).",ليه النسب دي، زي مين وافق عليها ومبنية على إيه (الاستخدام أو المساحة أو الإيراد).
+"Its share of the shared expenses, in %.",نصيبه من المصروفات المشتركة بالـ %.
+"Valid From must be after {0}, the date rule {1} starts on.",تاريخ السريان لازم يكون بعد {0}، اليوم اللي القاعدة {1} بتبدأ فيه.

@@ -1,0 +1,140 @@
+{
+ "actions": [],
+ "autoname": "REC-.####",
+ "creation": "2026-10-04 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "activity",
+  "expense_category",
+  "treasury",
+  "column_break_main",
+  "amount",
+  "day_of_month",
+  "next_date",
+  "enabled",
+  "notes_section",
+  "description"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Title",
+   "read_only": 1
+  },
+  {
+   "description": "The place this bill is for.",
+   "fieldname": "activity",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Business",
+   "options": "Cost Center",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expense_category",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Expense Category",
+   "options": "Expense Category",
+   "reqd": 1
+  },
+  {
+   "description": "The cash box or wallet this bill is paid from.",
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "label": "Treasury",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "What the bill usually comes to. When set, each month's expense is made as a draft with it, and the actual amount is entered there; changing it here changes the months to come. Leave empty to have the accountant enter the expense himself.",
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Expected Amount"
+  },
+  {
+   "default": "1",
+   "description": "In a shorter month, its last day.",
+   "fieldname": "day_of_month",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Day of Month",
+   "reqd": 1
+  },
+  {
+   "description": "When the next draft expense is made. Filled in from the day of the month; set it to start from another month.",
+   "fieldname": "next_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Next Due Date"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "Copied into each month's expense.",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "links": [
+  {
+   "link_doctype": "Expense",
+   "link_fieldname": "recurring_expense"
+  }
+ ],
+ "modified": "2026-10-05 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Recurring Expense",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "next_date",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "title",
+ "show_title_field_in_link": 1,
+ "track_changes": 1,
+ "search_fields": "expense_category,activity"
+}
