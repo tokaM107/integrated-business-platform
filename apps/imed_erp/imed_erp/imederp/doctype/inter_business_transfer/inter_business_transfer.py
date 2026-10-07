@@ -6,6 +6,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
+from imed_erp.imederp.treasuries import check_treasury
+
 # A treasury is a cash box or a wallet: a leaf Account of one of these types.
 TREASURY_TYPES = ("Cash", "Bank")
 
@@ -45,6 +47,7 @@ class InterBusinessTransfer(Document):
             account = frappe.db.get_value("Account", treasury, ["account_type", "is_group"], as_dict=True)
             if not account or account.is_group or account.account_type not in TREASURY_TYPES:
                 frappe.throw(_("{0} is not a treasury. Choose a cash or wallet account.").format(treasury))
+        check_treasury(self.from_business, self.from_treasury)
 
     def validate_period(self):
         if frappe.db.get_value("Academic Period", self.period, "is_closed"):
