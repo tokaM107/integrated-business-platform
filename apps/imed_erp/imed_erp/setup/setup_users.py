@@ -56,8 +56,11 @@ FULL_RIGHTS = {
 
 # Each branch manager is restricted to the company plus their own cost center / warehouse.
 # Users without cost_centers / warehouses get no User Permissions: their roles alone decide access.
-# Raghad's "المخزن المركزي بالمواساة" is a group warehouse: the permission also covers its
-# children (both libraries' stores and editions) so she can transfer stock to Azarita.
+# A permission on a group warehouse also covers the warehouses under it.
+# Raghad keeps the main warehouse (Mawasah, with its damaged stock) and also gets Azarita's, because
+# she supplies the branch: a transfer names both warehouses and is refused if either is not hers.
+# Sara gets Azarita only, so the server refuses any document, report row or API call that touches
+# Mawasah (or the center's office supplies) for her.
 # "enabled" defaults to 1.
 USERS = [
 	{"email": "owner", "first_name": "المالك", "roles": ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"]},
@@ -69,14 +72,14 @@ USERS = [
 		"first_name": "رغد",
 		"roles": LIBRARY_ROLES,
 		"cost_centers": ["مكتبة المواساة"],
-		"warehouses": ["المخزن المركزي بالمواساة"],
+		"warehouses": ["المخزن المركزي بالمواساة", "مخزن الأزاريطة"],
 	},
 	{
 		"email": "sara",
 		"first_name": "سارة",
 		"roles": LIBRARY_ROLES,
 		"cost_centers": ["مكتبة الأزاريطة"],
-		"warehouses": ["خامات الأزاريطة", "إصدارات الأطباء — الأزاريطة"],
+		"warehouses": ["مخزن الأزاريطة"],
 	},
 	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager"]},
 	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR", "HR Manager"]},
@@ -104,9 +107,16 @@ def desired_permissions(spec):
 		return []
 	# Pin to the real company so the demo company stays hidden.
 	rows.insert(0, ("Company", COMPANY))
-	# A value is the user's default only when it is their single value for that doctype.
+	# A value is the user's default only when it is their single value for that doctype, and never a
+	# group warehouse: forms would fill it in and stock transactions refuse group warehouses.
 	per_allow = {allow: sum(a == allow for a, _ in rows) for allow, _ in rows}
-	return [(allow, value, int(per_allow[allow] == 1)) for allow, value in rows]
+
+	def is_default(allow, value):
+		if allow == "Warehouse" and frappe.db.get_value("Warehouse", value, "is_group"):
+			return 0
+		return int(per_allow[allow] == 1)
+
+	return [(allow, value, is_default(allow, value)) for allow, value in rows]
 
 
 def preflight():
