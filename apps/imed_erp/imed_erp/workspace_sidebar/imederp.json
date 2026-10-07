@@ -12,6 +12,7 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense Categories", "link_to": "Expense Category", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Recurring Expenses", "link_to": "Recurring Expense", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Allocation Rules", "link_to": "Allocation Rule", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense Settings", "link_to": "Expense Settings", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense Report", "link_to": "Expense Report", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 0, "collapsible": 1, "icon": "book-open", "indent": 1, "keep_closed": 0, "label": "Doctors and Editions", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Agreements", "link_to": "Doctor Agreement", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
@@ -24,7 +25,7 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
  ],
- "modified": "2026-10-05 12:00:00.000000",
+ "modified": "2026-10-07 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",
