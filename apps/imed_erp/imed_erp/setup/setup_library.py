@@ -67,7 +67,14 @@ POS_PROFILES = [
 	("نقطة بيع مكتبة المواساة", "مكتبة المواساة", "إصدارات الأطباء — المواساة", "raghad@imed.local"),
 	("نقطة بيع مكتبة الأزاريطة", "مكتبة الأزاريطة", "إصدارات الأطباء — الأزاريطة", "sara@imed.local"),
 ]
-PAYMENT_MODE = "Cash"
+# Payment methods (CORE-03, ACC-01): cash goes to the library's own cash box, not to the company's main
+# treasury that ERPNext's "Cash" posts to. InstaPay and Vodafone Cash are one number for the whole group.
+# (name, type, account) - accounts from setup_coa.py, as in imederp/treasuries.py.
+CASH_MODES = {
+	"مكتبة المواساة": ("نقدي — مكتبة المواساة", "Cash", "خزينة مكتبة المواساة"),
+	"مكتبة الأزاريطة": ("نقدي — مكتبة الأزاريطة", "Cash", "خزينة مكتبة الأزاريطة"),
+}
+WALLET_MODES = [("InstaPay", "Bank", "محفظة InstaPay"), ("Vodafone Cash", "Bank", "محفظة Vodafone Cash")]
 
 waiting = []
 
@@ -203,9 +210,53 @@ def make_library_item(spec):
 	ensure_item(spec["code"], spec["name"], spec["group"], 1, extra)
 
 
+def make_mode_of_payment(name, mode_type, account):
+	"""A payment method posting to `account` for this company. Returns False if the account is missing."""
+	if not frappe.db.exists("Account", acc(account)):
+		wait(f"Mode of Payment {name}", f"account {acc(account)} not found (setup_coa.py makes it)")
+		return False
+	if not frappe.db.exists("Mode of Payment", name):
+		frappe.get_doc(
+			{
+				"doctype": "Mode of Payment",
+				"mode_of_payment": name,
+				"type": mode_type,
+				"enabled": 1,
+				"accounts": [{"company": COMPANY, "default_account": acc(account)}],
+			}
+		).insert()
+		print(f"create Mode of Payment {name} -> {acc(account)}")
+		return True
+	mode = frappe.get_doc("Mode of Payment", name)
+	row = next((r for r in mode.accounts if r.company == COMPANY), None)
+	if row and row.default_account == acc(account):
+		print(f"exists Mode of Payment {name}")
+		return True
+	if not row:
+		row = mode.append("accounts", {"company": COMPANY})
+	row.default_account = acc(account)
+	mode.save()
+	print(f"update Mode of Payment {name} -> {acc(account)}")
+	return True
+
+
 def make_pos_profile(name, cost_center, warehouse, user):
+	modes = [CASH_MODES[cost_center], *WALLET_MODES]
+	if not all([make_mode_of_payment(*mode) for mode in modes]):
+		wait(f"POS Profile {name}", "not created or updated, a payment method is missing its account")
+		return
+	# The library's cash first, as the default; then the wallets.
+	payments = [{"mode_of_payment": mode[0], "default": int(i == 0)} for i, mode in enumerate(modes)]
+
 	if frappe.db.exists("POS Profile", name):
-		print(f"exists POS Profile {name}")
+		profile = frappe.get_doc("POS Profile", name)
+		current = [(p.mode_of_payment, p.default) for p in profile.payments]
+		if current == [(p["mode_of_payment"], p["default"]) for p in payments]:
+			print(f"exists POS Profile {name}")
+		else:
+			profile.set("payments", payments)
+			profile.save()
+			print(f"update POS Profile {name}: payments {', '.join(p['mode_of_payment'] for p in payments)}")
 		return
 
 	missing = [
@@ -216,8 +267,6 @@ def make_pos_profile(name, cost_center, warehouse, user):
 	write_off = frappe.db.get_value("Company", COMPANY, "write_off_account")
 	if not write_off:
 		missing.append("Company write-off account")
-	if not frappe.db.get_value("Mode of Payment Account", {"parent": PAYMENT_MODE, "company": COMPANY}):
-		missing.append(f"an account on Mode of Payment {PAYMENT_MODE}")
 	if missing:
 		wait(f"POS Profile {name}", f"not created, missing {', '.join(missing)}")
 		return
@@ -235,7 +284,7 @@ def make_pos_profile(name, cost_center, warehouse, user):
 			"write_off_cost_center": acc(cost_center),
 			"selling_price_list": frappe.db.get_single_value("Selling Settings", "selling_price_list"),
 			"update_stock": 1,
-			"payments": [{"mode_of_payment": PAYMENT_MODE, "default": 1}],
+			"payments": payments,
 			"item_groups": [{"item_group": g} for g in ITEM_GROUPS],
 			"applicable_for_users": [{"user": user, "default": 1}],
 		}
