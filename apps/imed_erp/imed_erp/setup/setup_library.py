@@ -94,7 +94,6 @@ def make_item_groups():
 		print(f"create Item Group {PARENT_GROUP}")
 	elif not frappe.db.get_value("Item Group", PARENT_GROUP, "is_group"):
 		# Created as a leaf by setup_core.py; it must be a group to hold the three groups below.
-		# Paper (A4-PAPER) stays in it directly.
 		parent = frappe.get_doc("Item Group", PARENT_GROUP)
 		parent.is_group = 1
 		parent.save()

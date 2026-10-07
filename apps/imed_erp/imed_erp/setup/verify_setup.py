@@ -93,7 +93,11 @@ WAREHOUSE_ACCOUNTS = {
 UOMS = ["Nos", "ورقة", "رزمة", "كرتونة", "ساعة"]
 
 # Items stocked in a UOM other than Nos (setup_core.py).
-STOCK_UOMS = {"A4-PAPER": "ورقة"}
+STOCK_UOMS = {"A4-PAPER": "ورقة", "STUDIO-HOUR": "ساعة", "HALL-HOUR": "ساعة"}
+
+# Paper (setup_core.py): every item in this group is valued at moving average and bought by the box.
+PAPER_GROUP = "الورق"
+PAPER_ITEMS = ["A4-PAPER"]
 
 # (code, is_stock_item, income account, extra UOM conversions, expense account or None)
 ITEMS = [
@@ -246,6 +250,19 @@ def run():
 			if factors.get(uom) != factor:
 				errors.append(f"{uom} conversion is {factors.get(uom)}, expected {factor}")
 		report("Item", code, errors)
+
+	# ---------- Paper ----------
+	for code in PAPER_ITEMS:
+		if frappe.db.get_value("Item", code, "item_group") != PAPER_GROUP:
+			report("Paper", code, [f"not in item group {PAPER_GROUP}"])
+	for code in frappe.get_all("Item", filters={"item_group": PAPER_GROUP}, pluck="name"):
+		item = frappe.db.get_value("Item", code, ["valuation_method", "purchase_uom"], as_dict=True)
+		errors = []
+		if item.valuation_method != "Moving Average":
+			errors.append(f"valued by {item.valuation_method or 'the default'}, expected Moving Average")
+		if item.purchase_uom != "كرتونة":
+			errors.append(f"bought by {item.purchase_uom or 'its stock UOM'}, expected كرتونة")
+		report("Paper", code, errors)
 
 	# ---------- Users and User Permissions ----------
 	for email, first_name, roles, cost_centers, warehouses in USERS:

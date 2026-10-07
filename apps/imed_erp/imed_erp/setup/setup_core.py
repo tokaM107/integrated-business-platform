@@ -18,8 +18,16 @@ COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
 CURRENCY = "EGP"
 
-# The stock UOM of paper.
+# Paper is stocked in sheets and bought in boxes.
 SHEET = "ورقة"
+BOX = "كرتونة"
+HOUR = "ساعة"
+
+# Raw materials are not sold, so they sit apart from the library products. Every item in the paper group is
+# valued at moving average and bought by the box (ensure_paper_items), including paper added later.
+RAW_MATERIALS = "الخامات"
+PAPER_GROUP = "الورق"
+MOVING_AVERAGE = "Moving Average"
 
 # First fiscal year, used only when this script runs the setup wizard on a new site.
 # Must match the first entry of FISCAL_YEARS in setup_regional.py (academic year, Sep-Aug).
@@ -101,6 +109,10 @@ def make_item(
 	if frappe.db.exists("Item", code):
 		ensure_stock_uom(code, stock_uom)
 		ensure_conversions(code, conversions or [])
+		current_group = frappe.db.get_value("Item", code, "item_group")
+		if current_group != item_group:
+			frappe.db.set_value("Item", code, "item_group", item_group)
+			print(f"update Item {code}: group {current_group} -> {item_group}")
 		# Only fill missing defaults for this company; anything already set is left as is.
 		item = frappe.get_doc("Item", code)
 		row = next((d for d in item.item_defaults if d.company == COMPANY), None)
@@ -165,6 +177,32 @@ def ensure_conversions(code, conversions):
 		row.conversion_factor = c["conversion_factor"]
 	item.save()
 	print(f"update Item {code}: " + ", ".join(f"1 {c['uom']} = {c['conversion_factor']:g} {item.stock_uom}" for c in wrong))
+
+
+def ensure_paper_items():
+	"""Every paper item is valued at moving average and bought by the box.
+
+	Moving average: all sheets in a store cost the same, the average of what was paid, so a box bought at a
+	new price changes the cost of every sheet. ERPNext refuses to change the method once stock has moved.
+	"""
+	for code in frappe.get_all("Item", filters={"item_group": PAPER_GROUP}, pluck="name"):
+		item = frappe.get_doc("Item", code)
+		changes = []
+		if item.valuation_method != MOVING_AVERAGE:
+			if frappe.db.exists("Stock Ledger Entry", {"item_code": code}):
+				print(f"WARN   Item {code}: valued by {item.valuation_method or 'the default'}; stock has moved, so not changed")
+			else:
+				item.valuation_method = MOVING_AVERAGE
+				changes.append(f"valuation {MOVING_AVERAGE}")
+		# Bought by the box, so a quantity of 2 means 2 boxes, not 2 sheets.
+		if not item.purchase_uom and any(d.uom == BOX for d in item.uoms):
+			item.purchase_uom = BOX
+			changes.append(f"bought by the {BOX}")
+		if changes:
+			item.save()
+			print(f"update Item {code}: {', '.join(changes)}")
+		else:
+			print(f"exists Item {code}: paper settings")
 
 
 def complete_setup_wizard():
@@ -281,12 +319,17 @@ def run():
 			print(f"exists UOM {uom}")
 
 	# ---------- 5) Items ----------
-	for group in ["منتجات المكتبات", "الخدمات"]:
+	for group, parent, is_group in [
+		("منتجات المكتبات", "All Item Groups", 0),
+		("الخدمات", "All Item Groups", 0),
+		(RAW_MATERIALS, "All Item Groups", 1),
+		(PAPER_GROUP, RAW_MATERIALS, 0),
+	]:
 		if frappe.db.exists("Item Group", group):
 			print(f"exists Item Group {group}")
 		else:
 			frappe.get_doc(
-				{"doctype": "Item Group", "item_group_name": group, "parent_item_group": "All Item Groups"}
+				{"doctype": "Item Group", "item_group_name": group, "parent_item_group": parent, "is_group": is_group}
 			).insert()
 			print(f"create Item Group {group}")
 
@@ -299,7 +342,7 @@ def run():
 	make_item(
 		"A4-PAPER",
 		"ورق A4 80 جرام",
-		"منتجات المكتبات",
+		PAPER_GROUP,
 		1,
 		"إيراد مكتبة المواساة",
 		conversions=[{"uom": "رزمة", "conversion_factor": 500}, {"uom": "كرتونة", "conversion_factor": 2500}],
@@ -308,8 +351,9 @@ def run():
 	)
 	make_item("PRINT-SVC", "تصوير وطباعة", "منتجات المكتبات", 0, "إيراد مكتبة المواساة", rate=1)
 	make_item("BINDING-SVC", "تجليد", "منتجات المكتبات", 0, "إيراد مكتبة المواساة")
-	make_item("STUDIO-HOUR", "ساعة استوديو", "الخدمات", 0, "إيراد X Studio")
-	make_item("HALL-HOUR", "ساعة قاعة", "الخدمات", 0, "إيراد القاعات")
+	make_item("STUDIO-HOUR", "ساعة استوديو", "الخدمات", 0, "إيراد X Studio", stock_uom=HOUR)
+	make_item("HALL-HOUR", "ساعة قاعة", "الخدمات", 0, "إيراد القاعات", stock_uom=HOUR)
+	ensure_paper_items()
 
 	frappe.db.commit()
 	print(f"DONE   Core setup finished for {COMPANY} ({ABBR}).")
