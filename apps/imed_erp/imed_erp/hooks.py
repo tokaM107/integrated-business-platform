@@ -174,22 +174,80 @@ doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # 	}
 # }
 
+# on_trash: a submitted or cancelled financial document is never deleted (imederp/no_delete.py).
+# validate on the app's documents: none is saved in a closed month or academic period (imederp/period_lock.py).
 doc_events = {
 	"Journal Entry": {
 		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
 		"before_cancel": "imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Payment Entry": {
 		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Sales Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"POS Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Purchase Invoice": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Stock Entry": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Delivery Note": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Purchase Receipt": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Stock Reconciliation": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Cost Center Allocation": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Expense": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Inter Business Transfer": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Doctor Ledger Entry": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"App Subscription": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Book Edition": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Printer Reading": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Allocation Rule": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 }
 
+# Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
+period_closing_doctypes = [
+	"Expense",
+	"Inter Business Transfer",
+	"Doctor Ledger Entry",
+	"App Subscription",
+	"Printer Reading",
+]
 # Scheduled Tasks
 # ---------------
 
