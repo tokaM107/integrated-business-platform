@@ -18,6 +18,9 @@ COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
 CURRENCY = "EGP"
 
+# The stock UOM of paper.
+SHEET = "ورقة"
+
 # First fiscal year, used only when this script runs the setup wizard on a new site.
 # Must match the first entry of FISCAL_YEARS in setup_regional.py (academic year, Sep-Aug).
 FISCAL_YEAR_START = "2026-09-01"
@@ -77,7 +80,9 @@ def make_warehouse(name, parent, is_group=0):
 	return doc.name
 
 
-def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None, expense=None):
+def make_item(
+	code, item_name, item_group, is_stock_item, income, rate=0, conversions=None, expense=None, stock_uom="Nos"
+):
 	income_account = acc(income)
 	expense_account = acc(expense) if expense else None
 	for account in filter(None, (income_account, expense_account)):
@@ -94,6 +99,8 @@ def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conver
 	}
 
 	if frappe.db.exists("Item", code):
+		ensure_stock_uom(code, stock_uom)
+		ensure_conversions(code, conversions or [])
 		# Only fill missing defaults for this company; anything already set is left as is.
 		item = frappe.get_doc("Item", code)
 		row = next((d for d in item.item_defaults if d.company == COMPANY), None)
@@ -114,16 +121,50 @@ def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conver
 			"item_code": code,
 			"item_name": item_name,
 			"item_group": item_group,
-			"stock_uom": "Nos",
+			"stock_uom": stock_uom,
 			"is_stock_item": is_stock_item,
 			"include_item_in_manufacturing": 0,
 			"standard_rate": rate,
-			"uoms": [{"uom": "Nos", "conversion_factor": 1}] + (conversions or []),
+			"uoms": [{"uom": stock_uom, "conversion_factor": 1}] + (conversions or []),
 			"item_defaults": [{"company": COMPANY, **{k: v for k, v in wanted.items() if v}}],
 		}
 	).insert()
 	print(f"create Item {doc.name}")
 	return doc.name
+
+
+def ensure_stock_uom(code, stock_uom):
+	"""Move an existing item to its stock UOM. ERPNext refuses once stock has moved, so only before that."""
+	current = frappe.db.get_value("Item", code, "stock_uom")
+	if current == stock_uom:
+		return
+	# ERPNext counts cancelled movements too.
+	if frappe.db.exists("Stock Ledger Entry", {"item_code": code}):
+		print(f"WARN   Item {code}: stock UOM is {current}, expected {stock_uom}; stock has moved, so not changed")
+		return
+	item = frappe.get_doc("Item", code)
+	item.stock_uom = stock_uom
+	# ERPNext empties the conversion table when the stock UOM changes; ensure_conversions puts it back.
+	item.save()
+	print(f"update Item {code}: stock UOM {current} -> {stock_uom}")
+
+
+def ensure_conversions(code, conversions):
+	"""Keep the item's conversion factors as given, whatever removed or changed them.
+
+	A UOM missing from the item is converted with a factor of 1 on purchases and sales, so a box of
+	2,500 sheets would come in as one sheet.
+	"""
+	item = frappe.get_doc("Item", code)
+	factors = {d.uom: d.conversion_factor for d in item.uoms}
+	wrong = [c for c in conversions if factors.get(c["uom"]) != c["conversion_factor"]]
+	if not wrong:
+		return
+	for c in wrong:
+		row = next((d for d in item.uoms if d.uom == c["uom"]), None) or item.append("uoms", {"uom": c["uom"]})
+		row.conversion_factor = c["conversion_factor"]
+	item.save()
+	print(f"update Item {code}: " + ", ".join(f"1 {c['uom']} = {c['conversion_factor']:g} {item.stock_uom}" for c in wrong))
 
 
 def complete_setup_wizard():
@@ -227,12 +268,17 @@ def run():
 	exec(open(frappe.get_app_path("imed_erp", "setup", "setup_coa.py")).read(), {"frappe": frappe})
 
 	# ---------- 4) UOMs ----------
-	for uom in ["رزمة", "كرتونة"]:
-		if frappe.db.exists("UOM", uom):
-			print(f"exists UOM {uom}")
-		else:
-			frappe.get_doc({"doctype": "UOM", "uom_name": uom}).insert()
+	# Paper is stocked in sheets, and a sheet cannot be split.
+	for uom in ["رزمة", "كرتونة", "ورقة", "ساعة"]:
+		whole = int(uom == SHEET)
+		if not frappe.db.exists("UOM", uom):
+			frappe.get_doc({"doctype": "UOM", "uom_name": uom, "must_be_whole_number": whole}).insert()
 			print(f"create UOM {uom}")
+		elif whole and not frappe.db.get_value("UOM", uom, "must_be_whole_number"):
+			frappe.db.set_value("UOM", uom, "must_be_whole_number", 1)
+			print(f"update UOM {uom}: whole numbers only")
+		else:
+			print(f"exists UOM {uom}")
 
 	# ---------- 5) Items ----------
 	for group in ["منتجات المكتبات", "الخدمات"]:
@@ -247,7 +293,7 @@ def run():
 	# Library revenue is split by library, but an item has one default income account per company.
 	# Library items default to Mawasah; imederp/library_revenue.py moves each invoice row to the revenue
 	# account of the library it is sold in.
-	# A4 paper is stocked in sheets (Nos): 1 Ream = 500 sheets, 1 Box = 5 Reams = 2500 sheets.
+	# A4 paper is stocked in sheets: 1 Ream = 500 sheets, 1 Box = 5 Reams = 2500 sheets.
 	# Paper used up printing and photocopying for customers is a cost of what was sold (decided with the
 	# owner); without this default, issuing it from stock would land on stock differences.
 	make_item(
@@ -258,6 +304,7 @@ def run():
 		"إيراد مكتبة المواساة",
 		conversions=[{"uom": "رزمة", "conversion_factor": 500}, {"uom": "كرتونة", "conversion_factor": 2500}],
 		expense="تكلفة البضاعة المباعة",
+		stock_uom=SHEET,
 	)
 	make_item("PRINT-SVC", "تصوير وطباعة", "منتجات المكتبات", 0, "إيراد مكتبة المواساة", rate=1)
 	make_item("BINDING-SVC", "تجليد", "منتجات المكتبات", 0, "إيراد مكتبة المواساة")

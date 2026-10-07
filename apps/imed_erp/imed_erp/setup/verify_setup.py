@@ -90,7 +90,10 @@ WAREHOUSE_ACCOUNTS = {
 	"إصدارات الأطباء — الأزاريطة": "مخزون الأزاريطة — إصدارات الأطباء",
 }
 
-UOMS = ["Nos", "رزمة", "كرتونة"]
+UOMS = ["Nos", "ورقة", "رزمة", "كرتونة", "ساعة"]
+
+# Items stocked in a UOM other than Nos (setup_core.py).
+STOCK_UOMS = {"A4-PAPER": "ورقة"}
 
 # (code, is_stock_item, income account, extra UOM conversions, expense account or None)
 ITEMS = [
@@ -216,6 +219,8 @@ def run():
 	# ---------- UOMs ----------
 	for uom in UOMS:
 		report("UOM", uom, [] if frappe.db.exists("UOM", uom) else ["missing"])
+	if not frappe.db.get_value("UOM", "ورقة", "must_be_whole_number"):
+		report("UOM", "ورقة", ["must be whole numbers only"])
 
 	# ---------- Items ----------
 	for code, is_stock_item, income, conversions, expense in ITEMS:
@@ -233,6 +238,9 @@ def run():
 		if expense and (not default or default.expense_account != acc(expense)):
 			found = default.expense_account if default else None
 			errors.append(f"default expense account is {found}, expected {acc(expense)}")
+		stock_uom = STOCK_UOMS.get(code, "Nos")
+		if item.stock_uom != stock_uom:
+			errors.append(f"stock UOM is {item.stock_uom}, expected {stock_uom}")
 		factors = {d.uom: d.conversion_factor for d in item.uoms}
 		for uom, factor in conversions.items():
 			if factors.get(uom) != factor:
