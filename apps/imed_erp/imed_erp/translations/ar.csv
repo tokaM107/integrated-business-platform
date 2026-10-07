@@ -186,12 +186,10 @@ Sheets per Copy,عدد الورق في النسخة
 Doctor Requested Qty,الكمية بطلب الطبيب
 Library Extra Qty,الكمية الإضافية للمكتبة
 Sold Qty,الكمية المباعة
-Manufacturing Cost per Sheet,تكلفة تصنيع الورقة
 Owner Share per Sheet,نصيب المالك في الورقة
 Doctor Share per Copy,نصيب الطبيب في النسخة
 Filled in from the agreement when its share is a fixed amount per copy.,بيتملى من الاتفاقية لو نصيب الطبيب مبلغ ثابت للنسخة.
 Calculated Price per Copy,السعر المحسوب للنسخة
-(Manufacturing cost + owner share) per sheet x sheets per copy + doctor share.,(تكلفة التصنيع + نصيب المالك) للورقة × عدد الورق + نصيب الطبيب.
 Final Selling Price per Copy,سعر البيع النهائي للنسخة
 "Left empty, the calculated price rounded up to the nearest 5 EGP. Cannot be below the calculated price.",لو فاضي، بيبقى السعر المحسوب مقرّب لأعلى لأقرب 5 جنيه. مينفعش يكون أقل من السعر المحسوب.
 Rounding to Owner,فرق التقريب للمالك
@@ -210,5 +208,11 @@ Edition,الإصدار
 Parent Period,الفترة الأم
 Doctor Share Type,نوع نصيب الطبيب
 {0} is not a library. Printer readings are recorded for a library.,{0} مش مكتبة. قراءات العدادات بتتسجل للمكتبات بس.
-"{0} is in the closed accounting period {1}. Choose a date in an open month.",{0} في الفترة المحاسبية المقفولة {1}. اختار تاريخ في شهر مفتوح.
+{0} is in the closed accounting period {1}. Choose a date in an open month.,{0} في الفترة المحاسبية المقفولة {1}. اختار تاريخ في شهر مفتوح.
 Period Closed,الفترة مقفولة
+Paper Cost per Sheet,تكلفة ورق الورقة
+"Moving average price of A4 paper in the library's raw materials store, plus 0.04 EGP waste per sheet. Taken while the edition is a draft and fixed when it is submitted.",متوسط سعر ورق A4 في مخزن خامات المكتبة، + 4 قروش هدر لكل ورقة. بيتحسب والإصدار مسودة، وبيثبت لما يتسجل.
+Other Manufacturing Cost per Sheet,باقي تكلفة التصنيع للورقة
+"Ink, cover and binding per sheet; paper is above.",الحبر والغلاف والتجليد للورقة؛ الورق محسوب فوق.
+(Paper + other manufacturing cost + owner share) per sheet x sheets per copy + doctor share.,(الورق + باقي تكلفة التصنيع + نصيب المالك) للورقة × عدد الورق + نصيب الطبيب.
+A4 paper has no price yet in {0}; receive paper before approving the edition.,ورق A4 لسه مالوش سعر في {0}؛ استلم ورق الأول قبل تسجيل الإصدار.
