@@ -19,14 +19,15 @@ COLUMNS = ["Super Admin", "Accountant", "Branch Manager", "HR"]
 CHECKS = [
 	("Record revenue / a sale", "Sales Invoice", "create", (1, 1, 1, 0)),
 	("Record an expense", "Expense", "create", (1, 1, 1, 0)),
-	("Journal entry by hand", "Journal Entry", "create", (1, 1, 0, 0)),
+	("Journal entry", "Journal Entry", "create", (1, 1, 1, 0)),
 	("Submit a sale", "Sales Invoice", "submit", (1, 1, 1, 0)),
 	("Cancel a financial transaction", "Sales Invoice", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Journal Entry", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Payment Entry", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Stock Entry", "cancel", (1, 1, 0, 0)),
-	# Only a draft can be deleted; posted and cancelled documents never are (imederp/no_delete.py).
-	("Delete a draft", "Sales Invoice", "delete", (1, 1, 0, 0)),
+	# Only the owner deletes, and only a draft; posted and cancelled documents never are (imederp/no_delete.py).
+	("Delete a draft", "Sales Invoice", "delete", (1, 0, 0, 0)),
+	("Delete a draft", "Expense", "delete", (1, 0, 0, 0)),
 	("Close or reopen a month", "Accounting Period", "write", (1, 1, 0, 0)),
 	("Change the chart of accounts", "Account", "create", (1, 1, 0, 0)),
 	("Cancel the shared expenses split", "Cost Center Allocation", "cancel", (1, 1, 0, 0)),
