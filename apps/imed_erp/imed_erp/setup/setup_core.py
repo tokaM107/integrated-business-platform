@@ -23,9 +23,10 @@ SHEET = "ورقة"
 BOX = "كرتونة"
 HOUR = "ساعة"
 
-# Raw materials are not sold, so they sit apart from the library products. Every item in the paper group is
-# valued at moving average and bought by the box (ensure_paper_items), including paper added later.
-RAW_MATERIALS = "الخامات"
+# Raw materials are not sold, so they sit apart from the library products, under ERPNext's own raw materials
+# group (renamed by setup_arabic_names.py). Every item in the paper group is valued at moving average and
+# bought by the box (ensure_paper_items), including paper added later.
+RAW_MATERIALS = "خامات"
 PAPER_GROUP = "الورق"
 MOVING_AVERAGE = "Moving Average"
 
@@ -109,10 +110,6 @@ def make_item(
 	if frappe.db.exists("Item", code):
 		ensure_stock_uom(code, stock_uom)
 		ensure_conversions(code, conversions or [])
-		current_group = frappe.db.get_value("Item", code, "item_group")
-		if current_group != item_group:
-			frappe.db.set_value("Item", code, "item_group", item_group)
-			print(f"update Item {code}: group {current_group} -> {item_group}")
 		# Only fill missing defaults for this company; anything already set is left as is.
 		item = frappe.get_doc("Item", code)
 		row = next((d for d in item.item_defaults if d.company == COMPANY), None)
@@ -326,6 +323,15 @@ def run():
 		(PAPER_GROUP, RAW_MATERIALS, 0),
 	]:
 		if frappe.db.exists("Item Group", group):
+			if is_group and not frappe.db.get_value("Item Group", group, "is_group"):
+				# ERPNext ships it as a leaf; the paper group goes under it.
+				frappe.db.set_value("Item Group", group, "is_group", 1)
+				print(f"update Item Group {group}: is_group = 1")
+			if frappe.db.get_value("Item Group", group, "parent_item_group") != parent:
+				doc = frappe.get_doc("Item Group", group)
+				doc.parent_item_group = parent
+				doc.save()
+				print(f"move   Item Group {group} -> under {parent}")
 			print(f"exists Item Group {group}")
 		else:
 			frappe.get_doc(
@@ -353,6 +359,11 @@ def run():
 	make_item("BINDING-SVC", "تجليد", "منتجات المكتبات", 0, "إيراد مكتبة المواساة")
 	make_item("STUDIO-HOUR", "ساعة استوديو", "الخدمات", 0, "إيراد X Studio", stock_uom=HOUR)
 	make_item("HALL-HOUR", "ساعة قاعة", "الخدمات", 0, "إيراد القاعات", stock_uom=HOUR)
+	# Paper used to sit with the library products; it moves once to the paper group. Other items keep the
+	# group they are in: setup_library.py moves the library services to their own group.
+	if frappe.db.get_value("Item", "A4-PAPER", "item_group") != PAPER_GROUP:
+		frappe.db.set_value("Item", "A4-PAPER", "item_group", PAPER_GROUP)
+		print(f"update Item A4-PAPER: group -> {PAPER_GROUP}")
 	ensure_paper_items()
 
 	frappe.db.commit()
