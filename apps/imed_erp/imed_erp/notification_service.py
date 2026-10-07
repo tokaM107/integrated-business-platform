@@ -37,6 +37,17 @@ EVENTS = {
 		"message": "{{ item }} at {{ warehouse }} is down to {{ qty }}.",
 		"channels": ["system"],
 	},
+	# Expenses (EXP-05/06). The wording is made and translated by the module, so the template passes it on.
+	"expense_reminder": {
+		"subject": "{{ subject }}",
+		"message": "{{ subject }}",
+		"channels": ["system"],
+	},
+	"expense_approval": {
+		"subject": "{{ subject }}",
+		"message": "{{ subject }}",
+		"channels": ["system"],
+	},
 	"period_closed": {
 		"subject": "Accounting period {{ period }} closed",
 		"message": "Posting dated {{ start }} to {{ end }} is now blocked.",
@@ -45,8 +56,11 @@ EVENTS = {
 }
 
 
-def notify(event, users, context=None, channels=None):
+def notify(event, users, context=None, channels=None, document=None):
 	"""Send `event` to each user (User IDs) on `channels` (default: the event's own channels).
+
+	`document` is an optional (doctype, name): the in-app notification opens it, and the same notification
+	about the same document is not sent twice to a user.
 
 	Returns {channel: [users it was sent to]}. A failing channel is logged and does not stop the others.
 	"""
@@ -58,15 +72,22 @@ def notify(event, users, context=None, channels=None):
 	sent = {}
 	for channel in channels or spec["channels"]:
 		try:
-			sent[channel] = ADAPTERS[channel](users, subject, message, event)
+			sent[channel] = ADAPTERS[channel](users, subject, message, event, document)
 		except Exception:
 			frappe.log_error(title=f"Notification {event} failed on {channel}")
 			sent[channel] = []
 	return sent
 
 
-def _system(users, subject, message, event):
+def _system(users, subject, message, event, document=None):
+	document_type, document_name = document or (None, None)
+	sent = []
 	for user in users:
+		if document and frappe.db.exists(
+			"Notification Log",
+			{"for_user": user, "subject": subject, "document_type": document_type, "document_name": document_name},
+		):
+			continue
 		frappe.get_doc(
 			{
 				"doctype": "Notification Log",
@@ -74,12 +95,15 @@ def _system(users, subject, message, event):
 				"type": "Alert",
 				"subject": subject,
 				"email_content": message,
+				"document_type": document_type,
+				"document_name": document_name,
 			}
 		).insert(ignore_permissions=True)
-	return list(users)
+		sent.append(user)
+	return sent
 
 
-def _email(users, subject, message, event):
+def _email(users, subject, message, event, document=None):
 	recipients = [e for e in (frappe.db.get_value("User", u, "email") for u in users) if e]
 	if recipients:
 		frappe.sendmail(recipients=recipients, subject=subject, message=message)
@@ -87,7 +111,7 @@ def _email(users, subject, message, event):
 
 
 def _not_integrated(channel):
-	def adapter(users, subject, message, event):
+	def adapter(users, subject, message, event, document=None):
 		numbers = [frappe.db.get_value("User", u, "mobile_no") for u in users]
 		frappe.logger("imed_notifications").info(
 			f"{channel} not integrated yet; would send {event!r} to {numbers}: {subject}"
