@@ -143,12 +143,11 @@ and expense numbers would jump whenever a bill or a rule is made.
   Branch managers can create, edit drafts and submit them.
 - **Nothing posted is ever deleted (ACC-07, owner's decision of 7 Oct 2026).** A mistake is cancelled,
   which reverses it and keeps it on record. `imederp/no_delete.py` refuses to delete any submitted or
-  cancelled financial document, ERPNext's or the app's, for everyone; a draft that was never posted can
-  still be deleted by Super Admin and Accountant.
-- Branch managers **read** journal entries but do not make them: expenses and transfers go through their
-  own screens, which check the receipt, the owner's approval and the business's cash box. They also only
-  read month-end closing (Accounting Period), the chart of accounts and the split of the shared premises'
-  expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
+  cancelled financial document, ERPNext's or the app's, for everyone. Only the owner may delete, and only
+  a draft that was never posted; the accountant has every other right.
+- Branch managers make regular journal entries too (create and submit; no cancel, amend or delete). They
+  only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
+  premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
 - A branch manager pays expenses and sends transfers only from their own business's cash box or the
   group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
@@ -474,8 +473,11 @@ document linked to a closed academic period cannot be saved either.
 `نقدي — مكتبة الأزاريطة`, which posts to that library's cash box (ERPNext's `Cash` posts to the company's
 main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`).
 
-**Doctors' editions and the app.** An edition's price per copy is (manufacturing cost + owner share) per
-sheet × sheets per copy + the doctor's share, rounded up to 5 EGP; the rounding goes to the owner and the
+**Doctors' editions and the app.** An edition's price per copy is (paper + other manufacturing cost + owner
+share) per sheet × sheets per copy + the doctor's share, rounded up to 5 EGP. The paper is costed at the
+moving average price of A4 paper in the library's raw materials store plus 0.04 EGP waste a sheet (owner's
+decision), taken while the edition is a draft and fixed when it is submitted; an edition cannot be submitted
+before the library has a paper price. The other cost is ink, cover and binding. The rounding goes to the owner and the
 final price can never be below the calculated one (DOC-24/25/28). The doctor's share is filled in from a
 fixed-amount books agreement. An App Subscription records the student and the platform fee due from the
 doctor only: the course is paid by the student to the doctor directly and is not recorded (APP-05, v1.2).
