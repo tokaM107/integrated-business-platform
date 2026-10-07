@@ -171,6 +171,8 @@ ws = frappe.get_doc({
     "module": "ImedERP",
     "icon": "dashboard",
     "public": 1,
+    # Screen 2 of the requirements is the owner's alone.
+    "roles": [{"role": "Super Admin"}, {"role": "System Manager"}],
     "sequence_id": 1,
     "content": frappe.as_json(content),
     "number_cards": [{"number_card_name": c["real"], "label": c["label"]} for c in created_cards],
