@@ -184,9 +184,24 @@ doc_events = {
 	},
 	"Sales Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 	},
 	"POS Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+	},
+	# Reorder levels per item and warehouse (LIB-04).
+	"Item": {
+		"validate": "imed_erp.imederp.stock_reorder.validate_reorder_levels",
+	},
+	**{
+		doctype: {"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level"}
+		for doctype in (
+			"Stock Entry",
+			"Delivery Note",
+			"Purchase Receipt",
+			"Purchase Invoice",
+			"Stock Reconciliation",
+		)
 	},
 }
 

@@ -59,7 +59,15 @@ def make_cost_center(name, parent, is_group=0):
 def make_warehouse(name, parent, is_group=0):
 	full = acc(name)
 	if frappe.db.exists("Warehouse", full):
-		print(f"exists Warehouse {full}")
+		current = frappe.db.get_value("Warehouse", full, "parent_warehouse")
+		if current != parent and frappe.db.exists("Warehouse", parent):
+			# Moving a warehouse keeps its stock, account and links; only the tree changes.
+			doc = frappe.get_doc("Warehouse", full)
+			doc.parent_warehouse = parent
+			doc.save()
+			print(f"move   Warehouse {full}: {current} -> {parent}")
+		else:
+			print(f"exists Warehouse {full}")
 		return full
 	if not frappe.db.exists("Warehouse", parent):
 		print(f"SKIP   Warehouse {full}: parent {parent} not found")
@@ -212,15 +220,27 @@ def run():
 	make_cost_center("تطبيق BA Plus", ROOT_CC)
 
 	# ---------- 2) Warehouses ----------
-	# The group's only central store is at Mawasah; branch stores sit under it.
+	# Mawasah is the main warehouse and supplies Azarita by stock transfer (never a purchase).
+	# Azarita is a separate branch warehouse, not under Mawasah, so Mawasah's totals never include
+	# the branch's stock and Azarita's staff are kept out of Mawasah (setup_users.py).
 	# Each library keeps raw materials (paper, ink, binding supplies) apart from doctors' editions,
 	# the only goods sold; setup_coa.py gives each warehouse its own stock account.
+	#   المخزن المركزي بالمواساة   (main)
+	#     خامات المواساة / إصدارات الأطباء — المواساة / التالف — المواساة
+	#   مخزن الأزاريطة             (branch)
+	#     خامات الأزاريطة / إصدارات الأطباء — الأزاريطة
+	#   مخزن سنتر Imed — أدوات مكتبية (the center's office supplies: ink, toner, ...)
+	# Damaged goods are kept apart under Mawasah until they are sold by weight.
 	central = make_warehouse("المخزن المركزي بالمواساة", ROOT_WH, is_group=1)
 	if central:
 		make_warehouse("خامات المواساة", central)
 		make_warehouse("إصدارات الأطباء — المواساة", central)
-		make_warehouse("خامات الأزاريطة", central)
-		make_warehouse("إصدارات الأطباء — الأزاريطة", central)
+		make_warehouse("التالف — المواساة", central)
+	azarita = make_warehouse("مخزن الأزاريطة", ROOT_WH, is_group=1)
+	if azarita:
+		make_warehouse("خامات الأزاريطة", azarita)
+		make_warehouse("إصدارات الأطباء — الأزاريطة", azarita)
+	make_warehouse("مخزن سنتر Imed — أدوات مكتبية", ROOT_WH)
 
 	# ---------- 3) Accounts ----------
 	# Needs the company and the warehouses above; the items below need its income accounts.
@@ -235,7 +255,8 @@ def run():
 			print(f"create UOM {uom}")
 
 	# ---------- 5) Items ----------
-	for group in ["منتجات المكتبات", "الخدمات"]:
+	# ورق is one of the inventory groups of setup_library.py; made here too because A4 paper below needs it.
+	for group in ["منتجات المكتبات", "الخدمات", "ورق"]:
 		if frappe.db.exists("Item Group", group):
 			print(f"exists Item Group {group}")
 		else:
@@ -253,7 +274,7 @@ def run():
 	make_item(
 		"A4-PAPER",
 		"ورق A4 80 جرام",
-		"منتجات المكتبات",
+		"ورق",
 		1,
 		"إيراد مكتبة المواساة",
 		conversions=[{"uom": "رزمة", "conversion_factor": 500}, {"uom": "كرتونة", "conversion_factor": 2500}],

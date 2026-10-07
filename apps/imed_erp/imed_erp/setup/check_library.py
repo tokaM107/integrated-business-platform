@@ -21,6 +21,7 @@ AZARITA_CC = f"مكتبة الأزاريطة - {ABBR}"
 LIBRARY_REVENUE = [MAWASAH_REVENUE, AZARITA_REVENUE]
 
 PARENT_GROUP = "منتجات المكتبات"
+BOOKS_NOTEBOOKS_GROUP = "كتب وكشاكيل"
 BOOKS_GROUP = "كتب"
 MEMOS_GROUP = "مذكرات"
 SERVICES_GROUP = "خدمات المكتبات"
@@ -149,9 +150,15 @@ def run():
 
 	# ---------- 1) Item groups ----------
 	check(f"{PARENT_GROUP} is a group", frappe.db.get_value("Item Group", PARENT_GROUP, "is_group"))
-	for group in [BOOKS_GROUP, MEMOS_GROUP, SERVICES_GROUP]:
+	# Books and memos sit in Books & Notebooks (setup_library.py), which is under the library products.
+	for group, expected in [
+		(BOOKS_NOTEBOOKS_GROUP, PARENT_GROUP),
+		(BOOKS_GROUP, BOOKS_NOTEBOOKS_GROUP),
+		(MEMOS_GROUP, BOOKS_NOTEBOOKS_GROUP),
+		(SERVICES_GROUP, PARENT_GROUP),
+	]:
 		parent = frappe.db.get_value("Item Group", group, "parent_item_group")
-		check(f"Item Group {group} is under {PARENT_GROUP}", parent == PARENT_GROUP, parent)
+		check(f"Item Group {group} is under {expected}", parent == expected, parent)
 
 	# ---------- 2) Items: books and memos are stock items, services are not; item defaults ----------
 	for code, is_stock in ITEMS:
