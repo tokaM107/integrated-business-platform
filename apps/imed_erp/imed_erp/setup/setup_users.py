@@ -49,6 +49,16 @@ FINANCIAL_DOCTYPES = [
 ]
 MANAGER_STANDARD_ROLES = ["Accounts User", "Sales User", "Stock User"]
 MANAGER_DENIED = {"cancel": 0, "amend": 0, "delete": 0}
+READ_ONLY = {p: 0 for p in ("write", "create", "submit", "cancel", "amend", "delete")}
+# Branch managers record expenses and transfers on their own screens, which check the receipt, the owner's
+# approval and the business's own cash box. A journal entry by hand would skip all of that, so they only
+# read journal entries.
+MANAGER_RIGHTS = {"Journal Entry": READ_ONLY}
+
+# The books' own controls: month-end closing (CORE-09), the chart of accounts, and the split of the
+# shared premises' expenses (EXP-03). Only Super Admin and Accountant change them; ERPNext gives
+# Accounts User, which every branch manager has, full rights on them.
+CONTROL_DOCTYPES = ["Accounting Period", "Account", "Cost Center Allocation"]
 FULL_RIGHTS = {
 	p: 1
 	for p in ("read", "write", "create", "submit", "cancel", "amend", "delete", "report", "print", "email", "export", "share")
@@ -269,7 +279,15 @@ def apply_permission_matrix():
 		for role in ["Super Admin", "Accountant"]:
 			ensure_docperm(doctype, role, FULL_RIGHTS, create=True)
 		for role in MANAGER_STANDARD_ROLES:
-			ensure_docperm(doctype, role, MANAGER_DENIED, create=False)
+			ensure_docperm(doctype, role, MANAGER_RIGHTS.get(doctype, MANAGER_DENIED), create=False)
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
+
+	for doctype in CONTROL_DOCTYPES:
+		for role in ["Super Admin", "Accountant"]:
+			ensure_docperm(doctype, role, FULL_RIGHTS, create=True)
+		for role in MANAGER_STANDARD_ROLES:
+			ensure_docperm(doctype, role, READ_ONLY, create=False)
 		validate_permissions_for_doctype(doctype)
 		frappe.clear_cache(doctype=doctype)
 
