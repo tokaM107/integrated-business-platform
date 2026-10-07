@@ -269,7 +269,7 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (raw materials and doctors' editions per library), UOMs (Ream = 500 sheets, Box = carton = 5 Reams = 2500 sheets) and items. Runs `setup_coa.py` itself, after the warehouses. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (raw materials and doctors' editions per library), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour), the item groups `الخامات` > `الورق` for raw materials, and items. Paper is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
@@ -404,6 +404,27 @@ Shares are fixed percentages. Shares worked out from each business's area or rev
 task, were left out on purpose: the owner chose a fixed 60/40 (8 halls, 4 of which also serve as the
 studio part of the time), and the rule's Notes record what the shares are based on.
 
+### Paper units and cost
+
+Paper is bought by the box, used by the sheet and stocked in sheets:
+
+| UOM | Sheets |
+|---|---|
+| `ورقة` (sheet, whole numbers only) | 1 (stock UOM) |
+| `رزمة` (ream) | 500 |
+| `كرتونة` (box) | 2,500 (default purchase UOM) |
+
+Every item in the item group `الورق` (under `الخامات`) is valued at **moving average** and bought by the
+box; `setup_core.py` applies both to any paper item added to the group later. Moving average means every
+sheet in a store costs the same, the average of what was paid: a box at 650 then one at 700 make every
+sheet 0.27. Two boxes at 650 come in as 5,000 sheets at 0.26 each, 1,300 in all.
+
+A purchase takes the conversion factor from the item. If the item has no row for the chosen UOM, ERPNext
+uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the item's UOM table whenever
+its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
+`verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
+valuation method once stock has moved; the script then only warns.
+
 ### Library products (LIB-06)
 
 | Requirement | Where it is in ERPNext |
@@ -466,6 +487,7 @@ docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 ```
 
