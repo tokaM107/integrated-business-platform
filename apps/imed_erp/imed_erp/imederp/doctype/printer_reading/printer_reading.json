@@ -87,7 +87,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-28 17:44:43.851385",
+ "modified": "2026-10-07 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printer Reading",
@@ -148,5 +148,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
