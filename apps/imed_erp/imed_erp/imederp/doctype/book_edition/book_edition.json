@@ -16,6 +16,7 @@
   "doctor_qty",
   "extra_qty",
   "sold_qty",
+  "paper_cost",
   "unit_cost",
   "owner_share",
   "doctor_share",
@@ -40,6 +41,17 @@
    "in_list_view": 1,
    "label": "Agreement",
    "options": "Doctor Agreement",
+   "reqd": 1
+  },
+  {
+   "description": "The business this record belongs to. Branch managers only see their own.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cost Center",
+   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
+   "options": "Cost Center",
    "reqd": 1
   },
   {
@@ -71,9 +83,18 @@
    "read_only": 1
   },
   {
+   "description": "Moving average price of A4 paper in the library's raw materials store, plus 0.04 EGP waste per sheet. Taken while the edition is a draft and fixed when it is submitted.",
+   "fieldname": "paper_cost",
+   "fieldtype": "Currency",
+   "label": "Paper Cost per Sheet",
+   "read_only": 1,
+   "precision": "4"
+  },
+  {
    "fieldname": "unit_cost",
    "fieldtype": "Currency",
-   "label": "Manufacturing Cost per Sheet"
+   "label": "Other Manufacturing Cost per Sheet",
+   "description": "Ink, cover and binding per sheet; paper is above."
   },
   {
    "fieldname": "owner_share",
@@ -91,7 +112,7 @@
    "fieldtype": "Currency",
    "label": "Calculated Price per Copy",
    "read_only": 1,
-   "description": "(Manufacturing cost + owner share) per sheet x sheets per copy + doctor share."
+   "description": "(Paper + other manufacturing cost + owner share) per sheet x sheets per copy + doctor share."
   },
   {
    "fieldname": "selling_price",
@@ -122,24 +143,13 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "description": "The business this record belongs to. Branch managers only see their own.",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Cost Center",
-   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
-   "options": "Cost Center",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 18:00:00.000000",
+ "modified": "2026-10-07 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",
@@ -164,7 +174,7 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
