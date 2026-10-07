@@ -15,7 +15,7 @@
   }
  ],
  "content": "[\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Key Numbers</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Sales\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Invoices Count\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Outstanding from Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Purchases\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Charts</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Sales Trend\",\n   \"col\": 12\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Revenue by Business\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Stock Value by Warehouse\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Reports & Modules</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Profit per Business\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock & Paper\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Cash Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Who Owes Us\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Book Editions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Paper Counters\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"App Subscriptions\"\n  },\n  \"type\": \"shortcut\"\n }\n]",
- "creation": "2026-09-26 19:06:10.314197",
+ "creation": "2026-10-07 17:36:26.926502",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -27,7 +27,7 @@
  "label": "Owner Dashboard",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-09-26 19:06:10.314197",
+ "modified": "2026-10-07 17:36:26.926502",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Owner Dashboard",
@@ -60,7 +60,14 @@
  "owner": "Administrator",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Super Admin"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
  "sequence_id": 1.0,
  "shortcuts": [
   {
