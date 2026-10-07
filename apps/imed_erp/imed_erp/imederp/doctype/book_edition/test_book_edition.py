@@ -7,6 +7,8 @@
 # Run:
 #   bench --site frontend run-tests --doctype "Book Edition"
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 
@@ -55,6 +57,11 @@ def make_agreement(agreement_type, share_type="Fixed", share_value=0):
 	)
 
 
+# The paper price depends on what the library has received; these tests fix it, test_paper_stock.py reads it
+# from a real purchase.
+PAPER_COST = "imed_erp.imederp.doctype.book_edition.book_edition.get_paper_cost"
+
+
 class IntegrationTestBookEdition(IntegrationTestCase):
 	def make_edition(self, agreement, **values):
 		return frappe.get_doc(
@@ -65,24 +72,33 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 				"agreement": agreement,
 				"cost_center": LIBRARY,
 				"pages": 200,
-				"unit_cost": 0.26,
+				"unit_cost": 0.06,
 				"owner_share": 0.1,
 				**values,
 			}
 		).insert()
 
-	def test_price_is_per_copy_and_rounded_up_to_the_owner(self):
-		# (0.26 + 0.10) x 200 sheets = 72, + 15 doctor's share = 87 -> sold at 90, 3 to the owner.
+	@patch(PAPER_COST, return_value=0.30)
+	def test_price_is_per_copy_and_rounded_up_to_the_owner(self, _):
+		# Paper 0.26 average + 0.04 waste = 0.30; + 0.06 ink and binding + 0.10 owner = 0.46 a sheet.
+		# 0.46 x 200 sheets = 92, + 15 doctor's share = 107 -> sold at 110, 3 to the owner.
 		edition = self.make_edition(make_agreement("Books", "Fixed", 15))
+		self.assertEqual(edition.paper_cost, 0.30)
 		self.assertEqual(edition.doctor_share, 15)
-		self.assertEqual(edition.calculated_price, 87)
-		self.assertEqual(edition.selling_price, 90)
+		self.assertEqual(edition.calculated_price, 107)
+		self.assertEqual(edition.selling_price, 110)
 		self.assertEqual(edition.rounding_diff, 3)
 
-	def test_selling_price_cannot_cut_into_the_shares(self):
+	@patch(PAPER_COST, return_value=0.30)
+	def test_selling_price_cannot_cut_into_the_shares(self, _):
 		agreement = make_agreement("Books", "Fixed", 15)
-		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, selling_price=80)
-		self.assertEqual(self.make_edition(agreement, selling_price=100).rounding_diff, 13)
+		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, selling_price=100)
+		self.assertEqual(self.make_edition(agreement, selling_price=120).rounding_diff, 13)
+
+	@patch(PAPER_COST, return_value=0)
+	def test_no_approval_without_a_paper_price(self, _):
+		edition = self.make_edition(make_agreement("Books", "Fixed", 15))
+		self.assertRaises(frappe.ValidationError, edition.submit)
 
 	def test_edition_belongs_to_a_books_agreement(self):
 		self.assertRaises(frappe.ValidationError, self.make_edition, make_agreement("App"))
