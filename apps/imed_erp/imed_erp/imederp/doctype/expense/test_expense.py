@@ -340,8 +340,18 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 		expense.cancel()
 		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "Expense", expense.name)
 
+		# Only the owner deletes, even a draft.
 		draft = self.new_expense().insert()
-		frappe.delete_doc("Expense", draft.name)
+		frappe.set_user("accountant@imed.local")
+		try:
+			self.assertRaises(frappe.PermissionError, frappe.delete_doc, "Expense", draft.name)
+		finally:
+			frappe.set_user("Administrator")
+		frappe.set_user("owner@imed.local")
+		try:
+			frappe.delete_doc("Expense", draft.name)
+		finally:
+			frappe.set_user("Administrator")
 		self.assertFalse(frappe.db.exists("Expense", draft.name))
 
 	def test_no_expense_in_a_closed_month(self):
