@@ -51,7 +51,8 @@
   {
    "fieldname": "pages",
    "fieldtype": "Int",
-   "label": "Pages per Copy"
+   "label": "Sheets per Copy",
+   "reqd": 1
   },
   {
    "fieldname": "doctor_qty",
@@ -72,34 +73,38 @@
   {
    "fieldname": "unit_cost",
    "fieldtype": "Currency",
-   "label": "Manufacturing Cost per Page"
+   "label": "Manufacturing Cost per Sheet"
   },
   {
    "fieldname": "owner_share",
    "fieldtype": "Currency",
-   "label": "Owner Share per Page"
+   "label": "Owner Share per Sheet"
   },
   {
    "fieldname": "doctor_share",
    "fieldtype": "Currency",
-   "label": "Doctor Share per Page"
+   "label": "Doctor Share per Copy",
+   "description": "Filled in from the agreement when its share is a fixed amount per copy."
   },
   {
    "fieldname": "calculated_price",
    "fieldtype": "Currency",
-   "label": "Calculated Price",
-   "read_only": 1
+   "label": "Calculated Price per Copy",
+   "read_only": 1,
+   "description": "(Manufacturing cost + owner share) per sheet x sheets per copy + doctor share."
   },
   {
    "fieldname": "selling_price",
    "fieldtype": "Currency",
-   "label": "Final Selling Price"
+   "label": "Final Selling Price per Copy",
+   "description": "Left empty, the calculated price rounded up to the nearest 5 EGP. Cannot be below the calculated price."
   },
   {
    "fieldname": "rounding_diff",
    "fieldtype": "Currency",
    "label": "Rounding to Owner",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Selling price minus calculated price; goes to the owner."
   },
   {
    "default": "Active",
@@ -134,7 +139,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-29 12:00:00.000000",
+ "modified": "2026-10-07 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",
@@ -193,5 +198,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
