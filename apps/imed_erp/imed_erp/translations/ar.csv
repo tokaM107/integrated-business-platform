@@ -169,7 +169,6 @@ Cannot Delete,مينفعش يتمسح
 "Expense {0} of {1} for {2} ({3}) is still waiting for your approval, {4} days after its date.",المصروف {0} بمبلغ {1} لـ {2} ({3}) لسه مستني موافقتك، بعد معاده بـ {4} يوم.
 Agreement {0} is not a books agreement.,الاتفاقية {0} مش اتفاقية كتب.
 Agreement {0} is not an app agreement.,الاتفاقية {0} مش اتفاقية تطبيق.
-Final Selling Price {0} is below the calculated price {1}; the difference would come out of the shares.,سعر البيع النهائي {0} أقل من السعر المحسوب {1}، والفرق هيتخصم من الأنصبة.
 Treasury,الخزنة
 Doctor Agreement,اتفاقية طبيب
 Agreement Name,اسم الاتفاقية
@@ -229,6 +228,8 @@ Doctor's Amount per Copy,حق الطبيب في النسخة
 What the doctor asked for each copy; filled in from his agreement when it is a fixed amount.,اللي الطبيب طالبه في كل نسخة؛ بيتملى من اتفاقيته لو مبلغ ثابت.
 "(Paper + ink + overheads + profit) per sheet x sheets + binding + marketing + doctor's amount, per copy.",(الورق + الحبر + المشغولات + المكسب) للورقة × عدد الورق + التجليد + الماركتنج + حق الطبيب، للنسخة.
 Rates come from Printing Cost Settings while the edition is a draft and are kept once it is submitted. Change one here for this edition only.,الأسعار بتيجي من تكاليف الطباعة والإصدار مسودة، وبتتثبت لما يتسجل. غيّر أي واحد هنا للإصدار ده بس.
-"Left empty, the calculated price. A higher price can be set by hand; it cannot be below the calculated price.",لو فاضي، بيبقى السعر المحسوب. ينفع يتكتب سعر أعلى بالإيد؛ ومينفعش يكون أقل من المحسوب.
-Above Calculated Price,الزيادة عن السعر المحسوب
-Selling price minus calculated price; goes to the library.,سعر البيع ناقص السعر المحسوب، وبيروح للمكتبة.
+"Left empty, the calculated price. Another price can be set by hand, higher or lower (to sell more); the difference is the library's.",لو فاضي، بيبقى السعر المحسوب. ينفع يتكتب سعر تاني بالإيد، أعلى أو أقل (عشان نبيع أكتر)؛ والفرق على المكتبة.
+Difference from Calculated Price,الفرق عن السعر المحسوب
+"Selling price minus calculated price: added to the library's profit, or taken from it when negative. The doctor's amount does not change.",سعر البيع ناقص السعر المحسوب: بيتزود على مكسب المكتبة، أو بيتخصم منه لو بالسالب. حق الطبيب مابيتغيرش.
+"Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.",سعر البيع {0} أقل من تكلفة النسخة {1}: المكتبة بتخسر {2} في كل نسخة بتتباع.
+Selling at a Loss,بيع بخسارة
