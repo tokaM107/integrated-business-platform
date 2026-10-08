@@ -150,14 +150,14 @@
    "fieldname": "selling_price",
    "fieldtype": "Currency",
    "label": "Final Selling Price per Copy",
-   "description": "Left empty, the calculated price. A higher price can be set by hand; it cannot be below the calculated price."
+   "description": "Left empty, the calculated price. Another price can be set by hand, higher or lower (to sell more); the difference is the library's."
   },
   {
    "fieldname": "rounding_diff",
    "fieldtype": "Currency",
-   "label": "Above Calculated Price",
+   "label": "Difference from Calculated Price",
    "read_only": 1,
-   "description": "Selling price minus calculated price; goes to the library."
+   "description": "Selling price minus calculated price: added to the library's profit, or taken from it when negative. The doctor's amount does not change."
   },
   {
    "default": "Active",
@@ -192,7 +192,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-08 14:00:00.000000",
+ "modified": "2026-10-08 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",
