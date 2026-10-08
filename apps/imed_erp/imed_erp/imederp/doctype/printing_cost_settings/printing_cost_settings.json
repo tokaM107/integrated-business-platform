@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "creation": "2026-10-08 12:00:00.000000",
+ "description": "What printed sheets and books cost and earn. Change a rate here when prices change; editions take the rates while they are drafts and keep them once submitted.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "per_sheet_section",
+  "waste_per_sheet",
+  "ink_per_sheet",
+  "column_break_sheet",
+  "overheads_per_sheet",
+  "profit_per_sheet",
+  "per_copy_section",
+  "binding_per_copy"
+ ],
+ "fields": [
+  {
+   "description": "The paper itself is the moving average price paid for A4 paper in each library's raw materials store, from the boxes bought; it is not entered here.",
+   "fieldname": "per_sheet_section",
+   "fieldtype": "Section Break",
+   "label": "Per Sheet"
+  },
+  {
+   "default": "0.04",
+   "description": "Sheets spoilt in printing, per sheet printed.",
+   "fieldname": "waste_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Waste per Sheet",
+   "precision": "4",
+   "reqd": 1
+  },
+  {
+   "default": "0.10",
+   "fieldname": "ink_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Ink per Sheet",
+   "precision": "4",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_sheet",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0.05",
+   "description": "Rent, electricity, salaries and machine rental, per sheet.",
+   "fieldname": "overheads_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Overheads per Sheet",
+   "precision": "4",
+   "reqd": 1
+  },
+  {
+   "default": "0.25",
+   "fieldname": "profit_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Profit per Sheet",
+   "precision": "4",
+   "reqd": 1
+  },
+  {
+   "fieldname": "per_copy_section",
+   "fieldtype": "Section Break",
+   "label": "Books, per Copy"
+  },
+  {
+   "default": "20",
+   "fieldname": "binding_per_copy",
+   "fieldtype": "Currency",
+   "label": "Binding per Copy",
+   "reqd": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-08 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Printing Cost Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
