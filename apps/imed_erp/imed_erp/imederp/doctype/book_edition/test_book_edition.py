@@ -71,33 +71,72 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 				"edition_name": f"_Test Edition {frappe.generate_hash(length=6)}",
 				"agreement": agreement,
 				"cost_center": LIBRARY,
-				"pages": 200,
-				"unit_cost": 0.06,
-				"owner_share": 0.1,
+				"pages": 210,
+				"ink_cost": 0.10,
+				"overhead_cost": 0.05,
+				"owner_share": 0.25,
+				"binding_cost": 20,
 				**values,
 			}
 		).insert()
 
 	@patch(PAPER_COST, return_value=0.30)
-	def test_price_is_per_copy_and_rounded_up_to_the_owner(self, _):
-		# Paper 0.26 average + 0.04 waste = 0.30; + 0.06 ink and binding + 0.10 owner = 0.46 a sheet.
-		# 0.46 x 200 sheets = 92, + 15 doctor's share = 107 -> sold at 110, 3 to the owner.
-		edition = self.make_edition(make_agreement("Books", "Fixed", 15))
+	def test_price_is_per_copy_with_no_rounding(self, _):
+		# Paper 0.26 average + 0.04 waste = 0.30; + 0.10 ink + 0.05 overheads + 0.25 profit = 0.70 a sheet.
+		# 0.70 x 210 sheets = 147, + 20 binding + 80 the doctor asked for = 247, sold at 247.
+		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
 		self.assertEqual(edition.paper_cost, 0.30)
-		self.assertEqual(edition.doctor_share, 15)
-		self.assertEqual(edition.calculated_price, 107)
-		self.assertEqual(edition.selling_price, 110)
-		self.assertEqual(edition.rounding_diff, 3)
+		self.assertEqual(edition.doctor_share, 80)
+		self.assertEqual(edition.calculated_price, 247)
+		self.assertEqual(edition.selling_price, 247)
+		self.assertEqual(edition.rounding_diff, 0)
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_marketing_is_optional_and_added_per_copy(self, _):
+		edition = self.make_edition(make_agreement("Books", "Fixed", 80), marketing_cost=10)
+		self.assertEqual(edition.calculated_price, 257)
+		self.assertEqual(edition.selling_price, 257)
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_rates_come_from_the_settings_and_stay_once_submitted(self, _):
+		settings = frappe.get_single("Printing Cost Settings")
+		settings.update({"ink_per_sheet": 0.08, "overheads_per_sheet": 0.06, "profit_per_sheet": 0.20, "binding_per_copy": 25})
+		settings.save()
+		edition = frappe.get_doc(
+			{
+				"doctype": "Book Edition",
+				"edition_name": f"_Test Edition {frappe.generate_hash(length=6)}",
+				"agreement": make_agreement("Books", "Fixed", 80),
+				"cost_center": LIBRARY,
+				"pages": 100,
+			}
+		).insert()
+		self.assertEqual(
+			(edition.ink_cost, edition.overhead_cost, edition.owner_share, edition.binding_cost), (0.08, 0.06, 0.20, 25)
+		)
+		edition.submit()
+
+		# A later price change on the settings leaves the submitted edition as it was approved.
+		settings.ink_per_sheet = 0.15
+		settings.save()
+		edition.reload()
+		self.assertEqual(edition.ink_cost, 0.08)
+
+	def test_settings_rates_cannot_be_negative(self):
+		settings = frappe.get_single("Printing Cost Settings")
+		settings.waste_per_sheet = -0.01
+		self.assertRaises(frappe.ValidationError, settings.save)
 
 	@patch(PAPER_COST, return_value=0.30)
 	def test_selling_price_cannot_cut_into_the_shares(self, _):
-		agreement = make_agreement("Books", "Fixed", 15)
-		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, selling_price=100)
-		self.assertEqual(self.make_edition(agreement, selling_price=120).rounding_diff, 13)
+		agreement = make_agreement("Books", "Fixed", 80)
+		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, selling_price=240)
+		# A higher price set by hand: the difference goes to the library.
+		self.assertEqual(self.make_edition(agreement, selling_price=260).rounding_diff, 13)
 
 	@patch(PAPER_COST, return_value=0)
 	def test_no_approval_without_a_paper_price(self, _):
-		edition = self.make_edition(make_agreement("Books", "Fixed", 15))
+		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
 		self.assertRaises(frappe.ValidationError, edition.submit)
 
 	def test_edition_belongs_to_a_books_agreement(self):
