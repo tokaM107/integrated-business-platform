@@ -180,12 +180,21 @@ doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 doc_events = {
 	"Journal Entry": {
-		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
-		"before_cancel": "imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
+		"validate": [
+			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+		],
+		"before_cancel": [
+			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
+			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
+		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Payment Entry": {
-		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+		"validate": [
+			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Sales Invoice": {
