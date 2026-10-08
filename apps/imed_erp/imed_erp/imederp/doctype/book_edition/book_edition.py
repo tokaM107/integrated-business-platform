@@ -11,7 +11,8 @@ PAPER = "A4-PAPER"
 LIBRARY_PAPER_STORE = {"مكتبة المواساة": "خامات المواساة", "مكتبة الأزاريطة": "خامات الأزاريطة"}
 
 # No rounding (owner's decision of 8 Oct 2026, instead of DOC-28): the price is the calculated price, unless
-# a higher one is set by hand, and the difference goes to the library.
+# another one is set by hand. A higher price adds to the library's profit; a lower one, to sell more, comes
+# out of it. The doctor's amount never changes.
 
 # Rate on the edition <- rate in Printing Cost Settings, filled in when left empty.
 DEFAULT_RATES = {
@@ -63,13 +64,18 @@ class BookEdition(Document):
         self.calculated_price = flt(per_sheet * cint(self.pages) + per_copy, 2)
         if not self.selling_price:
             self.selling_price = self.calculated_price
-        if flt(self.selling_price) < self.calculated_price:
-            frappe.throw(
-                _("Final Selling Price {0} is below the calculated price {1}; the difference would come out of the shares.").format(
-                    self.selling_price, self.calculated_price
-                )
-            )
         self.rounding_diff = flt(self.selling_price) - self.calculated_price
+
+        # Below cost the library loses on every copy: allowed, but said plainly.
+        cost = flt(per_sheet - flt(self.owner_share)) * cint(self.pages) + per_copy - flt(self.marketing_cost)
+        if flt(self.selling_price) < flt(cost, 2):
+            frappe.msgprint(
+                _("Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.").format(
+                    self.selling_price, flt(cost, 2), flt(cost - flt(self.selling_price), 2)
+                ),
+                title=_("Selling at a Loss"),
+                indicator="orange",
+            )
 
 
 def get_paper_cost(cost_center, waste_per_sheet=None):
