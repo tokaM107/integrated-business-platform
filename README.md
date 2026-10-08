@@ -108,7 +108,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
 | Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
-| Expense | full | create, edit, submit (no cancel/delete); above the approval threshold, submit only once the owner approves |
+| Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the owner approves it |
 | Inter Business Transfer | full | Accounts User: read only. Branch Manager: create, edit, submit (no cancel/delete) |
 | Expense Category | full | read only |
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
@@ -149,13 +149,14 @@ and expense numbers would jump whenever a bill or a rule is made.
 - Branch managers make regular journal entries too (create and submit; no cancel, amend or delete). They
   only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
   premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
-- A branch manager pays expenses and sends transfers only from their own business's cash box or the
+- A branch manager pays expenses, sends transfers and makes journal and payment entries only from their
+  own business's cash box or the
   group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
 
 **Expense Approver** is not a requirement role but a marker the code checks: its holders approve or
-reject expenses above the approval threshold (EXP-06). Only the owner has it.
+reject expenses (EXP-06). Only the owner has it.
 
 Rows for modules not built yet (bookings, integrations, price approval) are listed by `verify_users.py` as
 not checked. The AI assistant is limited to the owner on the server (`assistant/api.py`).
@@ -373,8 +374,9 @@ skips a notification a user already has for the same document, so a second run t
 
 ### Expense approval (EXP-06)
 
-Expenses whose amount is above the **Approval Threshold** in Expense Settings are posted only once the
-owner approves them. An empty (or zero) threshold means no expense needs approval.
+**Every expense** is paid and posted only once the owner approves it, whatever its amount (owner's decision
+of 8 Oct 2026). There is no threshold, and Expense Settings (reminder days) can be changed by the owner
+only, so nobody else can switch the approval off.
 
 1. The accountant saves the expense with its receipt and clicks **Request Approval** (Submit is refused
    while the expense needs approval). The owner receives an in-app alert.
@@ -386,7 +388,7 @@ owner approves them. An empty (or zero) threshold means no expense needs approva
 
 Changing the amount, category, business, treasury or receipt after a request or an approval clears it,
 so the expense as changed needs approval again.
-The owner's own expenses above the threshold are approved as he submits them. Approval is by the
+The owner's own expenses are approved as he submits them. Approval is by the
 **Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
 
