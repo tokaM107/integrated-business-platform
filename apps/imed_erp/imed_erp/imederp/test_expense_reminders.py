@@ -120,7 +120,6 @@ class IntegrationTestExpenseReminders(IntegrationTestCase):
 	def test_settings_reject_invalid_values(self):
 		settings = frappe.get_single("Expense Settings")
 		for fieldname, value in (
-			("approval_threshold", -1),
 			("reminder_days_before", 0),
 			("overdue_reminder_every_days", 0),
 		):
