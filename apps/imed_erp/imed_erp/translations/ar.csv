@@ -186,14 +186,8 @@ Sheets per Copy,عدد الورق في النسخة
 Doctor Requested Qty,الكمية بطلب الطبيب
 Library Extra Qty,الكمية الإضافية للمكتبة
 Sold Qty,الكمية المباعة
-Owner Share per Sheet,نصيب المالك في الورقة
-Doctor Share per Copy,نصيب الطبيب في النسخة
-Filled in from the agreement when its share is a fixed amount per copy.,بيتملى من الاتفاقية لو نصيب الطبيب مبلغ ثابت للنسخة.
 Calculated Price per Copy,السعر المحسوب للنسخة
 Final Selling Price per Copy,سعر البيع النهائي للنسخة
-"Left empty, the calculated price rounded up to the nearest 5 EGP. Cannot be below the calculated price.",لو فاضي، بيبقى السعر المحسوب مقرّب لأعلى لأقرب 5 جنيه. مينفعش يكون أقل من السعر المحسوب.
-Rounding to Owner,فرق التقريب للمالك
-Selling price minus calculated price; goes to the owner.,سعر البيع ناقص السعر المحسوب، وبيروح للمالك.
 Carried Forward,مُرحّل
 App Subscription,اشتراك تطبيق
 Student,الطالب
@@ -210,9 +204,31 @@ Doctor Share Type,نوع نصيب الطبيب
 {0} is not a library. Printer readings are recorded for a library.,{0} مش مكتبة. قراءات العدادات بتتسجل للمكتبات بس.
 {0} is in the closed accounting period {1}. Choose a date in an open month.,{0} في الفترة المحاسبية المقفولة {1}. اختار تاريخ في شهر مفتوح.
 Period Closed,الفترة مقفولة
-Paper Cost per Sheet,تكلفة ورق الورقة
-"Moving average price of A4 paper in the library's raw materials store, plus 0.04 EGP waste per sheet. Taken while the edition is a draft and fixed when it is submitted.",متوسط سعر ورق A4 في مخزن خامات المكتبة، + 4 قروش هدر لكل ورقة. بيتحسب والإصدار مسودة، وبيثبت لما يتسجل.
-Other Manufacturing Cost per Sheet,باقي تكلفة التصنيع للورقة
-"Ink, cover and binding per sheet; paper is above.",الحبر والغلاف والتجليد للورقة؛ الورق محسوب فوق.
-(Paper + other manufacturing cost + owner share) per sheet x sheets per copy + doctor share.,(الورق + باقي تكلفة التصنيع + نصيب المالك) للورقة × عدد الورق + نصيب الطبيب.
 A4 paper has no price yet in {0}; receive paper before approving the edition.,ورق A4 لسه مالوش سعر في {0}؛ استلم ورق الأول قبل تسجيل الإصدار.
+Printing Cost Settings,تكاليف الطباعة
+What printed sheets and books cost and earn. Change a rate here when prices change; editions take the rates while they are drafts and keep them once submitted.,تكلفة الورق المطبوع والكتب ومكسبها. غيّر السعر هنا لما الأسعار تتغير؛ الإصدارات بتاخد الأسعار وهي مسودة، وبتحتفظ بيها بعد التسجيل.
+Per Sheet,للورقة
+"The paper itself is the moving average price paid for A4 paper in each library's raw materials store, from the boxes bought; it is not entered here.",سعر الورقة نفسها بيتحسب لوحده: متوسط سعر ورق A4 في مخزن خامات كل مكتبة، من الكراتين اللي اتشرت؛ مش بيتكتب هنا.
+Waste per Sheet,الهدر للورقة
+"Sheets spoilt in printing, per sheet printed.",الورق اللي بيبوظ في الطباعة، لكل ورقة مطبوعة.
+Ink per Sheet,الحبر للورقة
+Overheads per Sheet,المشغولات للورقة
+"Rent, electricity, salaries and machine rental, per sheet.",الإيجار والكهربا والمرتبات وإيجار المكنة، للورقة.
+Profit per Sheet,المكسب للورقة
+"Books, per Copy",الكتب، للنسخة
+Binding per Copy,التجليد للنسخة
+"{0} cannot be negative, got {1}.",{0} مينفعش يكون بالسالب، والمكتوب {1}.
+Paper per Sheet,الورق للورقة
+"Moving average price of A4 paper in the library's raw materials store, plus the waste in Printing Cost Settings.",متوسط سعر ورق A4 في مخزن خامات المكتبة، + الهدر من تكاليف الطباعة.
+From Printing Cost Settings when left empty.,لو فاضي، بيتملى من تكاليف الطباعة.
+"Rent, electricity, salaries and machine rental. From Printing Cost Settings when left empty.",الإيجار والكهربا والمرتبات وإيجار المكنة. لو فاضي، بيتملى من تكاليف الطباعة.
+The library's profit. From Printing Cost Settings when left empty.,مكسب المكتبة. لو فاضي، بيتملى من تكاليف الطباعة.
+Marketing per Copy,الماركتنج للنسخة
+"Optional: an extra amount per copy for selling the book. Goes to the library, not to the doctor.",اختياري: مبلغ زيادة للنسخة عشان بيع الكتاب. بيروح للمكتبة مش للطبيب.
+Doctor's Amount per Copy,حق الطبيب في النسخة
+What the doctor asked for each copy; filled in from his agreement when it is a fixed amount.,اللي الطبيب طالبه في كل نسخة؛ بيتملى من اتفاقيته لو مبلغ ثابت.
+"(Paper + ink + overheads + profit) per sheet x sheets + binding + marketing + doctor's amount, per copy.",(الورق + الحبر + المشغولات + المكسب) للورقة × عدد الورق + التجليد + الماركتنج + حق الطبيب، للنسخة.
+Rates come from Printing Cost Settings while the edition is a draft and are kept once it is submitted. Change one here for this edition only.,الأسعار بتيجي من تكاليف الطباعة والإصدار مسودة، وبتتثبت لما يتسجل. غيّر أي واحد هنا للإصدار ده بس.
+"Left empty, the calculated price. A higher price can be set by hand; it cannot be below the calculated price.",لو فاضي، بيبقى السعر المحسوب. ينفع يتكتب سعر أعلى بالإيد؛ ومينفعش يكون أقل من المحسوب.
+Above Calculated Price,الزيادة عن السعر المحسوب
+Selling price minus calculated price; goes to the library.,سعر البيع ناقص السعر المحسوب، وبيروح للمكتبة.
