@@ -318,6 +318,76 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 		self.assertRaises(frappe.ValidationError, expense.insert)
 
 
+	def test_branch_manager_pays_from_their_own_cash_box(self):
+		# Sara runs Azarita's library: its cash box or the group's wallets, not another business's treasury.
+		receipt = self.upload()
+		frappe.set_user("sara@imed.local")
+		try:
+			azarita = "مكتبة الأزاريطة - MMG"
+			for treasury in ("الخزينة الرئيسية - MMG", "خزينة مكتبة المواساة - MMG"):
+				with self.subTest(treasury):
+					expense = self.new_expense(activity=azarita, treasury=treasury, receipt=receipt)
+					self.assertRaises(frappe.ValidationError, expense.insert)
+			for treasury in ("خزينة مكتبة الأزاريطة - MMG", "محفظة InstaPay - MMG"):
+				self.new_expense(activity=azarita, treasury=treasury, receipt=receipt).insert()
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_posted_expense_is_never_deleted(self):
+		# ACC-07: a mistake is cancelled, which keeps it on record; only a draft can be deleted.
+		expense = self.submit_expense()
+		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "Expense", expense.name)
+		expense.cancel()
+		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "Expense", expense.name)
+
+		# Only the owner deletes, even a draft.
+		draft = self.new_expense().insert()
+		frappe.set_user("accountant@imed.local")
+		try:
+			self.assertRaises(frappe.PermissionError, frappe.delete_doc, "Expense", draft.name)
+		finally:
+			frappe.set_user("Administrator")
+		frappe.set_user("owner@imed.local")
+		try:
+			frappe.delete_doc("Expense", draft.name)
+		finally:
+			frappe.set_user("Administrator")
+		self.assertFalse(frappe.db.exists("Expense", draft.name))
+
+	def test_every_financial_doctype_keeps_its_guards(self):
+		# hooks.py lists each doctype once: a second entry for the same doctype would replace the first,
+		# and the delete guard or the closed-period check would stop running without any error.
+		from imed_erp.imederp.no_delete import FINANCIAL_DOCTYPES
+		from imed_erp.imederp.period_lock import LOCKED_DOCTYPES
+
+		events = frappe.get_hooks("doc_events", app_name="imed_erp")
+		for doctype in FINANCIAL_DOCTYPES:
+			with self.subTest(doctype):
+				self.assertIn("imed_erp.imederp.no_delete.block_delete_of_posted", events[doctype]["on_trash"])
+		for doctype in LOCKED_DOCTYPES:
+			with self.subTest(doctype):
+				self.assertIn("imed_erp.imederp.period_lock.validate_closed_period", events[doctype]["validate"])
+		# The reorder alerts (LIB-04) are still there next to them.
+		self.assertIn("imed_erp.imederp.stock_reorder.alert_on_reorder_level", events["Stock Entry"]["on_submit"])
+
+	def test_no_expense_in_a_closed_month(self):
+		period = frappe.get_doc(
+			{
+				"doctype": "Accounting Period",
+				"period_name": "_Test Closed Month",
+				"start_date": "2026-08-01",
+				"end_date": "2026-08-31",
+				"company": COMPANY,
+				"closed_documents": [{"document_type": "Expense", "closed": 1}],
+			}
+		).insert()
+		try:
+			self.assertRaises(frappe.ValidationError, self.new_expense(posting_date="2026-08-15").insert)
+			self.new_expense(posting_date="2026-09-15").insert()
+		finally:
+			frappe.delete_doc("Accounting Period", period.name)
+
+
 OWNER = "owner@imed.local"
 ACCOUNTANT = "accountant@imed.local"
 
@@ -405,3 +475,37 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		expense.submit()
 		self.assertEqual(expense.docstatus, 1)
 		self.assertEqual(expense.approval_status, "Approved")
+
+	def test_decision_goes_to_who_asked_for_approval(self):
+		# A monthly draft is made by the scheduler, as Administrator; the accountant asks for the approval.
+		expense = self.new_expense(amount=46000, receipt=self.upload()).insert()
+		frappe.set_user(ACCOUNTANT)
+		expense = frappe.get_doc("Expense", expense.name)
+		expense.request_approval()
+		self.assertEqual(expense.approval_requested_by, ACCOUNTANT)
+
+		self.as_user(OWNER, expense).approve()
+		self.assertTrue(
+			frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": ACCOUNTANT})
+		)
+
+	def test_rejection_reason_is_kept_as_typed(self):
+		expense = self.draft(46000)
+		expense.request_approval()
+		self.as_user(OWNER, expense).reject("المبلغ {0} غلط")
+		self.assertEqual(frappe.db.get_value("Expense", expense.name, "rejection_reason"), "المبلغ {0} غلط")
+
+	def test_changing_what_was_approved_needs_approval_again(self):
+		other_treasury = frappe.get_all(
+			"Account",
+			filters={"company": COMPANY, "is_group": 0, "account_type": "Cash", "name": ["!=", self.treasury]},
+			limit=1,
+			pluck="name",
+		)[0]
+		for field, value in (("expense_category", self.water), ("treasury", other_treasury)):
+			with self.subTest(field):
+				expense = self.draft(46000)
+				expense.request_approval()
+				expense.set(field, value)
+				expense.save()
+				self.assertFalse(expense.approval_status)

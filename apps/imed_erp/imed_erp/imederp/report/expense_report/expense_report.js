@@ -43,7 +43,7 @@ frappe.query_reports["Expense Report"] = {
 		},
 		{
 			fieldname: "treasury",
-			label: __("Cash/Bank Account"),
+			label: __("Treasury"),
 			fieldtype: "Link",
 			options: "Account",
 			get_query: () => ({ filters: { account_type: ["in", ["Cash", "Bank"]], is_group: 0 } }),

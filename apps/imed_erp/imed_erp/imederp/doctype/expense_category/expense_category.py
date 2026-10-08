@@ -20,6 +20,9 @@ class ExpenseCategory(NestedSet):
         self.validate_ledger()
         if self.is_group and frappe.db.exists("Expense", {"expense_category": self.name, "docstatus": ["<", 2]}):
             frappe.throw(_("{0} has expenses recorded under it and cannot become a group.").format(self.name))
+        # A monthly bill on it would stop making its drafts, and only the error log would show why.
+        if self.is_group and frappe.db.exists("Recurring Expense", {"expense_category": self.name, "enabled": 1}):
+            frappe.throw(_("{0} has monthly bills on it and cannot become a group.").format(self.name))
 
     def validate_parent(self):
         if self.parent_expense_category and not frappe.db.get_value(

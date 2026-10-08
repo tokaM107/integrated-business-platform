@@ -60,12 +60,12 @@ Activity and Expense Category,النشاط وتصنيف المصروف
 "Month, Activity and Expense Category",الشهر والنشاط وتصنيف المصروف
 The business the expense is charged to.,النشاط اللي المصروف بيتحمّل عليه.
 The cash or wallet account the money is paid from.,الخزينة أو المحفظة اللي الفلوس بتتدفع منها.
-"A photo or PDF of the receipt. Required before submitting.",صورة أو PDF للإيصال. لازم تكون موجودة قبل الاعتماد.
+A photo or PDF of the receipt. Required before submitting.,صورة أو PDF للإيصال. لازم تكون موجودة قبل التسجيل.
 Taken from the expense category.,بيتاخد من تصنيف المصروف.
-"A group only gathers other categories; expenses are recorded under the categories inside it.",المجموعة بتجمع تصنيفات تانية بس، والمصروفات بتتسجل على التصنيفات اللي جواها.
-"The expense account this category is posted to. Leave empty to use the parent category's account.",حساب المصروف اللي التصنيف ده بيترحّل عليه. سيبه فاضي عشان يستخدم حساب التصنيف الرئيسي.
-Attach the receipt before submitting this expense.,ارفق الإيصال قبل اعتماد المصروف.
-Receipt attachment is required before submitting this expense.,لازم ترفق صورة الإيصال قبل اعتماد المصروف.
+A group only gathers other categories; expenses are recorded under the categories inside it.,المجموعة بتجمع تصنيفات تانية بس، والمصروفات بتتسجل على التصنيفات اللي جواها.
+The expense account this category is posted to. Leave empty to use the parent category's account.,حساب المصروف اللي التصنيف ده بيترحّل عليه. سيبه فاضي عشان يستخدم حساب التصنيف الرئيسي.
+Attach the receipt before submitting this expense.,ارفق الإيصال قبل تسجيل المصروف.
+Receipt attachment is required before submitting this expense.,لازم ترفق صورة الإيصال قبل تسجيل المصروف.
 Receipt Missing,الإيصال مش موجود
 Receipt {0} was not found. Attach the receipt again.,الإيصال {0} مش موجود. ارفق الإيصال تاني.
 "Receipt must be an image or a PDF file, got {0}.",الإيصال لازم يكون صورة أو ملف PDF، والمرفق {0}.
@@ -88,18 +88,18 @@ App Subscriptions,اشتراكات التطبيق
 {0} has expenses recorded under it and cannot become a group.,{0} عليه مصروفات متسجلة ومينفعش يتحول لمجموعة.
 {0} was posted by Expense {1}. Cancel the expense instead.,{0} اترحّل من المصروف {1}. الغي المصروف بدل كده.
 Expense Settings,إعدادات المصروفات
-Approval,الاعتماد
-Approval Threshold,حد الاعتماد
-An expense whose actual amount is above this needs approval before it is posted. Leave empty to approve nothing.,أي مصروف مبلغه الفعلي أكبر من الرقم ده محتاج اعتماد قبل ما يتسجل. سيبه فاضي لو مفيش مصروف محتاج اعتماد.
+Approval,موافقة المالك
+Approval Threshold,حد الموافقة
+An expense whose actual amount is above this needs approval before it is posted. Leave empty to approve nothing.,أي مصروف مبلغه الفعلي أكبر من الرقم ده محتاج موافقة المالك قبل ما يتسجل. سيبه فاضي أو صفر لو مفيش مصروف محتاج موافقة.
 Recurring Expense Reminders,تذكيرات المصروفات المتكررة
 Remind Days Before,التذكير قبلها بكام يوم
 Remind the owner and the accountant this many days before a recurring expense is due.,تذكير المالك والمحاسب قبل معاد المصروف المتكرر بالعدد ده من الأيام.
 Repeat Overdue Reminder Every (Days),تكرار تذكير المتأخر كل (يوم)
 "While a generated recurring expense is still a draft after its date, remind again every this many days.",طول ما المصروف المتكرر لسه مسودة بعد معاده، التذكير يتكرر كل العدد ده من الأيام.
-"Approval Threshold cannot be negative, got {0}.",حد الاعتماد مينفعش يكون بالسالب، والمكتوب {0}.
+"Approval Threshold cannot be negative, got {0}.",حد الموافقة مينفعش يكون بالسالب، والمكتوب {0}.
 "{0} must be at least 1 day, got {1}.",{0} لازم يكون يوم واحد على الأقل، والمكتوب {1}.
 "Recurring expense {0} ({1}) is due on {2}, expected {3}.",مصروف متكرر: {0} ({1}) معاده {2}، والمتوقع {3}.
-"Recurring expense {0} ({1}) was due on {2} and is still a draft, {3} days late. Enter the actual amount, attach the receipt and submit it.",مصروف متكرر: {0} ({1}) كان معاده {2} ولسه مسودة، متأخر {3} يوم. اكتب المبلغ الفعلي وارفع الإيصال واعتمده.
+"Recurring expense {0} ({1}) was due on {2} and is still a draft, {3} days late. Enter the actual amount, attach the receipt and submit it.",مصروف متكرر: {0} ({1}) كان معاده {2} ولسه مسودة، متأخر {3} يوم. اكتب المبلغ الفعلي وارفع الإيصال وسجّله.
 Recurring Expense,مصروف متكرر
 Expected Amount,المبلغ المتوقع
 Day of Month,يوم الشهر
@@ -107,42 +107,41 @@ Next Due Date,المعاد الجاي
 The place this bill is for.,المكان اللي الفاتورة دي بتاعته.
 The cash box or wallet this bill is paid from.,الخزنة أو المحفظة اللي الفاتورة بتتدفع منها.
 "In a shorter month, its last day.",لو الشهر أقصر، آخر يوم فيه.
-"When the next draft expense is made. Filled in from the day of the month; set it to start from another month.",إمتى تتعمل مسودة المصروف الجاية. بتتملى لوحدها من يوم الشهر؛ غيّرها لو عايز تبدأ من شهر تاني.
+When the next draft expense is made. Filled in from the day of the month; set it to start from another month.,إمتى تتعمل مسودة المصروف الجاية. بتتملى لوحدها من يوم الشهر؛ غيّرها لو عايز تبدأ من شهر تاني.
 Copied into each month's expense.,بيتنسخ في مصروف كل شهر.
 "Day of Month must be between 1 and 31, got {0}.",يوم الشهر لازم يكون من 1 لـ 31، والمكتوب {0}.
 Recurring Expense {0} could not make its expense,المصروف المتكرر {0} معرفش يعمل المصروف بتاعه
 Monthly Bill,الفاتورة الشهرية
 "What the bill usually comes to. When set, each month's expense is made as a draft with it, and the actual amount is entered there; changing it here changes the months to come. Leave empty to have the accountant enter the expense himself.",الفاتورة بتيجي كام في العادي. لو مكتوب، مصروف كل شهر بيتعمل لوحده كمسودة بالمبلغ ده والمبلغ الفعلي بيتكتب فيها؛ ولو غيرته هنا بيتغير في الشهور الجاية. سيبه فاضي لو المحاسب هيسجل المصروف بنفسه.
 "Expected Amount cannot be negative, got {0}.",المبلغ المتوقع مينفعش يكون بالسالب، والمكتوب {0}.
-"Recurring expense {0} ({1}) is due on {2}.",مصروف متكرر: {0} ({1}) معاده {2}.
+Recurring expense {0} ({1}) is due on {2}.,مصروف متكرر: {0} ({1}) معاده {2}.
 Repeats,بيتكرر؟
 This Month Only,الشهر ده بس
 Every Month,كل شهر
 "Every Month: pick one of this place's monthly bills. If the bill is not there, fill it in yourself; it is added to the place's monthly bills when this expense is submitted.",كل شهر: اختار فاتورة من فواتير المكان ده الشهرية. لو الفاتورة مش موجودة املاها بنفسك، وهتتضاف لفواتير المكان الشهرية لما المصروف يتعتمد.
 Fills in the category and treasury. Only this place's bills are listed.,بتملا التصنيف والخزنة لوحدها. القايمة فيها فواتير المكان ده بس.
 "Monthly bill {0} is for {1}, not {2}.",الفاتورة الشهرية {0} بتاعة {1}، مش {2}.
-Expense Approver,معتمد المصروفات
-Approval Status,حالة الاعتماد
-Pending Approval,مستني الاعتماد
-Approved,اتعتمد
-Rejected,اترفض
+Expense Approver,موافق المصروفات
+Approval Status,حالة الموافقة
+Pending Approval,في انتظار الموافقة
+Approved,تمت الموافقة
 Decided By,اللي قرر
 Rejection Reason,سبب الرفض
-Request Approval,اطلب الاعتماد
-Approve,اعتماد
+Request Approval,اطلب موافقة المالك
+Approve,موافقة
 Reject,رفض
 Reject Expense,رفض المصروف
 Waiting for the owner's approval.,مستني موافقة المالك.
 This expense was rejected and is closed. Make a new expense if it is still needed.,المصروف ده اترفض واتقفل. اعمل مصروف جديد لو لسه محتاجه.
 Expense {0} was rejected and cannot be changed. Make a new expense instead.,المصروف {0} اترفض ومينفعش يتعدل. اعمل مصروف جديد بداله.
-This expense is above the approval threshold of {0}. Request the owner's approval first.,المصروف ده أكبر من حد الاعتماد ({0}). اطلب موافقة المالك الأول.
-Approval Needed,محتاج اعتماد
-Approval can only be requested for a draft that has not been sent yet.,طلب الاعتماد بيتعمل بس لمسودة لسه متبعتتش.
-This expense is not above the approval threshold. Submit it directly.,المصروف ده مش أكبر من حد الاعتماد. اعتمده على طول.
+This expense is above the approval threshold of {0}. Request the owner's approval first.,المصروف ده أكبر من حد الموافقة ({0}). اطلب موافقة المالك الأول.
+Approval Needed,محتاج موافقة
+Approval can only be requested for a draft that has not been sent yet.,طلب الموافقة بيتعمل بس لمسودة لسه متبعتتش.
+This expense is not above the approval threshold. Submit it directly.,المصروف ده مش أكبر من حد الموافقة. سجّله على طول.
 Expense {0} of {1} for {2} ({3}) is waiting for your approval.,المصروف {0} بمبلغ {1} لـ {2} ({3}) مستني موافقتك.
 Expense {0} was approved and posted.,المصروف {0} اتوافق عليه واتسجل.
 Expense {0} was rejected.,المصروف {0} اترفض.
-Expense {0} is not waiting for approval.,المصروف {0} مش مستني اعتماد.
+Expense {0} is not waiting for approval.,المصروف {0} مش مستني موافقة.
 Recurring Expenses,المصروفات المتكررة
 Allocation Rules,قواعد التوزيع
 Allocation Rule,قاعدة توزيع
@@ -151,8 +150,7 @@ Shared Cost Center,المركز المشترك
 "The shared cost center whose expenses are split, e.g. the center's shared premises.",المركز المشترك اللي مصروفاته بتتقسم، زي مصروفات المقر المشتركة.
 "Expenses dated from this day on are split by this rule. It cannot be on or before an expense already posted on the shared cost center, so past months stay as they are.",المصروفات اللي تاريخها من اليوم ده بتتقسم بالقاعدة دي. مينفعش يكون في يوم آخر مصروف اتسجل على المركز المشترك أو قبله، عشان الشهور اللي فاتت تفضل زي ما هي.
 Businesses,الأنشطة
-"Made when this rule is submitted; ERPNext splits the expenses by it.",بيتعمل لما القاعدة تتعتمد، وERPNext بيقسم المصروفات على أساسه.
-Share,النسبة
+Made when this rule is submitted; ERPNext splits the expenses by it.,بيتعمل لما القاعدة تتعتمد، وERPNext بيقسم المصروفات على أساسه.
 Row {0}: {1} is already in the rule. Each business can appear only once.,السطر {0}: {1} موجود قبل كده في القاعدة. كل نشاط يتكتب مرة واحدة بس.
 Row {0}: the shared cost center {1} cannot share its own expenses.,السطر {0}: المركز المشترك {1} مينفعش يكون جوه توزيع مصروفاته.
 Row {0}: {1} is a group. Choose a business under it.,السطر {0}: {1} مجموعة. اختار نشاط من اللي تحتها.
@@ -161,3 +159,77 @@ Row {0}: {1} is a group. Choose a business under it.,السطر {0}: {1} مجم�
 "Why these shares, e.g. who agreed to them and what they are based on (usage, area, revenue).",ليه النسب دي، زي مين وافق عليها ومبنية على إيه (الاستخدام أو المساحة أو الإيراد).
 "Its share of the shared expenses, in %.",نصيبه من المصروفات المشتركة بالـ %.
 "Valid From must be after {0}, the date rule {1} starts on.",تاريخ السريان لازم يكون بعد {0}، اليوم اللي القاعدة {1} بتبدأ فيه.
+Share (%),النسبة (%)
+Approval Requested By,طلب الموافقة
+{0} is not a treasury of {1}. Choose one of: {2}.,{0} مش خزنة {1}. اختار واحدة من: {2}.
+Wrong Treasury,خزنة غلط
+"{0} {1} was submitted, so it cannot be deleted. Cancel it instead: it stays on record.",{0} {1} اتسجل، فمينفعش يتمسح. الغيه بدل كده، وهيفضل محفوظ.
+Cannot Delete,مينفعش يتمسح
+{0} has monthly bills on it and cannot become a group.,{0} عليه فواتير شهرية ومينفعش يتحول لمجموعة.
+"Expense {0} of {1} for {2} ({3}) is still waiting for your approval, {4} days after its date.",المصروف {0} بمبلغ {1} لـ {2} ({3}) لسه مستني موافقتك، بعد معاده بـ {4} يوم.
+Agreement {0} is not a books agreement.,الاتفاقية {0} مش اتفاقية كتب.
+Agreement {0} is not an app agreement.,الاتفاقية {0} مش اتفاقية تطبيق.
+Treasury,الخزنة
+Doctor Agreement,اتفاقية طبيب
+Agreement Name,اسم الاتفاقية
+Doctor,الطبيب
+Agreement Type,نوع الاتفاقية
+Books,الكتب
+Share Value,قيمة النصيب
+Settlement Cycle,دورة التسوية
+Balance,الرصيد
+Book Edition,إصدار كتاب
+Edition Name,اسم الإصدار
+Agreement,الاتفاقية
+Sheets per Copy,عدد الورق في النسخة
+Doctor Requested Qty,الكمية بطلب الطبيب
+Library Extra Qty,الكمية الإضافية للمكتبة
+Sold Qty,الكمية المباعة
+Calculated Price per Copy,السعر المحسوب للنسخة
+Final Selling Price per Copy,سعر البيع النهائي للنسخة
+Carried Forward,مُرحّل
+App Subscription,اشتراك تطبيق
+Student,الطالب
+Course,الكورس
+Platform Fee (Due from Doctor),رسوم المنصة (على الطبيب)
+"Due from the doctor for this student, by the term's tier. The course itself is paid to the doctor directly and is not recorded.",مستحقة على الطبيب عن الطالب ده حسب شريحة الترم. تمن الكورس نفسه بيتدفع للطبيب مباشرة ومش بيتسجل هنا.
+Printer Reading,قراءة عداد
+Consumed Sheets,الورق المستهلك
+Sold Sheets,الورق المباع
+Doctor Ledger Entry,حركة حساب طبيب
+Edition,الإصدار
+Parent Period,الفترة الأم
+Doctor Share Type,نوع نصيب الطبيب
+{0} is not a library. Printer readings are recorded for a library.,{0} مش مكتبة. قراءات العدادات بتتسجل للمكتبات بس.
+{0} is in the closed accounting period {1}. Choose a date in an open month.,{0} في الفترة المحاسبية المقفولة {1}. اختار تاريخ في شهر مفتوح.
+Period Closed,الفترة مقفولة
+A4 paper has no price yet in {0}; receive paper before approving the edition.,ورق A4 لسه مالوش سعر في {0}؛ استلم ورق الأول قبل تسجيل الإصدار.
+Printing Cost Settings,تكاليف الطباعة
+What printed sheets and books cost and earn. Change a rate here when prices change; editions take the rates while they are drafts and keep them once submitted.,تكلفة الورق المطبوع والكتب ومكسبها. غيّر السعر هنا لما الأسعار تتغير؛ الإصدارات بتاخد الأسعار وهي مسودة، وبتحتفظ بيها بعد التسجيل.
+Per Sheet,للورقة
+"The paper itself is the moving average price paid for A4 paper in each library's raw materials store, from the boxes bought; it is not entered here.",سعر الورقة نفسها بيتحسب لوحده: متوسط سعر ورق A4 في مخزن خامات كل مكتبة، من الكراتين اللي اتشرت؛ مش بيتكتب هنا.
+Waste per Sheet,الهدر للورقة
+"Sheets spoilt in printing, per sheet printed.",الورق اللي بيبوظ في الطباعة، لكل ورقة مطبوعة.
+Ink per Sheet,الحبر للورقة
+Overheads per Sheet,المشغولات للورقة
+"Rent, electricity, salaries and machine rental, per sheet.",الإيجار والكهربا والمرتبات وإيجار المكنة، للورقة.
+Profit per Sheet,المكسب للورقة
+"Books, per Copy",الكتب، للنسخة
+Binding per Copy,التجليد للنسخة
+"{0} cannot be negative, got {1}.",{0} مينفعش يكون بالسالب، والمكتوب {1}.
+Paper per Sheet,الورق للورقة
+"Moving average price of A4 paper in the library's raw materials store, plus the waste in Printing Cost Settings.",متوسط سعر ورق A4 في مخزن خامات المكتبة، + الهدر من تكاليف الطباعة.
+From Printing Cost Settings when left empty.,لو فاضي، بيتملى من تكاليف الطباعة.
+"Rent, electricity, salaries and machine rental. From Printing Cost Settings when left empty.",الإيجار والكهربا والمرتبات وإيجار المكنة. لو فاضي، بيتملى من تكاليف الطباعة.
+The library's profit. From Printing Cost Settings when left empty.,مكسب المكتبة. لو فاضي، بيتملى من تكاليف الطباعة.
+Marketing per Copy,الماركتنج للنسخة
+"Optional: an extra amount per copy for selling the book. Goes to the library, not to the doctor.",اختياري: مبلغ زيادة للنسخة عشان بيع الكتاب. بيروح للمكتبة مش للطبيب.
+Doctor's Amount per Copy,حق الطبيب في النسخة
+What the doctor asked for each copy; filled in from his agreement when it is a fixed amount.,اللي الطبيب طالبه في كل نسخة؛ بيتملى من اتفاقيته لو مبلغ ثابت.
+"(Paper + ink + overheads + profit) per sheet x sheets + binding + marketing + doctor's amount, per copy.",(الورق + الحبر + المشغولات + المكسب) للورقة × عدد الورق + التجليد + الماركتنج + حق الطبيب، للنسخة.
+Rates come from Printing Cost Settings while the edition is a draft and are kept once it is submitted. Change one here for this edition only.,الأسعار بتيجي من تكاليف الطباعة والإصدار مسودة، وبتتثبت لما يتسجل. غيّر أي واحد هنا للإصدار ده بس.
+"Left empty, the calculated price. Another price can be set by hand, higher or lower (to sell more); the difference is the library's.",لو فاضي، بيبقى السعر المحسوب. ينفع يتكتب سعر تاني بالإيد، أعلى أو أقل (عشان نبيع أكتر)؛ والفرق على المكتبة.
+Difference from Calculated Price,الفرق عن السعر المحسوب
+"Selling price minus calculated price: added to the library's profit, or taken from it when negative. The doctor's amount does not change.",سعر البيع ناقص السعر المحسوب: بيتزود على مكسب المكتبة، أو بيتخصم منه لو بالسالب. حق الطبيب مابيتغيرش.
+"Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.",سعر البيع {0} أقل من تكلفة النسخة {1}: المكتبة بتخسر {2} في كل نسخة بتتباع.
+Selling at a Loss,بيع بخسارة

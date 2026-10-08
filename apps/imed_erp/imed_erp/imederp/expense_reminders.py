@@ -4,15 +4,18 @@
 # the actual amount, attaches the receipt and submits it. One without an amount is entered by the accountant
 # himself. Two reminders keep them from being forgotten:
 #   - upcoming: a set number of days before the next one is due, for every bill;
-#   - overdue:  while a generated expense is still a draft after its date, again every few days.
+#   - overdue:  while a generated expense is still a draft after its date, again every few days; one waiting
+#               for the owner's approval reminds the owner instead.
 # Both numbers come from Expense Settings.
 #
-# Reminders are in-app notifications of type "Alert", which never send an email.
+# Reminders, like the approval notices on Expense, go through the unified notification service (CORE-10) as
+# in-app alerts.
 
 import frappe
 from frappe import _
-from frappe.desk.doctype.notification_log.notification_log import enqueue_create_notification
 from frappe.utils import add_days, cint, date_diff, fmt_money, formatdate, today
+
+from imed_erp import notification_service
 
 EXPENSE = "Expense"
 
@@ -27,6 +30,7 @@ def send_recurring_expense_reminders():
         return
     remind_upcoming(users, cint(settings.reminder_days_before) or 3)
     remind_overdue(users, cint(settings.overdue_reminder_every_days) or 2)
+    remind_pending_approvals(cint(settings.overdue_reminder_every_days) or 2)
 
 
 def get_recipients():
@@ -84,15 +88,33 @@ def remind_overdue(users, every_days):
         )
 
 
-def notify(users, subject, document_type, document_name):
-    enqueue_create_notification(
-        users,
-        {
-            "type": "Alert",
-            "subject": subject,
-            "document_type": document_type,
-            "document_name": document_name,
-        },
-        # The subject carries the date or the days late, so a second run on the same day adds nothing.
-        dedupe_on=["document_type", "document_name", "subject"],
-    )
+def remind_pending_approvals(every_days):
+    """A monthly draft waiting for the owner's approval past its date reminds the owner, not the accountant."""
+    from imed_erp.imederp.doctype.expense.expense import PENDING, get_approvers
+
+    approvers = get_approvers()
+    if not approvers:
+        return
+    for expense in frappe.get_all(
+        EXPENSE,
+        filters={"docstatus": 0, "approval_status": PENDING, "posting_date": ["<", today()]},
+        fields=["name", "expense_category", "activity", "amount", "posting_date"],
+    ):
+        days_late = date_diff(today(), expense.posting_date)
+        if days_late % every_days:
+            continue
+        notify(
+            approvers,
+            _("Expense {0} of {1} for {2} ({3}) is still waiting for your approval, {4} days after its date.").format(
+                expense.name, fmt_money(expense.amount), expense.expense_category, expense.activity, days_late
+            ),
+            EXPENSE,
+            expense.name,
+        )
+
+
+def notify(users, subject, document_type, document_name, event="expense_reminder"):
+    # Through the unified notification service (CORE-10). The subject carries the date or the days late,
+    # and the service skips a notification a user already has for the same document, so a second run on
+    # the same day adds nothing.
+    notification_service.notify(event, users, {"subject": subject}, document=(document_type, document_name))

@@ -108,7 +108,14 @@ WAREHOUSE_ACCOUNTS = {
 	"مخزن سنتر Imed — أدوات مكتبية": "مخزون سنتر Imed — أدوات مكتبية",
 }
 
-UOMS = ["Nos", "رزمة", "كرتونة"]
+UOMS = ["Nos", "ورقة", "رزمة", "كرتونة", "ساعة"]
+
+# Items stocked in a UOM other than Nos (setup_core.py).
+STOCK_UOMS = {"A4-PAPER": "ورقة", "STUDIO-HOUR": "ساعة", "HALL-HOUR": "ساعة"}
+
+# Paper (setup_core.py): every item in this group is valued at moving average and bought by the box.
+PAPER_GROUP = "ورق"
+PAPER_ITEMS = ["A4-PAPER"]
 
 # (code, is_stock_item, income account, extra UOM conversions, expense account or None)
 ITEMS = [
@@ -242,6 +249,8 @@ def run():
 	# ---------- UOMs ----------
 	for uom in UOMS:
 		report("UOM", uom, [] if frappe.db.exists("UOM", uom) else ["missing"])
+	if not frappe.db.get_value("UOM", "ورقة", "must_be_whole_number"):
+		report("UOM", "ورقة", ["must be whole numbers only"])
 
 	# ---------- Items ----------
 	for code, is_stock_item, income, conversions, expense in ITEMS:
@@ -259,11 +268,27 @@ def run():
 		if expense and (not default or default.expense_account != acc(expense)):
 			found = default.expense_account if default else None
 			errors.append(f"default expense account is {found}, expected {acc(expense)}")
+		stock_uom = STOCK_UOMS.get(code, "Nos")
+		if item.stock_uom != stock_uom:
+			errors.append(f"stock UOM is {item.stock_uom}, expected {stock_uom}")
 		factors = {d.uom: d.conversion_factor for d in item.uoms}
 		for uom, factor in conversions.items():
 			if factors.get(uom) != factor:
 				errors.append(f"{uom} conversion is {factors.get(uom)}, expected {factor}")
 		report("Item", code, errors)
+
+	# ---------- Paper ----------
+	for code in PAPER_ITEMS:
+		if frappe.db.get_value("Item", code, "item_group") != PAPER_GROUP:
+			report("Paper", code, [f"not in item group {PAPER_GROUP}"])
+	for code in frappe.get_all("Item", filters={"item_group": PAPER_GROUP}, pluck="name"):
+		item = frappe.db.get_value("Item", code, ["valuation_method", "purchase_uom"], as_dict=True)
+		errors = []
+		if item.valuation_method != "Moving Average":
+			errors.append(f"valued by {item.valuation_method or 'the default'}, expected Moving Average")
+		if item.purchase_uom != "كرتونة":
+			errors.append(f"bought by {item.purchase_uom or 'its stock UOM'}, expected كرتونة")
+		report("Paper", code, errors)
 
 	# ---------- Users and User Permissions ----------
 	for email, first_name, roles, cost_centers, warehouses in USERS:

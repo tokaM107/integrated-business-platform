@@ -20,7 +20,12 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
   imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
                         Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
                         Expense, Expense Category, Expense Report, Recurring Expense,
-                        Expense Settings, Allocation Rule
+                        Expense Settings, Allocation Rule, Printing Cost Settings,
+                        Inter Business Transfer (and its report);
+                        shared rules: treasuries.py (each business's cash box), no_delete.py,
+                        period_lock.py (closed months), library_revenue.py, expense_reminders.py
+  imed_erp/assistant/   AI assistant (chat window; no model connected yet)
+  imed_erp/notification_service.py   Unified notifications (CORE-10)
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
 frappe_docker/          Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
 ```
@@ -104,13 +109,14 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
 | Expense | full | create, edit, submit (no cancel/delete); above the approval threshold, submit only once the owner approves |
+| Inter Business Transfer | full | Accounts User: read only. Branch Manager: create, edit, submit (no cancel/delete) |
 | Expense Category | full | read only |
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
 | Expense Settings | full | read only |
 | Allocation Rule | full | read only |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
-here. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
+here, except on Inter Business Transfer, which Branch Manager may send. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
 Accountant), as in the permissions matrix.
 
 Academic Periods form a tree: a **Round** belongs to a **Term** and a **Module** to a **Round**
@@ -133,21 +139,31 @@ and expense numbers would jump whenever a bill or a rule is made.
 
 `setup_users.py` applies the matrix rows that exist in the system today:
 
-- Only Super Admin and Accountant can **cancel, amend or delete** a financial document (sales / purchase
-  / POS invoice, payment, journal entry, stock entry, delivery note, purchase receipt, stock
-  reconciliation). Branch managers can create, edit drafts and submit them.
+- Only Super Admin and Accountant can **cancel or amend** a financial document (sales / purchase / POS
+  invoice, payment, journal entry, stock entry, delivery note, purchase receipt, stock reconciliation).
+  Branch managers can create, edit drafts and submit them.
+- **Nothing posted is ever deleted (ACC-07, owner's decision of 7 Oct 2026).** A mistake is cancelled,
+  which reverses it and keeps it on record. `imederp/no_delete.py` refuses to delete any submitted or
+  cancelled financial document, ERPNext's or the app's, for everyone. Only the owner may delete, and only
+  a draft that was never posted; the accountant has every other right.
+- Branch managers make regular journal entries too (create and submit; no cancel, amend or delete). They
+  only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
+  premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
+- A branch manager pays expenses and sends transfers only from their own business's cash box or the
+  group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
 
 **Expense Approver** is not a requirement role but a marker the code checks: its holders approve or
 reject expenses above the approval threshold (EXP-06). Only the owner has it.
 
-Rows for modules not built yet (bookings, integrations, AI assistant, price approval) are listed by
-`verify_users.py` as not checked.
+Rows for modules not built yet (bookings, integrations, price approval) are listed by `verify_users.py` as
+not checked. The AI assistant is limited to the owner on the server (`assistant/api.py`).
 
 ## Notifications (CORE-10)
 
-`imed_erp/notification_service.py` is the one entry point every module uses to notify people:
+`imed_erp/notification_service.py` is the one entry point every module uses to notify people (the expense
+reminders and approval notices included):
 
 ```python
 from imed_erp.notification_service import notify
@@ -223,7 +239,8 @@ already be used and tested.
 ## Language and invoice printing
 
 Everyone who uses the system gets the Arabic interface; Administrator stays in English
-(`setup_regional.py`). Account, item, cost center and warehouse **names** stay in English on purpose.
+(`setup_regional.py`). Account, item, cost center and warehouse names are in Arabic
+(`setup_arabic_names.py`); only the company, the `All Item Groups` root and the `Nos` UOM stay in English.
 
 Sales invoices print with the app's own format, **MMG Sales Invoice**
 (`imederp/print_format/mmg_sales_invoice`), set as the default by `setup_regional.py`:
@@ -269,7 +286,7 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (Ream = 500 sheets, Box = carton = 5 Reams = 2500 sheets) and items. Runs `setup_coa.py` itself, after the warehouses. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
@@ -283,7 +300,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق`, `الهالك والتالف` and `الاشتراكات والسيرفرات` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). The monthly bills sit in two groups: `المرافق` (electricity, water, internet, gas, and rent, which keeps its own account) and `الاشتراكات والسيرفرات` (the app's server and AI subscriptions). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
-| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with all 18 posting document types closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
+| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
 `setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
@@ -292,7 +309,7 @@ hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 ### Expenses (EXP-01/02, EXP-07)
 
 An **Expense** records one payment: Activity (a leaf cost center), whether it **Repeats** (*This Month
-Only* or *Every Month*), Expense Category, Expense Amount, Cash/Bank Account (a leaf cash or wallet
+Only* or *Every Month*), Expense Category, Expense Amount, Treasury (a leaf cash or wallet
 account), Supplier (optional: salaries have none) and Receipt Attachment. Monthly expenses are covered in
 the next section. A draft can be saved without the receipt, but submitting is refused until one is
 attached. The check is in the controller's `before_submit`, so it also holds for the API; the receipt
@@ -331,39 +348,44 @@ The **Expected Amount** is optional and decides how the bill is paid:
 | Empty (e.g. the libraries' bills) | Nothing is made. The accountant records the expense himself. |
 
 Either way the Next Due Date moves on one month. If the scheduler did not run for a while, one draft is
-made for each month missed.
+made for each month missed. A bill switched back on, or given a new day of the month, starts from this
+month (next month if this month already has an expense on it), so it makes no drafts for the months it
+was off and never two for the same month. A category with monthly bills on it cannot become a group.
 
 On the Expense form, **Every Month** shows **Monthly Bill**, which lists only the bills of the business
 chosen above it; picking one fills in the category and the treasury (and the expected amount, if the
 amount is still empty). A monthly expense whose bill is not listed yet is filled in by hand, and is
-added to that business's bills when it is submitted (due on the same day of the month), so it can be
-picked next month. A bill of one business cannot be used on another business's expense.
+added to that business's bills when it is submitted (due on the same day of the month, from the month
+after the expense), so it can be picked next month. A bill of one business cannot be used on another business's expense.
 
 **Reminders** go to the owner and the accountant (users with Accounts Manager, except Administrator)
 as in-app alerts, which never send e-mail:
 
 - a set number of days before a bill's next due date (**Remind Days Before**, default 3);
 - while a draft made from a bill is still unsubmitted after its date, again every few days (**Repeat
-  Overdue Reminder Every (Days)**, default 2). A draft waiting for the owner's approval, or rejected,
-  is not reminded.
+  Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for the
+  owner's approval reminds the owner instead, on the same days.
 
 Both numbers are in **Expense Settings**. The drafts and the reminders come from one daily scheduler
 job, `recurring_expense.run_daily` (`hooks.py`), so the month's drafts exist before the reminders look
-for them. The reminders do not go through `notification_service.py` yet.
+for them. Reminders and approval notices go through `notification_service.py` (CORE-10), which also
+skips a notification a user already has for the same document, so a second run the same day adds nothing.
 
 ### Expense approval (EXP-06)
 
 Expenses whose amount is above the **Approval Threshold** in Expense Settings are posted only once the
-owner approves them. An empty threshold means no expense needs approval.
+owner approves them. An empty (or zero) threshold means no expense needs approval.
 
 1. The accountant saves the expense with its receipt and clicks **Request Approval** (Submit is refused
    while the expense needs approval). The owner receives an in-app alert.
 2. The owner opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
-   reason. The person who created the expense is notified either way.
+   reason. The person who asked for the approval is notified either way (not the creator: monthly
+   drafts are made by the scheduler).
 3. A rejected expense is closed for good: it can no longer be saved or submitted. If the payment is
    needed after all, a new expense is made.
 
-Changing the amount after a request or an approval clears it, so the new amount needs approval again.
+Changing the amount, category, business, treasury or receipt after a request or an approval clears it,
+so the expense as changed needs approval again.
 The owner's own expenses above the threshold are approved as he submits them. Approval is by the
 **Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
@@ -403,6 +425,27 @@ expenses themselves, so it still shows them on the shared cost center.
 Shares are fixed percentages. Shares worked out from each business's area or revenue, also listed in the
 task, were left out on purpose: the owner chose a fixed 60/40 (8 halls, 4 of which also serve as the
 studio part of the time), and the rule's Notes record what the shares are based on.
+
+### Paper units and cost
+
+Paper is bought by the box, used by the sheet and stocked in sheets:
+
+| UOM | Sheets |
+|---|---|
+| `ورقة` (sheet, whole numbers only) | 1 (stock UOM) |
+| `رزمة` (ream) | 500 |
+| `كرتونة` (box) | 2,500 (default purchase UOM) |
+
+Every item in the item group `ورق` is valued at **moving average** and bought by the
+box; `setup_core.py` applies both to any paper item added to the group later. Moving average means every
+sheet in a store costs the same, the average of what was paid: a box at 650 then one at 700 make every
+sheet 0.27. Two boxes at 650 come in as 5,000 sheets at 0.26 each, 1,300 in all.
+
+A purchase takes the conversion factor from the item. If the item has no row for the chosen UOM, ERPNext
+uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the item's UOM table whenever
+its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
+`verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
+valuation method once stock has moved; the script then only warns.
 
 ### Library products (LIB-06)
 
@@ -478,7 +521,34 @@ item's stock unit.
   raises the Material Requests itself every day.
 
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
-document types to allow (or tick **Disabled** to reopen everything).
+document types to allow (or tick **Disabled** to reopen everything). Only Owner and Accountant can. A
+document linked to a closed academic period cannot be saved either.
+
+**Payment methods.** Each library's POS takes cash on its own method, `نقدي — مكتبة المواساة` /
+`نقدي — مكتبة الأزاريطة`, which posts to that library's cash box (ERPNext's `Cash` posts to the company's
+main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`).
+
+**Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
+copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
+
+> (paper + ink + overheads + profit) per sheet × sheets per copy + binding + marketing (optional) + the
+> doctor's amount.
+
+The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
+hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
+the doctor's amount, and a price below the cost of a copy is saved with a warning.
+
+The rates change several times a year, so the owner and the accountant set them on **Printing Cost
+Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
+The paper itself is the moving average price paid for A4 paper in the library's raw materials store, from
+the boxes bought, plus the waste rate. An edition takes the rates while it is a draft, any of them can be
+changed for that edition only, and they are kept once it is submitted, so a later price change never
+touches an approved edition (DOC-24/25). It cannot be submitted before the library has a paper price. Marketing is an optional amount per copy that
+goes to the library, not to the doctor.
+
+An App Subscription records the student and the platform fee due from the doctor only: the course is paid
+by the student to the doctor directly and is not recorded (APP-05, v1.2). Editions belong to books
+agreements and subscriptions to app agreements.
 
 Invoice PDFs need the site's `host_name` to point at the web server inside Docker, otherwise
 wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
@@ -520,6 +590,7 @@ docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 ```

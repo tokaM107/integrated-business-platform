@@ -5,7 +5,7 @@
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_users.py").read(), {"frappe": frappe})
 #
 # Users are read from the site (every user @imed.local), so there is no user list to keep in sync here.
-# Matrix rows for modules that are not built yet (bookings, integrations, AI assistant) are listed as such.
+# Matrix rows for modules that are not built yet (bookings, integrations, price approval) are listed as such.
 
 import frappe
 
@@ -18,13 +18,19 @@ COLUMNS = ["Super Admin", "Accountant", "Branch Manager", "HR"]
 # (matrix row, doctype, right, expected per column: Super Admin, Accountant, Branch Manager, HR)
 CHECKS = [
 	("Record revenue / a sale", "Sales Invoice", "create", (1, 1, 1, 0)),
-	("Record an expense", "Journal Entry", "create", (1, 1, 1, 0)),
+	("Record an expense", "Expense", "create", (1, 1, 1, 0)),
+	("Journal entry", "Journal Entry", "create", (1, 1, 1, 0)),
 	("Submit a sale", "Sales Invoice", "submit", (1, 1, 1, 0)),
 	("Cancel a financial transaction", "Sales Invoice", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Journal Entry", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Payment Entry", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Stock Entry", "cancel", (1, 1, 0, 0)),
-	("Delete a financial transaction", "Sales Invoice", "delete", (1, 1, 0, 0)),
+	# Only the owner deletes, and only a draft; posted and cancelled documents never are (imederp/no_delete.py).
+	("Delete a draft", "Sales Invoice", "delete", (1, 0, 0, 0)),
+	("Delete a draft", "Expense", "delete", (1, 0, 0, 0)),
+	("Close or reopen a month", "Accounting Period", "write", (1, 1, 0, 0)),
+	("Change the chart of accounts", "Account", "create", (1, 1, 0, 0)),
+	("Cancel the shared expenses split", "Cost Center Allocation", "cancel", (1, 1, 0, 0)),
 	("Approve edition pricing", "Book Edition", "submit", (1, 1, 0, 0)),
 	("Doctor settlements", "Doctor Ledger Entry", "submit", (1, 1, 0, 0)),
 	("View employees", "Employee", "read", (1, 1, 0, 1)),
@@ -33,7 +39,6 @@ CHECKS = [
 NOT_BUILT = [
 	"Create / edit / cancel a booking (Studio / Halls modules)",
 	"Integrations screen and re-sync",
-	"Use the AI assistant",
 	"Edit prices (Accountant: with approval) - approval flow",
 ]
 

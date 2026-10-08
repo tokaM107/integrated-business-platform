@@ -35,7 +35,9 @@ CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff"
 
 # Permissions matrix, section 3.2: "only the owner and the accountant can edit, cancel or delete a
 # financial transaction". Branch managers keep create / edit draft / submit, but lose cancel, amend
-# and delete on these documents; Super Admin and Accountant get every right on them.
+# and delete on these documents. Super Admin gets every right on them, Accountant every right but delete:
+# only the owner deletes, and only a draft (owner's decisions of 7 Oct 2026; imederp/no_delete.py refuses
+# to delete anything posted or cancelled).
 FINANCIAL_DOCTYPES = [
 	"Sales Invoice",
 	"POS Invoice",
@@ -49,10 +51,20 @@ FINANCIAL_DOCTYPES = [
 ]
 MANAGER_STANDARD_ROLES = ["Accounts User", "Sales User", "Stock User"]
 MANAGER_DENIED = {"cancel": 0, "amend": 0, "delete": 0}
+READ_ONLY = {p: 0 for p in ("write", "create", "submit", "cancel", "amend", "delete")}
+# Branch managers make regular journal entries too (owner's decision of 7 Oct 2026), with no cancel, amend or
+# delete like every financial document. Stated in full so a site where they were read-only gets them back.
+MANAGER_RIGHTS = {"Journal Entry": {"write": 1, "create": 1, "submit": 1, **MANAGER_DENIED}}
+
+# The books' own controls: month-end closing (CORE-09), the chart of accounts, and the split of the
+# shared premises' expenses (EXP-03). Only Super Admin and Accountant change them; ERPNext gives
+# Accounts User, which every branch manager has, full rights on them.
+CONTROL_DOCTYPES = ["Accounting Period", "Account", "Cost Center Allocation"]
 FULL_RIGHTS = {
 	p: 1
 	for p in ("read", "write", "create", "submit", "cancel", "amend", "delete", "report", "print", "email", "export", "share")
 }
+ACCOUNTANT_RIGHTS = {**FULL_RIGHTS, "delete": 0}
 
 # Each branch manager is restricted to the company plus their own cost center / warehouse.
 # Users without cost_centers / warehouses get no User Permissions: their roles alone decide access.
@@ -276,10 +288,20 @@ def apply_permission_matrix():
 	from frappe.core.doctype.doctype.doctype import validate_permissions_for_doctype
 
 	for doctype in FINANCIAL_DOCTYPES:
+		ensure_docperm(doctype, "Super Admin", FULL_RIGHTS, create=True)
+		ensure_docperm(doctype, "Accountant", ACCOUNTANT_RIGHTS, create=True)
+		# ERPNext gives Accounts Manager delete, and the accountant holds that role too.
+		ensure_docperm(doctype, "Accounts Manager", {"delete": 0}, create=False)
+		for role in MANAGER_STANDARD_ROLES:
+			ensure_docperm(doctype, role, MANAGER_RIGHTS.get(doctype, MANAGER_DENIED), create=False)
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
+
+	for doctype in CONTROL_DOCTYPES:
 		for role in ["Super Admin", "Accountant"]:
 			ensure_docperm(doctype, role, FULL_RIGHTS, create=True)
 		for role in MANAGER_STANDARD_ROLES:
-			ensure_docperm(doctype, role, MANAGER_DENIED, create=False)
+			ensure_docperm(doctype, role, READ_ONLY, create=False)
 		validate_permissions_for_doctype(doctype)
 		frappe.clear_cache(doctype=doctype)
 

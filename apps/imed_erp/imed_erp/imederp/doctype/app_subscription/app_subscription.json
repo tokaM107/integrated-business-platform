@@ -14,9 +14,7 @@
   "course",
   "period",
   "subscription_date",
-  "total_paid",
   "platform_fee",
-  "course_amount",
   "amended_from"
  ],
  "fields": [
@@ -54,23 +52,11 @@
    "reqd": 1
   },
   {
-   "fieldname": "total_paid",
-   "fieldtype": "Currency",
-   "label": "Total Paid by Student",
-   "reqd": 1
-  },
-  {
    "fieldname": "platform_fee",
    "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Platform Fee (Due from Doctor)",
-   "reqd": 1
-  },
-  {
-   "fieldname": "course_amount",
-   "fieldtype": "Currency",
-   "label": "Course Amount (Doctor)",
-   "read_only": 1
+   "description": "Due from the doctor for this student, by the term's tier. The course itself is paid to the doctor directly and is not recorded."
   },
   {
    "fieldname": "amended_from",
@@ -98,7 +84,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-28 17:46:43.264927",
+ "modified": "2026-10-07 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Subscription",
@@ -123,7 +109,7 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -159,5 +145,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
