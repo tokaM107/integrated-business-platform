@@ -125,9 +125,11 @@ class IntegrationTestPaperStock(IntegrationTestCase):
 			self.assertAlmostEqual(flt(rate), 0.27, places=4)
 
 	def test_edition_paper_is_the_average_plus_waste(self):
-		# An edition printed in Mawasah costs its paper at the store's moving average plus 0.04 waste a sheet.
+		# An edition printed in Mawasah costs its paper at the store's moving average plus the waste rate.
 		from imed_erp.imederp.doctype.book_edition.book_edition import get_paper_cost
+		from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 
 		self.receive((1, 650, BOX))
 		rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": STORE}, "valuation_rate"))
-		self.assertAlmostEqual(get_paper_cost(f"مكتبة المواساة - {ABBR}"), rate + 0.04, places=4)
+		waste = get_rates().waste_per_sheet
+		self.assertAlmostEqual(get_paper_cost(f"مكتبة المواساة - {ABBR}"), rate + waste, places=4)
