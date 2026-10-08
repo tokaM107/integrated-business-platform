@@ -10,21 +10,27 @@
  "field_order": [
   "edition_name",
   "agreement",
-  "cost_center",
   "period",
   "pages",
   "doctor_qty",
   "extra_qty",
   "sold_qty",
+  "pricing_section",
   "paper_cost",
-  "unit_cost",
+  "ink_cost",
+  "overhead_cost",
   "owner_share",
+  "column_break_pricing",
+  "binding_cost",
+  "marketing_cost",
   "doctor_share",
+  "price_section",
   "calculated_price",
   "selling_price",
   "rounding_diff",
   "status",
-  "amended_from"
+  "amended_from",
+  "cost_center"
  ],
  "fields": [
   {
@@ -41,17 +47,6 @@
    "in_list_view": 1,
    "label": "Agreement",
    "options": "Doctor Agreement",
-   "reqd": 1
-  },
-  {
-   "description": "The business this record belongs to. Branch managers only see their own.",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Cost Center",
-   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
-   "options": "Cost Center",
    "reqd": 1
   },
   {
@@ -83,49 +78,86 @@
    "read_only": 1
   },
   {
-   "description": "Moving average price of A4 paper in the library's raw materials store, plus 0.04 EGP waste per sheet. Taken while the edition is a draft and fixed when it is submitted.",
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing",
+   "description": "Rates come from Printing Cost Settings while the edition is a draft and are kept once it is submitted. Change one here for this edition only."
+  },
+  {
+   "description": "Moving average price of A4 paper in the library's raw materials store, plus the waste in Printing Cost Settings.",
    "fieldname": "paper_cost",
    "fieldtype": "Currency",
-   "label": "Paper Cost per Sheet",
+   "label": "Paper per Sheet",
    "read_only": 1,
    "precision": "4"
   },
   {
-   "fieldname": "unit_cost",
+   "fieldname": "ink_cost",
    "fieldtype": "Currency",
-   "label": "Other Manufacturing Cost per Sheet",
-   "description": "Ink, cover and binding per sheet; paper is above."
+   "label": "Ink per Sheet",
+   "description": "From Printing Cost Settings when left empty.",
+   "precision": "4"
+  },
+  {
+   "fieldname": "overhead_cost",
+   "fieldtype": "Currency",
+   "label": "Overheads per Sheet",
+   "description": "Rent, electricity, salaries and machine rental. From Printing Cost Settings when left empty.",
+   "precision": "4"
   },
   {
    "fieldname": "owner_share",
    "fieldtype": "Currency",
-   "label": "Owner Share per Sheet"
+   "label": "Profit per Sheet",
+   "description": "The library's profit. From Printing Cost Settings when left empty.",
+   "precision": "4"
+  },
+  {
+   "fieldname": "column_break_pricing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "binding_cost",
+   "fieldtype": "Currency",
+   "label": "Binding per Copy",
+   "description": "From Printing Cost Settings when left empty."
+  },
+  {
+   "fieldname": "marketing_cost",
+   "fieldtype": "Currency",
+   "label": "Marketing per Copy",
+   "description": "Optional: an extra amount per copy for selling the book. Goes to the library, not to the doctor."
   },
   {
    "fieldname": "doctor_share",
    "fieldtype": "Currency",
-   "label": "Doctor Share per Copy",
-   "description": "Filled in from the agreement when its share is a fixed amount per copy."
+   "label": "Doctor's Amount per Copy",
+   "description": "What the doctor asked for each copy; filled in from his agreement when it is a fixed amount."
+  },
+  {
+   "fieldname": "price_section",
+   "fieldtype": "Section Break",
+   "label": "Price"
   },
   {
    "fieldname": "calculated_price",
    "fieldtype": "Currency",
    "label": "Calculated Price per Copy",
    "read_only": 1,
-   "description": "(Paper + other manufacturing cost + owner share) per sheet x sheets per copy + doctor share."
+   "description": "(Paper + ink + overheads + profit) per sheet x sheets + binding + marketing + doctor's amount, per copy."
   },
   {
    "fieldname": "selling_price",
    "fieldtype": "Currency",
    "label": "Final Selling Price per Copy",
-   "description": "Left empty, the calculated price rounded up to the nearest 5 EGP. Cannot be below the calculated price."
+   "description": "Left empty, the calculated price. A higher price can be set by hand; it cannot be below the calculated price."
   },
   {
    "fieldname": "rounding_diff",
    "fieldtype": "Currency",
-   "label": "Rounding to Owner",
+   "label": "Above Calculated Price",
    "read_only": 1,
-   "description": "Selling price minus calculated price; goes to the owner."
+   "description": "Selling price minus calculated price; goes to the library."
   },
   {
    "default": "Active",
@@ -143,13 +175,24 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "description": "The business this record belongs to. Branch managers only see their own.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Cost Center",
+   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
+   "options": "Cost Center",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-08 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",
