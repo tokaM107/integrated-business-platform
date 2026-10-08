@@ -61,8 +61,11 @@ class BookEdition(Document):
         # and the doctor's amount.
         per_sheet = flt(self.paper_cost) + flt(self.ink_cost) + flt(self.overhead_cost) + flt(self.owner_share)
         per_copy = flt(self.binding_cost) + flt(self.marketing_cost) + flt(self.doctor_share)
+        previous = flt(self.calculated_price)
         self.calculated_price = flt(per_sheet * cint(self.pages) + per_copy, 2)
-        if not self.selling_price:
+        # A price still equal to the last calculated one was not set by hand, so it follows the new
+        # calculation (sheets, rates or the doctor's amount changed on the draft, or an amended copy).
+        if not self.selling_price or flt(self.selling_price) == previous:
             self.selling_price = self.calculated_price
         self.rounding_diff = flt(self.selling_price) - self.calculated_price
 
