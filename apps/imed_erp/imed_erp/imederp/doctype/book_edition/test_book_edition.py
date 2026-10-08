@@ -1,8 +1,9 @@
 # Copyright (c) 2026, toka mohamed and Contributors
 # See license.txt
 
-# Edition pricing (DOC-24/25/28): price per copy = (manufacturing cost + owner share) per sheet x sheets
-# + doctor share, rounded up to 5 EGP with the difference to the owner. Rolled back afterwards.
+# Edition pricing (DOC-24/25, owner's decisions of 8 Oct 2026): price per copy = (paper + ink + overheads +
+# profit) per sheet x sheets + binding + optional marketing + the doctor's amount, not rounded; a price set
+# by hand, higher or lower, is kept. Rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --doctype "Book Edition"
@@ -145,3 +146,27 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 
 	def test_edition_belongs_to_a_books_agreement(self):
 		self.assertRaises(frappe.ValidationError, self.make_edition, make_agreement("App"))
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_editing_a_draft_updates_its_price(self, _):
+		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
+		self.assertEqual(edition.selling_price, 247)
+		edition.pages = 220
+		edition.save()
+		# 0.70 x 220 = 154, + 20 + 80 = 254.
+		self.assertEqual((edition.calculated_price, edition.selling_price, edition.rounding_diff), (254, 254, 0))
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_price_set_by_hand_is_kept_when_the_draft_changes(self, _):
+		edition = self.make_edition(make_agreement("Books", "Fixed", 80), selling_price=230)
+		edition.pages = 220
+		edition.save()
+		self.assertEqual((edition.calculated_price, edition.selling_price), (254, 230))
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_one_books_profit_does_not_change_another(self, _):
+		agreement = make_agreement("Books", "Fixed", 80)
+		cheaper = self.make_edition(agreement, owner_share=0.15)
+		other = self.make_edition(agreement)
+		self.assertEqual((cheaper.owner_share, other.owner_share), (0.15, 0.25))
+		self.assertEqual(frappe.db.get_single_value("Printing Cost Settings", "profit_per_sheet") or 0.25, 0.25)
