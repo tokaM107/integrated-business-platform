@@ -18,6 +18,7 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Agreements", "link_to": "Doctor Agreement", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctors Ledger", "link_to": "Doctor Ledger Entry", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Book Editions", "link_to": "Book Edition", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Cost Settings", "link_to": "Printing Cost Settings", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Academic Periods", "link_to": "Academic Period", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 0, "collapsible": 1, "icon": "briefcase", "indent": 1, "keep_closed": 0, "label": "Business Operations", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Inter Business Transfer", "link_to": "Inter Business Transfer", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
@@ -25,7 +26,7 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
  ],
- "modified": "2026-10-07 18:00:00.000000",
+ "modified": "2026-10-08 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",
