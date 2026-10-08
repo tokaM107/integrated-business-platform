@@ -48,6 +48,12 @@ EVENTS = {
 		"message": "{{ subject }}",
 		"channels": ["system"],
 	},
+	"reorder_level_reached": {
+		"subject": "Reorder: {{ item }} at {{ warehouse }}",
+		"message": "{{ item }} ({{ item_code }}) at {{ warehouse }} is down to {{ qty }} {{ uom }}; "
+		"its reorder level there is {{ level }}. ({{ voucher }})",
+		"channels": ["system"],
+	},
 	"period_closed": {
 		"subject": "Accounting period {{ period }} closed",
 		"message": "Posting dated {{ start }} to {{ end }} is now blocked.",

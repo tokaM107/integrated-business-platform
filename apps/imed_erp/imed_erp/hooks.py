@@ -174,8 +174,10 @@ doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # 	}
 # }
 
+# Every event of a doctype in one entry: two entries for the same doctype would replace each other.
 # on_trash: a submitted or cancelled financial document is never deleted (imederp/no_delete.py).
 # validate on the app's documents: none is saved in a closed month or academic period (imederp/period_lock.py).
+# on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 doc_events = {
 	"Journal Entry": {
 		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
@@ -189,24 +191,30 @@ doc_events = {
 	"Sales Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 	},
 	"POS Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Invoice": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Entry": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Delivery Note": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Receipt": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Reconciliation": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Cost Center Allocation": {
@@ -238,8 +246,10 @@ doc_events = {
 	"Allocation Rule": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
+	"Item": {
+		"validate": "imed_erp.imederp.stock_reorder.validate_reorder_levels",
+	},
 }
-
 # Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
 period_closing_doctypes = [
 	"Expense",

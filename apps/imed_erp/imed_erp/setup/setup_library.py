@@ -29,6 +29,25 @@ MEMOS_GROUP = "مذكرات"
 SERVICES_GROUP = "خدمات المكتبات"
 ITEM_GROUPS = [BOOKS_GROUP, MEMOS_GROUP, SERVICES_GROUP]
 
+# The five inventory groups: (group, parent, is_group). Books & Notebooks holds the books and memos
+# groups above. Consumables is ERPNext's own "Consumable" group (renamed by setup_arabic_names.py),
+# reused rather than duplicated. A group is the item's classification (LIB-06).
+BOOKS_NOTEBOOKS_GROUP = "كتب وكشاكيل"
+PAPER_GROUP = "ورق"
+INVENTORY_GROUPS = [
+	(PAPER_GROUP, "All Item Groups", 0),
+	("أحبار", "All Item Groups", 0),
+	(BOOKS_NOTEBOOKS_GROUP, PARENT_GROUP, 1),
+	("مستهلكات", "All Item Groups", 0),
+	("خامات تجليد", "All Item Groups", 0),
+]
+# (group, parent) for the library groups; books and memos sit under Books & Notebooks.
+LIBRARY_GROUP_PARENTS = {
+	BOOKS_GROUP: BOOKS_NOTEBOOKS_GROUP,
+	MEMOS_GROUP: BOOKS_NOTEBOOKS_GROUP,
+	SERVICES_GROUP: PARENT_GROUP,
+}
+
 # Books and memos are doctors' editions, the only goods the libraries sell (setup_core.py). Mawasah's
 # store sits under the central store (LIB-02) and issues to Azarita (LIB-08).
 CENTRAL_WAREHOUSE = "إصدارات الأطباء — المواساة"
@@ -108,14 +127,32 @@ def make_item_groups():
 	else:
 		print(f"exists Item Group {PARENT_GROUP}")
 
-	for group in ITEM_GROUPS:
-		if frappe.db.exists("Item Group", group):
-			print(f"exists Item Group {group}")
-			continue
+	for group, parent, is_group in INVENTORY_GROUPS:
+		ensure_item_group(group, parent, is_group)
+	for group, parent in LIBRARY_GROUP_PARENTS.items():
+		ensure_item_group(group, parent)
+
+	# A4 paper was first made directly in the library products group; it belongs in Paper.
+	if frappe.db.get_value("Item", "A4-PAPER", "item_group") == PARENT_GROUP:
+		frappe.db.set_value("Item", "A4-PAPER", "item_group", PAPER_GROUP)
+		print(f"update Item A4-PAPER: group {PAPER_GROUP}")
+
+
+def ensure_item_group(group, parent, is_group=0):
+	"""Create the group under `parent`, or move it there. An existing group's is_group is kept."""
+	if not frappe.db.exists("Item Group", group):
 		frappe.get_doc(
-			{"doctype": "Item Group", "item_group_name": group, "parent_item_group": PARENT_GROUP}
+			{"doctype": "Item Group", "item_group_name": group, "parent_item_group": parent, "is_group": is_group}
 		).insert()
 		print(f"create Item Group {group}")
+		return
+	doc = frappe.get_doc("Item Group", group)
+	if doc.parent_item_group == parent:
+		print(f"exists Item Group {group}")
+		return
+	doc.parent_item_group = parent
+	doc.save()
+	print(f"move   Item Group {group} -> {parent}")
 
 
 def make_author_field():

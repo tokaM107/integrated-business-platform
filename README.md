@@ -286,12 +286,12 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (raw materials and doctors' editions per library), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour), the paper group `الورق` under the raw materials group `خامات`, and items. Paper is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
-| `setup_library.py` | Libraries (LIB). Makes `منتجات المكتبات` a parent group with `كتب`, `مذكرات` and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
@@ -436,7 +436,7 @@ Paper is bought by the box, used by the sheet and stocked in sheets:
 | `رزمة` (ream) | 500 |
 | `كرتونة` (box) | 2,500 (default purchase UOM) |
 
-Every item in the item group `الورق` (under `خامات`) is valued at **moving average** and bought by the
+Every item in the item group `ورق` is valued at **moving average** and bought by the
 box; `setup_core.py` applies both to any paper item added to the group later. Moving average means every
 sheet in a store costs the same, the average of what was paid: a box at 650 then one at 700 make every
 sheet 0.27. Two boxes at 650 come in as 5,000 sheets at 0.26 each, 1,300 in all.
@@ -454,7 +454,7 @@ valuation method once stock has moved; the script then only warns.
 | Name | Item Name |
 | ISBN | A row in the item's **Barcodes** table with type `ISBN` (so it can be scanned at the POS) |
 | Author | **Author** field on the item (`custom_author`) |
-| Category | Item Group: `كتب` or `مذكرات` |
+| Category (classification) | Item Group: `كتب` or `مذكرات` (under `كتب وكشاكيل`), or `ورق`, `أحبار`, `مستهلكات`, `خامات تجليد` |
 | Cost price | Valuation Rate |
 | Selling price | Item Price in the `Standard Selling` price list |
 | Quantity | Stock balance per warehouse (`إصدارات الأطباء — المواساة` under the central store, `إصدارات الأطباء — الأزاريطة` for the branch) |
@@ -465,6 +465,60 @@ library's account by `imederp/library_revenue.py`. An item has only one default 
 libraries sell the same book, so Azarita must sell through its POS Profile. A sales invoice row
 created through the API without a cost center gets the company's default cost center, not the item's,
 so an integration must send the cost center itself.
+
+ISBN and Author are optional: paper, ink or binding supplies are saved without them. An ISBN entered
+is checked (a wrong check digit is refused). The selling price typed on a new item becomes its
+`Standard Selling` Item Price; later changes are made on that Item Price (item > Connections > Item Price).
+
+### Warehouses, reorder levels and transfers (LIB-02, LIB-04, LIB-08)
+
+```
+كل المخازن
+├── المخزن المركزي بالمواساة          Mawasah, the main warehouse (group)
+│   ├── خامات المواساة                 raw materials: paper, ink, binding supplies
+│   ├── إصدارات الأطباء — المواساة     doctors' editions
+│   └── التالف — المواساة              damaged stock, kept apart until it is sold by weight
+├── مخزن الأزاريطة                     Azarita, the branch (group)
+│   ├── خامات الأزاريطة
+│   └── إصدارات الأطباء — الأزاريطة
+└── مخزن سنتر Imed — أدوات مكتبية      the center's office supplies (ink, toner, ...)
+```
+
+Each leaf has its own stock account (`setup_coa.py`). Azarita sits beside Mawasah, not under it, so a
+report on Mawasah never includes the branch's stock. On a site built before this change, `setup_core.py`
+moves Azarita's two warehouses under `مخزن الأزاريطة`, keeping their stock and accounts.
+
+**Who sees which warehouse** (User Permissions, `setup_users.py`; a group covers what is under it):
+
+| User | Warehouses |
+|---|---|
+| Raghad | `المخزن المركزي بالمواساة` (with the damaged stock) and `مخزن الأزاريطة`, because she supplies the branch |
+| Sara | `مخزن الأزاريطة` only |
+| Owner, Accountant | all (no restriction) |
+
+The server checks every warehouse on a document, so Sara cannot open Mawasah, see its stock (Stock
+Balance, Bin, API) or submit a stock entry with Mawasah on any row, even through the API.
+
+**Transfer Mawasah → Azarita** is an ERPNext **Stock Entry** of type *Material Transfer* (Stock > Stock
+Entry), never a purchase: one ledger line out of the source warehouse and one into the target, the total
+stays the same, and the value only moves between the two warehouses' stock accounts. ERPNext refuses a
+transfer of more than the source holds (negative stock is off). Moving goods to the damaged store is the
+same kind of transfer.
+
+**Reorder levels** are set per item **and** per warehouse in the item's *Reorder Levels* table (Inventory
+tab): e.g. A4 paper at 1,000 in `خامات المواساة` (request type Purchase) and 500 in `خامات الأزاريطة`
+(type Transfer, since Mawasah supplies it). ERPNext needs a reorder quantity on each row. A warehouse can
+have only one row per item, and never a group warehouse (`imederp/stock_reorder.py`). Levels are in the
+item's stock unit.
+
+- When a submitted document takes an item's stock in one warehouse to or below that warehouse's level,
+  the stock users who may see that warehouse get an in-app alert (`reorder_level_reached` in
+  `notification_service.py`): Sara for Azarita, Raghad for both. Only the crossing alerts, not every sale
+  below the level. The comparison uses that warehouse's own stock, never the total of all warehouses.
+- **Reorder Alerts** report (ImedERP sidebar) lists everything at or below its level now, each user only
+  for their own warehouses.
+- With *Stock Settings > Raise Material Request when stock reaches re-order level* on, ERPNext also
+  raises the Material Requests itself every day.
 
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
 document types to allow (or tick **Disabled** to reopen everything). Only Owner and Accountant can. A
@@ -538,6 +592,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "R
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

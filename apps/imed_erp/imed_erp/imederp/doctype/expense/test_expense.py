@@ -354,6 +354,22 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 			frappe.set_user("Administrator")
 		self.assertFalse(frappe.db.exists("Expense", draft.name))
 
+	def test_every_financial_doctype_keeps_its_guards(self):
+		# hooks.py lists each doctype once: a second entry for the same doctype would replace the first,
+		# and the delete guard or the closed-period check would stop running without any error.
+		from imed_erp.imederp.no_delete import FINANCIAL_DOCTYPES
+		from imed_erp.imederp.period_lock import LOCKED_DOCTYPES
+
+		events = frappe.get_hooks("doc_events", app_name="imed_erp")
+		for doctype in FINANCIAL_DOCTYPES:
+			with self.subTest(doctype):
+				self.assertIn("imed_erp.imederp.no_delete.block_delete_of_posted", events[doctype]["on_trash"])
+		for doctype in LOCKED_DOCTYPES:
+			with self.subTest(doctype):
+				self.assertIn("imed_erp.imederp.period_lock.validate_closed_period", events[doctype]["validate"])
+		# The reorder alerts (LIB-04) are still there next to them.
+		self.assertIn("imed_erp.imederp.stock_reorder.alert_on_reorder_level", events["Stock Entry"]["on_submit"])
+
 	def test_no_expense_in_a_closed_month(self):
 		period = frappe.get_doc(
 			{

@@ -24,7 +24,8 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Inter Business Transfer", "link_to": "Inter Business Transfer", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Inter Business Transfers", "link_to": "Inter Business Transfers", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Reorder Alerts", "link_to": "Reorder Alerts", "link_type": "Report", "show_arrow": 0, "type": "Link"}
  ],
  "modified": "2026-10-08 12:00:00.000000",
  "modified_by": "Administrator",
