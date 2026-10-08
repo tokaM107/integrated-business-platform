@@ -182,3 +182,41 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 			}
 		)
 		self.assertRaises(frappe.ValidationError, entry.insert)
+
+	def test_entries_are_cancelled_only_through_the_transfer(self):
+		transfer = self.make_transfer()
+		transfer.submit()
+		entry = frappe.get_doc("Journal Entry", transfer.send_journal_entry)
+		entry.flags.ignore_permissions = True
+		self.assertRaises(frappe.ValidationError, entry.cancel)
+
+		transfer.reload()
+		transfer.cancel()
+		self.assertEqual(frappe.db.get_value("Journal Entry", transfer.send_journal_entry, "docstatus"), 2)
+
+	def test_branch_manager_entry_only_on_their_own_cash_box(self):
+		# Sara runs Azarita's library: her own entries may use its cash box or the wallets, nothing else.
+		expense_account = frappe.get_all(
+			"Account",
+			filters={"company": frappe.db.get_value("Account", LIBRARY_CASH, "company"), "root_type": "Expense", "is_group": 0, "account_type": ""},
+			limit=1,
+			pluck="name",
+		)[0]
+
+		def entry(treasury):
+			return frappe.get_doc(
+				{
+					"doctype": "Journal Entry",
+					"company": frappe.db.get_value("Account", LIBRARY_CASH, "company"),
+					"posting_date": "2026-09-30",
+					"accounts": [
+						{"account": expense_account, "debit_in_account_currency": 100, "cost_center": LIBRARY},
+						{"account": treasury, "credit_in_account_currency": 100, "cost_center": LIBRARY},
+					],
+				}
+			)
+
+		frappe.set_user("sara@imed.local")
+		self.assertRaises(frappe.ValidationError, entry(f"خزينة مكتبة المواساة - {ABBR}").insert)
+		self.assertRaises(frappe.ValidationError, entry(f"الخزينة الرئيسية - {ABBR}").insert)
+		entry(LIBRARY_CASH).insert()
