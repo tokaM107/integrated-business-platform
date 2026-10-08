@@ -20,7 +20,8 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
   imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
                         Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
                         Expense, Expense Category, Expense Report, Recurring Expense,
-                        Expense Settings, Allocation Rule, Inter Business Transfer (and its report);
+                        Expense Settings, Allocation Rule, Printing Cost Settings,
+                        Inter Business Transfer (and its report);
                         shared rules: treasuries.py (each business's cash box), no_delete.py,
                         period_lock.py (closed months), library_revenue.py, expense_reminders.py
   imed_erp/assistant/   AI assistant (chat window; no model connected yet)
@@ -473,15 +474,27 @@ document linked to a closed academic period cannot be saved either.
 `نقدي — مكتبة الأزاريطة`, which posts to that library's cash box (ERPNext's `Cash` posts to the company's
 main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`).
 
-**Doctors' editions and the app.** An edition's price per copy is (paper + other manufacturing cost + owner
-share) per sheet × sheets per copy + the doctor's share, rounded up to 5 EGP. The paper is costed at the
-moving average price of A4 paper in the library's raw materials store plus 0.04 EGP waste a sheet (owner's
-decision), taken while the edition is a draft and fixed when it is submitted; an edition cannot be submitted
-before the library has a paper price. The other cost is ink, cover and binding. The rounding goes to the owner and the
-final price can never be below the calculated one (DOC-24/25/28). The doctor's share is filled in from a
-fixed-amount books agreement. An App Subscription records the student and the platform fee due from the
-doctor only: the course is paid by the student to the doctor directly and is not recorded (APP-05, v1.2).
-Editions belong to books agreements and subscriptions to app agreements.
+**Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
+copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
+
+> (paper + ink + overheads + profit) per sheet × sheets per copy + binding + marketing (optional) + the
+> doctor's amount.
+
+The price is not rounded (owner's decision, instead of DOC-28's rounding); a higher price can be set by
+hand, and the difference goes to the library.
+
+The rates change several times a year, so the owner and the accountant set them on **Printing Cost
+Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
+The paper itself is the moving average price paid for A4 paper in the library's raw materials store, from
+the boxes bought, plus the waste rate. An edition takes the rates while it is a draft, any of them can be
+changed for that edition only, and they are kept once it is submitted, so a later price change never
+touches an approved edition (DOC-24/25). It cannot be submitted before the library has a paper price,
+and its final price can never be below the calculated one. Marketing is an optional amount per copy that
+goes to the library, not to the doctor.
+
+An App Subscription records the student and the platform fee due from the doctor only: the course is paid
+by the student to the doctor directly and is not recorded (APP-05, v1.2). Editions belong to books
+agreements and subscriptions to app agreements.
 
 Invoice PDFs need the site's `host_name` to point at the web server inside Docker, otherwise
 wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
