@@ -480,16 +480,16 @@ copy (from his agreement, as a fixed amount), with the library's costs and profi
 > (paper + ink + overheads + profit) per sheet × sheets per copy + binding + marketing (optional) + the
 > doctor's amount.
 
-The price is not rounded (owner's decision, instead of DOC-28's rounding); a higher price can be set by
-hand, and the difference goes to the library.
+The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
+hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
+the doctor's amount, and a price below the cost of a copy is saved with a warning.
 
 The rates change several times a year, so the owner and the accountant set them on **Printing Cost
 Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
 The paper itself is the moving average price paid for A4 paper in the library's raw materials store, from
 the boxes bought, plus the waste rate. An edition takes the rates while it is a draft, any of them can be
 changed for that edition only, and they are kept once it is submitted, so a later price change never
-touches an approved edition (DOC-24/25). It cannot be submitted before the library has a paper price,
-and its final price can never be below the calculated one. Marketing is an optional amount per copy that
+touches an approved edition (DOC-24/25). It cannot be submitted before the library has a paper price. Marketing is an optional amount per copy that
 goes to the library, not to the doctor.
 
 An App Subscription records the student and the platform fee due from the doctor only: the course is paid
