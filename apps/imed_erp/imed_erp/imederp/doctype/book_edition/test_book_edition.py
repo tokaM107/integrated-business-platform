@@ -128,11 +128,15 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 		self.assertRaises(frappe.ValidationError, settings.save)
 
 	@patch(PAPER_COST, return_value=0.30)
-	def test_selling_price_cannot_cut_into_the_shares(self, _):
+	def test_price_set_by_hand_higher_or_lower(self, _):
 		agreement = make_agreement("Books", "Fixed", 80)
-		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, selling_price=240)
-		# A higher price set by hand: the difference goes to the library.
+		# Higher: 13 more for the library.
 		self.assertEqual(self.make_edition(agreement, selling_price=260).rounding_diff, 13)
+		# Lower, to sell more: 7 less for the library; the doctor's 80 stays.
+		lower = self.make_edition(agreement, selling_price=240)
+		self.assertEqual((lower.rounding_diff, lower.doctor_share), (-7, 80))
+		# Even below cost (0.45 x 210 + 20 + 80 = 194.5) it is saved, with a warning.
+		self.assertEqual(self.make_edition(agreement, selling_price=180).selling_price, 180)
 
 	@patch(PAPER_COST, return_value=0)
 	def test_no_approval_without_a_paper_price(self, _):
