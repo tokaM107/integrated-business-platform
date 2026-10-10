@@ -89,14 +89,11 @@ App Subscriptions,اشتراكات التطبيق
 {0} was posted by Expense {1}. Cancel the expense instead.,{0} اترحّل من المصروف {1}. الغي المصروف بدل كده.
 Expense Settings,إعدادات المصروفات
 Approval,موافقة المالك
-Approval Threshold,حد الموافقة
-An expense whose actual amount is above this needs approval before it is posted. Leave empty to approve nothing.,أي مصروف مبلغه الفعلي أكبر من الرقم ده محتاج موافقة المالك قبل ما يتسجل. سيبه فاضي أو صفر لو مفيش مصروف محتاج موافقة.
 Recurring Expense Reminders,تذكيرات المصروفات المتكررة
 Remind Days Before,التذكير قبلها بكام يوم
 Remind the owner and the accountant this many days before a recurring expense is due.,تذكير المالك والمحاسب قبل معاد المصروف المتكرر بالعدد ده من الأيام.
 Repeat Overdue Reminder Every (Days),تكرار تذكير المتأخر كل (يوم)
 "While a generated recurring expense is still a draft after its date, remind again every this many days.",طول ما المصروف المتكرر لسه مسودة بعد معاده، التذكير يتكرر كل العدد ده من الأيام.
-"Approval Threshold cannot be negative, got {0}.",حد الموافقة مينفعش يكون بالسالب، والمكتوب {0}.
 "{0} must be at least 1 day, got {1}.",{0} لازم يكون يوم واحد على الأقل، والمكتوب {1}.
 "Recurring expense {0} ({1}) is due on {2}, expected {3}.",مصروف متكرر: {0} ({1}) معاده {2}، والمتوقع {3}.
 "Recurring expense {0} ({1}) was due on {2} and is still a draft, {3} days late. Enter the actual amount, attach the receipt and submit it.",مصروف متكرر: {0} ({1}) كان معاده {2} ولسه مسودة، متأخر {3} يوم. اكتب المبلغ الفعلي وارفع الإيصال وسجّله.
@@ -134,10 +131,8 @@ Reject Expense,رفض المصروف
 Waiting for the owner's approval.,مستني موافقة المالك.
 This expense was rejected and is closed. Make a new expense if it is still needed.,المصروف ده اترفض واتقفل. اعمل مصروف جديد لو لسه محتاجه.
 Expense {0} was rejected and cannot be changed. Make a new expense instead.,المصروف {0} اترفض ومينفعش يتعدل. اعمل مصروف جديد بداله.
-This expense is above the approval threshold of {0}. Request the owner's approval first.,المصروف ده أكبر من حد الموافقة ({0}). اطلب موافقة المالك الأول.
 Approval Needed,محتاج موافقة
 Approval can only be requested for a draft that has not been sent yet.,طلب الموافقة بيتعمل بس لمسودة لسه متبعتتش.
-This expense is not above the approval threshold. Submit it directly.,المصروف ده مش أكبر من حد الموافقة. سجّله على طول.
 Expense {0} of {1} for {2} ({3}) is waiting for your approval.,المصروف {0} بمبلغ {1} لـ {2} ({3}) مستني موافقتك.
 Expense {0} was approved and posted.,المصروف {0} اتوافق عليه واتسجل.
 Expense {0} was rejected.,المصروف {0} اترفض.
@@ -233,3 +228,4 @@ Difference from Calculated Price,الفرق عن السعر المحسوب
 "Selling price minus calculated price: added to the library's profit, or taken from it when negative. The doctor's amount does not change.",سعر البيع ناقص السعر المحسوب: بيتزود على مكسب المكتبة، أو بيتخصم منه لو بالسالب. حق الطبيب مابيتغيرش.
 "Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.",سعر البيع {0} أقل من تكلفة النسخة {1}: المكتبة بتخسر {2} في كل نسخة بتتباع.
 Selling at a Loss,بيع بخسارة
+Every expense is paid only once the owner approves it. Request the owner's approval first.,أي مصروف مابيتصرفش غير بعد موافقة المالك. اطلب موافقة المالك الأول.

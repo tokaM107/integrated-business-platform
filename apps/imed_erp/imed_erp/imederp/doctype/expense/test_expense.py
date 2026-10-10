@@ -393,15 +393,12 @@ ACCOUNTANT = "accountant@imed.local"
 
 
 class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
-	"""Expenses above the threshold in Expense Settings are posted only once the owner approves them."""
+	"""Every expense is posted only once the owner approves it (owner's decision of 8 Oct 2026)."""
 
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.make_fixtures()
-		settings = frappe.get_single("Expense Settings")
-		settings.approval_threshold = 5000
-		settings.save()
 
 	@classmethod
 	def tearDownClass(cls):
@@ -420,11 +417,15 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		frappe.set_user(user)
 		return frappe.get_doc("Expense", expense.name)
 
-	def test_below_threshold_is_submitted_directly(self):
-		expense = self.draft(5000)
-		expense.submit()
-		self.assertEqual(expense.docstatus, 1)
-		self.assertFalse(expense.approval_status)
+	def test_even_a_small_expense_needs_the_owners_approval(self):
+		expense = self.draft(50)
+		self.assertRaises(frappe.ValidationError, expense.submit)
+
+	def test_only_the_owner_changes_the_expense_settings(self):
+		frappe.set_user(ACCOUNTANT)
+		self.assertFalse(frappe.has_permission("Expense Settings", "write"))
+		frappe.set_user(OWNER)
+		self.assertTrue(frappe.has_permission("Expense Settings", "write"))
 
 	def test_above_threshold_needs_the_owners_approval(self):
 		expense = self.draft(46000)

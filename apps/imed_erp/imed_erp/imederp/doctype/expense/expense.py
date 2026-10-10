@@ -16,7 +16,8 @@ TREASURY_TYPES = ("Cash", "Bank")
 
 EVERY_MONTH = "Every Month"
 
-# Only the owner has it: an expense above the approval threshold is posted once a holder approves it.
+# Only the owner has it: every expense is posted only once a holder approves it (owner's decision of
+# 8 Oct 2026), and an expense the owner records himself is approved as he submits it.
 APPROVER_ROLE = "Expense Approver"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
 
@@ -101,8 +102,8 @@ class Expense(Document):
             self.approval_requested_by = None
 
     def needs_approval(self):
-        threshold = flt(frappe.db.get_single_value("Expense Settings", "approval_threshold"))
-        return bool(threshold) and flt(self.amount) > threshold
+        # Every expense, whatever its amount (owner's decision of 8 Oct 2026).
+        return True
 
     def before_submit(self):
         # Checked here, not by a mandatory field, so drafts can be saved before the receipt is at hand,
@@ -119,9 +120,7 @@ class Expense(Document):
             self.approved_by = frappe.session.user
             return
         frappe.throw(
-            _("This expense is above the approval threshold of {0}. Request the owner's approval first.").format(
-                frappe.format_value(frappe.db.get_single_value("Expense Settings", "approval_threshold"), {"fieldtype": "Currency"})
-            ),
+            _("Every expense is paid only once the owner approves it. Request the owner's approval first."),
             title=_("Approval Needed"),
         )
 
@@ -130,8 +129,6 @@ class Expense(Document):
         self.check_permission("write")
         if self.docstatus != 0 or self.approval_status in (PENDING, APPROVED, REJECTED):
             frappe.throw(_("Approval can only be requested for a draft that has not been sent yet."))
-        if not self.needs_approval():
-            frappe.throw(_("This expense is not above the approval threshold. Submit it directly."))
         # The owner decides on the full expense, receipt included.
         self.validate_receipt()
         self.approval_status = PENDING
@@ -199,6 +196,7 @@ class Expense(Document):
         )
         # Whoever may submit the expense may post its entry; the expense is the gate.
         journal_entry.flags.ignore_permissions = True
+        journal_entry.flags.from_expense = True
         journal_entry.insert()
         journal_entry.submit()
         self.db_set("journal_entry", journal_entry.name)
