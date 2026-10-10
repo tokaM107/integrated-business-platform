@@ -8,7 +8,9 @@
 #   - the supplier group for paper and materials suppliers;
 #   - the payment terms a purchase invoice is made on: cash (due the same day) or on credit (due in 30 days);
 #   - Buying Settings: no purchase order or receipt required first. The library buys directly, and one
-#     purchase invoice with "Update Stock" both receives the paper and records what is owed.
+#     purchase invoice with "Update Stock" both receives the paper and records what is owed;
+#   - the purchase invoice screen (public/js/purchase_invoice.js): Update Stock ticked on a new invoice,
+#     and the unit shown next to the quantity in the items table.
 #
 # Idempotent: what exists is left as is. Safe to run again.
 
@@ -22,6 +24,12 @@ AFTER_INVOICE_DATE = "Day(s) after invoice date"
 
 # Buying Settings field <- value.
 BUYING_SETTINGS = {"po_required": "No", "pr_required": "No"}
+
+# (doctype, field, property, value, type): Customize Form changes, kept as Property Setters.
+PROPERTY_SETTERS = [
+	("Purchase Invoice", "update_stock", "default", "1", "Text"),
+	("Purchase Invoice Item", "uom", "in_list_view", "1", "Check"),
+]
 
 
 def ensure_supplier_group():
@@ -82,6 +90,20 @@ def ensure_buying_settings():
 	print(f"update Buying Settings: {diff}")
 
 
+def ensure_property_setter(doctype, field, prop, value, prop_type):
+	current = frappe.db.get_value(
+		"Property Setter", {"doc_type": doctype, "field_name": field, "property": prop}, "value"
+	)
+	if current == value:
+		print(f"exists Property Setter {doctype}.{field} {prop} = {value}")
+		return
+	frappe.make_property_setter(
+		{"doctype": doctype, "fieldname": field, "property": prop, "value": value, "property_type": prop_type},
+		validate_fields_for_doctype=False,
+	)
+	print(f"update Property Setter {doctype}.{field} {prop} = {value}")
+
+
 def run():
 	if not frappe.db.exists("Supplier Group", "All Supplier Groups"):
 		print("STOP   Supplier Group 'All Supplier Groups' not found. Run setup_core.py first.")
@@ -93,6 +115,8 @@ def run():
 			ensure_payment_term(name, days)
 			ensure_payment_terms_template(name, days)
 		ensure_buying_settings()
+		for spec in PROPERTY_SETTERS:
+			ensure_property_setter(*spec)
 		frappe.db.commit()
 	except Exception:
 		frappe.db.rollback()
