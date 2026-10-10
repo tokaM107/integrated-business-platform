@@ -79,3 +79,40 @@ class IntegrationTestLibraryRevenue(IntegrationTestCase):
 		invoice = self.make_invoice(HALLS, item_code="HALL-HOUR")
 
 		self.assertEqual(self.revenue_credited(invoice), {f"إيراد القاعات - {ABBR}": 100})
+
+	def test_hall_cash_goes_to_the_centers_cash_box(self):
+		# Cash for a hall goes to the center's cash box, not ERPNext's main "Cash" (CORE-03).
+		invoice = frappe.get_doc(
+			{
+				"doctype": "Sales Invoice",
+				"company": COMPANY,
+				"customer": self.customer,
+				"posting_date": nowdate(),
+				"due_date": nowdate(),
+				"cost_center": HALLS,
+				"is_pos": 1,
+				"items": [{"item_code": "HALL-HOUR", "qty": 1, "rate": 100, "cost_center": HALLS}],
+				"payments": [{"mode_of_payment": "نقدي — قاعات Imed", "amount": 100}],
+			}
+		).insert()
+		invoice.submit()
+
+		entries = frappe.get_all(
+			"GL Entry",
+			filters={"voucher_no": invoice.name, "account": f"خزينة سنتر Imed - {ABBR}", "is_cancelled": 0},
+			fields=["debit", "credit"],
+		)
+		self.assertEqual(sum(e.debit - e.credit for e in entries), 100)
+
+	def test_each_business_has_cash_into_its_own_cash_box(self):
+		# Set up by setup/setup_library.py; the cash boxes are the ones in imederp/treasuries.py.
+		from imed_erp.imederp.treasuries import BUSINESS_TREASURY
+
+		for business in ("قاعات Imed", "استوديو X", "تطبيق BA Plus"):
+			with self.subTest(business):
+				account = frappe.db.get_value(
+					"Mode of Payment Account",
+					{"parent": f"نقدي — {business}", "company": COMPANY},
+					"default_account",
+				)
+				self.assertEqual(account, f"{BUSINESS_TREASURY[business]} - {ABBR}")

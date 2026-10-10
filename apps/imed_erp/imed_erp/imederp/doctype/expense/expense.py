@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_months, flt, getdate
+from frappe.utils import add_months, flt, format_datetime, getdate, now_datetime
 
 from imed_erp.imederp.doctype.expense_category.expense_category import get_expense_account
 from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
@@ -92,10 +92,11 @@ class Expense(Document):
             frappe.throw(_("Expense {0} was rejected and cannot be changed. Make a new expense instead.").format(self.name))
 
     def reset_approval_if_amount_changed(self):
-        # The owner approved this expense as it was: its amount, what it is for, where it is paid from and
-        # its receipt. A change to any of them needs his approval again.
+        # The owner approved this expense as it was: its amount, what it is for, where it is paid from, its
+        # date and its receipt. A change to any of them needs his approval again.
         if self.approval_status in (PENDING, APPROVED) and any(
-            self.has_value_changed(field) for field in ("amount", "expense_category", "activity", "treasury", "receipt")
+            self.has_value_changed(field)
+            for field in ("amount", "expense_category", "activity", "treasury", "posting_date", "receipt")
         ):
             self.approval_status = None
             self.approved_by = None
@@ -134,10 +135,16 @@ class Expense(Document):
         self.approval_status = PENDING
         self.approval_requested_by = frappe.session.user
         self.save()
+        # The time makes each request its own notification: the service skips one the owner already has, so
+        # a request sent again after a change would otherwise never reach him.
         notify(
             get_approvers(),
-            _("Expense {0} of {1} for {2} ({3}) is waiting for your approval.").format(
-                self.name, frappe.format_value(self.amount, {"fieldtype": "Currency"}), self.expense_category, self.activity
+            _("Expense {0} of {1} for {2} ({3}) is waiting for your approval (requested {4}).").format(
+                self.name,
+                frappe.format_value(self.amount, {"fieldtype": "Currency"}),
+                self.expense_category,
+                self.activity,
+                format_datetime(now_datetime()),
             ),
             "Expense",
             self.name,

@@ -33,10 +33,13 @@ cards = [
     dict(label="Total Purchases", doc="Purchase Receipt",
          func="Sum", field="grand_total", color=SLATE, full=1,
          filters=[["Purchase Receipt", "docstatus", "=", 1]]),
+    # A customer is never submitted (docstatus is always 0), so a disabled one is what is left out.
     dict(label="Customers", doc="Customer",
-         func="Count", field="", color=SLATE, filters=[]),
+         func="Count", field="", color=SLATE,
+         filters=[["Customer", "disabled", "=", 0]]),
     dict(label="Doctor Agreements", doc="Doctor Agreement",
-         func="Count", field="", color=SLATE, filters=[]),
+         func="Count", field="", color=SLATE,
+         filters=[["Doctor Agreement", "docstatus", "=", 1]]),
 ]
 
 created_cards = []
@@ -67,15 +70,16 @@ for c in cards:
 frappe.db.commit()
 
 # ---------------- Charts ----------------
+# Only submitted sales: Frappe's charts count drafts too unless told otherwise.
 charts = [
     dict(label="Sales Trend", doc="Sales Invoice",
          based_on="posting_date", value_field="grand_total",
          ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
-         parent_doc=None),
+         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
     dict(label="Revenue by Business", doc="Sales Invoice Item",
          based_on="cost_center", value_field="base_net_amount",
          ctype="Bar", color=TEAL_LIGHT, timespan=None, time_interval=None,
-         parent_doc="Sales Invoice"),
+         parent_doc="Sales Invoice", filters=[["Sales Invoice Item", "docstatus", "=", 1]]),
     dict(label="Stock Value by Warehouse", doc="Bin",
          based_on="warehouse", value_field="stock_value",
          ctype="Donut", color=TEAL, timespan=None, time_interval=None,
@@ -94,7 +98,7 @@ for ch in charts:
             "type": ch["ctype"],
             "color": ch["color"],
             "is_public": 1,
-            "filters_json": "[]",
+            "filters_json": frappe.as_json(ch.get("filters", [])),
         }
         if ch["ctype"] in ("Bar", "Donut"):
             d.update({

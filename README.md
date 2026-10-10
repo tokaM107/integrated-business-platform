@@ -149,11 +149,14 @@ and expense numbers would jump whenever a bill or a rule is made.
 - Branch managers make regular journal entries too (create and submit; no cancel, amend or delete). They
   only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
   premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
+  The accountant changes these three but never deletes them; only the owner does.
 - A branch manager pays expenses, sends transfers and makes journal and payment entries only from their
   own business's cash box or the
   group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
+- Prices (Item Price): only the owner edits them. The accountant's price changes need approval (SEC-02),
+  not built yet. Customers: the owner, the accountant and branch managers add them.
 
 **Expense Approver** is not a requirement role but a marker the code checks: its holders approve or
 reject expenses (EXP-06). Only the owner has it.
@@ -293,8 +296,8 @@ without changing anything if they do not (so a user is never created without the
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
-| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
-| `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
+| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
 | `check_financial.py` | Test, rolled back afterwards. Checks EGP on the company and Global Defaults, the fiscal year, `dd-mm-yyyy` dates, number format, that a printed invoice (HTML and PDF) shows `EGP` and not `£`, and that a closed accounting period blocks invoices and journal entries (CORE-09). |
@@ -303,7 +306,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
 | `setup_buying.py` | Buying (LIB-07, ACC-12): the supplier group `موردي الورق والخامات` and the payment terms a purchase invoice is made on, each a Payment Term and a Payment Terms Template of the same name: `نقدي` (due the same day) and `آجل 30 يوم` (due in 30 days). Buying Settings: no purchase order or purchase receipt required first, since the library buys directly; one purchase invoice with **Update Stock** ticked receives the paper and records what is owed. The purchase invoice screen (`public/js/purchase_invoice.js`) shows only what a purchase needs; Update Stock is ticked on a new invoice and the unit is a column of the items table (Property Setters). What exists is left as is. Idempotent. |
-| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
+| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
 `setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_buying.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
@@ -388,8 +391,9 @@ only, so nobody else can switch the approval off.
 3. A rejected expense is closed for good: it can no longer be saved or submitted. If the payment is
    needed after all, a new expense is made.
 
-Changing the amount, category, business, treasury or receipt after a request or an approval clears it,
-so the expense as changed needs approval again.
+Changing the amount, category, business, treasury, date or receipt after a request or an approval clears
+it, so the expense as changed needs approval again. Each request carries the time it was sent, so a request
+sent again after a change reaches the owner as a new alert.
 The owner's own expenses are approved as he submits them. Approval is by the
 **Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
@@ -437,8 +441,11 @@ Paper is bought by the box, used by the sheet and stocked in sheets:
 | UOM | Sheets |
 |---|---|
 | `ورقة` (sheet, whole numbers only) | 1 (stock UOM) |
-| `رزمة` (ream) | 500 |
-| `كرتونة` (box) | 2,500 (default purchase UOM) |
+| `رزمة` (ream, whole numbers only) | 500 |
+| `كرتونة` (box, whole numbers only) | 2,500 (default purchase UOM) |
+
+None of the three is split, so ERPNext's reorder rounds up: a shortfall of 2,000 sheets asks for one box,
+not 0.8.
 
 Every item in the item group `ورق` is valued at **moving average** and bought by the
 box; `setup_core.py` applies both to any paper item added to the group later. Moving average means every
@@ -562,7 +569,8 @@ document linked to a closed academic period cannot be saved either.
 
 **Payment methods.** Each library's POS takes cash on its own method, `نقدي — مكتبة المواساة` /
 `نقدي — مكتبة الأزاريطة`, which posts to that library's cash box (ERPNext's `Cash` posts to the company's
-main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`).
+main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`). The other businesses take cash the same
+way into their own cash boxes: `نقدي — قاعات Imed` (the center's), `نقدي — استوديو X` and `نقدي — تطبيق BA Plus`.
 
 **Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
 copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
@@ -572,7 +580,9 @@ copy (from his agreement, as a fixed amount), with the library's costs and profi
 
 The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
 hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
-the doctor's amount, and a price below the cost of a copy is saved with a warning.
+the doctor's amount, and a price below the cost of a copy is saved with a warning. Editions belong to a
+library only. A books agreement with a percentage gives no amount per copy: the edition warns that the
+doctor's amount is missing until it is typed in.
 
 The rates change several times a year, so the owner and the accountant set them on **Printing Cost
 Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.

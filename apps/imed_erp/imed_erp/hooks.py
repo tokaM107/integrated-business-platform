@@ -179,7 +179,8 @@ doctype_js = {
 
 # Every event of a doctype in one entry: two entries for the same doctype would replace each other.
 # on_trash: a submitted or cancelled financial document is never deleted (imederp/no_delete.py).
-# validate on the app's documents: none is saved in a closed month or academic period (imederp/period_lock.py).
+# validate and before_cancel on the app's documents: none is saved or cancelled in a closed month or academic
+# period (imederp/period_lock.py).
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 doc_events = {
 	"Journal Entry": {
@@ -235,18 +236,22 @@ doc_events = {
 	"Expense": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
 	"Inter Business Transfer": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
 	"Doctor Ledger Entry": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
 	"App Subscription": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
 	"Book Edition": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
@@ -254,6 +259,7 @@ doc_events = {
 	"Printer Reading": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
 	"Allocation Rule": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",

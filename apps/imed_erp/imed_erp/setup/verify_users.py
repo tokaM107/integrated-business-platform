@@ -28,6 +28,8 @@ CHECKS = [
 	# Only the owner deletes, and only a draft; posted and cancelled documents never are (imederp/no_delete.py).
 	("Delete a draft", "Sales Invoice", "delete", (1, 0, 0, 0)),
 	("Delete a draft", "Expense", "delete", (1, 0, 0, 0)),
+	("Delete a month closing", "Accounting Period", "delete", (1, 0, 0, 0)),
+	("Delete the shared expenses split", "Cost Center Allocation", "delete", (1, 0, 0, 0)),
 	("Close or reopen a month", "Accounting Period", "write", (1, 1, 0, 0)),
 	("Change the chart of accounts", "Account", "create", (1, 1, 0, 0)),
 	("Cancel the shared expenses split", "Cost Center Allocation", "cancel", (1, 1, 0, 0)),
@@ -35,6 +37,8 @@ CHECKS = [
 	("Doctor settlements", "Doctor Ledger Entry", "submit", (1, 1, 0, 0)),
 	("View employees", "Employee", "read", (1, 1, 0, 1)),
 	("Manage employees", "Employee", "write", (1, 0, 0, 1)),
+	("Edit prices", "Item Price", "write", (1, 0, 0, 0)),
+	("Add a customer", "Customer", "create", (1, 1, 1, 0)),
 ]
 NOT_BUILT = [
 	"Create / edit / cancel a booking (Studio / Halls modules)",
