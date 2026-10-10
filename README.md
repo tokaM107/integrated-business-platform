@@ -438,8 +438,11 @@ Paper is bought by the box, used by the sheet and stocked in sheets:
 | UOM | Sheets |
 |---|---|
 | `ورقة` (sheet, whole numbers only) | 1 (stock UOM) |
-| `رزمة` (ream) | 500 |
-| `كرتونة` (box) | 2,500 (default purchase UOM) |
+| `رزمة` (ream, whole numbers only) | 500 |
+| `كرتونة` (box, whole numbers only) | 2,500 (default purchase UOM) |
+
+None of the three is split, so ERPNext's reorder rounds up: a shortfall of 2,000 sheets asks for one box,
+not 0.8.
 
 Every item in the item group `ورق` is valued at **moving average** and bought by the
 box; `setup_core.py` applies both to any paper item added to the group later. Moving average means every
