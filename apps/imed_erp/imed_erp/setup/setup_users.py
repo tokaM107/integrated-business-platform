@@ -314,6 +314,17 @@ def apply_permission_matrix():
 	validate_permissions_for_doctype("Employee")
 	frappe.clear_cache(doctype="Employee")
 
+	# "Edit prices" and "Add a customer": the owner does both. The accountant adds customers; their
+	# price changes need approval (SEC-02), which is not built yet. Branch managers add customers at the
+	# point of sale through ERPNext's Sales User.
+	edit = {"read": 1, "write": 1, "create": 1}
+	ensure_docperm("Item Price", "Super Admin", edit, create=True)
+	ensure_docperm("Customer", "Super Admin", edit, create=True)
+	ensure_docperm("Customer", "Accountant", {"read": 1, "create": 1}, create=True)
+	for doctype in ("Item Price", "Customer"):
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
+
 
 def run():
 	# Safety check: stop before writing anything if the company, a role, a cost center or a
