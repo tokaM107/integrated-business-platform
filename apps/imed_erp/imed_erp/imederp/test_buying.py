@@ -140,6 +140,12 @@ class IntegrationTestBuying(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("Purchase Invoice", invoice.name, "outstanding_amount"), 650)
 		self.assertEqual(owed(), 650)
 
+	def test_purchase_paid_on_the_spot(self):
+		# Is Paid: the payment is part of the invoice, so nothing is owed. The screen fills in the treasury
+		# from the payment method; here it is set as the screen would.
+		invoice = self.buy(1, 650, is_paid=1, mode_of_payment="Cash", cash_bank_account=MAIN_TREASURY, paid_amount=650)
+		self.assertEqual((invoice.outstanding_amount, invoice.status), (0, "Paid"))
+
 	def test_payables_report_shows_what_is_left_in_arabic(self):
 		from frappe.desk.query_report import run
 
