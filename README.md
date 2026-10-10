@@ -445,6 +445,34 @@ box; `setup_core.py` applies both to any paper item added to the group later. Mo
 sheet in a store costs the same, the average of what was paid: a box at 650 then one at 700 make every
 sheet 0.27. Two boxes at 650 come in as 5,000 sheets at 0.26 each, 1,300 in all.
 
+A purchase takes the conversion factor from the item. If the item has no row for the chosen UOM, ERPNext
+uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the item's UOM table whenever
+its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
+`verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
+valuation method once stock has moved; the script then only warns.
+
+### Buying from suppliers (LIB-07, ACC-12)
+
+The accountant buys paper and materials from suppliers, paid on the spot or on credit, with ERPNext's
+own Supplier, Purchase Invoice, Payment Entry and payables reports; `setup_buying.py` sets them up.
+
+1. **Supplier**, in the group `موردي الورق والخامات`.
+2. **Purchase Invoice**, with no purchase order or receipt before it: the library buys directly.
+   **Update Stock** is ticked on a new invoice, so the one invoice brings the paper into the store and
+   records what is owed. Purchases go into the main store, `خامات المواساة`; paper reaches a branch by a
+   transfer from it, never by a purchase of its own. Paper is bought by the box (see below). The screen
+   (`public/js/purchase_invoice.js`) shows only what a purchase needs: supplier and date, Update Stock
+   and the warehouse, the items with their unit, the totals, and the payment terms; the supplier's
+   invoice is attached from the sidebar.
+3. **Paid on the spot or on credit.** For a purchase paid at once, tick **Is Paid** and choose the
+   payment method; the screen fills in its treasury. Otherwise pick the payment terms, `نقدي` (due the same day) or `آجل 30 يوم` (due in
+   30 days), and pay later with a **Payment Entry** of type Pay against the invoice. Two boxes at 650 on
+   credit leave the supplier owed 1,300; paying 650 from the main treasury leaves 650.
+4. **Who pays from where.** The owner and the accountant pay from any treasury. A branch manager pays
+   only from their own business's cash box or the group's InstaPay / Vodafone Cash wallets
+   (`imederp/treasuries.py`). Branch managers cannot open the main store's invoices (their warehouse
+   permission is their own branch's), so those are paid by the accountant.
+
 Shipping is part of what the paper cost. It is added after the purchase with a **Landed Cost Voucher**
 on the purchase invoice (or receipt), charged to `مصروفات الشحن والنقل`: two boxes at 650 with 100 for
 shipping make every sheet 0.28 instead of 0.26. The voucher credits the shipping account and the
@@ -454,12 +482,6 @@ What is owed to each supplier is ERPNext's **Accounts Payable** (invoice by invo
 **Accounts Payable Summary** (one line per supplier). Both need the company, which they fill in from the
 user's default (`Mohamed Mamdouh group`). ERPNext's Arabic for two of their columns is wrong
 (`Due Date`, `Age (Days)`); `translations/ar.csv` corrects it.
-
-A purchase takes the conversion factor from the item. If the item has no row for the chosen UOM, ERPNext
-uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the item's UOM table whenever
-its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
-`verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
-valuation method once stock has moved; the script then only warns.
 
 ### Library products (LIB-06)
 
@@ -605,6 +627,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "E
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_buying
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 ```
