@@ -27,6 +27,13 @@ AZARITA = f"مكتبة الأزاريطة - {ABBR}"
 AZARITA_CASH = f"خزينة مكتبة الأزاريطة - {ABBR}"
 
 
+def labels_of(report):
+	from frappe.desk.query_report import run
+
+	result = run(report, filters={"company": COMPANY, "report_date": today(), "party_type": "Supplier"})
+	return [c["label"] for c in result["columns"] if isinstance(c, dict)]
+
+
 class IntegrationTestBuying(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
@@ -52,7 +59,7 @@ class IntegrationTestBuying(IntegrationTestCase):
 			{
 				"doctype": "Purchase Invoice",
 				"company": COMPANY,
-				"supplier": self.supplier,
+				"supplier": values.pop("supplier", self.supplier),
 				"posting_date": today(),
 				"set_warehouse": STORE,
 				"items": [{"item_code": PAPER, "qty": boxes, "uom": BOX, "rate": rate, "warehouse": STORE}],
@@ -118,6 +125,32 @@ class IntegrationTestBuying(IntegrationTestCase):
 		payment.submit()
 		self.assertEqual(payment.payment_type, "Pay")
 		self.assertEqual(frappe.db.get_value("Purchase Invoice", invoice.name, "outstanding_amount"), 650)
+
+	def test_payables_report_shows_what_is_left_in_arabic(self):
+		from frappe.desk.query_report import run
+
+		# Its own supplier: the other tests' purchases stay on the class supplier until the class rolls back.
+		supplier = frappe.get_doc(
+			{"doctype": "Supplier", "supplier_name": "_Test Payables Supplier", "supplier_group": "موردي الورق والخامات"}
+		).insert()
+		invoice = self.buy(2, 650, supplier=supplier.name, payment_terms_template="آجل 30 يوم")
+		payment = self.pay(invoice, 650, MAIN_TREASURY).insert()
+		payment.submit()
+
+		lang = frappe.local.lang
+		frappe.local.lang = "ar"
+		try:
+			for report in ("Accounts Payable", "Accounts Payable Summary"):
+				with self.subTest(report):
+					result = run(report, filters={"company": COMPANY, "report_date": today(), "party_type": "Supplier"})
+					rows = [r for r in result["result"] if isinstance(r, dict) and r.get("party") == supplier.name]
+					self.assertEqual(sum(flt(r["outstanding"]) for r in rows), 650)
+					labels = [c["label"] for c in result["columns"] if isinstance(c, dict)]
+					self.assertIn("المبلغ المستحق", labels)
+			# ERPNext's own Arabic for these two is wrong; translations/ar.csv corrects it.
+			self.assertIn("تاريخ الاستحقاق", labels_of("Accounts Payable"))
+		finally:
+			frappe.local.lang = lang
 
 	def test_branch_manager_pays_a_supplier_only_from_her_cash_box(self):
 		# The main store's invoices are the accountant's (Sara has no access to its warehouse), so her
