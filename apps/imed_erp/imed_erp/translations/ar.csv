@@ -133,7 +133,7 @@ This expense was rejected and is closed. Make a new expense if it is still neede
 Expense {0} was rejected and cannot be changed. Make a new expense instead.,المصروف {0} اترفض ومينفعش يتعدل. اعمل مصروف جديد بداله.
 Approval Needed,محتاج موافقة
 Approval can only be requested for a draft that has not been sent yet.,طلب الموافقة بيتعمل بس لمسودة لسه متبعتتش.
-Expense {0} of {1} for {2} ({3}) is waiting for your approval.,المصروف {0} بمبلغ {1} لـ {2} ({3}) مستني موافقتك.
+Expense {0} of {1} for {2} ({3}) is waiting for your approval (requested {4}).,المصروف {0} بمبلغ {1} لـ {2} ({3}) مستني موافقتك (الطلب اتبعت {4}).
 Expense {0} was approved and posted.,المصروف {0} اتوافق عليه واتسجل.
 Expense {0} was rejected.,المصروف {0} اترفض.
 Expense {0} is not waiting for approval.,المصروف {0} مش مستني موافقة.
@@ -196,6 +196,9 @@ Edition,الإصدار
 Parent Period,الفترة الأم
 Doctor Share Type,نوع نصيب الطبيب
 {0} is not a library. Printer readings are recorded for a library.,{0} مش مكتبة. قراءات العدادات بتتسجل للمكتبات بس.
+{0} is not a library. Editions are printed and sold by a library.,{0} مش مكتبة. الإصدارات بتتطبع وتتباع في المكتبات بس.
+"Agreement {0} gives the doctor a percentage, not an amount per copy. Enter it in Doctor's Amount per Copy, or the doctor gets nothing from this edition.","الاتفاقية {0} بتدّي الطبيب نسبة، مش مبلغ على النسخة. اكتب المبلغ في خانة «حق الطبيب في النسخة»، وإلا الطبيب مش هياخد حاجة من الإصدار ده."
+Doctor's Amount Missing,حق الطبيب مش مكتوب
 {0} is in the closed accounting period {1}. Choose a date in an open month.,{0} في الفترة المحاسبية المقفولة {1}. اختار تاريخ في شهر مفتوح.
 Period Closed,الفترة مقفولة
 A4 paper has no price yet in {0}; receive paper before approving the edition.,ورق A4 لسه مالوش سعر في {0}؛ استلم ورق الأول قبل تسجيل الإصدار.

@@ -57,8 +57,8 @@ READ_ONLY = {p: 0 for p in ("write", "create", "submit", "cancel", "amend", "del
 MANAGER_RIGHTS = {"Journal Entry": {"write": 1, "create": 1, "submit": 1, **MANAGER_DENIED}}
 
 # The books' own controls: month-end closing (CORE-09), the chart of accounts, and the split of the
-# shared premises' expenses (EXP-03). Only Super Admin and Accountant change them; ERPNext gives
-# Accounts User, which every branch manager has, full rights on them.
+# shared premises' expenses (EXP-03). Only Super Admin and Accountant change them, and only Super Admin
+# deletes them; ERPNext gives Accounts User, which every branch manager has, full rights on them.
 CONTROL_DOCTYPES = ["Accounting Period", "Account", "Cost Center Allocation"]
 FULL_RIGHTS = {
 	p: 1
@@ -298,8 +298,9 @@ def apply_permission_matrix():
 		frappe.clear_cache(doctype=doctype)
 
 	for doctype in CONTROL_DOCTYPES:
-		for role in ["Super Admin", "Accountant"]:
-			ensure_docperm(doctype, role, FULL_RIGHTS, create=True)
+		ensure_docperm(doctype, "Super Admin", FULL_RIGHTS, create=True)
+		ensure_docperm(doctype, "Accountant", ACCOUNTANT_RIGHTS, create=True)
+		ensure_docperm(doctype, "Accounts Manager", {"delete": 0}, create=False)
 		for role in MANAGER_STANDARD_ROLES:
 			ensure_docperm(doctype, role, READ_ONLY, create=False)
 		validate_permissions_for_doctype(doctype)
@@ -312,6 +313,17 @@ def apply_permission_matrix():
 	ensure_docperm("Employee", "Accountant", {"read": 1, "report": 1}, create=True)
 	validate_permissions_for_doctype("Employee")
 	frappe.clear_cache(doctype="Employee")
+
+	# "Edit prices" and "Add a customer": the owner does both. The accountant adds customers; their
+	# price changes need approval (SEC-02), which is not built yet. Branch managers add customers at the
+	# point of sale through ERPNext's Sales User.
+	edit = {"read": 1, "write": 1, "create": 1}
+	ensure_docperm("Item Price", "Super Admin", edit, create=True)
+	ensure_docperm("Customer", "Super Admin", edit, create=True)
+	ensure_docperm("Customer", "Accountant", {"read": 1, "create": 1}, create=True)
+	for doctype in ("Item Price", "Customer"):
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
 
 
 def run():

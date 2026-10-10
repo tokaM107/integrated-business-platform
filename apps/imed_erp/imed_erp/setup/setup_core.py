@@ -20,6 +20,7 @@ CURRENCY = "EGP"
 
 # Paper is stocked in sheets and bought in boxes.
 SHEET = "ورقة"
+REAM = "رزمة"
 BOX = "كرتونة"
 HOUR = "ساعة"
 
@@ -321,9 +322,10 @@ def run():
 	exec(open(frappe.get_app_path("imed_erp", "setup", "setup_coa.py")).read(), {"frappe": frappe})
 
 	# ---------- 4) UOMs ----------
-	# Paper is stocked in sheets, and a sheet cannot be split.
-	for uom in ["رزمة", "كرتونة", "ورقة", "ساعة"]:
-		whole = int(uom == SHEET)
+	# Paper is stocked in sheets and bought in reams and boxes; none of them is split, so a reorder of
+	# 2,000 sheets asks for one box, not 0.8.
+	for uom in [REAM, BOX, SHEET, HOUR]:
+		whole = int(uom in (SHEET, REAM, BOX))
 		if not frappe.db.exists("UOM", uom):
 			frappe.get_doc({"doctype": "UOM", "uom_name": uom, "must_be_whole_number": whole}).insert()
 			print(f"create UOM {uom}")

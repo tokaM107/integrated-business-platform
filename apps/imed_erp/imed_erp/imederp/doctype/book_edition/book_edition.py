@@ -3,6 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt
 
+from imed_erp.imederp.doctype.printer_reading.printer_reading import LIBRARIES
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 
 # The paper in a copy is costed at the moving average price paid for it, read from the library's raw
@@ -28,6 +29,10 @@ class BookEdition(Document):
         # Records are posted to one business; group cost centers cannot hold transactions.
         if frappe.db.get_value("Cost Center", self.cost_center, "is_group"):
             frappe.throw(f"Cost Center {self.cost_center} is a group. Choose a branch under it.")
+        # Editions are printed and sold by the libraries only.
+        abbr = frappe.get_cached_value("Company", frappe.db.get_value("Cost Center", self.cost_center, "company"), "abbr")
+        if frappe.db.get_value("Cost Center", self.cost_center, "parent_cost_center") != f"{LIBRARIES} - {abbr}":
+            frappe.throw(_("{0} is not a library. Editions are printed and sold by a library.").format(self.cost_center))
         self.validate_agreement()
         # DOC-25: the rates are taken while the edition is a draft and kept once it is submitted.
         if self.docstatus == 0:
@@ -48,6 +53,13 @@ class BookEdition(Document):
         # The doctor names his amount per copy; the library prices the rest on top of it.
         if agreement and agreement.share_type == "Fixed" and not self.doctor_share:
             self.doctor_share = agreement.share_value
+        # The price is built on an amount per copy; a percentage gives none, so the doctor would get nothing.
+        if agreement and agreement.share_type == "Percentage" and not flt(self.doctor_share):
+            frappe.msgprint(
+                _("Agreement {0} gives the doctor a percentage, not an amount per copy. Enter it in Doctor's Amount per Copy, or the doctor gets nothing from this edition.").format(self.agreement),
+                title=_("Doctor's Amount Missing"),
+                indicator="orange",
+            )
 
     def set_rates(self):
         rates = get_rates()

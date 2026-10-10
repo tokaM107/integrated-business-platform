@@ -367,6 +367,7 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 		for doctype in LOCKED_DOCTYPES:
 			with self.subTest(doctype):
 				self.assertIn("imed_erp.imederp.period_lock.validate_closed_period", events[doctype]["validate"])
+				self.assertIn("imed_erp.imederp.period_lock.validate_closed_period", events[doctype]["before_cancel"])
 		# The reorder alerts (LIB-04) are still there next to them.
 		self.assertIn("imed_erp.imederp.stock_reorder.alert_on_reorder_level", events["Stock Entry"]["on_submit"])
 
@@ -503,10 +504,31 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 			limit=1,
 			pluck="name",
 		)[0]
-		for field, value in (("expense_category", self.water), ("treasury", other_treasury)):
+		for field, value in (
+			("expense_category", self.water),
+			("treasury", other_treasury),
+			("posting_date", lambda expense: frappe.utils.add_days(expense.posting_date, -1)),
+		):
 			with self.subTest(field):
 				expense = self.draft(46000)
 				expense.request_approval()
-				expense.set(field, value)
+				expense.set(field, value(expense) if callable(value) else value)
 				expense.save()
 				self.assertFalse(expense.approval_status)
+
+	def test_a_request_sent_again_reaches_the_owner(self):
+		# The notification service skips one the owner already has; each request carries its own time.
+		from unittest.mock import patch
+
+		expense = self.draft(46000)
+		expense.request_approval()
+		expense.amount = 50000
+		expense.save()
+		with patch(
+			"imed_erp.imederp.doctype.expense.expense.now_datetime",
+			return_value=frappe.utils.add_to_date(frappe.utils.now_datetime(), minutes=5),
+		):
+			expense.request_approval()
+		self.assertEqual(
+			frappe.db.count("Notification Log", {"document_name": expense.name, "for_user": OWNER, "type": "Alert"}), 2
+		)
