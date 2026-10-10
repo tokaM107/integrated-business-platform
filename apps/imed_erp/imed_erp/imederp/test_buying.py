@@ -117,14 +117,28 @@ class IntegrationTestBuying(IntegrationTestCase):
 		return payment
 
 	def test_paying_part_of_a_credit_purchase(self):
-		# Two boxes on 30 days' credit: 1,300 owed. 650 paid from the main treasury leaves 650.
-		invoice = self.buy(2, 650, payment_terms_template="آجل 30 يوم")
-		self.assertEqual(invoice.outstanding_amount, 1300)
+		# Two boxes on 30 days' credit: 5,000 sheets in the store and 1,300 owed to the supplier. 650 paid
+		# from the main treasury leaves 650.
+		from erpnext.accounts.utils import get_balance_on
+
+		supplier = frappe.get_doc(
+			{"doctype": "Supplier", "supplier_name": "_Test Credit Supplier", "supplier_group": "موردي الورق والخامات"}
+		).insert()
+
+		def owed():
+			# A supplier's balance is a credit: what we owe shows as a negative balance.
+			return -flt(get_balance_on(party_type="Supplier", party=supplier.name, company=COMPANY))
+
+		before = self.stock()
+		invoice = self.buy(2, 650, supplier=supplier.name, payment_terms_template="آجل 30 يوم")
+		self.assertEqual(self.stock()[0], before[0] + 5000)
+		self.assertEqual((invoice.outstanding_amount, owed()), (1300, 1300))
 
 		payment = self.pay(invoice, 650, MAIN_TREASURY).insert()
 		payment.submit()
 		self.assertEqual(payment.payment_type, "Pay")
 		self.assertEqual(frappe.db.get_value("Purchase Invoice", invoice.name, "outstanding_amount"), 650)
+		self.assertEqual(owed(), 650)
 
 	def test_payables_report_shows_what_is_left_in_arabic(self):
 		from frappe.desk.query_report import run
