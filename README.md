@@ -445,6 +445,11 @@ box; `setup_core.py` applies both to any paper item added to the group later. Mo
 sheet in a store costs the same, the average of what was paid: a box at 650 then one at 700 make every
 sheet 0.27. Two boxes at 650 come in as 5,000 sheets at 0.26 each, 1,300 in all.
 
+Shipping is part of what the paper cost. It is added after the purchase with a **Landed Cost Voucher**
+on the purchase invoice (or receipt), charged to `مصروفات الشحن والنقل`: two boxes at 650 with 100 for
+shipping make every sheet 0.28 instead of 0.26. The voucher credits the shipping account and the
+shipping bill, when paid, debits it, so the account nets to zero and the cost sits in the paper.
+
 A purchase takes the conversion factor from the item. If the item has no row for the chosen UOM, ERPNext
 uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the item's UOM table whenever
 its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
