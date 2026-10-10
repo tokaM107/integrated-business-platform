@@ -1,6 +1,6 @@
 # No financial transaction is ever deleted (ACC-07, owner's decision of 7 Oct 2026). A mistake is corrected
 # by cancelling the document, which reverses its entries and keeps it on record. Only a draft, never posted,
-# can be deleted, by the owner and the accountant (the permission is theirs; see setup_users.py).
+# can be deleted, and only by the owner (the permission is his alone; see setup_users.py).
 #
 # hooks.py runs this on_trash for every financial doctype, ERPNext's and the app's.
 
