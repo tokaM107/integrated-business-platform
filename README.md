@@ -389,8 +389,9 @@ only, so nobody else can switch the approval off.
 3. A rejected expense is closed for good: it can no longer be saved or submitted. If the payment is
    needed after all, a new expense is made.
 
-Changing the amount, category, business, treasury or receipt after a request or an approval clears it,
-so the expense as changed needs approval again.
+Changing the amount, category, business, treasury, date or receipt after a request or an approval clears
+it, so the expense as changed needs approval again. Each request carries the time it was sent, so a request
+sent again after a change reaches the owner as a new alert.
 The owner's own expenses are approved as he submits them. Approval is by the
 **Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
@@ -545,7 +546,9 @@ copy (from his agreement, as a fixed amount), with the library's costs and profi
 
 The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
 hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
-the doctor's amount, and a price below the cost of a copy is saved with a warning.
+the doctor's amount, and a price below the cost of a copy is saved with a warning. Editions belong to a
+library only. A books agreement with a percentage gives no amount per copy: the edition warns that the
+doctor's amount is missing until it is typed in.
 
 The rates change several times a year, so the owner and the accountant set them on **Printing Cost
 Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
