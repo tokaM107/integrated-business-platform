@@ -28,6 +28,8 @@ CHECKS = [
 	# Only the owner deletes, and only a draft; posted and cancelled documents never are (imederp/no_delete.py).
 	("Delete a draft", "Sales Invoice", "delete", (1, 0, 0, 0)),
 	("Delete a draft", "Expense", "delete", (1, 0, 0, 0)),
+	("Delete a month closing", "Accounting Period", "delete", (1, 0, 0, 0)),
+	("Delete the shared expenses split", "Cost Center Allocation", "delete", (1, 0, 0, 0)),
 	("Close or reopen a month", "Accounting Period", "write", (1, 1, 0, 0)),
 	("Change the chart of accounts", "Account", "create", (1, 1, 0, 0)),
 	("Cancel the shared expenses split", "Cost Center Allocation", "cancel", (1, 1, 0, 0)),
