@@ -133,3 +133,47 @@ class IntegrationTestPaperStock(IntegrationTestCase):
 		rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": STORE}, "valuation_rate"))
 		waste = get_rates().waste_per_sheet
 		self.assertAlmostEqual(get_paper_cost(f"مكتبة المواساة - {ABBR}"), rate + waste, places=4)
+
+	def test_reams_and_boxes_are_whole_numbers(self):
+		for uom in (REAM, BOX):
+			with self.subTest(uom):
+				self.assertTrue(frappe.db.get_value("UOM", uom, "must_be_whole_number"))
+
+	def test_reorder_of_2000_sheets_asks_for_one_box(self):
+		# ERPNext's daily reorder turns the sheets short into the purchase unit; a box is not split, so
+		# 2,000 sheets (0.8 of a box) become one box.
+		from erpnext.stock.reorder_item import create_material_request
+
+		item = frappe.get_cached_doc("Item", PAPER)
+		frappe.local.reorder_email_notify = 0
+		try:
+			requests = create_material_request(
+				{
+					"Purchase": {
+						COMPANY: [
+							{
+								"item_code": PAPER,
+								"warehouse": STORE,
+								"reorder_qty": 2000,
+								"original_reorder_qty": 2000,
+								"reorder_level": 2000,
+								"projected_on_hand": 0,
+								"item_details": frappe._dict(
+									name=PAPER,
+									item_name=item.item_name,
+									item_group=item.item_group,
+									description=item.description,
+									stock_uom=item.stock_uom,
+									purchase_uom=item.purchase_uom,
+								),
+							}
+						]
+					}
+				}
+			)
+		finally:
+			del frappe.local.reorder_email_notify
+
+		self.assertEqual(len(requests), 1)
+		row = requests[0].items[0]
+		self.assertEqual((row.uom, row.qty, row.stock_qty), (BOX, 1, 2500))
