@@ -94,6 +94,12 @@ CASH_MODES = {
 	"مكتبة الأزاريطة": ("نقدي — مكتبة الأزاريطة", "Cash", "خزينة مكتبة الأزاريطة"),
 }
 WALLET_MODES = [("InstaPay", "Bank", "محفظة InstaPay"), ("Vodafone Cash", "Bank", "محفظة Vodafone Cash")]
+# The other businesses take cash too, each into its own cash box (no point of sale: invoices are made by hand).
+OTHER_CASH_MODES = [
+	("نقدي — قاعات Imed", "Cash", "خزينة سنتر Imed"),
+	("نقدي — استوديو X", "Cash", "خزينة X Studio"),
+	("نقدي — تطبيق BA Plus", "Cash", "خزينة تطبيق BA Plus"),
+]
 
 waiting = []
 
@@ -355,6 +361,10 @@ def run():
 		# ---------- 5) POS Profiles: warehouse and cost center per branch ----------
 		for spec in POS_PROFILES:
 			make_pos_profile(*spec)
+
+		# ---------- 6) Cash payment methods of the other businesses ----------
+		for mode in OTHER_CASH_MODES:
+			make_mode_of_payment(*mode)
 
 		frappe.db.commit()
 	except Exception:
