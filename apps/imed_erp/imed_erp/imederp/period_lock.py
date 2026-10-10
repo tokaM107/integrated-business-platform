@@ -3,12 +3,14 @@
 # Month-end closing is ERPNext's Accounting Period (setup/close_period.py). It locks every document type in
 # the `period_closing_doctypes` hook, and hooks.py adds the app's documents to that list. ERPNext's own check
 # reads `posting_date` and `company`, which most of the app's documents do not have, so this one finds the
-# date and the company on each document. A document linked to a closed academic period is locked too.
+# date and the company on each document, or uses the default company when the document has none (Doctor
+# Ledger Entry). A document linked to a closed academic period is locked too. The check runs on save, submit
+# and cancel: cancelling posts a reversal, so it is refused inside a closed month as well.
 
 import frappe
 from frappe import _
 
-# The doctypes this check runs on (hooks.py: period_closing_doctypes and doc_events).
+# The doctypes this check runs on (hooks.py: period_closing_doctypes, and doc_events validate and before_cancel).
 LOCKED_DOCTYPES = [
 	"Expense",
 	"Inter Business Transfer",
@@ -24,8 +26,13 @@ COST_CENTER_FIELDS = ("activity", "from_business", "cost_center", "branch")
 def validate_closed_period(doc, method=None):
 	validate_academic_period(doc)
 	date = next((doc.get(f) for f in DATE_FIELDS if doc.get(f)), None)
-	company = doc.get("company") or next(
-		(frappe.db.get_value("Cost Center", doc.get(f), "company") for f in COST_CENTER_FIELDS if doc.get(f)), None
+	company = (
+		doc.get("company")
+		or next(
+			(frappe.db.get_value("Cost Center", doc.get(f), "company") for f in COST_CENTER_FIELDS if doc.get(f)),
+			None,
+		)
+		or frappe.defaults.get_global_default("company")
 	)
 	if not date or not company:
 		return
