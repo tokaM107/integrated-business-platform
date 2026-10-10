@@ -367,6 +367,7 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 		for doctype in LOCKED_DOCTYPES:
 			with self.subTest(doctype):
 				self.assertIn("imed_erp.imederp.period_lock.validate_closed_period", events[doctype]["validate"])
+				self.assertIn("imed_erp.imederp.period_lock.validate_closed_period", events[doctype]["before_cancel"])
 		# The reorder alerts (LIB-04) are still there next to them.
 		self.assertIn("imed_erp.imederp.stock_reorder.alert_on_reorder_level", events["Stock Entry"]["on_submit"])
 
