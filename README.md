@@ -450,6 +450,11 @@ on the purchase invoice (or receipt), charged to `مصروفات الشحن وا
 shipping make every sheet 0.28 instead of 0.26. The voucher credits the shipping account and the
 shipping bill, when paid, debits it, so the account nets to zero and the cost sits in the paper.
 
+What is owed to each supplier is ERPNext's **Accounts Payable** (invoice by invoice, with its age) and
+**Accounts Payable Summary** (one line per supplier). Both need the company, which they fill in from the
+user's default (`Mohamed Mamdouh group`). ERPNext's Arabic for two of their columns is wrong
+(`Due Date`, `Age (Days)`); `translations/ar.csv` corrects it.
+
 A purchase takes the conversion factor from the item. If the item has no row for the chosen UOM, ERPNext
 uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the item's UOM table whenever
 its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
