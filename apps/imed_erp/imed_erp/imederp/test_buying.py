@@ -20,6 +20,11 @@ PAPER = "A4-PAPER"
 STORE = f"خامات المواساة - {ABBR}"
 BOX = "كرتونة"
 SHIPPING = f"مصروفات الشحن والنقل - {ABBR}"
+MAIN_TREASURY = f"الخزينة الرئيسية - {ABBR}"
+# Sara runs Azarita's library: she pays only from its cash box or the group's wallets (imederp/treasuries.py).
+BRANCH_MANAGER = "sara@imed.local"
+AZARITA = f"مكتبة الأزاريطة - {ABBR}"
+AZARITA_CASH = f"خزينة مكتبة الأزاريطة - {ABBR}"
 
 
 class IntegrationTestBuying(IntegrationTestCase):
@@ -33,6 +38,9 @@ class IntegrationTestBuying(IntegrationTestCase):
 			.insert()
 			.name
 		)
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
 
 	def stock(self):
 		"""Sheets in the store and their total value."""
@@ -91,3 +99,48 @@ class IntegrationTestBuying(IntegrationTestCase):
 		if before == (0.0, 0.0):
 			rate = frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": STORE}, "valuation_rate")
 			self.assertAlmostEqual(flt(rate), 0.28, places=4)
+
+	def pay(self, invoice, amount, treasury, **values):
+		"""A payment to the supplier against `invoice`, from `treasury`; not saved."""
+		from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+
+		payment = get_payment_entry("Purchase Invoice", invoice.name)
+		payment.update({"paid_from": treasury, "paid_amount": amount, "received_amount": amount, **values})
+		payment.references[0].allocated_amount = amount
+		return payment
+
+	def test_paying_part_of_a_credit_purchase(self):
+		# Two boxes on 30 days' credit: 1,300 owed. 650 paid from the main treasury leaves 650.
+		invoice = self.buy(2, 650, payment_terms_template="آجل 30 يوم")
+		self.assertEqual(invoice.outstanding_amount, 1300)
+
+		payment = self.pay(invoice, 650, MAIN_TREASURY).insert()
+		payment.submit()
+		self.assertEqual(payment.payment_type, "Pay")
+		self.assertEqual(frappe.db.get_value("Purchase Invoice", invoice.name, "outstanding_amount"), 650)
+
+	def test_branch_manager_pays_a_supplier_only_from_her_cash_box(self):
+		# The main store's invoices are the accountant's (Sara has no access to its warehouse), so her
+		# payment is made to the supplier directly, not against an invoice.
+		def payment(treasury):
+			return frappe.get_doc(
+				{
+					"doctype": "Payment Entry",
+					"payment_type": "Pay",
+					"company": COMPANY,
+					"posting_date": today(),
+					"party_type": "Supplier",
+					"party": self.supplier,
+					"paid_from": treasury,
+					"paid_to": frappe.get_cached_value("Company", COMPANY, "default_payable_account"),
+					"paid_amount": 200,
+					"received_amount": 200,
+					"cost_center": AZARITA,
+				}
+			)
+
+		frappe.set_user(BRANCH_MANAGER)
+		for treasury in (MAIN_TREASURY, f"خزينة مكتبة المواساة - {ABBR}"):
+			with self.subTest(treasury):
+				self.assertRaisesRegex(frappe.ValidationError, "treasury", payment(treasury).insert)
+		payment(AZARITA_CASH).insert().submit()
