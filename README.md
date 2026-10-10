@@ -149,6 +149,7 @@ and expense numbers would jump whenever a bill or a rule is made.
 - Branch managers make regular journal entries too (create and submit; no cancel, amend or delete). They
   only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
   premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
+  The accountant changes these three but never deletes them; only the owner does.
 - A branch manager pays expenses, sends transfers and makes journal and payment entries only from their
   own business's cash box or the
   group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
