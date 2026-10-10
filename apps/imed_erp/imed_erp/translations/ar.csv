@@ -229,3 +229,5 @@ Difference from Calculated Price,الفرق عن السعر المحسوب
 "Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.",سعر البيع {0} أقل من تكلفة النسخة {1}: المكتبة بتخسر {2} في كل نسخة بتتباع.
 Selling at a Loss,بيع بخسارة
 Every expense is paid only once the owner approves it. Request the owner's approval first.,أي مصروف مابيتصرفش غير بعد موافقة المالك. اطلب موافقة المالك الأول.
+Due Date,تاريخ الاستحقاق
+Age (Days),العمر (بالأيام)
