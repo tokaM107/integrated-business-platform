@@ -6,7 +6,9 @@
 #
 # Makes:
 #   - the supplier group for paper and materials suppliers;
-#   - the payment terms a purchase invoice is made on: cash (due the same day) or on credit (due in 30 days).
+#   - the payment terms a purchase invoice is made on: cash (due the same day) or on credit (due in 30 days);
+#   - Buying Settings: no purchase order or receipt required first. The library buys directly, and one
+#     purchase invoice with "Update Stock" both receives the paper and records what is owed.
 #
 # Idempotent: what exists is left as is. Safe to run again.
 
@@ -17,6 +19,9 @@ SUPPLIER_GROUP = "موردي الورق والخامات"
 # (name, days to pay). Each term is also its own one-line template, which is what an invoice picks.
 PAYMENT_TERMS = [("نقدي", 0), ("آجل 30 يوم", 30)]
 AFTER_INVOICE_DATE = "Day(s) after invoice date"
+
+# Buying Settings field <- value.
+BUYING_SETTINGS = {"po_required": "No", "pr_required": "No"}
 
 
 def ensure_supplier_group():
@@ -66,6 +71,17 @@ def ensure_payment_terms_template(name, days):
 	print(f"create Payment Terms Template {name}")
 
 
+def ensure_buying_settings():
+	settings = frappe.get_single("Buying Settings")
+	diff = {field: value for field, value in BUYING_SETTINGS.items() if settings.get(field) != value}
+	if not diff:
+		print("exists Buying Settings: no purchase order or receipt required")
+		return
+	settings.update(diff)
+	settings.save()
+	print(f"update Buying Settings: {diff}")
+
+
 def run():
 	if not frappe.db.exists("Supplier Group", "All Supplier Groups"):
 		print("STOP   Supplier Group 'All Supplier Groups' not found. Run setup_core.py first.")
@@ -76,6 +92,7 @@ def run():
 		for name, days in PAYMENT_TERMS:
 			ensure_payment_term(name, days)
 			ensure_payment_terms_template(name, days)
+		ensure_buying_settings()
 		frappe.db.commit()
 	except Exception:
 		frappe.db.rollback()
