@@ -155,6 +155,8 @@ and expense numbers would jump whenever a bill or a rule is made.
   group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
+- Prices (Item Price): only the owner edits them. The accountant's price changes need approval (SEC-02),
+  not built yet. Customers: the owner, the accountant and branch managers add them.
 
 **Expense Approver** is not a requirement role but a marker the code checks: its holders approve or
 reject expenses (EXP-06). Only the owner has it.
