@@ -148,6 +148,24 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 		self.assertRaises(frappe.ValidationError, self.make_edition, make_agreement("App"))
 
 	@patch(PAPER_COST, return_value=0.30)
+	def test_edition_belongs_to_a_library(self, _):
+		agreement = make_agreement("Books", "Fixed", 80)
+		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, cost_center="قاعات Imed - MMG")
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_percentage_agreement_warns_that_the_doctors_amount_is_missing(self, _):
+		agreement = make_agreement("Books", "Percentage", 10)
+		frappe.clear_messages()
+		edition = self.make_edition(agreement)
+		self.assertFalse(edition.doctor_share)
+		self.assertIn(agreement, " ".join(str(m) for m in frappe.get_message_log()))
+
+		# Once the amount is typed in, there is nothing to warn about.
+		frappe.clear_messages()
+		self.make_edition(agreement, doctor_share=80)
+		self.assertNotIn(agreement, " ".join(str(m) for m in frappe.get_message_log()))
+
+	@patch(PAPER_COST, return_value=0.30)
 	def test_editing_a_draft_updates_its_price(self, _):
 		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
 		self.assertEqual(edition.selling_price, 247)
