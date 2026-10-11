@@ -287,7 +287,9 @@ period_closing_doctypes = [
 	"Printer Reading",
 ]
 
-# The custom fields the app's code relies on, kept in step with it on every migrate.
+# The custom fields the app's code relies on: made when the app is installed (install-app does not run
+# after_migrate) and kept in step with the code on every migrate.
+after_install = ["imed_erp.imederp.material_issue.make_custom_fields"]
 after_migrate = ["imed_erp.imederp.material_issue.make_custom_fields"]
 
 # Scheduled Tasks
