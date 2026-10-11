@@ -17,6 +17,7 @@ LOCKED_DOCTYPES = [
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Printer Reading",
+	"Stock Count",
 ]
 
 DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date")
