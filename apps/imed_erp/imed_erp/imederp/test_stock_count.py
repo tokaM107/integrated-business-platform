@@ -254,3 +254,29 @@ class IntegrationTestStockCount(IntegrationTestCase):
 		frappe.get_doc("Stock Count", count.name).cancel()
 		frappe.set_user("Administrator")
 		self.assertEqual(frappe.db.get_value("Stock Reconciliation", reconciliation.name, "docstatus"), 2)
+
+	def test_get_items_in_store_lists_what_the_store_holds(self):
+		from imed_erp.imederp.doctype.stock_count.stock_count import get_recorded, get_store_items
+
+		self.receive_two_boxes()
+		self.receive(BOOK, 10, 50)
+		sheets, rate = self.on_hand()
+		frappe.set_user(RAGHAD)
+		rows = {row["item_code"]: row for row in get_store_items(STORE, today(), "23:59:59")}
+		self.assertEqual((rows[PAPER]["recorded_qty"], rows[PAPER]["valuation_rate"]), (sheets, rate))
+		self.assertEqual(rows[BOOK]["recorded_qty"], self.on_hand_of(BOOK))
+		self.assertEqual(get_recorded(PAPER, STORE, today(), "23:59:59"), {"recorded_qty": sheets, "valuation_rate": rate})
+
+	def on_hand_of(self, item_code, store=STORE):
+		return flt(frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": store}, "actual_qty"))
+
+	def test_an_item_left_uncounted_is_refused(self):
+		# Get Items in Store leaves Counted Qty empty: an item forgotten is refused, not a shortage of all of
+		# it. 0 is typed when there is none.
+		self.receive_two_boxes()
+		frappe.set_user(RAGHAD)
+		count = frappe.get_doc({"doctype": "Stock Count", "store": STORE, "items": [{"item_code": PAPER}]})
+		self.assertRaisesRegex(frappe.ValidationError, "enter the counted quantity", count.insert)
+		count.items[0].counted_qty = 0
+		count.insert()
+		self.assertEqual(count.items[0].difference_qty, -self.on_hand()[0])
