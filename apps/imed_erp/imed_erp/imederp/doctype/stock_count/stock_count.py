@@ -44,6 +44,13 @@ class StockCount(Document):
 	def check_items(self):
 		seen = set()
 		for row in self.items:
+			# Left empty is not counted; 0 is typed when there is none. An item fetched with Get Items in Store
+			# and forgotten would otherwise be a shortage of everything recorded.
+			if row.counted_qty is None:
+				frappe.throw(
+					_("Row #{0}: enter the counted quantity of {1}, 0 if there is none.").format(row.idx, row.item_code),
+					title=_("Not Counted"),
+				)
 			if row.item_code in seen:
 				frappe.throw(_("Row #{0}: {1} is counted twice.").format(row.idx, row.item_code))
 			seen.add(row.item_code)
@@ -51,14 +58,8 @@ class StockCount(Document):
 				frappe.throw(_("Row #{0}: the counted quantity cannot be negative.").format(row.idx))
 
 	def set_differences(self):
-		from erpnext.stock.utils import get_stock_balance
-
 		for row in self.items:
-			recorded, rate = get_stock_balance(
-				row.item_code, self.store, self.posting_date, self.posting_time, with_valuation_rate=True
-			)[:2]
-			row.recorded_qty = flt(recorded)
-			row.valuation_rate = flt(rate)
+			row.recorded_qty, row.valuation_rate = recorded(row.item_code, self.store, self.posting_date, self.posting_time)
 			row.difference_qty = flt(row.counted_qty) - row.recorded_qty
 			row.difference_value = flt(row.difference_qty * row.valuation_rate, row.precision("difference_value"))
 		self.items_counted = len(self.items)
@@ -103,6 +104,45 @@ class StockCount(Document):
 			reconciliation.flags.ignore_permissions = True
 			reconciliation.flags.from_stock_count = True
 			reconciliation.cancel()
+
+
+def recorded(item_code, store, posting_date, posting_time):
+	"""(quantity, cost of one) the system shows for an item in a store at a date and time."""
+	from erpnext.stock.utils import get_stock_balance
+
+	qty, rate = get_stock_balance(item_code, store, posting_date, posting_time, with_valuation_rate=True)[:2]
+	return flt(qty), flt(rate)
+
+
+@frappe.whitelist()
+def get_recorded(item_code, store, posting_date, posting_time):
+	"""For the screen: an item's recorded quantity and cost, as soon as it is picked."""
+	frappe.has_permission("Stock Count", "create", throw=True)
+	frappe.has_permission("Warehouse", "read", store, throw=True)
+	qty, rate = recorded(item_code, store, posting_date, posting_time)
+	return {"recorded_qty": qty, "valuation_rate": rate}
+
+
+@frappe.whitelist()
+def get_store_items(store, posting_date, posting_time):
+	"""Get Items in Store: every item the store holds, with its recorded quantity, for a full count."""
+	frappe.has_permission("Stock Count", "create", throw=True)
+	frappe.has_permission("Warehouse", "read", store, throw=True)
+	items = frappe.get_all(
+		"Bin",
+		filters={"warehouse": store, "actual_qty": ["!=", 0]},
+		pluck="item_code",
+		order_by="item_code",
+	)
+	rows = []
+	for item_code in items:
+		qty, rate = recorded(item_code, store, posting_date, posting_time)
+		if qty:
+			item = frappe.get_cached_value("Item", item_code, ["item_name", "stock_uom"], as_dict=True)
+			rows.append(
+				{"item_code": item_code, "item_name": item.item_name, "stock_uom": item.stock_uom, "recorded_qty": qty, "valuation_rate": rate}
+			)
+	return rows
 
 
 def block_cancel_of_count_reconciliation(doc, method=None):
