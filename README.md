@@ -114,6 +114,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
 | Expense Settings | full | read only |
 | Allocation Rule | full | read only |
+| Stock Count | full | Branch Manager: create, edit, submit, own branch's stores only (no cancel/delete) |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here, except on Inter Business Transfer, which Branch Manager may send. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
@@ -458,25 +459,29 @@ valuation method once stock has moved; the script then only warns.
 
 ### Stock counts (LIB-03, PRN-06)
 
-A count is ERPNext's **Stock Reconciliation**: the counted quantity of each item in a store, against the
-recorded one. ERPNext works out the shortage or surplus in quantity and value and posts it to
-`فروقات الجرد`: 4,900 sheets counted where 5,000 are recorded is a shortage of 100 sheets, 26 at 0.26 a
-sheet. The app adds two fields (`setup_library.py`, `imederp/stock_count.py`):
+The library counts every day and the consumables (paper, ink) every 7-15 days, on the app's **Stock Count**
+screen (`imederp/doctype/stock_count`): one store, the date, Count Type (`Daily` or `Periodic
+(Consumables)`), Counted By (whoever makes the count, by default) and every item counted with its counted
+quantity. On save it fills in the recorded quantity, the difference and its value at the store's moving
+average; the branch is the store's.
 
-- **Count Type**: `Daily` (the library, every day), `Periodic (Consumables)` (paper and ink, every 7-15
-  days) or `Opening` (the opening balance). An opening count is ERPNext's purpose `Opening Stock`, which
-  posts to a temporary opening account, and only that: Opening Stock is always an opening count, and an
-  opening count under the purpose `Stock Reconciliation` is refused.
-- **Counted By**: who counted, by default whoever makes the count; the accountant can record a count
-  someone else made.
+- **Every count is kept**, with or without a difference, so the owner sees that a branch counted and who
+  did. ERPNext's own Stock Reconciliation cannot be that record: it drops the rows with no difference and
+  refuses a count where everything matched.
+- **On submit**, the count makes a Stock Reconciliation for the rows with a difference, in the system's
+  name (Counted By keeps who counted). ERPNext posts the shortage or surplus to the company's Stock
+  Adjustment Account, `فروقات الجرد`, on the branch's cost center (Mawasah's or Azarita's library, from the
+  store; otherwise ERPNext would use the head office). 4,900 sheets counted where 5,000 are recorded is a
+  shortage of 100 sheets, 26 at 0.26 a sheet. That reconciliation is cancelled only by cancelling the count.
+- **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
+  in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
+  never deleted, and none is saved or cancelled in a closed month.
 
-The difference account is the company's Stock Adjustment Account, `فروقات الجرد`. The cost center is the
-branch whose store was counted (Mawasah's or Azarita's library), set from the store whatever was typed;
-otherwise ERPNext would post the difference on the company's default cost center, the head office. One
-count covers one branch's stores.
-
-ERPNext saves only a count that finds a difference. Today only the owner and the accountant can make a
-count (Stock Manager, Super Admin, Accountant); branch managers cannot.
+The Stock Reconciliation screen is still there for the owner and the accountant, for the opening balance
+and corrections. It carries the same two fields (`setup_library.py`, `imederp/stock_count.py`), with a third
+count type, `Opening`: an opening count is ERPNext's purpose `Opening Stock`, which posts to a temporary
+opening account, and only that. One reconciliation covers one branch's stores, and its cost center is set
+from them whatever was typed.
 
 ### Library products (LIB-06)
 
