@@ -352,3 +352,5 @@ Net Difference,صافي الفرق
 Item,الصنف
 Request Store Approval,اطلب موافقة المخزن
 "A branch request is submitted by approving it. Click Request Store Approval, then Raghad approves it.",طلب الفرع بيتعمله اعتماد لما رغد توافق عليه. دوس اطلب موافقة المخزن، وبعدين رغد توافق.
+Due Date,تاريخ الاستحقاق
+Age (Days),العمر (بالأيام)
