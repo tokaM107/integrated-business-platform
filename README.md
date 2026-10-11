@@ -481,6 +481,13 @@ branch is the store's.
   in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
 
+**Stock Count Variance** (report): every item on the submitted counts of a period, with its branch and
+store, recorded and counted quantity, difference in quantity and value, count type, who counted and the
+date. Filters: dates, branch (a group stands for every branch under it), store, count type, who counted,
+and Only Differences; untick it to see the counts that found nothing too. The summary gives the number of
+counts, the items with a difference, and the shortage, surplus and net values. A branch manager sees only
+their own branch.
+
 The Stock Reconciliation screen is still there for the owner and the accountant, for the opening balance
 and corrections. It carries the same two fields (`setup_library.py`, `imederp/stock_count.py`), with a third
 count type, `Opening`: an opening count is ERPNext's purpose `Opening Stock`, which posts to a temporary
@@ -635,6 +642,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "R
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 ```
