@@ -268,3 +268,10 @@ Choose the store first.,اختار المخزن الأول.
 Replace the items already listed with every item in the store?,تستبدل الأصناف اللي في الجدول بكل أصناف المخزن؟
 "Row #{0}: enter the counted quantity of {1}, 0 if there is none.","سطر {0}: اكتب الكمية الفعلية لـ {1}، و0 لو مفيش منه."
 Not Counted,ماتجردش
+Stock Count Variance,فروقات الجرد (تقرير)
+Only Differences,الفروق بس
+Counts,عدد مرات الجرد
+Shortage Value,قيمة العجز
+Surplus Value,قيمة الزيادة
+Net Difference,صافي الفرق
+Item,الصنف
