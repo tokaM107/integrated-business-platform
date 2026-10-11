@@ -262,3 +262,9 @@ Not Your Branch,مش فرعك
 Row #{0}: {1} is counted twice.,سطر {0}: {1} متكرر في الجرد.
 Row #{0}: the counted quantity cannot be negative.,سطر {0}: الكمية الفعلية مينفعش تبقى بالسالب.
 {0} was posted by Stock Count {1}. Cancel the count instead.,{0} اتعمل من الجرد {1}. الغي الجرد نفسه.
+Get Items in Store,هات كل أصناف المخزن
+Choose the store first.,اختار المخزن الأول.
+"{0} items. Type the counted quantity of each, 0 if there is none.","{0} صنف. اكتب الكمية الفعلية لكل صنف، و0 لو مفيش منه."
+Replace the items already listed with every item in the store?,تستبدل الأصناف اللي في الجدول بكل أصناف المخزن؟
+"Row #{0}: enter the counted quantity of {1}, 0 if there is none.","سطر {0}: اكتب الكمية الفعلية لـ {1}، و0 لو مفيش منه."
+Not Counted,ماتجردش
