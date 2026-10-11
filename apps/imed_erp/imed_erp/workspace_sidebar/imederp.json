@@ -25,7 +25,11 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Inter Business Transfers", "link_to": "Inter Business Transfers", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Reorder Alerts", "link_to": "Reorder Alerts", "link_type": "Report", "show_arrow": 0, "type": "Link"}
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Reorder Alerts", "link_to": "Reorder Alerts", "link_type": "Report", "show_arrow": 0, "type": "Link"},
+  {"child": 0, "collapsible": 1, "icon": "package", "indent": 1, "keep_closed": 0, "label": "Branch Requests", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Material Requests", "link_to": "Material Request", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Material Issues", "link_to": "Material Issues", "link_type": "Report", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Machines", "link_to": "Printing Machine", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
  ],
  "modified": "2026-10-08 12:00:00.000000",
  "modified_by": "Administrator",

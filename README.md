@@ -20,10 +20,11 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
   imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
                         Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
                         Expense, Expense Category, Expense Report, Recurring Expense,
-                        Expense Settings, Allocation Rule, Printing Cost Settings,
-                        Inter Business Transfer (and its report);
+                        Expense Settings, Allocation Rule, Printing Cost Settings, Printing Machine,
+                        Inter Business Transfer (and its report), Material Issues report;
                         shared rules: treasuries.py (each business's cash box), no_delete.py,
-                        period_lock.py (closed months), library_revenue.py, expense_reminders.py
+                        period_lock.py (closed months), library_revenue.py, expense_reminders.py,
+                        stock_reorder.py (reorder levels), material_issue.py (branch requests)
   imed_erp/assistant/   AI assistant (chat window; no model connected yet)
   imed_erp/notification_service.py   Unified notifications (CORE-10)
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
@@ -115,6 +116,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Expense Settings | full | read only |
 | Allocation Rule | full | read only |
 | Stock Count | full | Branch Manager: create, edit, submit, own branch's stores only (no cancel/delete) |
+| Printing Machine | full (Super Admin, Stock Manager; Stock Request Approver can add and edit) | read only (Stock User, Branch Manager) |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here, except on Inter Business Transfer, which Branch Manager may send. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
@@ -568,6 +570,50 @@ item's stock unit.
 - With *Stock Settings > Raise Material Request when stock reaches re-order level* on, ERPNext also
   raises the Material Requests itself every day.
 
+### Branch requests from the main warehouse, and paper per printing machine
+
+A branch asks Mawasah for materials, Raghad approves, the store issues them and records who received
+them; paper is issued to a printing machine, so it can later be compared with the machine's counter.
+Built on ERPNext's **Material Request** and **Stock Entry** (`imederp/material_issue.py`):
+
+| Step | Who | Where | What happens |
+|---|---|---|---|
+| 1. Request | Branch (Sara) | Stock > Material Request > New, type *Material Transfer*: Set Source Warehouse `خامات المواساة` (or `إصدارات الأطباء — المواساة`), Set Target Warehouse the branch's, items and quantities (any unit the item has, e.g. carton), optionally a printing machine per row. Save. | Nothing moves. |
+| 2. Ask | Branch | **Request Store Approval** | *Approval Status* = Pending Approval; the approvers get an in-app alert. Changing the request now sends it back to draft. |
+| 3. Decide | Raghad | **Approve**, or **Reject** with a reason | Approve submits the request (now locked; a change is Cancel + Amend, approved again). Reject closes it for good. Who and when are kept on the request. The requester is alerted. |
+| 4. Issue | The store (Raghad) | On the approved request: Create > Material Transfer. Fill **Received By**, the machine on each paper row, the quantity actually issued. Submit. | Stock leaves Mawasah only now. *Issued By* = whoever submitted; the date and time are the entry's posting date and time. The request shows *Partially Received* until everything is issued, then *Transferred*. |
+
+Rules, checked on the server (so they also hold through the API):
+
+- A request is from a warehouse ticked **Supplies Branches** (`setup_core.py` ticks Mawasah's raw materials
+  and doctors' editions, not the damaged store) to another, non-group warehouse. Quantities above zero,
+  active stock items only. A branch can only request for the warehouses its User Permissions allow.
+- Only Approve submits a request, and only a holder of **Stock Request Approver** can approve or reject,
+  for the source warehouses her User Permissions allow. The approval fields cannot be set by anyone else.
+- Nothing can be issued from a draft, pending, rejected or cancelled request. The issue goes from the
+  approved source to the approved target, and the total issued per row never goes beyond what was approved
+  (rows are compared in the item's stock unit; two issues submitted at once are serialised). Stock
+  availability and negative stock are ERPNext's own checks.
+- **Paper** (item group with **Needs Printing Machine** ticked, or under one: `ورق`) is issued to one
+  printing machine per row; a machine named on the request cannot be swapped; the machine must be active
+  and at the target branch. To supply several machines, add one row per machine with its own quantity.
+  Other items need no machine.
+
+**Printing Machine** (ImedERP > Branch Requests > Printing Machines): name, location warehouse (the branch,
+e.g. `مخزن الأزاريطة`), optional cost center, disabled. The owner and stock managers add them; Raghad too.
+
+**Material Issues** report: every request row with its approval, each issue against it (stock entry,
+date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
+approval status, target warehouse, machine, item, requested by. The Material Request list shows the
+Approval Status column and filter.
+
+**Raghad's approval rights**: `setup_users.py` gives her the `Stock Request Approver` role. Someone else is
+made an approver by adding that role to their user (User > Roles), with User Permissions on the source
+warehouse.
+
+Not built yet: counter-based paper consumption per machine (the *Printer Reading* screen still names its
+machine as text, to be linked to Printing Machine when the counters are done).
+
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
 document types to allow (or tick **Disabled** to reopen everything). Only Owner and Accountant can. A
 document linked to a closed academic period cannot be saved either.
@@ -646,6 +692,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

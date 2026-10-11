@@ -31,7 +31,9 @@ EMAIL_DOMAIN = "imed.local"
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 LIBRARY_ROLES = [*BRANCH_ROLES, "Stock User"]
 # "Expense Approver" approves expenses above the threshold in Expense Settings; only the owner has it.
-CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff", "Expense Approver"]
+# "Stock Request Approver" approves or rejects the branches' requests from the main warehouse
+# (imederp/material_issue.py), for the warehouses her User Permissions give her; Raghad has it.
+CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff", "Expense Approver", "Stock Request Approver"]
 
 # Permissions matrix, section 3.2: "only the owner and the accountant can edit, cancel or delete a
 # financial transaction". Branch managers keep create / edit draft / submit, but lose cancel, amend
@@ -82,7 +84,7 @@ USERS = [
 	{
 		"email": "raghad",
 		"first_name": "رغد",
-		"roles": LIBRARY_ROLES,
+		"roles": [*LIBRARY_ROLES, "Stock Request Approver"],
 		"cost_centers": ["مكتبة المواساة"],
 		"warehouses": ["المخزن المركزي بالمواساة", "مخزن الأزاريطة"],
 	},
@@ -326,6 +328,22 @@ def apply_permission_matrix():
 		frappe.clear_cache(doctype=doctype)
 
 
+def ensure_items_visible_to_branches():
+	"""An item's default selling cost center (Mawasah for the books, setup_library.py) must not hide the
+	item from the other branch: both libraries sell and request the same books. ERPNext already exempts
+	the buying cost center this way. Sales still post to each branch's own cost center, which stays
+	restricted; only reading the item is affected."""
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+	field = frappe.get_meta("Item Default").get_field("selling_cost_center")
+	if field.ignore_user_permissions:
+		print("exists Item Default.selling_cost_center: ignore_user_permissions = 1")
+		return
+	make_property_setter("Item Default", "selling_cost_center", "ignore_user_permissions", 1, "Check", validate_fields_for_doctype=False)
+	frappe.clear_cache(doctype="Item Default")
+	print("update Item Default.selling_cost_center: ignore_user_permissions = 1")
+
+
 def run():
 	# Safety check: stop before writing anything if the company, a role, a cost center or a
 	# warehouse is missing. Otherwise a user could be created with roles but without restrictions.
@@ -360,6 +378,7 @@ def run():
 
 		# ---------- 4) Permissions matrix (section 3.2) on financial documents ----------
 		apply_permission_matrix()
+		ensure_items_visible_to_branches()
 
 		# ---------- 5) Strict user permissions: OFF ----------
 		# Strict mode hides every record that has an EMPTY Cost Center / Warehouse / Company link.
