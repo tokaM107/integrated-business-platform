@@ -48,6 +48,12 @@ EVENTS = {
 		"message": "{{ subject }}",
 		"channels": ["system"],
 	},
+	# Branch requests from the main warehouse (imederp/material_issue.py); worded and translated there.
+	"stock_request_approval": {
+		"subject": "{{ subject }}",
+		"message": "{{ subject }}",
+		"channels": ["system"],
+	},
 	"reorder_level_reached": {
 		"subject": "Reorder: {{ item }} at {{ warehouse }}",
 		"message": "{{ item }} ({{ item_code }}) at {{ warehouse }} is down to {{ qty }} {{ uom }}; "

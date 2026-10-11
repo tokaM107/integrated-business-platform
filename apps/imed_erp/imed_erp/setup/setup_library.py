@@ -138,6 +138,15 @@ def make_item_groups():
 	for group, parent in LIBRARY_GROUP_PARENTS.items():
 		ensure_item_group(group, parent)
 
+	# Paper is issued to a printing machine (imederp/material_issue.py); the field comes with the app.
+	if not frappe.get_meta("Item Group").has_field("custom_requires_printing_machine"):
+		print(f"WAIT   Item Group {PAPER_GROUP}: Needs Printing Machine field missing; run bench migrate, then this script again")
+	elif frappe.db.get_value("Item Group", PAPER_GROUP, "custom_requires_printing_machine"):
+		print(f"exists Item Group {PAPER_GROUP}: needs printing machine")
+	else:
+		frappe.db.set_value("Item Group", PAPER_GROUP, "custom_requires_printing_machine", 1)
+		print(f"update Item Group {PAPER_GROUP}: needs printing machine")
+
 	# A4 paper was first made directly in the library products group; it belongs in Paper.
 	if frappe.db.get_value("Item", "A4-PAPER", "item_group") == PARENT_GROUP:
 		frappe.db.set_value("Item", "A4-PAPER", "item_group", PAPER_GROUP)
