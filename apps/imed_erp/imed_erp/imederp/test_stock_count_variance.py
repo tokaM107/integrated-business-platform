@@ -124,3 +124,59 @@ class IntegrationTestStockCountVariance(IntegrationTestCase):
 		self.assertEqual({row.branch for row in self.run_report()[0]}, {MAWASAH})
 		frappe.set_user(SARA)
 		self.assertEqual({row.branch for row in self.run_report()[0]}, {AZARITA})
+
+
+STOCK_DIFFERENCES = f"فروقات الجرد - {ABBR}"
+
+
+class IntegrationTestShortageThenSurplus(IntegrationTestCase):
+	"""One store, two counts: 100 sheets short, then the 100 found again. Each is posted to stock differences
+	on Mawasah's library, the second the other way round, and the report shows both."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		receive(PAPER, 5000, 0.26, MAWASAH_STORE)
+		cls.rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": MAWASAH_STORE}, "valuation_rate"))
+		cls.shortage = count(MAWASAH_STORE, [(PAPER, 100)], RAGHAD)
+		cls.surplus = count(MAWASAH_STORE, [(PAPER, -100)], RAGHAD)
+
+	def posted(self, stock_count):
+		"""(account, cost center) -> debit minus credit, on the reconciliation the count made."""
+		entries = frappe.get_all(
+			"GL Entry",
+			filters={"voucher_no": stock_count.stock_reconciliation, "is_cancelled": 0},
+			fields=["account", "cost_center", "debit", "credit"],
+		)
+		totals = {}
+		for entry in entries:
+			key = (entry.account, entry.cost_center)
+			totals[key] = totals.get(key, 0) + flt(entry.debit) - flt(entry.credit)
+		return totals
+
+	def test_shortage_is_a_loss_on_stock_differences(self):
+		posted = self.posted(self.shortage)
+		self.assertAlmostEqual(posted[(STOCK_DIFFERENCES, MAWASAH)], 100 * self.rate, places=2)
+		self.assertEqual({cost_center for _account, cost_center in posted}, {MAWASAH})
+		self.assertAlmostEqual(sum(posted.values()), 0, places=2)
+		if self.rate == 0.26:
+			self.assertAlmostEqual(posted[(STOCK_DIFFERENCES, MAWASAH)], 26, places=2)
+
+	def test_surplus_is_posted_the_other_way(self):
+		shortage, surplus = self.posted(self.shortage), self.posted(self.surplus)
+		self.assertEqual(set(surplus), set(shortage))
+		for key in shortage:
+			self.assertAlmostEqual(surplus[key], -shortage[key], places=2)
+		self.assertEqual(on_hand(PAPER, MAWASAH_STORE), 5000)
+
+	def test_report_shows_the_shortage_and_the_surplus(self):
+		columns, data, _message, _chart, summary = execute({"from_date": today(), "to_date": today(), "store": MAWASAH_STORE})
+		rows = {row.stock_count: row for row in data}
+		self.assertEqual((rows[self.shortage.name].difference_qty, rows[self.surplus.name].difference_qty), (-100, 100))
+		self.assertEqual({row.counted_by for row in data}, {RAGHAD})
+		self.assertEqual({row.branch for row in data}, {MAWASAH})
+
+		summary = {s["label"]: s["value"] for s in summary}
+		self.assertAlmostEqual(summary["Shortage Value"], -100 * self.rate, places=2)
+		self.assertAlmostEqual(summary["Surplus Value"], 100 * self.rate, places=2)
+		self.assertAlmostEqual(summary["Net Difference"], 0, places=2)
