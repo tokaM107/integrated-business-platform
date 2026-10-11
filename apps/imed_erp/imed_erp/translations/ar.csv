@@ -238,3 +238,6 @@ Periodic (Consumables),دوري للمستهلكات
 "Daily: the library's daily count. Periodic: paper and ink every 7-15 days. Opening: the opening balance (Purpose: Opening Stock).","يومي: جرد المكتبة اليومي. دوري: الورق والحبر كل 7–15 يوم. افتتاحي: الرصيد الافتتاحي (الغرض: مخزون أول المدة)."
 An opening count records the opening balance: set Purpose to {0}.,الجرد الافتتاحي بيسجل الرصيد الافتتاحي: اختار الغرض {0}.
 Opening Count,جرد افتتاحي
+A count covers one branch's stores. Count each branch separately: {0}.,الجرد الواحد بيبقى لمخازن فرع واحد. اعمل جرد لكل فرع لوحده: {0}.
+One Branch per Count,جرد لكل فرع
+other stores,مخازن تانية
