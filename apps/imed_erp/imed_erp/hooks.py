@@ -230,6 +230,7 @@ doc_events = {
 			"imed_erp.imederp.stock_count.check_count_type",
 			"imed_erp.imederp.stock_count.set_branch_cost_center",
 		],
+		"before_cancel": "imed_erp.imederp.doctype.stock_count.stock_count.block_cancel_of_count_reconciliation",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -259,6 +260,11 @@ doc_events = {
 	"Book Edition": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
+	"Stock Count": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
 	"Printer Reading": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
@@ -278,6 +284,7 @@ period_closing_doctypes = [
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Printer Reading",
+	"Stock Count",
 ]
 # Scheduled Tasks
 # ---------------
