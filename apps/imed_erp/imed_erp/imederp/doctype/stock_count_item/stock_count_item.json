@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "creation": "2026-10-11 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "stock_uom",
+  "recorded_qty",
+  "counted_qty",
+  "difference_qty",
+  "valuation_rate",
+  "difference_value"
+ ],
+ "fields": [
+  {
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1,
+   "columns": 3
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.stock_uom",
+   "fieldname": "stock_uom",
+   "fieldtype": "Link",
+   "options": "UOM",
+   "label": "Unit",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "description": "What the system shows in the store, at the count's date and time.",
+   "fieldname": "recorded_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Recorded Qty",
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "counted_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Counted Qty",
+   "columns": 2
+  },
+  {
+   "description": "Counted minus recorded: negative is a shortage, positive a surplus.",
+   "fieldname": "difference_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Difference",
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "valuation_rate",
+   "fieldtype": "Currency",
+   "label": "Cost per Unit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference_value",
+   "fieldtype": "Currency",
+   "label": "Difference Value",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-11 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Stock Count Item",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1,
+ "permissions": []
+}

@@ -115,6 +115,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
 | Expense Settings | full | read only |
 | Allocation Rule | full | read only |
+| Stock Count | full | Branch Manager: create, edit, submit, own branch's stores only (no cancel/delete) |
 | Printing Machine | full (Super Admin, Stock Manager; Stock Request Approver can add and edit) | read only (Stock User, Branch Manager) |
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
@@ -297,7 +298,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
-| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
@@ -457,6 +458,44 @@ uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the i
 its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
 `verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
 valuation method once stock has moved; the script then only warns.
+
+### Stock counts (LIB-03, PRN-06)
+
+The library counts every day and the consumables (paper, ink) every 7-15 days, on the app's **Stock Count**
+screen (`imederp/doctype/stock_count`): one store, the date, Count Type (`Daily` or `Periodic
+(Consumables)`), Counted By (whoever makes the count, by default) and every item counted with its counted
+quantity. **Get Items in Store** lists every item the store holds, with its recorded quantity, for a full
+count; the recorded quantity also shows as soon as an item is picked, and the difference as soon as the
+counted quantity is typed. Counted Qty is left empty and a count with an empty one is refused (0 is typed
+when there is none), so an item forgotten is not taken for a shortage of all of it. On save the server
+works out the recorded quantity, the difference and its value at the store's moving average again; the
+branch is the store's.
+
+- **Every count is kept**, with or without a difference, so the owner sees that a branch counted and who
+  did. ERPNext's own Stock Reconciliation cannot be that record: it drops the rows with no difference and
+  refuses a count where everything matched.
+- **On submit**, the count makes a Stock Reconciliation for the rows with a difference, in the system's
+  name (Counted By keeps who counted). ERPNext posts the shortage or surplus to the company's Stock
+  Adjustment Account, `فروقات الجرد`, on the branch's cost center (Mawasah's or Azarita's library, from the
+  store; otherwise ERPNext would use the head office). 4,900 sheets counted where 5,000 are recorded is a
+  shortage of 100 sheets, 26 at 0.26 a sheet, a loss on the library; a surplus is posted the other way round.
+  That reconciliation is cancelled only by cancelling the count.
+- **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
+  in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
+  never deleted, and none is saved or cancelled in a closed month.
+
+**Stock Count Variance** (report): every item on the submitted counts of a period, with its branch and
+store, recorded and counted quantity, difference in quantity and value, count type, who counted and the
+date. Filters: dates, branch (a group stands for every branch under it), store, count type, who counted,
+and Only Differences; untick it to see the counts that found nothing too. The summary gives the number of
+counts, the items with a difference, and the shortage, surplus and net values. A branch manager sees only
+their own branch.
+
+The Stock Reconciliation screen is still there for the owner and the accountant, for the opening balance
+and corrections. It carries the same two fields (`setup_library.py`, `imederp/stock_count.py`), with a third
+count type, `Opening`: an opening count is ERPNext's purpose `Opening Stock`, which posts to a temporary
+opening account, and only that. One reconciliation covers one branch's stores, and its cost center is set
+from them whatever was typed.
 
 ### Library products (LIB-06)
 
@@ -649,6 +688,8 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "E
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue

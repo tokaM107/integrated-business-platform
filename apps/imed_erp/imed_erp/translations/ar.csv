@@ -307,5 +307,48 @@ Difference from Calculated Price,الفرق عن السعر المحسوب
 "Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.",سعر البيع {0} أقل من تكلفة النسخة {1}: المكتبة بتخسر {2} في كل نسخة بتتباع.
 Selling at a Loss,بيع بخسارة
 Every expense is paid only once the owner approves it. Request the owner's approval first.,أي مصروف مابيتصرفش غير بعد موافقة المالك. اطلب موافقة المالك الأول.
+Count Type,نوع الجرد
+Counted By,المسؤول عن الجرد
+Periodic (Consumables),دوري للمستهلكات
+"Daily: the library's daily count. Periodic: paper and ink every 7-15 days. Opening: the opening balance (Purpose: Opening Stock).","يومي: جرد المكتبة اليومي. دوري: الورق والحبر كل 7–15 يوم. افتتاحي: الرصيد الافتتاحي (الغرض: مخزون أول المدة)."
+An opening count records the opening balance: set Purpose to {0}.,الجرد الافتتاحي بيسجل الرصيد الافتتاحي: اختار الغرض {0}.
+Opening Count,جرد افتتاحي
+A count covers one branch's stores. Count each branch separately: {0}.,الجرد الواحد بيبقى لمخازن فرع واحد. اعمل جرد لكل فرع لوحده: {0}.
+One Branch per Count,جرد لكل فرع
+other stores,مخازن تانية
+Stock Count,جرد
+Stock Count Item,صنف في الجرد
+Store,المخزن
+Items Counted,الأصناف اللي اتجردت
+Items with a Difference,أصناف فيها فرق
+Total Difference Value,إجمالي قيمة الفرق
+Recorded Qty,الكمية المسجلة
+Counted Qty,الكمية الفعلية
+Difference Value,قيمة الفرق
+Cost per Unit,تكلفة الوحدة
+"What the system shows in the store, at the count's date and time.",اللي السيستم شايفه في المخزن وقت الجرد.
+"Counted minus recorded: negative is a shortage, positive a surplus.",الفعلي ناقص المسجل: بالسالب يبقى عجز، وبالموجب زيادة.
+"The branch of the store; its shortage or surplus is posted on this cost center.",فرع المخزن؛ العجز أو الزيادة بيتسجلوا على مركز التكلفة ده.
+Negative is a loss to the branch.,بالسالب يبقى خسارة على الفرع.
+Made on submit for the items with a difference; none when everything matched.,بيتعمل لما الجرد يتسجل للأصناف اللي فيها فرق؛ ومش بيتعمل لو كله مظبوط.
+{0} is a group of stores. Choose the store that was counted.,{0} مجموعة مخازن. اختار المخزن اللي اتجرد.
+{0} is not a store of your branch. You can count the stores of: {1}.,{0} مش مخزن في فرعك. تقدر تجرد مخازن: {1}.
+Not Your Branch,مش فرعك
+Row #{0}: {1} is counted twice.,سطر {0}: {1} متكرر في الجرد.
+Row #{0}: the counted quantity cannot be negative.,سطر {0}: الكمية الفعلية مينفعش تبقى بالسالب.
+{0} was posted by Stock Count {1}. Cancel the count instead.,{0} اتعمل من الجرد {1}. الغي الجرد نفسه.
+Get Items in Store,هات كل أصناف المخزن
+Choose the store first.,اختار المخزن الأول.
+"{0} items. Type the counted quantity of each, 0 if there is none.","{0} صنف. اكتب الكمية الفعلية لكل صنف، و0 لو مفيش منه."
+Replace the items already listed with every item in the store?,تستبدل الأصناف اللي في الجدول بكل أصناف المخزن؟
+"Row #{0}: enter the counted quantity of {1}, 0 if there is none.","سطر {0}: اكتب الكمية الفعلية لـ {1}، و0 لو مفيش منه."
+Not Counted,ماتجردش
+Stock Count Variance,فروقات الجرد (تقرير)
+Only Differences,الفروق بس
+Counts,عدد مرات الجرد
+Shortage Value,قيمة العجز
+Surplus Value,قيمة الزيادة
+Net Difference,صافي الفرق
+Item,الصنف
 Request Store Approval,اطلب موافقة المخزن
 "A branch request is submitted by approving it. Click Request Store Approval, then Raghad approves it.",طلب الفرع بيتعمله اعتماد لما رغد توافق عليه. دوس اطلب موافقة المخزن، وبعدين رغد توافق.

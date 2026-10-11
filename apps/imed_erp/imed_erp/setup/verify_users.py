@@ -25,6 +25,11 @@ CHECKS = [
 	("Cancel a financial transaction", "Journal Entry", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Payment Entry", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Stock Entry", "cancel", (1, 1, 0, 0)),
+	# Stock counts (LIB-03): branch managers count their own branch; cancelling is the accountant's, and
+	# ERPNext's reconciliation behind a count is posted by the system.
+	("Count stock", "Stock Count", "submit", (1, 1, 1, 0)),
+	("Cancel a stock count", "Stock Count", "cancel", (1, 1, 0, 0)),
+	("Reconcile stock directly", "Stock Reconciliation", "create", (1, 1, 0, 0)),
 	# Only the owner deletes, and only a draft; posted and cancelled documents never are (imederp/no_delete.py).
 	("Delete a draft", "Sales Invoice", "delete", (1, 0, 0, 0)),
 	("Delete a draft", "Expense", "delete", (1, 0, 0, 0)),

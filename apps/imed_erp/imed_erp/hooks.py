@@ -183,6 +183,8 @@ doctype_js = {
 # validate and before_cancel on the app's documents: none is saved or cancelled in a closed month or academic
 # period (imederp/period_lock.py).
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
+# Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
+# branch's (imederp/stock_count.py).
 doc_events = {
 	"Journal Entry": {
 		"validate": [
@@ -231,6 +233,11 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Reconciliation": {
+		"validate": [
+			"imed_erp.imederp.stock_count.check_count_type",
+			"imed_erp.imederp.stock_count.set_branch_cost_center",
+		],
+		"before_cancel": "imed_erp.imederp.doctype.stock_count.stock_count.block_cancel_of_count_reconciliation",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -260,6 +267,11 @@ doc_events = {
 	"Book Edition": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
+	"Stock Count": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
 	"Printer Reading": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
@@ -285,6 +297,7 @@ period_closing_doctypes = [
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Printer Reading",
+	"Stock Count",
 ]
 
 # The custom fields the app's code relies on, kept in step with it on every migrate.
