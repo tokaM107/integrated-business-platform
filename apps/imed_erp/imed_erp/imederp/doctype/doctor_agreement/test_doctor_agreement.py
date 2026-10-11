@@ -9,7 +9,9 @@ from frappe.tests import IntegrationTestCase
 # link-field test record dependencies are recursively loaded
 # Use these module variables to add/remove to/from that list
 EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
-IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
+# Linked records already exist on the site or are made by the tests; without this list Frappe builds
+# ERPNext's "_Test ..." records and commits them to the site.
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Customer", "Doctor Agreement"]
 
 
 

@@ -49,7 +49,7 @@ frappe.ui.form.on("Material Request", {
 		}
 		if (doc.docstatus === 0 && !status && !frm.is_dirty()) {
 			frm.set_intro(__("Save the items, then send the request to Raghad for approval."), "blue");
-			frm.page.set_primary_action(__("Request Approval"), () => call(frm, "request_approval"));
+			frm.page.set_primary_action(__("Request Store Approval"), () => call(frm, "request_approval"));
 			return;
 		}
 		if (doc.docstatus === 1 && status === "Approved") {

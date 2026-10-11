@@ -35,7 +35,7 @@ def get_detail_columns():
         {"label": _("Activity"), "fieldname": "activity", "fieldtype": "Link", "options": "Cost Center", "width": 180},
         {"label": _("Expense Amount"), "fieldname": "amount", "fieldtype": "Currency", "width": 120},
         {"label": _("Supplier"), "fieldname": "supplier", "fieldtype": "Link", "options": "Supplier", "width": 160},
-        {"label": _("Cash/Bank Account"), "fieldname": "treasury", "fieldtype": "Link", "options": "Account", "width": 170},
+        {"label": _("Treasury"), "fieldname": "treasury", "fieldtype": "Link", "options": "Account", "width": 170},
         {"label": _("Expense Account"), "fieldname": "expense_account", "fieldtype": "Link", "options": "Account", "width": 170},
         {"label": _("Description"), "fieldname": "description", "fieldtype": "Data", "width": 220},
     ]

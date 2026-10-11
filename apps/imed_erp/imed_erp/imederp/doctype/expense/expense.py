@@ -4,17 +4,20 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate
+from frappe.utils import add_months, flt, format_datetime, getdate, now_datetime
 
 from imed_erp.imederp.doctype.expense_category.expense_category import get_expense_account
+from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
 from imed_erp.imederp.expense_reminders import notify
+from imed_erp.imederp.treasuries import check_treasury
 
 # A treasury is a cash box or a wallet: a leaf Account of one of these types.
 TREASURY_TYPES = ("Cash", "Bank")
 
 EVERY_MONTH = "Every Month"
 
-# Only the owner has it: an expense above the approval threshold is posted once a holder approves it.
+# Only the owner has it: every expense is posted only once a holder approves it (owner's decision of
+# 8 Oct 2026), and an expense the owner records himself is approved as he submits it.
 APPROVER_ROLE = "Expense Approver"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
 
@@ -64,6 +67,7 @@ class Expense(Document):
         account = frappe.db.get_value("Account", self.treasury, ["account_type", "is_group"], as_dict=True)
         if not account or account.is_group or account.account_type not in TREASURY_TYPES:
             frappe.throw(_("{0} is not a treasury. Choose a cash or wallet account.").format(self.treasury))
+        check_treasury(self.activity, self.treasury)
 
     def validate_company(self):
         self.company = frappe.db.get_value("Cost Center", self.activity, "company")
@@ -88,14 +92,19 @@ class Expense(Document):
             frappe.throw(_("Expense {0} was rejected and cannot be changed. Make a new expense instead.").format(self.name))
 
     def reset_approval_if_amount_changed(self):
-        # The owner approved an amount, not the expense whatever it becomes.
-        if self.approval_status in (PENDING, APPROVED) and self.has_value_changed("amount"):
+        # The owner approved this expense as it was: its amount, what it is for, where it is paid from, its
+        # date and its receipt. A change to any of them needs his approval again.
+        if self.approval_status in (PENDING, APPROVED) and any(
+            self.has_value_changed(field)
+            for field in ("amount", "expense_category", "activity", "treasury", "posting_date", "receipt")
+        ):
             self.approval_status = None
             self.approved_by = None
+            self.approval_requested_by = None
 
     def needs_approval(self):
-        threshold = flt(frappe.db.get_single_value("Expense Settings", "approval_threshold"))
-        return bool(threshold) and flt(self.amount) > threshold
+        # Every expense, whatever its amount (owner's decision of 8 Oct 2026).
+        return True
 
     def before_submit(self):
         # Checked here, not by a mandatory field, so drafts can be saved before the receipt is at hand,
@@ -112,9 +121,7 @@ class Expense(Document):
             self.approved_by = frappe.session.user
             return
         frappe.throw(
-            _("This expense is above the approval threshold of {0}. Request the owner's approval first.").format(
-                frappe.format_value(frappe.db.get_single_value("Expense Settings", "approval_threshold"), {"fieldtype": "Currency"})
-            ),
+            _("Every expense is paid only once the owner approves it. Request the owner's approval first."),
             title=_("Approval Needed"),
         )
 
@@ -123,19 +130,25 @@ class Expense(Document):
         self.check_permission("write")
         if self.docstatus != 0 or self.approval_status in (PENDING, APPROVED, REJECTED):
             frappe.throw(_("Approval can only be requested for a draft that has not been sent yet."))
-        if not self.needs_approval():
-            frappe.throw(_("This expense is not above the approval threshold. Submit it directly."))
         # The owner decides on the full expense, receipt included.
         self.validate_receipt()
         self.approval_status = PENDING
+        self.approval_requested_by = frappe.session.user
         self.save()
+        # The time makes each request its own notification: the service skips one the owner already has, so
+        # a request sent again after a change would otherwise never reach him.
         notify(
             get_approvers(),
-            _("Expense {0} of {1} for {2} ({3}) is waiting for your approval.").format(
-                self.name, frappe.format_value(self.amount, {"fieldtype": "Currency"}), self.expense_category, self.activity
+            _("Expense {0} of {1} for {2} ({3}) is waiting for your approval (requested {4}).").format(
+                self.name,
+                frappe.format_value(self.amount, {"fieldtype": "Currency"}),
+                self.expense_category,
+                self.activity,
+                format_datetime(now_datetime()),
             ),
             "Expense",
             self.name,
+            event="expense_approval",
         )
 
     @frappe.whitelist()
@@ -145,7 +158,7 @@ class Expense(Document):
         self.approval_status = APPROVED
         self.approved_by = frappe.session.user
         self.submit()
-        self.notify_requester(_("Expense {0} was approved and posted."))
+        self.notify_requester(_("Expense {0} was approved and posted.").format(self.name))
 
     @frappe.whitelist()
     def reject(self, reason=None):
@@ -153,14 +166,16 @@ class Expense(Document):
         self.check_pending()
         # db_set: from now on validate refuses every save.
         self.db_set({"approval_status": REJECTED, "approved_by": frappe.session.user, "rejection_reason": reason})
-        self.notify_requester(_("Expense {0} was rejected.") + (f" {reason}" if reason else ""))
+        # The reason is added after formatting, so braces typed in it are kept as they are.
+        self.notify_requester(_("Expense {0} was rejected.").format(self.name) + (f" {reason}" if reason else ""))
 
     def check_pending(self):
         if self.docstatus != 0 or self.approval_status != PENDING:
             frappe.throw(_("Expense {0} is not waiting for approval.").format(self.name))
 
     def notify_requester(self, subject):
-        notify([self.owner], subject.format(self.name), "Expense", self.name)
+        # Monthly drafts are made by the scheduler, so their creator is not who asked for approval.
+        notify([self.approval_requested_by or self.owner], subject, "Expense", self.name, event="expense_approval")
 
     def validate_receipt(self):
         if not self.receipt:
@@ -188,6 +203,7 @@ class Expense(Document):
         )
         # Whoever may submit the expense may post its entry; the expense is the gate.
         journal_entry.flags.ignore_permissions = True
+        journal_entry.flags.from_expense = True
         journal_entry.insert()
         journal_entry.submit()
         self.db_set("journal_entry", journal_entry.name)
@@ -200,12 +216,15 @@ class Expense(Document):
         filters = {"activity": self.activity, "expense_category": self.expense_category}
         bill = frappe.db.get_value("Recurring Expense", filters)
         if not bill:
+            day = getdate(self.posting_date).day
             bill = frappe.get_doc(
                 {
                     "doctype": "Recurring Expense",
                     **filters,
                     "treasury": self.treasury,
-                    "day_of_month": getdate(self.posting_date).day,
+                    "day_of_month": day,
+                    # This expense pays its month, so the bill is next due the month after it.
+                    "next_date": due_date_in(add_months(self.posting_date, 1), day),
                 }
             )
             # Whoever may submit the expense may add its bill; the expense is the gate.

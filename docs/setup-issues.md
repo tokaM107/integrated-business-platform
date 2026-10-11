@@ -19,6 +19,8 @@ the table they belong to, with the date and who met it.
 
 | Date | Problem | Cause | Fix |
 |---|---|---|---|
+| 2026-10-04 (Toka) | Running `bench run-tests` left 21 `_Test` companies, about 2,100 accounts, 12 users and a 1,000,000 EGP stock entry on the real company | A new Link field (to User) was not in the test file's `IGNORE_TEST_RECORD_DEPENDENCIES`, so Frappe built ERPNext's test records and committed them | Removed by creation-time window; every doctype test file now lists its links (see README, Tests). Take a backup and copy it out of the container before running tests |
+| 2026-10-07 (Toka) | A4 paper lost its ream (500) and box (2500) conversion factors; a purchase by the box would come in as one sheet | ERPNext empties an item's UOM table when its stock UOM changes (Nos to ورقة here) and only shows a short alert | `setup_core.py` puts the factors back on every run (`ensure_conversions`); `verify_setup.py` and `test_paper_stock.py` check them |
 | 2026-09-29 | On a new site `setup_regional.py` stops: `Company 'Mohamed Mamdouh group' ... not found` | The README ran `setup_regional.py` before `setup_core.py`, which creates the company | Order changed: `setup_core.py` runs first |
 | 2026-09-29 | On a new site `setup_core.py` fails: `Could not find Warehouse Type: Transit` | The setup wizard was not done, so ERPNext's base records do not exist | `setup_core.py` now completes the setup wizard itself on a new site |
 | 2026-09-29 | `setup_core.py` fails creating items: `Warehouse Stores - I doesn't belong to Company Mohamed Mamdouh group` | Another company exists (created by the browser wizard); Frappe fills the item's warehouse from the site default | `setup_core.py` sets MMG's own warehouse (Store Mawasah) on each item |

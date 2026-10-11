@@ -19,6 +19,7 @@
   "receipt",
   "approval_section",
   "approval_status",
+  "approval_requested_by",
   "approved_by",
   "column_break_approval",
   "rejection_reason",
@@ -93,7 +94,7 @@
    "description": "The cash or wallet account the money is paid from.",
    "fieldname": "treasury",
    "fieldtype": "Link",
-   "label": "Cash/Bank Account",
+   "label": "Treasury",
    "options": "Account",
    "reqd": 1
   },
@@ -135,6 +136,14 @@
    "label": "Approval Status",
    "no_copy": 1,
    "options": "\nPending Approval\nApproved\nRejected",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approval_requested_by",
+   "fieldtype": "Link",
+   "label": "Approval Requested By",
+   "no_copy": 1,
+   "options": "User",
    "read_only": 1
   },
   {
@@ -205,7 +214,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-05 15:00:00.000000",
+ "modified": "2026-10-07 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Expense",
@@ -231,7 +240,7 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -265,5 +274,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "expense_category"
+ "title_field": "expense_category",
+ "track_changes": 1
 }

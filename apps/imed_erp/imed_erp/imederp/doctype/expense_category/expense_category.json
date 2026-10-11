@@ -81,7 +81,7 @@
  "index_web_pages_for_search": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2026-10-04 12:00:00.000000",
+ "modified": "2026-10-07 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Expense Category",
@@ -129,5 +129,6 @@
  "show_name_in_global_search": 1,
  "sort_field": "lft",
  "sort_order": "ASC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }

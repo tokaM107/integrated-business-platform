@@ -116,3 +116,31 @@ class IntegrationTestRecurringExpense(IntegrationTestCase):
 
 	def test_title_names_the_bill_and_the_place(self):
 		self.assertEqual(self.make_recurring().title, "الإيجار - مصروفات المقر المشتركة")
+
+	def test_switched_back_on_starts_this_month(self):
+		# Off for three months: switching it back on makes this month's draft, not one per month it was off.
+		recurring = self.make_recurring(day_of_month=1)
+		recurring.db_set({"enabled": 0, "next_date": add_months(today(), -3)})
+		recurring.reload()
+		recurring.enabled = 1
+		recurring.save()
+		self.assertEqual(getdate(recurring.next_date), due_date_in(today(), 1))
+
+		make_due_expenses()
+		self.assertEqual(len(self.drafts_of(recurring)), 1)
+
+	def test_new_day_does_not_repeat_a_recorded_month(self):
+		recurring = self.make_recurring(next_date=today())
+		make_due_expenses()
+		recurring.reload()
+		recurring.day_of_month = 28 if getdate(today()).day != 28 else 27
+		recurring.save()
+
+		# This month already has its draft, so the new day starts next month.
+		self.assertEqual(getdate(recurring.next_date), due_date_in(add_months(today(), 1), recurring.day_of_month))
+
+	def test_category_with_bills_cannot_become_a_group(self):
+		self.make_recurring(expense_category="الكهرباء")
+		category = frappe.get_doc("Expense Category", "الكهرباء")
+		category.is_group = 1
+		self.assertRaises(frappe.ValidationError, category.save)

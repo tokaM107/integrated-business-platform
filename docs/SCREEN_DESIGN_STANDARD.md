@@ -38,7 +38,7 @@ invent roles or personas.
 
 There is **no plain "Employee" self-service role** and no employee-linked self-service users. Any
 "My Expenses / My Leave / My Profile" experience would need the HR module, employee-linked user
-accounts, and a self-service role first — see §12 (**Needs Business Confirmation**). Do not build it on
+accounts, and a self-service role first — see §13 (**Needs Business Confirmation**). Do not build it on
 a guessed role.
 
 ## 2. Role-based UI (progressive disclosure by role)
@@ -52,14 +52,14 @@ as access control** (see Scope). Rule of thumb:
 
 Implement with the helper's `restrict` option (§10), using the shared role groups
 `imed.screen.ROLE_GROUPS` (data, defined once). The exact visibility line for each screen is a UX
-choice — sensible defaults are used and flagged in §12 where the business should confirm the boundary.
+choice — sensible defaults are used and flagged in §13 where the business should confirm the boundary.
 
 ### Role / Screen matrix
 
 Functional guide — what each role should *see first* vs. what should stay hidden/collapsed. Navigation
 (which workspaces/screens a role lands on) is governed by Frappe permissions and the home-screen quick
 actions (`imed_home.js`, shown per permission); fuller role-based navigation menus are a workspace
-config task (§12), not a Client Script one.
+config task (§13), not a Client Script one.
 
 | Role | Main screens | Should see | Hidden / collapsed |
 |---|---|---|---|
@@ -103,17 +103,17 @@ never use (hide, never delete):
 | **Company-currency duplicates** | `base_*` totals | Identical to the transaction values in a single-currency company. |
 
 **Rule:** confirm a field is unused before hiding it. **If uncertain, leave it visible and record it in
-§12** rather than guessing. These groups are predefined by name in the helper (§10).
+§13** rather than guessing. These groups are predefined by name in the helper (§10).
 
 ## 5. Simplify ERPNext terminology (business-friendly labels)
 
 Some ERPNext labels are unclear to a first-time user. Relabelling is allowed **only** via Customize
 Form (a Property Setter) — never hardcoded in JS, and never when it changes meaning. Decide per label;
-when in doubt, keep ERPNext's term and flag it in §12.
+when in doubt, keep ERPNext's term and flag it in §13.
 
 | ERPNext label | Clearer label | Decision |
 |---|---|---|
-| "Cash/Bank Account" | "Treasury" (الخزينة) | Already done on Expense (custom field). |
+| "Cash/Bank Account" | "Treasury" (الخزينة) | Done on Expense, Recurring Expense and the Expense Report. |
 | "Cost Center" | "Activity / Branch" | **Needs business confirmation** — "Cost Center" appears across many screens; relabel consistently or not at all. |
 | "Grand Total" | keep | Clear enough; translated in Arabic. |
 | "Posting Date" | keep | Standard accounting term. |

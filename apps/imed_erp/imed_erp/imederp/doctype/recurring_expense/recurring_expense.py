@@ -20,8 +20,14 @@ class RecurringExpense(Document):
     def validate(self):
         if not 1 <= cint(self.day_of_month) <= 31:
             frappe.throw(_("Day of Month must be between 1 and 31, got {0}.").format(self.day_of_month))
-        if not self.next_date or (not self.is_new() and self.has_value_changed("day_of_month")):
+        if not self.next_date:
             self.next_date = next_due_date(self.day_of_month, today())
+        elif not self.is_new() and (
+            self.has_value_changed("day_of_month") or (self.enabled and self.has_value_changed("enabled"))
+        ):
+            # A new day, or a bill switched back on, starts from this month: no draft for the months it was
+            # off, and no second draft for a month already recorded.
+            self.next_date = self.unrecorded_due_date()
         if flt(self.amount) < 0:
             frappe.throw(_("Expected Amount cannot be negative, got {0}.").format(self.amount))
         # An expense that would fail on these fails here instead, while someone is looking at it.
@@ -32,6 +38,20 @@ class RecurringExpense(Document):
         expense.validate_company()
         # Several places pay the same bill, so the dropdown on Expense names both.
         self.title = f"{self.expense_category} - {frappe.db.get_value('Cost Center', self.activity, 'cost_center_name')}"
+
+    def unrecorded_due_date(self):
+        """This month's due date, or next month's when this month already has an expense on the bill."""
+        month = today()
+        if frappe.db.exists(
+            "Expense",
+            {
+                "recurring_expense": self.name,
+                "docstatus": ["<", 2],
+                "posting_date": ["between", [get_first_day(month), get_last_day(month)]],
+            },
+        ):
+            month = add_months(month, 1)
+        return due_date_in(month, self.day_of_month)
 
     def new_expense(self):
         return frappe.get_doc(

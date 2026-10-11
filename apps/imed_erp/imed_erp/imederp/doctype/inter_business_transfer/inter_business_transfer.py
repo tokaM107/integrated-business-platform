@@ -6,6 +6,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
+from imed_erp.imederp.treasuries import check_treasury
+
 # A treasury is a cash box or a wallet: a leaf Account of one of these types.
 TREASURY_TYPES = ("Cash", "Bank")
 
@@ -45,6 +47,7 @@ class InterBusinessTransfer(Document):
             account = frappe.db.get_value("Account", treasury, ["account_type", "is_group"], as_dict=True)
             if not account or account.is_group or account.account_type not in TREASURY_TYPES:
                 frappe.throw(_("{0} is not a treasury. Choose a cash or wallet account.").format(treasury))
+        check_treasury(self.from_business, self.from_treasury)
 
     def validate_period(self):
         if frappe.db.get_value("Academic Period", self.period, "is_closed"):
@@ -96,6 +99,7 @@ class InterBusinessTransfer(Document):
             if entry and frappe.db.get_value("Journal Entry", entry, "docstatus") == 1:
                 journal_entry = frappe.get_doc("Journal Entry", entry)
                 journal_entry.flags.ignore_permissions = True
+                journal_entry.flags.from_inter_business_transfer = True
                 journal_entry.cancel()
         self.db_set("status", "Cancelled")
 
@@ -153,3 +157,19 @@ def block_current_account_in_payment(doc, method=None):
     for account in accounts:
         if account and frappe.db.get_value("Account", account, "account_name") == CURRENT_ACCOUNT:
             frappe.throw(_("{0} cannot be used in a payment. Create an Inter Business Transfer instead.").format(account))
+
+
+def block_cancel_of_transfer_entry(doc, method=None):
+    """Journal Entry before_cancel hook: a transfer's entry is reversed only by cancelling the transfer,
+    otherwise the transfer would still show the money sent or received while it is back in the treasury."""
+    if doc.flags.from_inter_business_transfer:
+        return
+    transfer = frappe.get_all(
+        "Inter Business Transfer",
+        filters={"docstatus": 1},
+        or_filters={"send_journal_entry": doc.name, "receipt_journal_entry": doc.name},
+        pluck="name",
+        limit=1,
+    )
+    if transfer:
+        frappe.throw(_("{0} was posted by Inter Business Transfer {1}. Cancel the transfer instead.").format(doc.name, transfer[0]))

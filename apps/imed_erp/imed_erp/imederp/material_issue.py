@@ -26,7 +26,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.utils import cint, flt, now_datetime
 
 from imed_erp.imederp.doctype.printing_machine.printing_machine import serves_warehouse
-from imed_erp.imederp.expense_reminders import notify
+from imed_erp import notification_service
 
 APPROVER_ROLE = "Stock Request Approver"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
@@ -270,7 +270,7 @@ def before_submit_material_request(doc, method=None):
 		return
 	if not (doc.flags.imed_approval and doc.custom_approval_status == APPROVED):
 		frappe.throw(
-			_("A branch request is submitted by approving it. Click Request Approval, then Raghad approves it."),
+			_("A branch request is submitted by approving it. Click Request Store Approval, then Raghad approves it."),
 			title=_("Approval Needed"),
 		)
 
@@ -289,7 +289,6 @@ def request_approval(name):
 	notify(
 		get_approvers(doc),
 		_("Material Request {0} from {1} is waiting for your approval.").format(doc.name, destinations(doc)),
-		"Material Request",
 		doc.name,
 	)
 
@@ -338,7 +337,14 @@ def get_pending(name):
 
 
 def notify_requester(doc, subject):
-	notify([doc.owner], subject.format(doc.name), "Material Request", doc.name)
+	notify([doc.owner], subject.format(doc.name), doc.name)
+
+
+def notify(users, subject, request):
+	"""In-app alert that opens the request (notification_service, CORE-10)."""
+	notification_service.notify(
+		"stock_request_approval", users, {"subject": subject}, document=("Material Request", request)
+	)
 
 
 def destinations(doc):

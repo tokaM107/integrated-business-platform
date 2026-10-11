@@ -178,33 +178,98 @@ doctype_js = {
 # 	}
 # }
 
+# Every event of a doctype in one entry: two entries for the same doctype would replace each other.
+# on_trash: a submitted or cancelled financial document is never deleted (imederp/no_delete.py).
+# validate and before_cancel on the app's documents: none is saved or cancelled in a closed month or academic
+# period (imederp/period_lock.py).
+# on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 doc_events = {
 	"Journal Entry": {
-		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
-		"before_cancel": "imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
+		"validate": [
+			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+		],
+		"before_cancel": [
+			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
+			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
+		],
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Payment Entry": {
-		"validate": "imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+		"validate": [
+			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+		],
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Sales Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 	},
 	"POS Invoice": {
 		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
-	# Reorder levels per item and warehouse (LIB-04).
+	"Purchase Invoice": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Stock Entry": {
+		# validate and before_submit: the issue of a branch request (imederp/material_issue.py).
+		"validate": "imed_erp.imederp.material_issue.validate_stock_entry",
+		"before_submit": "imed_erp.imederp.material_issue.before_submit_stock_entry",
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Delivery Note": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Purchase Receipt": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Stock Reconciliation": {
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Cost Center Allocation": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Expense": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Inter Business Transfer": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Doctor Ledger Entry": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"App Subscription": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Book Edition": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Printer Reading": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Allocation Rule": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
 	"Item": {
 		"validate": "imed_erp.imederp.stock_reorder.validate_reorder_levels",
-	},
-	**{
-		doctype: {"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level"}
-		for doctype in (
-			"Delivery Note",
-			"Purchase Receipt",
-			"Purchase Invoice",
-			"Stock Reconciliation",
-		)
 	},
 	# Branch requests from the main warehouse: Raghad's approval, then the issue (imederp/material_issue.py).
 	"Material Request": {
@@ -212,12 +277,15 @@ doc_events = {
 		"validate": "imed_erp.imederp.material_issue.validate_material_request",
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_material_request",
 	},
-	"Stock Entry": {
-		"validate": "imed_erp.imederp.material_issue.validate_stock_entry",
-		"before_submit": "imed_erp.imederp.material_issue.before_submit_stock_entry",
-		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
-	},
 }
+# Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
+period_closing_doctypes = [
+	"Expense",
+	"Inter Business Transfer",
+	"Doctor Ledger Entry",
+	"App Subscription",
+	"Printer Reading",
+]
 
 # The custom fields the app's code relies on, kept in step with it on every migrate.
 after_migrate = ["imed_erp.imederp.material_issue.make_custom_fields"]

@@ -10,20 +10,27 @@
  "field_order": [
   "edition_name",
   "agreement",
-  "cost_center",
   "period",
   "pages",
   "doctor_qty",
   "extra_qty",
   "sold_qty",
-  "unit_cost",
+  "pricing_section",
+  "paper_cost",
+  "ink_cost",
+  "overhead_cost",
   "owner_share",
+  "column_break_pricing",
+  "binding_cost",
+  "marketing_cost",
   "doctor_share",
+  "price_section",
   "calculated_price",
   "selling_price",
   "rounding_diff",
   "status",
-  "amended_from"
+  "amended_from",
+  "cost_center"
  ],
  "fields": [
   {
@@ -51,7 +58,8 @@
   {
    "fieldname": "pages",
    "fieldtype": "Int",
-   "label": "Pages per Copy"
+   "label": "Sheets per Copy",
+   "reqd": 1
   },
   {
    "fieldname": "doctor_qty",
@@ -70,36 +78,86 @@
    "read_only": 1
   },
   {
-   "fieldname": "unit_cost",
+   "fieldname": "pricing_section",
+   "fieldtype": "Section Break",
+   "label": "Pricing",
+   "description": "Rates come from Printing Cost Settings while the edition is a draft and are kept once it is submitted. Change one here for this edition only."
+  },
+  {
+   "description": "Moving average price of A4 paper in the library's raw materials store, plus the waste in Printing Cost Settings.",
+   "fieldname": "paper_cost",
    "fieldtype": "Currency",
-   "label": "Manufacturing Cost per Page"
+   "label": "Paper per Sheet",
+   "read_only": 1,
+   "precision": "4"
+  },
+  {
+   "fieldname": "ink_cost",
+   "fieldtype": "Currency",
+   "label": "Ink per Sheet",
+   "description": "From Printing Cost Settings when left empty.",
+   "precision": "4"
+  },
+  {
+   "fieldname": "overhead_cost",
+   "fieldtype": "Currency",
+   "label": "Overheads per Sheet",
+   "description": "Rent, electricity, salaries and machine rental. From Printing Cost Settings when left empty.",
+   "precision": "4"
   },
   {
    "fieldname": "owner_share",
    "fieldtype": "Currency",
-   "label": "Owner Share per Page"
+   "label": "Profit per Sheet",
+   "description": "The library's profit. From Printing Cost Settings when left empty.",
+   "precision": "4"
+  },
+  {
+   "fieldname": "column_break_pricing",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "binding_cost",
+   "fieldtype": "Currency",
+   "label": "Binding per Copy",
+   "description": "From Printing Cost Settings when left empty."
+  },
+  {
+   "fieldname": "marketing_cost",
+   "fieldtype": "Currency",
+   "label": "Marketing per Copy",
+   "description": "Optional: an extra amount per copy for selling the book. Goes to the library, not to the doctor."
   },
   {
    "fieldname": "doctor_share",
    "fieldtype": "Currency",
-   "label": "Doctor Share per Page"
+   "label": "Doctor's Amount per Copy",
+   "description": "What the doctor asked for each copy; filled in from his agreement when it is a fixed amount."
+  },
+  {
+   "fieldname": "price_section",
+   "fieldtype": "Section Break",
+   "label": "Price"
   },
   {
    "fieldname": "calculated_price",
    "fieldtype": "Currency",
-   "label": "Calculated Price",
-   "read_only": 1
+   "label": "Calculated Price per Copy",
+   "read_only": 1,
+   "description": "(Paper + ink + overheads + profit) per sheet x sheets + binding + marketing + doctor's amount, per copy."
   },
   {
    "fieldname": "selling_price",
    "fieldtype": "Currency",
-   "label": "Final Selling Price"
+   "label": "Final Selling Price per Copy",
+   "description": "Left empty, the calculated price. Another price can be set by hand, higher or lower (to sell more); the difference is the library's."
   },
   {
    "fieldname": "rounding_diff",
    "fieldtype": "Currency",
-   "label": "Rounding to Owner",
-   "read_only": 1
+   "label": "Difference from Calculated Price",
+   "read_only": 1,
+   "description": "Selling price minus calculated price: added to the library's profit, or taken from it when negative. The doctor's amount does not change."
   },
   {
    "default": "Active",
@@ -134,7 +192,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-09-29 12:00:00.000000",
+ "modified": "2026-10-08 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",
@@ -159,7 +217,7 @@
    "amend": 1,
    "cancel": 1,
    "create": 1,
-   "delete": 1,
+   "delete": 0,
    "email": 1,
    "export": 1,
    "print": 1,
@@ -193,5 +251,6 @@
  "rows_threshold_for_grid_search": 20,
  "sort_field": "creation",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "track_changes": 1
 }
