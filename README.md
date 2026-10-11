@@ -295,7 +295,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
-| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
@@ -456,6 +456,23 @@ its stock UOM changes**, so `setup_core.py` puts the factors back on every run (
 `verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
 valuation method once stock has moved; the script then only warns.
 
+### Stock counts (LIB-03, PRN-06)
+
+A count is ERPNext's **Stock Reconciliation**: the counted quantity of each item in a store, against the
+recorded one. ERPNext works out the shortage or surplus in quantity and value and posts it to
+`فروقات الجرد`: 4,900 sheets counted where 5,000 are recorded is a shortage of 100 sheets, 26 at 0.26 a
+sheet. The app adds two fields (`setup_library.py`, `imederp/stock_count.py`):
+
+- **Count Type**: `Daily` (the library, every day), `Periodic (Consumables)` (paper and ink, every 7-15
+  days) or `Opening` (the opening balance). An opening count is ERPNext's purpose `Opening Stock`, which
+  posts to a temporary opening account, and only that: Opening Stock is always an opening count, and an
+  opening count under the purpose `Stock Reconciliation` is refused.
+- **Counted By**: who counted, by default whoever makes the count; the accountant can record a count
+  someone else made.
+
+ERPNext saves only a count that finds a difference. Today only the owner and the accountant can make a
+count (Stock Manager, Super Admin, Accountant); branch managers cannot.
+
 ### Library products (LIB-06)
 
 | Requirement | Where it is in ERPNext |
@@ -603,6 +620,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "E
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 ```
