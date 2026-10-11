@@ -27,6 +27,7 @@ FINANCIAL_DOCTYPES = [
 	"Book Edition",
 	"Printer Reading",
 	"Allocation Rule",
+	"Stock Count",
 ]
 
 
