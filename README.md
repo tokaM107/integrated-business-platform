@@ -476,7 +476,8 @@ branch is the store's.
   name (Counted By keeps who counted). ERPNext posts the shortage or surplus to the company's Stock
   Adjustment Account, `فروقات الجرد`, on the branch's cost center (Mawasah's or Azarita's library, from the
   store; otherwise ERPNext would use the head office). 4,900 sheets counted where 5,000 are recorded is a
-  shortage of 100 sheets, 26 at 0.26 a sheet. That reconciliation is cancelled only by cancelling the count.
+  shortage of 100 sheets, 26 at 0.26 a sheet, a loss on the library; a surplus is posted the other way round.
+  That reconciliation is cancelled only by cancelling the count.
 - **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
   in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
