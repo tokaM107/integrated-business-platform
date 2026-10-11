@@ -462,8 +462,12 @@ valuation method once stock has moved; the script then only warns.
 The library counts every day and the consumables (paper, ink) every 7-15 days, on the app's **Stock Count**
 screen (`imederp/doctype/stock_count`): one store, the date, Count Type (`Daily` or `Periodic
 (Consumables)`), Counted By (whoever makes the count, by default) and every item counted with its counted
-quantity. On save it fills in the recorded quantity, the difference and its value at the store's moving
-average; the branch is the store's.
+quantity. **Get Items in Store** lists every item the store holds, with its recorded quantity, for a full
+count; the recorded quantity also shows as soon as an item is picked, and the difference as soon as the
+counted quantity is typed. Counted Qty is left empty and a count with an empty one is refused (0 is typed
+when there is none), so an item forgotten is not taken for a shortage of all of it. On save the server
+works out the recorded quantity, the difference and its value at the store's moving average again; the
+branch is the store's.
 
 - **Every count is kept**, with or without a difference, so the owner sees that a branch counted and who
   did. ERPNext's own Stock Reconciliation cannot be that record: it drops the rows with no difference and
