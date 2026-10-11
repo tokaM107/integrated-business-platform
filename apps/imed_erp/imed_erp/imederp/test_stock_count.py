@@ -20,6 +20,9 @@ COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
 PAPER = "A4-PAPER"
 STORE = f"خامات المواساة - {ABBR}"
+MAWASAH = f"مكتبة المواساة - {ABBR}"
+AZARITA_STORE = f"خامات الأزاريطة - {ABBR}"
+AZARITA = f"مكتبة الأزاريطة - {ABBR}"
 STOCK_DIFFERENCES = f"فروقات الجرد - {ABBR}"
 ACCOUNTANT = "accountant@imed.local"
 RAGHAD = "raghad@imed.local"
@@ -29,19 +32,19 @@ class IntegrationTestStockCount(IntegrationTestCase):
 	def tearDown(self):
 		frappe.set_user("Administrator")
 
-	def on_hand(self):
+	def on_hand(self, store=STORE):
 		"""Sheets in the store and the price of one."""
-		row = frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": STORE}, ["actual_qty", "valuation_rate"])
+		row = frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": store}, ["actual_qty", "valuation_rate"])
 		return tuple(flt(v) for v in row) if row else (0.0, 0.0)
 
-	def receive_two_boxes(self):
+	def receive_two_boxes(self, store=STORE):
 		# 2 boxes at 650: 5,000 sheets at 0.26 when the store was empty.
 		entry = frappe.get_doc(
 			{
 				"doctype": "Stock Entry",
 				"stock_entry_type": "Material Receipt",
 				"company": COMPANY,
-				"items": [{"item_code": PAPER, "qty": 2, "uom": "كرتونة", "basic_rate": 650, "t_warehouse": STORE}],
+				"items": [{"item_code": PAPER, "qty": 2, "uom": "كرتونة", "basic_rate": 650, "t_warehouse": store}],
 			}
 		).insert()
 		entry.submit()
@@ -103,9 +106,14 @@ class IntegrationTestStockCount(IntegrationTestCase):
 		count.custom_count_type = DAILY
 		count.insert()
 
+	def test_the_company_posts_differences_to_stock_differences(self):
+		self.assertEqual(
+			frappe.get_cached_value("Company", COMPANY, "stock_adjustment_account"), STOCK_DIFFERENCES
+		)
+
 	def test_shortage_of_100_sheets_is_26_on_stock_differences(self):
 		# 5,000 sheets recorded, 4,900 counted: a shortage of 100 sheets, 26 at 0.26 a sheet, posted to the
-		# stock differences account.
+		# stock differences account on Mawasah's library, whose store was counted.
 		self.receive_two_boxes()
 		recorded, rate = self.on_hand()
 		count = self.count(recorded - 100, custom_count_type=PERIODIC).insert()
@@ -118,16 +126,39 @@ class IntegrationTestStockCount(IntegrationTestCase):
 			self.assertAlmostEqual(flt(row.amount_difference), -26, places=2)
 		self.assertEqual(self.on_hand()[0], recorded - 100)
 
+		self.assertEqual((count.expense_account, count.cost_center), (STOCK_DIFFERENCES, MAWASAH))
 		posted = frappe.get_all(
 			"GL Entry",
-			filters={"voucher_no": count.name, "account": STOCK_DIFFERENCES, "is_cancelled": 0},
-			fields=["debit", "credit"],
+			filters={"voucher_no": count.name, "is_cancelled": 0},
+			fields=["account", "cost_center", "debit", "credit"],
 		)
-		self.assertAlmostEqual(sum(flt(g.debit) - flt(g.credit) for g in posted), 100 * rate, places=2)
+		loss = [g for g in posted if g.account == STOCK_DIFFERENCES]
+		self.assertAlmostEqual(sum(flt(g.debit) - flt(g.credit) for g in loss), 100 * rate, places=2)
+		self.assertEqual({g.cost_center for g in posted}, {MAWASAH})
+
+	def test_each_branchs_difference_is_its_own(self):
+		self.receive_two_boxes(AZARITA_STORE)
+		count = self.count(self.on_hand(AZARITA_STORE)[0] - 10)
+		count.items[0].warehouse = AZARITA_STORE
+		count.insert()
+		self.assertEqual(count.cost_center, AZARITA)
+
+		# A cost center typed by hand is put right: the store decides.
+		count.cost_center = MAWASAH
+		count.save()
+		self.assertEqual(count.cost_center, AZARITA)
+
+	def test_one_count_one_branch(self):
+		self.receive_two_boxes()
+		self.receive_two_boxes(AZARITA_STORE)
+		count = self.count(self.on_hand()[0] - 1)
+		count.append("items", {"item_code": PAPER, "warehouse": AZARITA_STORE, "qty": self.on_hand(AZARITA_STORE)[0] - 1})
+		self.assertRaisesRegex(frappe.ValidationError, "one branch", count.insert)
 
 	def test_stock_reconciliation_keeps_all_its_hooks(self):
 		# hooks.py lists each doctype once; a second "Stock Reconciliation" entry would silently replace these.
 		events = frappe.get_hooks("doc_events", app_name="imed_erp")["Stock Reconciliation"]
 		self.assertIn("imed_erp.imederp.stock_count.check_count_type", events["validate"])
+		self.assertIn("imed_erp.imederp.stock_count.set_branch_cost_center", events["validate"])
 		self.assertIn("imed_erp.imederp.stock_reorder.alert_on_reorder_level", events["on_submit"])
 		self.assertIn("imed_erp.imederp.no_delete.block_delete_of_posted", events["on_trash"])
