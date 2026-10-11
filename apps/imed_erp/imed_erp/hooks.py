@@ -179,7 +179,8 @@ doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
 # validate and before_cancel on the app's documents: none is saved or cancelled in a closed month or academic
 # period (imederp/period_lock.py).
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
-# Stock Reconciliation validate: an opening count is ERPNext's Opening Stock (imederp/stock_count.py).
+# Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
+# branch's (imederp/stock_count.py).
 doc_events = {
 	"Journal Entry": {
 		"validate": [
@@ -225,7 +226,10 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Reconciliation": {
-		"validate": "imed_erp.imederp.stock_count.check_count_type",
+		"validate": [
+			"imed_erp.imederp.stock_count.check_count_type",
+			"imed_erp.imederp.stock_count.set_branch_cost_center",
+		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
