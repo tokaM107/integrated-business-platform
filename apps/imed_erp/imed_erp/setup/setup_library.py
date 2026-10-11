@@ -1,5 +1,6 @@
 # Library / POS / inventory setup (LIB) for Mohamed Mamdouh group: item groups, the product fields of
-# LIB-06, the library services, item defaults and one POS Profile per library branch.
+# LIB-06, the library services, item defaults, one POS Profile per library branch and the stock count
+# fields (LIB-03).
 #
 # Run from bench console (after setup_core.py and setup_users.py):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
@@ -159,6 +160,47 @@ def ensure_item_group(group, parent, is_group=0):
 	doc.parent_item_group = parent
 	doc.save()
 	print(f"move   Item Group {group} -> {parent}")
+
+
+def make_stock_count_fields():
+	"""LIB-03, PRN-06: what kind of count a Stock Reconciliation is and who counted, for the variance report
+	(imederp/stock_count.py). Made or updated to match on every run."""
+	from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+
+	from imed_erp.imederp.stock_count import COUNT_TYPES, DAILY
+
+	existed = frappe.get_meta("Stock Reconciliation").has_field("custom_count_type")
+	create_custom_fields(
+		{
+			"Stock Reconciliation": [
+				{
+					"fieldname": "custom_count_type",
+					"label": "Count Type",
+					"fieldtype": "Select",
+					"options": "\n".join(COUNT_TYPES),
+					"default": DAILY,
+					"reqd": 1,
+					"insert_after": "purpose",
+					"in_standard_filter": 1,
+					"in_list_view": 1,
+					"description": "Daily: the library's daily count. Periodic: paper and ink every 7-15 days. Opening: the opening balance (Purpose: Opening Stock).",
+				},
+				{
+					"fieldname": "custom_counted_by",
+					"label": "Counted By",
+					"fieldtype": "Link",
+					"options": "User",
+					"default": "__user",
+					"reqd": 1,
+					"insert_after": "custom_count_type",
+					"in_standard_filter": 1,
+				},
+			]
+		},
+		update=True,
+	)
+	fields = "Stock Reconciliation.custom_count_type, custom_counted_by"
+	print(f"exists Custom Fields {fields} (kept as defined here)" if existed else f"create Custom Fields {fields}")
 
 
 def make_author_field():
@@ -365,6 +407,9 @@ def run():
 		# ---------- 6) Cash payment methods of the other businesses ----------
 		for mode in OTHER_CASH_MODES:
 			make_mode_of_payment(*mode)
+
+		# ---------- 7) Stock counts (LIB-03, PRN-06): count type and who counted ----------
+		make_stock_count_fields()
 
 		frappe.db.commit()
 	except Exception:
