@@ -470,6 +470,11 @@ sheet. The app adds two fields (`setup_library.py`, `imederp/stock_count.py`):
 - **Counted By**: who counted, by default whoever makes the count; the accountant can record a count
   someone else made.
 
+The difference account is the company's Stock Adjustment Account, `فروقات الجرد`. The cost center is the
+branch whose store was counted (Mawasah's or Azarita's library), set from the store whatever was typed;
+otherwise ERPNext would post the difference on the company's default cost center, the head office. One
+count covers one branch's stores.
+
 ERPNext saves only a count that finds a difference. Today only the owner and the accountant can make a
 count (Stock Manager, Super Admin, Accountant); branch managers cannot.
 
