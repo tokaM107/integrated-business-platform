@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:machine_name",
+ "creation": "2026-10-11 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "machine_name",
+  "warehouse",
+  "cost_center",
+  "column_break_main",
+  "disabled",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "machine_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Machine Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "The branch or store the machine works in. Paper is issued to it only into this warehouse (or a warehouse under it).",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Location (Warehouse)",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Branch (Cost Center)",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "A disabled machine can no longer receive paper.",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-11 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Printing Machine",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Super Admin", "share": 1, "write": 1},
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Stock Manager", "share": 1, "write": 1},
+  {"create": 1, "print": 1, "read": 1, "report": 1, "role": "Stock Request Approver", "write": 1},
+  {"print": 1, "read": 1, "report": 1, "role": "Stock User"},
+  {"print": 1, "read": 1, "report": 1, "role": "Branch Manager"}
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "machine_name",
+ "sort_order": "ASC",
+ "states": [],
+ "title_field": "machine_name"
+}

@@ -87,6 +87,9 @@ WAREHOUSES = [
 	("مخزن سنتر Imed — أدوات مكتبية", ROOT_WH, 0),
 ]
 
+# Warehouses the branches request materials from - must match setup_core.py.
+SUPPLYING_WAREHOUSES = ["خامات المواساة", "إصدارات الأطباء — المواساة"]
+
 # (group, parent) - must match setup_library.py.
 ITEM_GROUPS = [
 	("ورق", "All Item Groups"),
@@ -131,7 +134,7 @@ USERS = [
 	(
 		"raghad@imed.local",
 		"رغد",
-		[*BRANCH_ROLES, "Stock User"],
+		[*BRANCH_ROLES, "Stock User", "Stock Request Approver"],
 		["مكتبة المواساة"],
 		["المخزن المركزي بالمواساة", "مخزن الأزاريطة"],
 	),
@@ -231,6 +234,14 @@ def run():
 		else:
 			report("Stock link", acc(warehouse), [])
 
+	# ---------- Branch requests: who supplies, what goes to a printing machine ----------
+	for name in SUPPLYING_WAREHOUSES:
+		flag = frappe.db.get_value("Warehouse", acc(name), "custom_supplies_branches")
+		report("Supplier", acc(name), [] if flag else ["Supplies Branches is not ticked"])
+	for name in ("التالف — المواساة", "خامات الأزاريطة", "إصدارات الأطباء — الأزاريطة"):
+		if frappe.db.get_value("Warehouse", acc(name), "custom_supplies_branches"):
+			report("Supplier", acc(name), ["must not supply the branches"])
+
 	# ---------- Item groups ----------
 	for group, parent in ITEM_GROUPS:
 		found = frappe.db.get_value("Item Group", group, "parent_item_group")
@@ -238,6 +249,8 @@ def run():
 			report("Item Group", group, ["missing"])
 		else:
 			report("Item Group", group, [] if found == parent else [f"parent is {found}, expected {parent}"])
+	machine = frappe.db.get_value("Item Group", "ورق", "custom_requires_printing_machine")
+	report("Item Group", "ورق: needs printing machine", [] if machine else ["Needs Printing Machine is not ticked"])
 
 	# ---------- UOMs ----------
 	for uom in UOMS:

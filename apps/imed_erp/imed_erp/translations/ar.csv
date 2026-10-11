@@ -161,3 +161,80 @@ Row {0}: {1} is a group. Choose a business under it.,السطر {0}: {1} مجم�
 "Why these shares, e.g. who agreed to them and what they are based on (usage, area, revenue).",ليه النسب دي، زي مين وافق عليها ومبنية على إيه (الاستخدام أو المساحة أو الإيراد).
 "Its share of the shared expenses, in %.",نصيبه من المصروفات المشتركة بالـ %.
 "Valid From must be after {0}, the date rule {1} starts on.",تاريخ السريان لازم يكون بعد {0}، اليوم اللي القاعدة {1} بتبدأ فيه.
+Printing Machine,ماكينة الطباعة
+Printing Machines,ماكينات الطباعة
+Machine Name,اسم الماكينة
+Location (Warehouse),المكان (المخزن)
+Branch (Cost Center),الفرع (مركز التكلفة)
+A disabled machine can no longer receive paper.,الماكينة المتوقفة مش بيتصرف لها ورق.
+Material Issues,صرف الخامات
+Branch Requests,طلبات الفروع
+Material Requests,طلبات الخامات
+Issued By,صرف بواسطة
+The person who physically received the materials.,الشخص اللي استلم الخامات بإيده.
+Supplies Branches,بيمد الفروع
+Needs Printing Machine,محتاج ماكينة طباعة
+Stock Request Approver,معتمد طلبات المخزن
+Approved / Rejected By,اعتمد / رفض بواسطة
+Approved / Rejected On,تاريخ الاعتماد / الرفض
+Reject Request,رفض الطلب
+Requested By,طالب الطلب
+Request Date,تاريخ الطلب
+Request Status,حالة الطلب
+Requested Qty,الكمية المطلوبة
+Approved (Stock UOM),المعتمد (بوحدة المخزن)
+Issued in Total (Stock UOM),إجمالي المنصرف (بوحدة المخزن)
+Still to Issue (Stock UOM),الباقي للصرف (بوحدة المخزن)
+Issue Date,تاريخ الصرف
+Issue Time,وقت الصرف
+Issued Qty,الكمية المنصرفة
+Issued UOM,وحدة الصرف
+Issued (Stock UOM),المنصرف (بوحدة المخزن)
+To Warehouse,إلى مخزن
+From Warehouse,من مخزن
+"Waiting for Raghad's approval. Nothing has left the warehouse yet.","مستني اعتماد رغد. لسه مفيش حاجة خرجت من المخزن."
+"Save the items, then send the request to Raghad for approval.","احفظ الأصناف، وبعدين ابعت الطلب لرغد تعتمده."
+This request was rejected and is closed: {0},الطلب ده اترفض واتقفل: {0}
+no reason given,من غير سبب
+"Approved by {0} on {1}. The store issues it with Create > Material Transfer.","اتعتمد من {0} يوم {1}. المخزن بيصرفه من إنشاء > تحويل مواد."
+"Issue of an approved request: enter who received the materials, and the printing machine for paper rows. Stock leaves the warehouse only when you submit.","صرف طلب معتمد: اكتب مين استلم الخامات، واختار ماكينة الطباعة لسطور الورق. الرصيد مش بيخرج من المخزن غير لما تعمل اعتماد (Submit)."
+Enter who received the materials (Received By).,اكتب مين استلم الخامات (المستلم).
+Missing Recipient,المستلم ناقص
+Missing Printing Machine,ماكينة الطباعة ناقصة
+More Than Approved,أكتر من المعتمد
+Row #{0}: {1} is issued to a printing machine. Choose the machine.,سطر #{0}: {1} بيتصرف لماكينة طباعة. اختار الماكينة.
+Material Request {0} from {1} is waiting for your approval.,طلب الخامات {0} من {1} مستني اعتمادك.
+Material Request {0} was approved and can be issued.,طلب الخامات {0} اتعتمد وممكن يتصرف.
+Material Request {0} was rejected.,طلب الخامات {0} اترفض.
+"A branch request is submitted by approving it. Click Request Approval, then Raghad approves it.","طلب الفرع بيتعمله Submit لما يتعتمد. دوس اطلب الاعتماد، وبعدين رغد تعتمده."
+Approval Needed,محتاج اعتماد
+A branch request is issued with a Material Transfer.,طلب الفرع بيتصرف بتحويل مواد (Material Transfer).
+"Branches request materials from this warehouse (Material Request), and Raghad's approval is needed before they are issued.","الفروع بتطلب خامات من المخزن ده (طلب خامات)، ولازم رغد تعتمد قبل الصرف."
+Cost Center {0} and warehouse {1} belong to different companies.,مركز التكلفة {0} والمخزن {1} تبع شركتين مختلفين.
+Cost Center {0} is a group. Choose a branch under it.,مركز التكلفة {0} مجموعة. اختار فرع تحتها.
+"Items of this group (e.g. paper) are issued to a printing machine. Applies to the groups under it too.","أصناف المجموعة دي (زي الورق) بتتصرف لماكينة طباعة. وده بيسري على المجموعات اللي تحتها كمان."
+Material Request {0} is not a branch request from the main warehouse.,طلب الخامات {0} مش طلب فرع من المخزن الرئيسي.
+Material Request {0} is not waiting for approval.,طلب الخامات {0} مش مستني اعتماد.
+Material Request {0} was rejected and is closed. Make a new request instead.,طلب الخامات {0} اترفض واتقفل. اعمل طلب جديد.
+Not permitted to view warehouse {0},مش مسموح لك تشوف المخزن {0}
+Rejected: {0},اترفض: {0}
+Row #{0},سطر #{0}
+Row #{0}: the row of Material Request {1} was not found.,سطر #{0}: السطر بتاعه في طلب الخامات {1} مش موجود.
+"Row #{0}: {1} would be issued {2} {3} in total, but {4} were approved in Material Request {5} ({6} already issued).","سطر #{0}: إجمالي المنصرف من {1} هيبقى {2} {3}، والمعتمد في طلب الخامات {5} هو {4} بس (اتصرف منه {6} قبل كده)."
+"The branch or store the machine works in. Paper is issued to it only into this warehouse (or a warehouse under it).","الفرع أو المخزن اللي الماكينة شغالة فيه. الورق بيتصرف لها على المخزن ده بس (أو مخزن تحته)."
+You cannot approve requests from {0}.,مش مسموح لك تعتمد طلبات من {0}.
+empty,فاضي
+{0} is set by the approval actions only.,{0} بيتحدد من أزرار الاعتماد بس.
+"{0}: Material Request {1} is not approved, so nothing can be issued from it.","{0}: طلب الخامات {1} مش معتمد، فمينفعش يتصرف منه حاجة."
+{0}: Material Request {1} is {2}.,{0}: طلب الخامات {1} حالته {2}.
+{0}: choose the warehouse the materials go to.,{0}: اختار المخزن اللي الخامات رايحة له.
+"{0}: issue from {1} to {2}, as approved.","{0}: الصرف يكون من {1} إلى {2}، زي ما اتعتمد."
+{0}: materials are requested from the main warehouse; {1} does not supply the branches.,{0}: الخامات بتتطلب من المخزن الرئيسي؛ {1} مش بيمد الفروع.
+{0}: printing machine {1} is disabled.,{0}: ماكينة الطباعة {1} متوقفة.
+{0}: printing machine {1} is not at {2}. Choose a machine of that branch.,{0}: ماكينة الطباعة {1} مش موجودة في {2}. اختار ماكينة من الفرع ده.
+"{0}: the materials must go to a branch, not to {1}.","{0}: الخامات لازم تروح لفرع، مش لـ {1}."
+{0}: the quantity issued must be more than zero.,{0}: الكمية المنصرفة لازم تكون أكبر من صفر.
+{0}: the quantity must be more than zero.,{0}: الكمية لازم تكون أكبر من صفر.
+{0}: the request was approved for printing machine {1}.,{0}: الطلب اتعتمد لماكينة الطباعة {1}.
+{0}: {1} is a group warehouse. Choose the warehouse that will hold the materials.,{0}: {1} مخزن مجموعة. اختار المخزن اللي هيشيل الخامات.
+{0}: {1} is not an active stock item.,{0}: {1} مش صنف مخزني شغال.

@@ -65,7 +65,11 @@ website_context = {
 
 # include js in doctype views
 # Screen design standard applied to a standard ERPNext doctype (see docs/SCREEN_DESIGN_STANDARD.md).
-doctype_js = {"Sales Invoice": "public/js/sales_invoice.js"}
+doctype_js = {
+	"Sales Invoice": "public/js/sales_invoice.js",
+	"Material Request": "public/js/material_request.js",
+	"Stock Entry": "public/js/stock_entry.js",
+}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -196,14 +200,27 @@ doc_events = {
 	**{
 		doctype: {"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level"}
 		for doctype in (
-			"Stock Entry",
 			"Delivery Note",
 			"Purchase Receipt",
 			"Purchase Invoice",
 			"Stock Reconciliation",
 		)
 	},
+	# Branch requests from the main warehouse: Raghad's approval, then the issue (imederp/material_issue.py).
+	"Material Request": {
+		"onload": "imed_erp.imederp.material_issue.material_request_onload",
+		"validate": "imed_erp.imederp.material_issue.validate_material_request",
+		"before_submit": "imed_erp.imederp.material_issue.before_submit_material_request",
+	},
+	"Stock Entry": {
+		"validate": "imed_erp.imederp.material_issue.validate_stock_entry",
+		"before_submit": "imed_erp.imederp.material_issue.before_submit_stock_entry",
+		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+	},
 }
+
+# The custom fields the app's code relies on, kept in step with it on every migrate.
+after_migrate = ["imed_erp.imederp.material_issue.make_custom_fields"]
 
 # Scheduled Tasks
 # ---------------

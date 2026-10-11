@@ -85,6 +85,20 @@ def make_warehouse(name, parent, is_group=0):
 	return doc.name
 
 
+def mark_supplies_branches(warehouse):
+	if not frappe.db.exists("Warehouse", warehouse):
+		return
+	# The field comes with the app (material_issue.py, created on migrate).
+	if not frappe.get_meta("Warehouse").has_field("custom_supplies_branches"):
+		print(f"WAIT   Warehouse {warehouse}: Supplies Branches field missing; run bench migrate, then this script again")
+		return
+	if frappe.db.get_value("Warehouse", warehouse, "custom_supplies_branches"):
+		print(f"exists Warehouse {warehouse}: supplies branches")
+		return
+	frappe.db.set_value("Warehouse", warehouse, "custom_supplies_branches", 1)
+	print(f"update Warehouse {warehouse}: supplies branches")
+
+
 def make_item(code, item_name, item_group, is_stock_item, income, rate=0, conversions=None, expense=None):
 	income_account = acc(income)
 	expense_account = acc(expense) if expense else None
@@ -241,6 +255,10 @@ def run():
 		make_warehouse("خامات الأزاريطة", azarita)
 		make_warehouse("إصدارات الأطباء — الأزاريطة", azarita)
 	make_warehouse("مخزن سنتر Imed — أدوات مكتبية", ROOT_WH)
+
+	# The branches request materials from these (imederp/material_issue.py); damaged stock is not one.
+	for name in ["خامات المواساة", "إصدارات الأطباء — المواساة"]:
+		mark_supplies_branches(acc(name))
 
 	# ---------- 3) Accounts ----------
 	# Needs the company and the warehouses above; the items below need its income accounts.
