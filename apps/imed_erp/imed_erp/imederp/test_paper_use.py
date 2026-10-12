@@ -155,3 +155,33 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		invoice = self.sell([("COPY-SVC", 5), ("BINDING-SVC", 1)], library=AZARITA, user="sara@imed.local")
 		self.assertEqual(invoice.docstatus, 1)
 		self.assertEqual({row.warehouse for row in invoice.items}, {None})
+
+	def test_the_sellers_session_is_kept(self):
+		# Inside a web request the session's sid and data are the person's browser session. The paper is issued
+		# in the system's name, and her session must come back exactly as it was (frappe.set_user alone wipes
+		# them, which logged her out after the request).
+		self.receive(500)
+		frappe.set_user(RAGHAD)
+		session = frappe.local.session
+		session.sid, session.data = "browser-session-id", frappe._dict(csrf_token="token", user=RAGHAD)
+		data = session.data
+		frappe.local.form_dict = frappe._dict(cmd="frappe.client.submit")
+		try:
+			invoice = frappe.get_doc(
+				{
+					"doctype": "Sales Invoice",
+					"company": COMPANY,
+					"customer": self.customer,
+					"posting_date": today(),
+					"cost_center": MAWASAH,
+					"items": [{"item_code": "PRINT-SVC", "qty": 10, "rate": 1, "cost_center": MAWASAH}],
+				}
+			).insert()
+			invoice.submit()
+			self.assertEqual([i.docstatus for i in self.issues(invoice)], [1])
+			self.assertEqual((frappe.session.user, session.sid), (RAGHAD, "browser-session-id"))
+			self.assertIs(session.data, data)
+			self.assertEqual(session.data.csrf_token, "token")
+			self.assertEqual(frappe.local.form_dict.cmd, "frappe.client.submit")
+		finally:
+			frappe.set_user("Administrator")
