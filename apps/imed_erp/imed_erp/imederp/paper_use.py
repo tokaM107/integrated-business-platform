@@ -15,6 +15,7 @@ from frappe import _
 from frappe.utils import flt
 
 from imed_erp.imederp.doctype.book_edition.book_edition import LIBRARY_PAPER_STORE, PAPER
+from imed_erp.imederp.system_user import as_administrator
 
 # Service item -> sheets of A4 paper per unit sold. Both are sold by the sheet (1 EGP a sheet).
 SHEETS_PER_UNIT = {"PRINT-SVC": 1, "COPY-SVC": 1}
@@ -68,9 +69,7 @@ def issue_paper_used(doc, method=None):
 		)
 		issue.flags.from_paper_use = True
 		# Posted in the system's name: the cashier sells printing, she does not issue stock.
-		user = frappe.session.user
-		frappe.set_user("Administrator")
-		try:
+		with as_administrator():
 			issue.insert()
 			if on_hand(store, doc.posting_date, doc.posting_time) >= sheets:
 				issue.submit()
@@ -84,8 +83,6 @@ def issue_paper_used(doc, method=None):
 					title=_("Paper Not Issued"),
 					indicator="orange",
 				)
-		finally:
-			frappe.set_user(user)
 
 
 def cancel_paper_used(doc, method=None):
