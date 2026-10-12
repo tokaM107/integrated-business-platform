@@ -88,7 +88,7 @@ App Subscriptions,اشتراكات التطبيق
 {0} has expenses recorded under it and cannot become a group.,{0} عليه مصروفات متسجلة ومينفعش يتحول لمجموعة.
 {0} was posted by Expense {1}. Cancel the expense instead.,{0} اترحّل من المصروف {1}. الغي المصروف بدل كده.
 Expense Settings,إعدادات المصروفات
-Approval,موافقة المالك
+Approval,الموافقة
 Recurring Expense Reminders,تذكيرات المصروفات المتكررة
 Remind Days Before,التذكير قبلها بكام يوم
 Remind the owner and the accountant this many days before a recurring expense is due.,تذكير المالك والمحاسب قبل معاد المصروف المتكرر بالعدد ده من الأيام.
@@ -124,11 +124,11 @@ Pending Approval,في انتظار الموافقة
 Approved,تمت الموافقة
 Decided By,اللي قرر
 Rejection Reason,سبب الرفض
-Request Approval,اطلب موافقة المالك
+Request Approval,اطلب الموافقة
 Approve,موافقة
 Reject,رفض
 Reject Expense,رفض المصروف
-Waiting for the owner's approval.,مستني موافقة المالك.
+Waiting for approval.,مستني الموافقة.
 This expense was rejected and is closed. Make a new expense if it is still needed.,المصروف ده اترفض واتقفل. اعمل مصروف جديد لو لسه محتاجه.
 Expense {0} was rejected and cannot be changed. Make a new expense instead.,المصروف {0} اترفض ومينفعش يتعدل. اعمل مصروف جديد بداله.
 Approval Needed,محتاج موافقة
@@ -232,7 +232,7 @@ empty,فاضي
 Share (%),النسبة (%)
 Approval Requested By,طلب الموافقة
 {0} is not a treasury of {1}. Choose one of: {2}.,{0} مش خزنة {1}. اختار واحدة من: {2}.
-Wrong Treasury,خزنة غلط
+Wrong Treasury,خزينة غلط
 "{0} {1} was submitted, so it cannot be deleted. Cancel it instead: it stays on record.",{0} {1} اتسجل، فمينفعش يتمسح. الغيه بدل كده، وهيفضل محفوظ.
 Cannot Delete,مينفعش يتمسح
 {0} has monthly bills on it and cannot become a group.,{0} عليه فواتير شهرية ومينفعش يتحول لمجموعة.
@@ -306,7 +306,7 @@ Difference from Calculated Price,الفرق عن السعر المحسوب
 "Selling price minus calculated price: added to the library's profit, or taken from it when negative. The doctor's amount does not change.",سعر البيع ناقص السعر المحسوب: بيتزود على مكسب المكتبة، أو بيتخصم منه لو بالسالب. حق الطبيب مابيتغيرش.
 "Final Selling Price {0} is below the cost of a copy, {1}: the library loses {2} on each copy sold.",سعر البيع {0} أقل من تكلفة النسخة {1}: المكتبة بتخسر {2} في كل نسخة بتتباع.
 Selling at a Loss,بيع بخسارة
-Every expense is paid only once the owner approves it. Request the owner's approval first.,أي مصروف مابيتصرفش غير بعد موافقة المالك. اطلب موافقة المالك الأول.
+Every expense is paid only once the accountant approves it. Request approval first.,أي مصروف مابيتصرفش غير بعد موافقة المحاسب. اطلب الموافقة الأول.
 Count Type,نوع الجرد
 Counted By,المسؤول عن الجرد
 Periodic (Consumables),دوري للمستهلكات
@@ -352,3 +352,9 @@ Net Difference,صافي الفرق
 Item,الصنف
 Request Store Approval,اطلب موافقة المخزن
 "A branch request is submitted by approving it. Click Request Store Approval, then Raghad approves it.",طلب الفرع بيتعمله اعتماد لما رغد توافق عليه. دوس اطلب موافقة المخزن، وبعدين رغد توافق.
+"The approval of an expense is changed only with Request Approval, Approve or Reject.",الموافقة على المصروف بتتغير بس من «اطلب الموافقة» أو «موافقة» أو «رفض».
+Paper used for printing and copying sold on {0}.,ورق اتصرف للتصوير والطباعة اللي اتباعوا في {0}.
+{0} has fewer sheets than the {1} sold for printing and copying. The paper issue {2} is saved as a draft for the accountant.,{0} فيه ورق أقل من الـ {1} ورقة اللي اتباعوا تصوير وطباعة. صرف الورق {2} اتحفظ مسودة للمحاسب.
+Paper Not Issued,الورق ماتصرفش
+{0} is the paper used for Sales Invoice {1}. Cancel the invoice instead.,{0} هو الورق اللي اتصرف لفاتورة البيع {1}. الغي الفاتورة نفسها.
+{0} is not your business's treasury. You can use: {1}.,{0} مش خزينة نشاطك. تقدر تستخدم: {1}.
