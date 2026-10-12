@@ -309,3 +309,16 @@ class IntegrationTestStockCount(IntegrationTestCase):
 			}
 		).insert()
 		self.assertEqual(str(dated.posting_date), frappe.utils.add_days(today(), -1))
+
+	def test_the_counters_session_is_kept(self):
+		# The reconciliation is made in the system's name; Raghad's browser session must come back as it was.
+		self.receive_two_boxes()
+		frappe.set_user(RAGHAD)
+		session = frappe.local.session
+		session.sid, session.data = "browser-session-id", frappe._dict(csrf_token="token")
+		count = frappe.get_doc(
+			{"doctype": "Stock Count", "store": STORE, "items": [{"item_code": PAPER, "counted_qty": self.on_hand()[0] - 1}]}
+		).insert()
+		count.submit()
+		self.assertTrue(count.stock_reconciliation)
+		self.assertEqual((frappe.session.user, session.sid, session.data.csrf_token), (RAGHAD, "browser-session-id", "token"))
