@@ -194,8 +194,9 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 		transfer.cancel()
 		self.assertEqual(frappe.db.get_value("Journal Entry", transfer.send_journal_entry, "docstatus"), 2)
 
-	def test_branch_manager_entry_only_on_their_own_cash_box(self):
-		# Sara runs Azarita's library: her own entries may use its cash box or the wallets, nothing else.
+	def test_branch_manager_makes_no_journal_entry(self):
+		# Spending goes through an Expense the accountant approves (owner's decision of 12 Oct 2026): Sara, who
+		# runs Azarita's library, makes no journal entry, not even on her own cash box.
 		expense_account = frappe.get_all(
 			"Account",
 			filters={"company": frappe.db.get_value("Account", LIBRARY_CASH, "company"), "root_type": "Expense", "is_group": 0, "account_type": ""},
@@ -217,6 +218,7 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 			)
 
 		frappe.set_user("sara@imed.local")
-		self.assertRaises(frappe.ValidationError, entry(f"خزينة مكتبة المواساة - {ABBR}").insert)
-		self.assertRaises(frappe.ValidationError, entry(f"الخزينة الرئيسية - {ABBR}").insert)
+		self.assertRaises(frappe.PermissionError, entry(LIBRARY_CASH).insert)
+		# The accountant still makes them.
+		frappe.set_user("accountant@imed.local")
 		entry(LIBRARY_CASH).insert()
