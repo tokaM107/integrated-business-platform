@@ -744,6 +744,9 @@ docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
