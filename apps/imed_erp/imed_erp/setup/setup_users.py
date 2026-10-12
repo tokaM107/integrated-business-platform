@@ -55,9 +55,10 @@ FINANCIAL_DOCTYPES = [
 MANAGER_STANDARD_ROLES = ["Accounts User", "Sales User", "Stock User"]
 MANAGER_DENIED = {"cancel": 0, "amend": 0, "delete": 0}
 READ_ONLY = {p: 0 for p in ("write", "create", "submit", "cancel", "amend", "delete")}
-# Branch managers make regular journal entries too (owner's decision of 7 Oct 2026), with no cancel, amend or
-# delete like every financial document. Stated in full so a site where they were read-only gets them back.
-MANAGER_RIGHTS = {"Journal Entry": {"write": 1, "create": 1, "submit": 1, **MANAGER_DENIED}}
+# Branch managers no longer make journal entries (owner's decision of 12 Oct 2026, replacing that of 7 Oct):
+# every spending goes through an Expense the accountant approves. Stated in full so a site where they could
+# make them is set back to read-only.
+MANAGER_RIGHTS = {"Journal Entry": READ_ONLY}
 
 # The books' own controls: month-end closing (CORE-09), the chart of accounts, and the split of the
 # shared premises' expenses (EXP-03). Only Super Admin and Accountant change them, and only Super Admin

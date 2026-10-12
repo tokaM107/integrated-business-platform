@@ -189,8 +189,11 @@ class Expense(Document):
     def reject(self, reason=None):
         frappe.only_for(APPROVER_ROLE)
         self.check_pending()
-        # db_set: from now on validate refuses every save.
-        self.db_set({"approval_status": REJECTED, "approved_by": frappe.session.user, "rejection_reason": reason})
+        # Saved, so the change history keeps who rejected it and why; from now on validate refuses every save.
+        self.approval_status, self.approved_by, self.rejection_reason = REJECTED, frappe.session.user, reason
+        self.flags.approval_action = True
+        self.flags.ignore_permissions = True
+        self.save()
         # The reason is added after formatting, so braces typed in it are kept as they are.
         self.notify_requester(_("Expense {0} was rejected.").format(self.name) + (f" {reason}" if reason else ""))
 

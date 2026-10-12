@@ -2,8 +2,8 @@
 # See license.txt
 
 # A branch manager's money moves only through their own business's cash box or the group's wallets
-# (imederp/treasuries.py, owner's decision of 8 Oct 2026): on a purchase paid on the spot and on a sale paid at
-# the counter too, not only on journal and payment entries. Real items, stores and accounts; rolled back.
+# (imederp/treasuries.py, owner's decision of 8 Oct 2026), on a sale paid at the counter too; and money paid out
+# is an Expense the accountant approves (12 Oct 2026), so she pays no purchase and records no payment out. Real items, stores and accounts; rolled back.
 #
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.test_treasuries
@@ -81,12 +81,47 @@ class IntegrationTestTreasuries(IntegrationTestCase):
 			}
 		)
 
-	def test_branch_manager_pays_a_purchase_only_from_her_cash_box(self):
+	def test_branch_manager_pays_nothing_out_without_approval(self):
+		# Money paid out is an Expense the accountant approves (owner's decision of 12 Oct 2026): Sara pays no
+		# purchase on the spot and records no payment out, not even from her own cash box.
 		frappe.set_user(SARA)
-		for treasury in (MAIN_TREASURY, MAWASAH_CASH):
+		for treasury in (AZARITA_CASH, MAIN_TREASURY):
 			with self.subTest(treasury):
-				self.assertRaisesRegex(frappe.ValidationError, "not your business's treasury", self.purchase_paid_from(treasury).insert)
-		self.purchase_paid_from(AZARITA_CASH).insert()
+				self.assertRaisesRegex(frappe.ValidationError, "Make an Expense", self.purchase_paid_from(treasury).insert)
+		payment = frappe.get_doc(
+			{
+				"doctype": "Payment Entry",
+				"payment_type": "Pay",
+				"company": COMPANY,
+				"posting_date": today(),
+				"party_type": "Supplier",
+				"party": self.supplier,
+				"paid_from": AZARITA_CASH,
+				"paid_to": frappe.get_cached_value("Company", COMPANY, "default_payable_account"),
+				"paid_amount": 100,
+				"received_amount": 100,
+				"cost_center": AZARITA,
+			}
+		)
+		self.assertRaisesRegex(frappe.ValidationError, "Make an Expense", payment.insert)
+
+	def test_branch_manager_still_takes_payments_in(self):
+		frappe.set_user(SARA)
+		frappe.get_doc(
+			{
+				"doctype": "Payment Entry",
+				"payment_type": "Receive",
+				"company": COMPANY,
+				"posting_date": today(),
+				"party_type": "Customer",
+				"party": self.customer,
+				"paid_from": frappe.get_cached_value("Company", COMPANY, "default_receivable_account"),
+				"paid_to": AZARITA_CASH,
+				"paid_amount": 100,
+				"received_amount": 100,
+				"cost_center": AZARITA,
+			}
+		).insert()
 
 	def test_branch_manager_takes_a_sale_only_into_her_cash_box(self):
 		frappe.set_user(SARA)

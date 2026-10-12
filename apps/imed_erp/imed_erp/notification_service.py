@@ -61,6 +61,12 @@ EVENTS = {
 		"its reorder level there is {{ level }}. ({{ voucher }})",
 		"channels": ["system"],
 	},
+	# Paper sold for printing that the store did not show yet (imederp/paper_use.py). Worded by the module.
+	"paper_issue_pending": {
+		"subject": "{{ subject }}",
+		"message": "{{ subject }}",
+		"channels": ["system"],
+	},
 	"period_closed": {
 		"subject": "Accounting period {{ period }} closed",
 		"message": "Posting dated {{ start }} to {{ end }} is now blocked.",

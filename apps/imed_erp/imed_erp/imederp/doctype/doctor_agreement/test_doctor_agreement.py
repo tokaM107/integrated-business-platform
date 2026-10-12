@@ -61,6 +61,9 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "is not a doctor", self.agreement(student.name, "_Test Refused").insert)
 
 	def entry(self, agreement, entry_type, amount):
+		# Ledger entries go on a submitted agreement.
+		if frappe.db.get_value("Doctor Agreement", agreement, "docstatus") == 0:
+			frappe.get_doc("Doctor Agreement", agreement).submit()
 		entry = frappe.get_doc(
 			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount}
 		).insert()
@@ -105,8 +108,10 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 
 		app = self.agreement(make_doctor(), "_Test Suspended App")
 		app.agreement_type = "App"
-		app.status = "Suspended"
 		app.insert()
+		app.submit()
+		app.status = "Suspended"
+		app.save()
 		subscription = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
@@ -167,6 +172,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		# 80 a copy from January, 100 from November: an October edition is 80, a November one 100, and one
 		# before January has no amount.
 		agreement = self.books("_Test Two Terms", [("2026-11-01", 100), ("2026-01-01", 80)]).insert()
+		agreement.submit()
 		self.assertEqual([(str(t.valid_from), t.amount_per_copy) for t in agreement.terms], [("2026-01-01", 80), ("2026-11-01", 100)])
 		self.assertEqual(self.edition(agreement.name, "2026-10-15", "_Test October Edition").doctor_share, 80)
 		self.assertEqual(self.edition(agreement.name, "2026-11-05", "_Test November Edition").doctor_share, 100)
@@ -236,32 +242,35 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 			frappe.db.get_value("Doctor Agreement", app.name, ["balance_direction", "balance"]), ("Owed by Doctor", 200)
 		)
 
-	def period(self, name, period_type, start, end, parent=None, closed=0):
-		return frappe.get_doc(
-			{
-				"doctype": "Academic Period",
-				"period_name": name,
-				"period_type": period_type,
-				"parent_period": parent,
-				"start_date": start,
-				"end_date": end,
-				"is_closed": closed,
-			}
-		).insert().name
+	def test_the_settlement_period_is_entered_by_the_accountant(self):
+		# Each year has its own dates (owner, 12 Oct 2026): the next settlement is the end of the period the
+		# accountant enters, and it can move on after the agreement is submitted.
+		agreement = self.agreement(make_doctor(), "_Test Settlement Period")
+		agreement.settlement_from, agreement.next_settlement_date = "2026-10-01", "2026-09-01"
+		self.assertRaisesRegex(frappe.ValidationError, "ends before it starts", agreement.insert)
+		agreement.next_settlement_date = "2026-12-31"
+		agreement.insert()
+		agreement.submit()
 
-	def test_the_summary_shows_the_last_settlement_and_the_next(self):
-		from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import next_settlement_date
+		agreement = frappe.get_doc("Doctor Agreement", agreement.name)
+		agreement.settlement_from, agreement.next_settlement_date = "2027-01-01", "2027-03-31"
+		agreement.save()
+		self.assertEqual(str(frappe.db.get_value("Doctor Agreement", agreement.name, "next_settlement_date")), "2027-03-31")
 
-		# Two terms: one already ended, one ending in the future. The next settlement is the open one's end.
-		self.period("_Test Past Term", "Term", "2025-09-01", "2026-01-31")
-		self.period("_Test Next Term", "Term", "2026-02-01", "2099-01-31")
-		self.assertEqual(str(next_settlement_date("Term", "2026-10-12")), "2099-01-31")
-		# A closed period is not waited for.
-		self.period("_Test Closed Term", "Term", "2026-02-01", "2098-01-31", closed=1)
-		self.assertEqual(str(next_settlement_date("Term", "2026-10-12")), "2099-01-31")
+	def test_a_submitted_agreement_opened_on_screen_can_be_suspended(self):
+		# The form was opened, then a ledger entry changed the balance before it was saved: the save still
+		# goes through, with the balance read again from the ledger.
+		agreement = self.agreement(make_doctor(), "_Test Open Form").insert()
+		agreement.submit()
+		on_screen = frappe.get_doc("Doctor Agreement", agreement.name)
+		on_screen.run_method("onload")
+		self.entry(agreement.name, "Accrual", 400)
+		on_screen.status = "Suspended"
+		on_screen.save()
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, ["status", "balance"]), ("Suspended", 400))
 
+	def test_the_summary_shows_the_last_settlement(self):
 		agreement = self.agreement(make_doctor(), "_Test Summary").insert()
-		self.assertEqual(str(agreement.next_settlement_date), "2099-01-31")
 
 		# The last settlement is the latest payment; an accrual is not one.
 		self.entry(agreement.name, "Accrual", 800)
@@ -313,3 +322,79 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 			}
 		)
 		self.assertRaisesRegex(frappe.ValidationError, "amount per copy", agreement.insert)
+
+	def test_nothing_goes_on_a_draft_or_cancelled_agreement(self):
+		draft = self.books("_Test Draft Agreement", [("2026-01-01", 80)]).insert()
+		self.assertRaisesRegex(frappe.ValidationError, "not submitted", self.edition, draft.name, "2026-10-01", "_Test On Draft")
+		ledger = frappe.get_doc(
+			{"doctype": "Doctor Ledger Entry", "agreement": draft.name, "entry_date": today(), "entry_type": "Accrual", "amount": 10}
+		)
+		self.assertRaisesRegex(frappe.ValidationError, "not submitted", ledger.insert)
+
+		draft.submit()
+		draft.cancel()
+		self.assertRaisesRegex(frappe.ValidationError, "cancelled", self.edition, draft.name, "2026-10-01", "_Test On Cancelled")
+
+	def test_a_cancelled_agreement_is_amended_under_the_same_name(self):
+		agreement = self.books("_Test Amended", [("2026-01-01", 80)]).insert()
+		agreement.submit()
+		agreement.cancel()
+		# What the form's Amend does: a draft copy pointing at the cancelled one.
+		amended = frappe.copy_doc(agreement)
+		amended.docstatus = 0
+		amended.amended_from = agreement.name
+		amended.insert()
+		# The name field moves on with the document's name, so its uniqueness does not stand in the way.
+		self.assertEqual((amended.name, amended.agreement_name), ("_Test Amended-1", "_Test Amended-1"))
+
+	@patch(PAPER_COST, return_value=0.30)
+	def test_an_edition_saved_before_a_suspension_is_not_approved(self, _):
+		agreement = self.books("_Test Suspended Later", [("2026-01-01", 80)]).insert()
+		agreement.submit()
+		edition = self.edition(agreement.name, "2026-10-01", "_Test Saved Before")
+		agreement = frappe.get_doc("Doctor Agreement", agreement.name)
+		agreement.status = "Suspended"
+		agreement.save()
+		self.assertRaisesRegex(frappe.ValidationError, "suspended", frappe.get_doc("Book Edition", edition.name).submit)
+
+	def test_a_new_term_starts_after_the_last_one(self):
+		agreement = self.books("_Test Back Dated", [("2026-01-01", 80), ("2099-01-01", 100)]).insert()
+		agreement.submit()
+		agreement = frappe.get_doc("Doctor Agreement", agreement.name)
+		agreement.append("terms", {"valid_from": "2026-09-15", "amount_per_copy": 90})
+		self.assertRaisesRegex(frappe.ValidationError, "after the last one", agreement.save)
+
+		# A term that has not started yet can still be taken back.
+		agreement = frappe.get_doc("Doctor Agreement", agreement.name)
+		agreement.terms = [t for t in agreement.terms if str(t.valid_from) != "2099-01-01"]
+		agreement.save()
+		self.assertEqual([str(t.valid_from) for t in agreement.terms], ["2026-01-01"])
+
+	def test_ledger_entries_follow_the_agreement(self):
+		books = self.books("_Test Ledger Rules", [("2026-01-01", 80)]).insert()
+		books.submit()
+		app = self.agreement(make_doctor(), "_Test Ledger App")
+		app.agreement_type = "App"
+		app.insert()
+		app.submit()
+
+		def entry(agreement, entry_type, amount, **values):
+			return frappe.get_doc(
+				{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount, **values}
+			)
+
+		self.assertRaisesRegex(frappe.ValidationError, "greater than zero", entry(books.name, "Accrual", -50).insert)
+		self.assertRaisesRegex(frappe.ValidationError, "books agreement", entry(app.name, "Cancellation Charge", 50).insert)
+		other = self.books("_Test Other Books", [("2026-01-01", 70)]).insert()
+		other.submit()
+		edition = self.edition(other.name, "2026-10-01", "_Test Other Edition")
+		self.assertRaisesRegex(frappe.ValidationError, "another agreement", entry(books.name, "Accrual", 50, edition=edition.name).insert)
+		entry(books.name, "Adjustment", -20).insert()
+
+	def test_branch_managers_pick_an_agreement_but_do_not_read_them(self):
+		# The doctors' accounts are the accountant's; a manager only picks an agreement on an edition.
+		for user in ("sara@imed.local", "nour@imed.local"):
+			with self.subTest(user):
+				self.assertFalse(frappe.has_permission("Doctor Agreement", "read", user=user))
+				self.assertTrue(frappe.has_permission("Doctor Agreement", "select", user=user))
+				self.assertFalse(frappe.has_permission("Doctor Ledger Entry", "read", user=user))

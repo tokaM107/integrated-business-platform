@@ -48,8 +48,9 @@ class BookEdition(Document):
         # DOC-02: an edition belongs to a books agreement, not to an app one.
         if frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type") != "Books":
             frappe.throw(_("Agreement {0} is not a books agreement.").format(self.agreement))
-        if self.docstatus != 0:
-            # A submitted edition keeps the amount it was priced with.
+        if self.docstatus != 0 and self._action != "submit":
+            # A submitted edition keeps the amount it was priced with; submitting checks the agreement again
+            # (it may have been suspended since the draft was saved) and takes its term once more.
             return
         check_active(self.agreement)
         # The doctor names his amount per copy (the agreement's term in force on the edition's date); the

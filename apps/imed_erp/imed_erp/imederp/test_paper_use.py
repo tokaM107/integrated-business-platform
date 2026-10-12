@@ -127,6 +127,21 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		[issue] = self.issues(invoice)
 		self.assertEqual(issue.docstatus, 0)
 		self.assertEqual(self.sheets(AZARITA_STORE), before)
+		# The accountant is told.
+		self.assertTrue(frappe.db.exists("Notification Log", {"for_user": "accountant@imed.local", "document_name": issue.name}))
+
+		# Once the paper arrives, the draft is submitted as it is, dated the day it is submitted.
+		self.receive(500, AZARITA_STORE)
+		draft = frappe.get_doc("Stock Entry", issue.name)
+		draft.submit()
+		self.assertEqual(self.sheets(AZARITA_STORE), before + 500 - (before + 50))
+
+	def test_a_sale_beyond_the_paper_left_as_draft_goes_with_the_sale(self):
+		self.receive(10, AZARITA_STORE)
+		before = self.sheets(AZARITA_STORE)
+		invoice = self.sell([("PRINT-SVC", before + 50)], library=AZARITA)
+		[issue] = self.issues(invoice)
+		self.assertEqual(issue.docstatus, 0)
 
 		# Cancelling the sale removes the draft issue.
 		frappe.get_doc("Sales Invoice", invoice.name).cancel()
@@ -155,3 +170,48 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		invoice = self.sell([("COPY-SVC", 5), ("BINDING-SVC", 1)], library=AZARITA, user="sara@imed.local")
 		self.assertEqual(invoice.docstatus, 1)
 		self.assertEqual({row.warehouse for row in invoice.items}, {None})
+
+	def test_the_sellers_session_is_kept(self):
+		# Inside a web request the session's sid and data are the person's browser session. The paper is issued
+		# in the system's name, and her session must come back exactly as it was (frappe.set_user alone wipes
+		# them, which logged her out after the request).
+		self.receive(500)
+		frappe.set_user(RAGHAD)
+		session = frappe.local.session
+		session.sid, session.data = "browser-session-id", frappe._dict(csrf_token="token", user=RAGHAD)
+		data = session.data
+		frappe.local.form_dict = frappe._dict(cmd="frappe.client.submit")
+		try:
+			invoice = frappe.get_doc(
+				{
+					"doctype": "Sales Invoice",
+					"company": COMPANY,
+					"customer": self.customer,
+					"posting_date": today(),
+					"cost_center": MAWASAH,
+					"items": [{"item_code": "PRINT-SVC", "qty": 10, "rate": 1, "cost_center": MAWASAH}],
+				}
+			).insert()
+			invoice.submit()
+			self.assertEqual([i.docstatus for i in self.issues(invoice)], [1])
+			self.assertEqual((frappe.session.user, session.sid), (RAGHAD, "browser-session-id"))
+			self.assertIs(session.data, data)
+			self.assertEqual(session.data.csrf_token, "token")
+			self.assertEqual(frappe.local.form_dict.cmd, "frappe.client.submit")
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_the_cancel_button_cancels_the_invoice_and_its_paper(self):
+		# The form's Cancel first lists submitted documents linked to the invoice, minus the doctypes it is told
+		# to skip (sales_invoice.js adds Stock Entry to ERPNext's list). The paper issue is skipped there and
+		# goes back with the invoice.
+		from frappe.desk.form.linked_with import get_submitted_linked_docs
+
+		self.receive(500)
+		before = self.sheets()
+		invoice = self.sell([("PRINT-SVC", 100)])
+		skipped = ["Journal Entry", "Payment Entry", "Serial and Batch Bundle", "Stock Entry"]
+		linked = get_submitted_linked_docs("Sales Invoice", invoice.name, ignore_doctypes_on_cancel_all=skipped)
+		self.assertNotIn("Stock Entry", [d["doctype"] for d in linked.get("docs", [])])
+		frappe.get_doc("Sales Invoice", invoice.name).cancel()
+		self.assertEqual(self.sheets(), before)

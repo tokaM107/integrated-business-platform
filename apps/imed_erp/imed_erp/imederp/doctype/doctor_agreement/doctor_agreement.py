@@ -24,20 +24,26 @@ BALANCE_SIGN = {"Accrual": 1, "Payment": -1, "Cancellation Charge": -1, "Adjustm
 
 
 class DoctorAgreement(Document):
-	def onload(self):
-		# The next settlement moves on as periods end, so it is worked out each time the agreement is opened.
-		self.next_settlement_date = next_settlement_date(self.settlement_cycle)
-
 	def validate(self):
-		self.next_settlement_date = next_settlement_date(self.settlement_cycle)
 		self.validate_doctor()
 		self.balance_direction = DIRECTION.get(self.agreement_type)
 		self.validate_terms()
+		self.validate_settlement_period()
 
 	def before_update_after_submit(self):
-		# A submitted agreement takes new terms and a new status without an amendment; validate does not run
-		# then, so the terms are checked here.
+		# A submitted agreement takes new terms, a new status and the next settlement period without an
+		# amendment; validate does not run then, so they are checked here. The summary is read again from the
+		# ledger, so a form opened before an entry was posted saves the right figures.
 		self.validate_terms()
+		self.validate_settlement_period()
+		self.balance = get_balance(self.name)
+		self.last_settlement_date, self.last_settlement_amount = last_settlement(self.name)
+
+	def validate_settlement_period(self):
+		# DOC-05/29: each year has its own dates (owner, 12 Oct 2026), so the accountant enters the period
+		# being settled; the next settlement is due at its end.
+		if self.settlement_from and self.next_settlement_date and getdate(self.next_settlement_date) < getdate(self.settlement_from):
+			frappe.throw(_("The settlement period ends before it starts. Check its dates."), title=_("Settlement Period"))
 
 	def validate_doctor(self):
 		if frappe.db.get_value("Customer", self.doctor, "customer_group") != DOCTOR_GROUP:
@@ -70,13 +76,24 @@ class DoctorAgreement(Document):
 
 	def keep_past_terms(self):
 		# Once submitted, a term already given stays as it was: editions were priced on it. A new amount is
-		# a new row from a later date.
+		# a new row from after the last one, so no edition already dated is moved to another amount. A term
+		# that has not started yet may still be taken back.
 		before = self.get_doc_before_save()
 		if self.docstatus != 1 or not before:
 			return
+		given = {(getdate(t.valid_from), flt(t.amount_per_copy)) for t in before.terms}
 		now = {(getdate(t.valid_from), flt(t.amount_per_copy)) for t in self.terms}
+		last = max((date for date, _amount in given), default=None)
+		for date, _amount in now - given:
+			if last and date <= last:
+				frappe.throw(
+					_("A new term starts after the last one, {0}. An earlier date would change editions already priced.").format(
+						frappe.format_value(last, {"fieldtype": "Date"})
+					),
+					title=_("Term Already Given"),
+				)
 		for term in before.terms:
-			if (getdate(term.valid_from), flt(term.amount_per_copy)) not in now:
+			if (getdate(term.valid_from), flt(term.amount_per_copy)) not in now and getdate(term.valid_from) <= getdate(today()):
 				frappe.throw(
 					_("The term from {0} was already in force. Add a new row from a later date instead of changing it.").format(
 						frappe.format_value(term.valid_from, {"fieldtype": "Date"})
@@ -95,21 +112,6 @@ def get_amount_per_copy(agreement, date):
 		limit=1,
 	)
 	return flt(terms[0].amount_per_copy) if terms else None
-
-
-def next_settlement_date(cycle, on=None):
-	"""DOC-05/29: the end of the nearest academic period of the agreement's cycle that has not ended or been
-	closed. None when no such period is set up yet."""
-	if not cycle:
-		return None
-	periods = frappe.get_all(
-		"Academic Period",
-		filters={"period_type": cycle, "is_closed": 0, "end_date": [">=", on or today()]},
-		pluck="end_date",
-		order_by="end_date asc",
-		limit=1,
-	)
-	return periods[0] if periods else None
 
 
 def last_settlement(agreement):
@@ -144,8 +146,19 @@ def update_balance(agreement):
 	)
 
 
+def check_submitted(agreement):
+	"""Editions, subscriptions and ledger entries go on a submitted agreement: a draft's terms can still change
+	under them, and a cancelled one is replaced by its amended copy."""
+	docstatus = frappe.db.get_value("Doctor Agreement", agreement, "docstatus")
+	if docstatus == 0:
+		frappe.throw(_("Agreement {0} is not submitted yet. Submit it before adding to it.").format(agreement), title=_("Agreement Not Submitted"))
+	if docstatus == 2:
+		frappe.throw(_("Agreement {0} was cancelled. Use its amended copy.").format(agreement), title=_("Agreement Cancelled"))
+
+
 def check_active(agreement):
 	"""A suspended agreement takes no new editions or subscriptions."""
+	check_submitted(agreement)
 	if frappe.db.get_value("Doctor Agreement", agreement, "status") == SUSPENDED:
 		frappe.throw(
 			_("Agreement {0} is suspended. Make it Active again before adding to it.").format(agreement),
