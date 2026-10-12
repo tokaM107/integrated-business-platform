@@ -10,13 +10,18 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import flt, getdate, nowtime, today
 
 from imed_erp.imederp.stock_count import branch_of
+
+# Holders may date a count other than now (a count made yesterday, entered today); the reconciliation it makes
+# is posted at that date and reposts everything after it, so branch managers cannot.
+DATING_ROLE = "Accounts Manager"
 
 
 class StockCount(Document):
 	def validate(self):
+		self.set_count_time()
 		if frappe.db.get_value("Warehouse", self.store, "is_group"):
 			frappe.throw(_("{0} is a group of stores. Choose the store that was counted.").format(self.store))
 		self.branch = branch_of(self.store)
@@ -25,8 +30,22 @@ class StockCount(Document):
 		self.set_differences()
 
 	def before_submit(self):
+		if not can_date_counts() and getdate(self.posting_date) != getdate(today()):
+			frappe.throw(
+				_("This count was saved on {0}. The stock has moved since: count again today.").format(
+					frappe.format_value(self.posting_date, {"fieldtype": "Date"})
+				),
+				title=_("Count Again"),
+			)
 		# The stock may have moved since the count was saved.
 		self.set_differences()
+
+	def set_count_time(self):
+		# A branch manager's count is dated when it is saved, whatever was typed; submitting keeps that date,
+		# and before_submit refuses one saved on another day.
+		if self.docstatus == 0 and not can_date_counts():
+			self.posting_date = today()
+			self.posting_time = nowtime()
 
 	def check_own_branch(self):
 		# A branch manager counts only their own branch's stores (their cost centers in User Permission).
@@ -104,6 +123,10 @@ class StockCount(Document):
 			reconciliation.flags.ignore_permissions = True
 			reconciliation.flags.from_stock_count = True
 			reconciliation.cancel()
+
+
+def can_date_counts(user=None):
+	return DATING_ROLE in frappe.get_roles(user)
 
 
 def recorded(item_code, store, posting_date, posting_time):

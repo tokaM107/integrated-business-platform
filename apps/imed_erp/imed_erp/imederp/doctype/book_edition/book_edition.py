@@ -28,7 +28,7 @@ class BookEdition(Document):
     def validate(self):
         # Records are posted to one business; group cost centers cannot hold transactions.
         if frappe.db.get_value("Cost Center", self.cost_center, "is_group"):
-            frappe.throw(f"Cost Center {self.cost_center} is a group. Choose a branch under it.")
+            frappe.throw(_("Cost Center {0} is a group. Choose a branch under it.").format(self.cost_center))
         # Editions are printed and sold by the libraries only.
         abbr = frappe.get_cached_value("Company", frappe.db.get_value("Cost Center", self.cost_center, "company"), "abbr")
         if frappe.db.get_value("Cost Center", self.cost_center, "parent_cost_center") != f"{LIBRARIES} - {abbr}":

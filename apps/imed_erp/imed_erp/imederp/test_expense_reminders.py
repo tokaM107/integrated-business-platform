@@ -128,8 +128,8 @@ class IntegrationTestExpenseReminders(IntegrationTestCase):
 				settings.set(fieldname, value)
 				self.assertRaises(frappe.ValidationError, settings.save)
 
-	def test_late_draft_waiting_for_approval_reminds_the_approvers(self):
-		# The accountant approves expenses (owner's decision of 12 Oct 2026), and the owner can too.
+	def test_late_draft_waiting_for_approval_reminds_the_accountant(self):
+		# The accountant approves expenses and is the one reminded (owner's decision of 12 Oct 2026).
 		recurring = self.make_recurring(due_in_days=10)
 		expense = self.make_expense(recurring, add_days(today(), -2))
 		expense.db_set("approval_status", "Pending Approval")
@@ -137,4 +137,4 @@ class IntegrationTestExpenseReminders(IntegrationTestCase):
 		send_recurring_expense_reminders()
 		reminded = self.reminders_for(expense.name)
 		self.assertIn("accountant@imed.local", reminded)
-		self.assertIn("owner@imed.local", reminded)
+		self.assertNotIn("owner@imed.local", reminded)

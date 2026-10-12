@@ -13,6 +13,10 @@ frappe.ui.form.on("Stock Count", {
 	},
 
 	refresh(frm) {
+		// A branch manager's count is dated when saved (stock_count.py); only the accountant picks a date.
+		const can_date = frappe.user.has_role("Accounts Manager");
+		frm.set_df_property("posting_date", "read_only", can_date ? 0 : 1);
+		frm.set_df_property("posting_time", "read_only", can_date ? 0 : 1);
 		if (frm.doc.docstatus === 0) {
 			frm.add_custom_button(__("Get Items in Store"), () => get_store_items(frm));
 		}

@@ -269,6 +269,9 @@ doc_events = {
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
 		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
+	"Doctor Agreement": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
 	"Doctor Ledger Entry": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",

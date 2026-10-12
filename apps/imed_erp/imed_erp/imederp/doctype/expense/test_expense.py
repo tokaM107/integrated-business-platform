@@ -445,6 +445,8 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		self.assertTrue(
 			frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": ACCOUNTANT, "type": "Alert"})
 		)
+		# The owner can approve, but only the accountant is notified of each request.
+		self.assertFalse(frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": OWNER}))
 		# Sara cannot approve her own request.
 		self.assertRaises(frappe.PermissionError, expense.approve)
 

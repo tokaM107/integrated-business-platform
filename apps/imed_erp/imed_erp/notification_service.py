@@ -13,6 +13,7 @@
 # To add an event, add it to EVENTS. To integrate a provider, fill in its adapter; nothing else changes.
 
 import frappe
+from frappe import _
 from frappe.utils.jinja import render_template
 
 # Templates are placeholders until each module defines its real wording.
@@ -78,8 +79,10 @@ def notify(event, users, context=None, channels=None, document=None):
 	"""
 	spec = EVENTS[event]
 	context = context or {}
-	subject = render_template(spec["subject"], context)
-	message = render_template(spec["message"], context)
+	# The templates are translated before they are filled in (translations/ar.csv has them with their
+	# {{ placeholders }}), so the people notified read them in the site's language.
+	subject = render_template(_(spec["subject"]), context)
+	message = render_template(_(spec["message"]), context)
 
 	sent = {}
 	for channel in channels or spec["channels"]:

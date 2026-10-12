@@ -113,10 +113,13 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Inter Business Transfer | full | Accounts User: read only. Branch Manager: create, edit, submit (no cancel/delete) |
 | Expense Category | full | read only |
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
-| Expense Settings | full | read only |
+| Expense Settings | read only (only the owner edits it) | read only |
 | Allocation Rule | full | read only |
 | Stock Count | full | Branch Manager: create, edit, submit, own branch's stores only (no cancel/delete) |
 | Printing Machine | full (Super Admin, Stock Manager; Stock Request Approver can add and edit) | read only (Stock User, Branch Manager) |
+
+"Full" never includes delete: on every one of these only the owner deletes, and only a draft that was never
+posted (owner's decision of 7 Oct 2026; `verify_users.py` checks it).
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here, except on Inter Business Transfer, which Branch Manager may send. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
@@ -264,6 +267,12 @@ Sales invoices print with the app's own format, **MMG Sales Invoice**
 - It draws its own header (logo, company, title, number) instead of the site letter head, which
   prints the English doctype name.
 
+
+Notification templates (`notification_service.py` `EVENTS`) are translated before they are filled in, so
+alerts such as reorder levels reach Arabic users in Arabic. Some of ERPNext's own Arabic is wrong and is
+corrected in `translations/ar.csv` with the same meaning: `Draft` (مسودة, not «مشروع»), `In Stock`, `Stock UOM`,
+`Request Type`, `Due Date`, `Age (Days)`.
+
 ## Setup scripts
 
 The scripts in `apps/imed_erp/imed_erp/setup/` are run from bench console:
@@ -309,7 +318,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق`, `الهالك والتالف` and `الاشتراكات والسيرفرات` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). The monthly bills sit in two groups: `المرافق` (electricity, water, internet, gas, and rent, which keeps its own account) and `الاشتراكات والسيرفرات` (the app's server and AI subscriptions). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
-| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
+| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, Stock Count, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
 `setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
@@ -373,7 +382,7 @@ as in-app alerts, which never send e-mail:
 - a set number of days before a bill's next due date (**Remind Days Before**, default 3);
 - while a draft made from a bill is still unsubmitted after its date, again every few days (**Repeat
   Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for
-  approval reminds the approvers (the accountant and the owner) instead, on the same days.
+  approval reminds the accountant, who approves it, instead, on the same days.
 
 Both numbers are in **Expense Settings**. The drafts and the reminders come from one daily scheduler
 job, `recurring_expense.run_daily` (`hooks.py`), so the month's drafts exist before the reminders look
@@ -388,7 +397,8 @@ owner can approve too. There is no threshold, and Expense Settings (reminder day
 owner only, so nobody else can switch the approval off.
 
 1. A branch manager saves the expense with its receipt and clicks **Request Approval** (Submit is refused
-   while the expense needs approval). The accountant (and the owner) receive an in-app alert.
+   while the expense needs approval). The accountant receives an in-app alert; the owner is not notified
+   of each request but can approve one he opens.
 2. The accountant opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
    reason. The person who asked for the approval is notified either way (not the creator: monthly
    drafts are made by the scheduler).
@@ -486,7 +496,9 @@ branch is the store's.
   shortage of 100 sheets, 26 at 0.26 a sheet, a loss on the library; a surplus is posted the other way round.
   That reconciliation is cancelled only by cancelling the count.
 - **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
-  in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
+  in User Permission); the owner and the accountant count any store and cancel a count. A branch manager's
+  count is dated when it is saved, and one saved on another day is counted again; only the owner and the
+  accountant date a count in the past, since its reconciliation reposts every stock entry after that date. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
 
 **Services have no warehouse.** Printing, copying, binding, hall and studio hours are not stock, so

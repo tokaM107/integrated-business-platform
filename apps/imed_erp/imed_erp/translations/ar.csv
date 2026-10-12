@@ -102,7 +102,7 @@ Expected Amount,المبلغ المتوقع
 Day of Month,يوم الشهر
 Next Due Date,المعاد الجاي
 The place this bill is for.,المكان اللي الفاتورة دي بتاعته.
-The cash box or wallet this bill is paid from.,الخزنة أو المحفظة اللي الفاتورة بتتدفع منها.
+The cash box or wallet this bill is paid from.,الخزينة أو المحفظة اللي الفاتورة بتتدفع منها.
 "In a shorter month, its last day.",لو الشهر أقصر، آخر يوم فيه.
 When the next draft expense is made. Filled in from the day of the month; set it to start from another month.,إمتى تتعمل مسودة المصروف الجاية. بتتملى لوحدها من يوم الشهر؛ غيّرها لو عايز تبدأ من شهر تاني.
 Copied into each month's expense.,بيتنسخ في مصروف كل شهر.
@@ -116,7 +116,7 @@ Repeats,بيتكرر؟
 This Month Only,الشهر ده بس
 Every Month,كل شهر
 "Every Month: pick one of this place's monthly bills. If the bill is not there, fill it in yourself; it is added to the place's monthly bills when this expense is submitted.",كل شهر: اختار فاتورة من فواتير المكان ده الشهرية. لو الفاتورة مش موجودة املاها بنفسك، وهتتضاف لفواتير المكان الشهرية لما المصروف يتعتمد.
-Fills in the category and treasury. Only this place's bills are listed.,بتملا التصنيف والخزنة لوحدها. القايمة فيها فواتير المكان ده بس.
+Fills in the category and treasury. Only this place's bills are listed.,بتملا التصنيف والخزينة لوحدها. القايمة فيها فواتير المكان ده بس.
 "Monthly bill {0} is for {1}, not {2}.",الفاتورة الشهرية {0} بتاعة {1}، مش {2}.
 Expense Approver,موافق المصروفات
 Approval Status,حالة الموافقة
@@ -230,7 +230,7 @@ empty,فاضي
 {0}: {1} is a group warehouse. Choose the warehouse that will hold the materials.,{0}: {1} مخزن مجموعة. اختار المخزن اللي هيشيل الخامات.
 {0}: {1} is not an active stock item.,{0}: {1} مش صنف مخزني شغال.
 Share (%),النسبة (%)
-Approval Requested By,طلب الموافقة
+Approval Requested By,مين طلب الموافقة
 {0} is not a treasury of {1}. Choose one of: {2}.,{0} مش خزنة {1}. اختار واحدة من: {2}.
 Wrong Treasury,خزينة غلط
 "{0} {1} was submitted, so it cannot be deleted. Cancel it instead: it stays on record.",{0} {1} اتسجل، فمينفعش يتمسح. الغيه بدل كده، وهيفضل محفوظ.
@@ -239,7 +239,7 @@ Cannot Delete,مينفعش يتمسح
 "Expense {0} of {1} for {2} ({3}) is still waiting for your approval, {4} days after its date.",المصروف {0} بمبلغ {1} لـ {2} ({3}) لسه مستني موافقتك، بعد معاده بـ {4} يوم.
 Agreement {0} is not a books agreement.,الاتفاقية {0} مش اتفاقية كتب.
 Agreement {0} is not an app agreement.,الاتفاقية {0} مش اتفاقية تطبيق.
-Treasury,الخزنة
+Treasury,الخزينة
 Doctor Agreement,اتفاقية طبيب
 Agreement Name,اسم الاتفاقية
 Doctor,الطبيب
@@ -284,7 +284,7 @@ Per Sheet,للورقة
 Waste per Sheet,الهدر للورقة
 "Sheets spoilt in printing, per sheet printed.",الورق اللي بيبوظ في الطباعة، لكل ورقة مطبوعة.
 Ink per Sheet,الحبر للورقة
-Overheads per Sheet,المشغولات للورقة
+Overheads per Sheet,المصاريف العامة للورقة
 "Rent, electricity, salaries and machine rental, per sheet.",الإيجار والكهربا والمرتبات وإيجار المكنة، للورقة.
 Profit per Sheet,المكسب للورقة
 "Books, per Copy",الكتب، للنسخة
@@ -358,3 +358,29 @@ Paper used for printing and copying sold on {0}.,ورق اتصرف للتصوي�
 Paper Not Issued,الورق ماتصرفش
 {0} is the paper used for Sales Invoice {1}. Cancel the invoice instead.,{0} هو الورق اللي اتصرف لفاتورة البيع {1}. الغي الفاتورة نفسها.
 {0} is not your business's treasury. You can use: {1}.,{0} مش خزينة نشاطك. تقدر تستخدم: {1}.
+Stock Counts,الجرد
+Draft,مسودة
+In Stock,الموجود في المخزن
+Stock UOM,وحدة المخزون
+Request Type,نوع الطلب
+Shortage,النقص
+Count Again,اعمل الجرد تاني
+"This count was saved on {0}. The stock has moved since: count again today.",الجرد ده اتحفظ يوم {0}. المخزون اتحرك من ساعتها: اعمل الجرد تاني النهارده.
+"Row #{0}: reorder level and quantity cannot be negative.",سطر {0}: حد إعادة الطلب والكمية مينفعش يبقوا بالسالب.
+"Row #{0}: warehouse {1} already has a reorder level in row #{2}.",سطر {0}: المخزن {1} ليه حد إعادة طلب في السطر {2}.
+"Row #{0}: {1} is a group warehouse. Set the reorder level on a warehouse that holds stock.",سطر {0}: {1} مجموعة مخازن. حط حد إعادة الطلب على مخزن فيه بضاعة.
+You are not allowed to use the assistant.,مش مسموحلك تستخدم المساعد.
+Unsupported audio format: {0},نوع الصوت ده مش مدعوم: {0}
+The voice message could not be read.,الرسالة الصوتية ماتقريتش.
+The voice message is too long.,الرسالة الصوتية طويلة.
+Write a message first.,اكتب رسالة الأول.
+{0} was posted by Inter Business Transfer {1}. Cancel the transfer instead.,{0} اتعمل من التحويل بين الأنشطة {1}. الغي التحويل نفسه.
+End Date {0} is before Start Date {1}.,تاريخ النهاية {0} قبل تاريخ البداية {1}.
+A {0} must belong to a {1}. Set Parent Period.,الـ{0} لازم يبقى تبع {1}. اختار الفترة الأب.
+"A {0} must belong to a {1}, but {2} is a {3}.",الـ{0} لازم يبقى تبع {1}، لكن {2} نوعه {3}.
+{0} ({1} to {2}) must fall inside {3} ({4} to {5}).,{0} (من {1} لـ {2}) لازم يبقى جوه {3} (من {4} لـ {5}).
+Closing reading cannot be less than opening reading.,قراءة القفل مينفعش تبقى أقل من قراءة الفتح.
+Reorder: {{ item }} at {{ warehouse }},إعادة طلب: {{ item }} في {{ warehouse }}
+{{ item }} ({{ item_code }}) at {{ warehouse }} is down to {{ qty }} {{ uom }}; its reorder level there is {{ level }}. ({{ voucher }}),{{ item }} ({{ item_code }}) في {{ warehouse }} وصل لـ {{ qty }} {{ uom }}؛ وحد إعادة الطلب هناك {{ level }}. ({{ voucher }})
+Accounting period {{ period }} closed,الفترة المحاسبية {{ period }} اتقفلت
+Posting dated {{ start }} to {{ end }} is now blocked.,التسجيل بتاريخ من {{ start }} لـ {{ end }} بقى مقفول.
