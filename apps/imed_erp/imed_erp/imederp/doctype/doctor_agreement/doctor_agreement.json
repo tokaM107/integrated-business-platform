@@ -208,16 +208,12 @@
    "write": 1
   },
   {
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Accounts User"
+   "role": "Accounts User",
+   "select": 1
   },
   {
-   "print": 1,
-   "read": 1,
-   "report": 1,
-   "role": "Branch Manager"
+   "role": "Branch Manager",
+   "select": 1
   }
  ],
  "row_format": "Dynamic",
