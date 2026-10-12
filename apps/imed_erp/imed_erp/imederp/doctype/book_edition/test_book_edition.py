@@ -53,6 +53,7 @@ def make_agreement(agreement_type, share_type="Fixed", share_value=0):
 				"agreement_type": agreement_type,
 				"share_type": share_type,
 				"share_value": share_value,
+				"settlement_cycle": "Term",
 			}
 		)
 		.insert()
