@@ -657,6 +657,12 @@ way into their own cash boxes: `نقدي — قاعات Imed` (the center's), `�
 Doctor Agreement's doctor can only be one of them: the screen lists only that group, and the server refuses
 any other customer.
 
+A **Doctor Agreement** holds the doctor, the type (Books or App), the start date, the settlement cycle
+(Module, Term or Round) and its status. **Suspended** (it can be set after the agreement is submitted, with no
+amendment) stops new editions and subscriptions on it, while its account can still be settled. **Balance**
+is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
+add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
+
 **Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
 copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
 
