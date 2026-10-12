@@ -208,6 +208,7 @@ doc_events = {
 		"validate": [
 			"imed_erp.imederp.library_revenue.set_library_income_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.services.clear_service_warehouses",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"on_submit": [
@@ -221,6 +222,7 @@ doc_events = {
 		"validate": [
 			"imed_erp.imederp.library_revenue.set_library_income_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.services.clear_service_warehouses",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
