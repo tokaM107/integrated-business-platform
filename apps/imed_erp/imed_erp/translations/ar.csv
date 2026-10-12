@@ -384,3 +384,5 @@ Reorder: {{ item }} at {{ warehouse }},إعادة طلب: {{ item }} في {{ war
 {{ item }} ({{ item_code }}) at {{ warehouse }} is down to {{ qty }} {{ uom }}; its reorder level there is {{ level }}. ({{ voucher }}),{{ item }} ({{ item_code }}) في {{ warehouse }} وصل لـ {{ qty }} {{ uom }}؛ وحد إعادة الطلب هناك {{ level }}. ({{ voucher }})
 Accounting period {{ period }} closed,الفترة المحاسبية {{ period }} اتقفلت
 Posting dated {{ start }} to {{ end }} is now blocked.,التسجيل بتاريخ من {{ start }} لـ {{ end }} بقى مقفول.
+"{0} is not a doctor. Choose a customer in the {1} group, or move this customer to it.",{0} مش طبيب. اختار عميل من مجموعة {1}، أو انقل العميل ده ليها.
+Not a Doctor,مش طبيب
