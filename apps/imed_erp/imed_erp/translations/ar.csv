@@ -407,3 +407,11 @@ Owed by Doctor,مستحق على الطبيب
 "Set by the type: a books agreement owes the doctor his amount on copies sold; an app agreement has the doctor owe the group the platform fees.",بيتحدد من النوع: اتفاقية الكتب علينا فيها حق الطبيب على النسخ المباعة؛ واتفاقية التطبيق على الطبيب فيها رسوم المنصة للمجموعة.
 We owe the doctor {0} under this agreement.,علينا للطبيب {0} في الاتفاقية دي.
 The doctor owes us {0} under this agreement.,على الطبيب لينا {0} في الاتفاقية دي.
+Account Summary,ملخص الحساب
+Last Settlement,آخر تسوية
+Last Settlement Amount,مبلغ آخر تسوية
+Next Settlement,التسوية الجاية
+The latest payment on this agreement in the doctor's ledger.,آخر دفعة على الاتفاقية دي في دفتر الطبيب.
+The end of the nearest open academic period of the settlement cycle.,نهاية أقرب فترة دراسية مفتوحة من دورة التسوية.
+Next settlement: {0}.,التسوية الجاية: {0}.
+No open academic period for its settlement cycle yet.,لسه مفيش فترة دراسية مفتوحة لدورة التسوية بتاعتها.
