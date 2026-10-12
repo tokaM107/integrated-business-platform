@@ -13,6 +13,8 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
+
 # Every doctype these tests link to is made here or already exists on the site. Without this Frappe builds
 # ERPNext's "_Test ..." records for them and commits them to the site.
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
@@ -28,7 +30,7 @@ def make_doctor(name="_Test Doctor"):
 			{
 				"doctype": "Customer",
 				"customer_name": name,
-				"customer_group": frappe.get_all("Customer Group", filters={"is_group": 0}, limit=1, pluck="name")[0],
+				"customer_group": DOCTOR_GROUP,
 				"territory": frappe.get_all("Territory", filters={"is_group": 0}, limit=1, pluck="name")[0],
 			}
 		)
