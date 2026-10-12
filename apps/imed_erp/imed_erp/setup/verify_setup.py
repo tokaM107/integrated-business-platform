@@ -259,6 +259,13 @@ def run():
 	machine = frappe.db.get_value("Item Group", "ورق", "custom_requires_printing_machine")
 	report("Item Group", "ورق: needs printing machine", [] if machine else ["Needs Printing Machine is not ticked"])
 
+	# ---------- Customer groups: doctors (CRM-01) ----------
+	if frappe.db.exists("Customer Group", "طبيب"):
+		found = frappe.db.get_value("Customer Group", "طبيب", "parent_customer_group")
+		report("Customer Group", "طبيب", [] if found == "All Customer Groups" else [f"parent is {found}, expected All Customer Groups"])
+	else:
+		report("Customer Group", "طبيب", ["missing"])
+
 	# ---------- UOMs ----------
 	for uom in UOMS:
 		report("UOM", uom, [] if frappe.db.exists("UOM", uom) else ["missing"])
