@@ -11,7 +11,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
-from imed_erp.imederp.report.stock_count_variance.stock_count_variance import execute
+from imed_erp.imederp.report.stock_count_variance.stock_count_variance import execute, get_summary
 
 # A test module outside a doctype folder builds no "_Test ..." records, so it needs (and may have) no
 # IGNORE_TEST_RECORD_DEPENDENCIES; keep it here, not under a doctype.
@@ -74,14 +74,19 @@ class IntegrationTestStockCountVariance(IntegrationTestCase):
 		cls.mawasah = count(MAWASAH_STORE, [(PAPER, 100), (BOOK, 0)], RAGHAD)
 		cls.azarita = count(AZARITA_STORE, [(PAPER, 0)], SARA)
 		count(MAWASAH_STORE, [(BOOK, 1)], RAGHAD, submit=False)
-		cancelled = count(AZARITA_STORE, [(PAPER, 5)], SARA)
-		cancelled.cancel()
+		cls.cancelled = count(AZARITA_STORE, [(PAPER, 5)], SARA)
+		cls.cancelled.cancel()
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
 
 	def run_report(self, **filters):
-		columns, data, _message, _chart, summary = execute({"from_date": today(), "to_date": today(), **filters})
+		# Only this test's counts: other counts made today on the site (by people or other tests) are left out,
+		# and the summary is worked out again from these rows with the report's own function.
+		mine = {self.mawasah.name, self.azarita.name, self.cancelled.name}
+		columns, data, _message, _chart, _summary = execute({"from_date": today(), "to_date": today(), **filters})
+		data = [row for row in data if row.stock_count in mine]
+		summary = get_summary(data)
 		return data, {s["label"]: s["value"] for s in summary}
 
 	def test_every_item_counted_shows_with_its_difference(self):
@@ -136,6 +141,7 @@ class IntegrationTestShortageThenSurplus(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		cls.before = on_hand(PAPER, MAWASAH_STORE)
 		receive(PAPER, 5000, 0.26, MAWASAH_STORE)
 		cls.rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": MAWASAH_STORE}, "valuation_rate"))
 		cls.shortage = count(MAWASAH_STORE, [(PAPER, 100)], RAGHAD)
@@ -167,10 +173,12 @@ class IntegrationTestShortageThenSurplus(IntegrationTestCase):
 		self.assertEqual(set(surplus), set(shortage))
 		for key in shortage:
 			self.assertAlmostEqual(surplus[key], -shortage[key], places=2)
-		self.assertEqual(on_hand(PAPER, MAWASAH_STORE), 5000)
+		self.assertEqual(on_hand(PAPER, MAWASAH_STORE), self.before + 5000)
 
 	def test_report_shows_the_shortage_and_the_surplus(self):
-		columns, data, _message, _chart, summary = execute({"from_date": today(), "to_date": today(), "store": MAWASAH_STORE})
+		columns, data, _message, _chart, _summary = execute({"from_date": today(), "to_date": today(), "store": MAWASAH_STORE})
+		data = [row for row in data if row.stock_count in (self.shortage.name, self.surplus.name)]
+		summary = get_summary(data)
 		rows = {row.stock_count: row for row in data}
 		self.assertEqual((rows[self.shortage.name].difference_qty, rows[self.surplus.name].difference_qty), (-100, 100))
 		self.assertEqual({row.counted_by for row in data}, {RAGHAD})
