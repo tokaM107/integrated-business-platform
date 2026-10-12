@@ -127,6 +127,21 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		[issue] = self.issues(invoice)
 		self.assertEqual(issue.docstatus, 0)
 		self.assertEqual(self.sheets(AZARITA_STORE), before)
+		# The accountant is told.
+		self.assertTrue(frappe.db.exists("Notification Log", {"for_user": "accountant@imed.local", "document_name": issue.name}))
+
+		# Once the paper arrives, the draft is submitted as it is, dated the day it is submitted.
+		self.receive(500, AZARITA_STORE)
+		draft = frappe.get_doc("Stock Entry", issue.name)
+		draft.submit()
+		self.assertEqual(self.sheets(AZARITA_STORE), before + 500 - (before + 50))
+
+	def test_a_sale_beyond_the_paper_left_as_draft_goes_with_the_sale(self):
+		self.receive(10, AZARITA_STORE)
+		before = self.sheets(AZARITA_STORE)
+		invoice = self.sell([("PRINT-SVC", before + 50)], library=AZARITA)
+		[issue] = self.issues(invoice)
+		self.assertEqual(issue.docstatus, 0)
 
 		# Cancelling the sale removes the draft issue.
 		frappe.get_doc("Sales Invoice", invoice.name).cancel()
@@ -185,3 +200,18 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 			self.assertEqual(frappe.local.form_dict.cmd, "frappe.client.submit")
 		finally:
 			frappe.set_user("Administrator")
+
+	def test_the_cancel_button_cancels_the_invoice_and_its_paper(self):
+		# The form's Cancel first lists submitted documents linked to the invoice, minus the doctypes it is told
+		# to skip (sales_invoice.js adds Stock Entry to ERPNext's list). The paper issue is skipped there and
+		# goes back with the invoice.
+		from frappe.desk.form.linked_with import get_submitted_linked_docs
+
+		self.receive(500)
+		before = self.sheets()
+		invoice = self.sell([("PRINT-SVC", 100)])
+		skipped = ["Journal Entry", "Payment Entry", "Serial and Batch Bundle", "Stock Entry"]
+		linked = get_submitted_linked_docs("Sales Invoice", invoice.name, ignore_doctypes_on_cancel_all=skipped)
+		self.assertNotIn("Stock Entry", [d["doctype"] for d in linked.get("docs", [])])
+		frappe.get_doc("Sales Invoice", invoice.name).cancel()
+		self.assertEqual(self.sheets(), before)
