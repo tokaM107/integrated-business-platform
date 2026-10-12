@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate, today
+from frappe.utils import flt, getdate
 
 # A doctor is a Customer in this group (CRM-01): one record for the person, whatever they buy or earn.
 # setup/setup_core.py makes it.
@@ -24,20 +24,26 @@ BALANCE_SIGN = {"Accrual": 1, "Payment": -1, "Cancellation Charge": -1, "Adjustm
 
 
 class DoctorAgreement(Document):
-	def onload(self):
-		# The next settlement moves on as periods end, so it is worked out each time the agreement is opened.
-		self.next_settlement_date = next_settlement_date(self.settlement_cycle)
-
 	def validate(self):
-		self.next_settlement_date = next_settlement_date(self.settlement_cycle)
 		self.validate_doctor()
 		self.balance_direction = DIRECTION.get(self.agreement_type)
 		self.validate_terms()
+		self.validate_settlement_period()
 
 	def before_update_after_submit(self):
-		# A submitted agreement takes new terms and a new status without an amendment; validate does not run
-		# then, so the terms are checked here.
+		# A submitted agreement takes new terms, a new status and the next settlement period without an
+		# amendment; validate does not run then, so they are checked here. The summary is read again from the
+		# ledger, so a form opened before an entry was posted saves the right figures.
 		self.validate_terms()
+		self.validate_settlement_period()
+		self.balance = get_balance(self.name)
+		self.last_settlement_date, self.last_settlement_amount = last_settlement(self.name)
+
+	def validate_settlement_period(self):
+		# DOC-05/29: each year has its own dates (owner, 12 Oct 2026), so the accountant enters the period
+		# being settled; the next settlement is due at its end.
+		if self.settlement_from and self.next_settlement_date and getdate(self.next_settlement_date) < getdate(self.settlement_from):
+			frappe.throw(_("The settlement period ends before it starts. Check its dates."), title=_("Settlement Period"))
 
 	def validate_doctor(self):
 		if frappe.db.get_value("Customer", self.doctor, "customer_group") != DOCTOR_GROUP:
@@ -95,21 +101,6 @@ def get_amount_per_copy(agreement, date):
 		limit=1,
 	)
 	return flt(terms[0].amount_per_copy) if terms else None
-
-
-def next_settlement_date(cycle, on=None):
-	"""DOC-05/29: the end of the nearest academic period of the agreement's cycle that has not ended or been
-	closed. None when no such period is set up yet."""
-	if not cycle:
-		return None
-	periods = frappe.get_all(
-		"Academic Period",
-		filters={"period_type": cycle, "is_closed": 0, "end_date": [">=", on or today()]},
-		pluck="end_date",
-		order_by="end_date asc",
-		limit=1,
-	)
-	return periods[0] if periods else None
 
 
 def last_settlement(agreement):
