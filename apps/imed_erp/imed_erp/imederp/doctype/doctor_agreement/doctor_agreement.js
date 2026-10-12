@@ -21,10 +21,10 @@ function show_balance(frm) {
 	const balance = owed_to_doctor
 		? __("We owe the doctor {0} under this agreement.", [amount])
 		: __("The doctor owes us {0} under this agreement.", [amount]);
-	// DOC-29: when it is next settled, from the academic periods of its cycle.
+	// DOC-29: when it is next settled, the end of the settlement period the accountant entered.
 	const next = frm.doc.next_settlement_date
 		? __("Next settlement: {0}.", [frappe.datetime.str_to_user(frm.doc.next_settlement_date)])
-		: __("No open academic period for its settlement cycle yet.");
+		: __("Enter the settlement period's dates.");
 	frm.dashboard.clear_headline();
 	frm.dashboard.set_headline_alert(`${balance} ${next}`, owed_to_doctor ? "orange" : "blue");
 }
