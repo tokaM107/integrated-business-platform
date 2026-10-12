@@ -16,10 +16,15 @@ TREASURY_TYPES = ("Cash", "Bank")
 
 EVERY_MONTH = "Every Month"
 
-# Only the owner has it: every expense is posted only once a holder approves it (owner's decision of
-# 8 Oct 2026), and an expense the owner records himself is approved as he submits it.
+# The accountant has it, since the money is paid out of his cash (owner's decision of 12 Oct 2026, which
+# replaces the owner's own approval of 8 Oct), and the owner keeps it. Every expense is posted only once a
+# holder approves it; an expense a holder records himself is approved as he submits it.
 APPROVER_ROLE = "Expense Approver"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
+
+# Set only by Request Approval, Approve and Reject. The form shows them read-only, but the server does not
+# enforce that, so a draft saved with "Approved" through the API would otherwise post without an approver.
+APPROVAL_FIELDS = ("approval_status", "approved_by", "approval_requested_by", "rejection_reason")
 
 # A receipt is a photo or a scan.
 RECEIPT_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".heic", ".pdf")
@@ -32,6 +37,7 @@ class Expense(Document):
         self.set_onload("is_approver", is_approver())
 
     def validate(self):
+        self.protect_approval()
         self.validate_not_rejected()
         self.validate_amount()
         self.validate_activity()
@@ -86,14 +92,29 @@ class Expense(Document):
                     _("Monthly bill {0} is for {1}, not {2}.").format(self.recurring_expense, activity, self.activity)
                 )
 
+    def protect_approval(self):
+        if self.flags.approval_action:
+            return
+        before = self.get_doc_before_save()
+        if not before:
+            # A new expense, copied or amended ones included, is approved afresh.
+            for field in APPROVAL_FIELDS:
+                self.set(field, None)
+            return
+        if any(self.get(field) != before.get(field) for field in APPROVAL_FIELDS):
+            frappe.throw(
+                _("The approval of an expense is changed only with Request Approval, Approve or Reject."),
+                title=_("Approval Needed"),
+            )
+
     def validate_not_rejected(self):
         # A rejected expense is closed for good; if it is needed after all, a new one is made.
         if self.get_db_value("approval_status") == REJECTED:
             frappe.throw(_("Expense {0} was rejected and cannot be changed. Make a new expense instead.").format(self.name))
 
     def reset_approval_if_amount_changed(self):
-        # The owner approved this expense as it was: its amount, what it is for, where it is paid from, its
-        # date and its receipt. A change to any of them needs his approval again.
+        # The approver approved this expense as it was: its amount, what it is for, where it is paid from, its
+        # date and its receipt. A change to any of them needs approval again.
         if self.approval_status in (PENDING, APPROVED) and any(
             self.has_value_changed(field)
             for field in ("amount", "expense_category", "activity", "treasury", "posting_date", "receipt")
@@ -115,13 +136,13 @@ class Expense(Document):
     def validate_approved(self):
         if not self.needs_approval() or self.approval_status == APPROVED:
             return
-        # The owner's own expenses need no one else's approval.
+        # An approver's own expenses need no one else's approval.
         if is_approver():
             self.approval_status = APPROVED
             self.approved_by = frappe.session.user
             return
         frappe.throw(
-            _("Every expense is paid only once the owner approves it. Request the owner's approval first."),
+            _("Every expense is paid only once the accountant approves it. Request approval first."),
             title=_("Approval Needed"),
         )
 
@@ -130,13 +151,14 @@ class Expense(Document):
         self.check_permission("write")
         if self.docstatus != 0 or self.approval_status in (PENDING, APPROVED, REJECTED):
             frappe.throw(_("Approval can only be requested for a draft that has not been sent yet."))
-        # The owner decides on the full expense, receipt included.
+        # The approver decides on the full expense, receipt included.
         self.validate_receipt()
         self.approval_status = PENDING
         self.approval_requested_by = frappe.session.user
+        self.flags.approval_action = True
         self.save()
-        # The time makes each request its own notification: the service skips one the owner already has, so
-        # a request sent again after a change would otherwise never reach him.
+        # The time makes each request its own notification: the service skips one the approver already has,
+        # so a request sent again after a change would otherwise never reach him.
         notify(
             get_approvers(),
             _("Expense {0} of {1} for {2} ({3}) is waiting for your approval (requested {4}).").format(
@@ -157,6 +179,7 @@ class Expense(Document):
         self.check_pending()
         self.approval_status = APPROVED
         self.approved_by = frappe.session.user
+        self.flags.approval_action = True
         self.submit()
         self.notify_requester(_("Expense {0} was approved and posted.").format(self.name))
 
