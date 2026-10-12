@@ -106,7 +106,9 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 
 | DocType | Accounts Manager | Accounts User / Branch Manager |
 |---|---|---|
-| Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
+| Academic Period | full | read only |
+| Doctor Agreement | full | pick one on an edition or subscription only (select); the agreements are not opened |
+| Doctor Ledger Entry | full | none |
 | Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
 | Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the accountant approves it |
@@ -152,13 +154,13 @@ and expense numbers would jump whenever a bill or a rule is made.
   which reverses it and keeps it on record. `imederp/no_delete.py` refuses to delete any submitted or
   cancelled financial document, ERPNext's or the app's, for everyone. Only the owner may delete, and only
   a draft that was never posted; the accountant has every other right.
-- Branch managers make regular journal entries too (create and submit; no cancel, amend or delete). They
-  only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
+- Branch managers make no journal entries, pay no purchase on the spot and record no payment out: money
+  paid out is an Expense the accountant approves (owner's decision of 12 Oct 2026). They still take payments
+  in. They only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
   premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
   The accountant changes these three but never deletes them; only the owner does.
-- A branch manager pays expenses, sends transfers, makes journal and payment entries, pays a purchase on
-  the spot (Purchase Invoice, Is Paid) and takes a sale's money at the counter (Sales / POS Invoice) only
-  through their own business's cash box or the group's InstaPay / Vodafone Cash wallets
+- A branch manager's expenses, transfers, payments in and a sale's money at the counter (Sales / POS
+  Invoice) go only through their own business's cash box or the group's InstaPay / Vodafone Cash wallets
   (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
@@ -497,7 +499,8 @@ branch is the store's.
   That reconciliation is cancelled only by cancelling the count.
 - **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
   in User Permission); the owner and the accountant count any store and cancel a count. A branch manager's
-  count is dated when it is saved, and one saved on another day is counted again; only the owner and the
+  count is dated when it is first saved (later saves keep that moment, so fixing a typo after sales does not
+  make a false difference), and one saved on another day is counted again; only the owner and the
   accountant date a count in the past, since its reconciliation reposts every stock entry after that date. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
 
@@ -511,8 +514,10 @@ sheets used as a shortage. Now a submitted Sales Invoice (a POS shift reaches it
 issues one sheet of A4 per unit of `PRINT-SVC` and `COPY-SVC` from the library's raw materials store
 (`خامات المواساة` / `خامات الأزاريطة`), as a Material Issue linked by its Sales Invoice field, to cost of goods
 sold on the library's cost center. If the store shows fewer sheets than were sold, the sale stands and the
-issue is saved as a draft for the accountant. Cancelling the sale cancels the issue (or removes the draft);
-the issue is never cancelled on its own. A return does not bring printed paper back.
+issue is saved as a draft, not tied to the sale's time, and the accountant is notified; once the missing
+paper is received he submits it as it is. Cancelling the sale (the form's Cancel too) cancels the issue or
+removes the draft; the issue is never cancelled on its own. A return does not bring printed paper back. The
+issue is posted in the system's name (`imederp/system_user.py`), which keeps the cashier's own session.
 
 **Stock Count Variance** (report): every item on the submitted counts of a period, with its branch and
 store, recorded and counted quantity, difference in quantity and value, count type, who counted and the
@@ -662,11 +667,17 @@ A **Doctor Agreement** holds the doctor, the type (Books or App), the start date
 amendment) stops new editions and subscriptions on it, while its account can still be settled. **Balance**
 is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
 add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
+Editions, subscriptions and ledger entries go only on a **submitted** agreement (a draft's terms can still
+change; a cancelled one is replaced by its amended copy), and submitting an edition checks its agreement
+again. A ledger entry's amount is positive except an Adjustment, which carries its own sign; a Cancellation
+Charge is for a books agreement; an entry's edition belongs to the same agreement.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
 colour (orange: we owe the doctor; blue: the doctor owes us), and the list shows each agreement in the same
-colours, a suspended one in grey.
+colours, a suspended one in grey. A negative balance runs the other way (DOC-20): a books doctor charged more
+than he earned owes the group, and is shown so.
 
 The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
 the **settlement period** (from and to, entered by the accountant: each year has its own dates, owner's
@@ -678,7 +689,8 @@ screen shows the balance and the next settlement together.
 
 A books agreement's **Agreement Terms** give the doctor's amount per copy sold from each date (a row with no
 date starts with the agreement). A new amount is a new row from a later date, added without amending the
-agreement; a term already given is never changed or removed. An edition has an **Edition Date** and takes the
+agreement, and it starts after the last one (an earlier date would move editions already priced); a term
+already in force is never changed or removed, one that has not started yet can be taken back. An edition has an **Edition Date** and takes the
 amount in force on it, read-only on the edition, and a submitted edition keeps its amount: going from 80 to
 100 a copy from 1 November leaves the editions priced at 80 as they were.
 
