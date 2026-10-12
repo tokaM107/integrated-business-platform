@@ -410,8 +410,12 @@ The doctor owes us {0} under this agreement.,على الطبيب لينا {0} ف
 Account Summary,ملخص الحساب
 Last Settlement,آخر تسوية
 Last Settlement Amount,مبلغ آخر تسوية
-Next Settlement,التسوية الجاية
 The latest payment on this agreement in the doctor's ledger.,آخر دفعة على الاتفاقية دي في دفتر الطبيب.
-The end of the nearest open academic period of the settlement cycle.,نهاية أقرب فترة دراسية مفتوحة من دورة التسوية.
 Next settlement: {0}.,التسوية الجاية: {0}.
-No open academic period for its settlement cycle yet.,لسه مفيش فترة دراسية مفتوحة لدورة التسوية بتاعتها.
+Settlement Period From,فترة التسوية من
+Settlement Period To,فترة التسوية لـ
+The start of the period being settled.,بداية الفترة اللي بتتسوّى.
+"The end of the period being settled: the next settlement is due then. Set by the accountant, since each year has its own dates; after settling, he enters the next period.",نهاية الفترة اللي بتتسوّى: التسوية الجاية بتبقى ساعتها. المحاسب بيكتبها، لأن كل فرقة ليها مواعيدها؛ وبعد التسوية بيكتب الفترة اللي بعدها.
+Enter the settlement period's dates.,اكتب تواريخ فترة التسوية.
+The settlement period ends before it starts. Check its dates.,فترة التسوية بتخلص قبل ما تبدأ. راجع التواريخ.
+Settlement Period,فترة التسوية
