@@ -391,10 +391,16 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 
 OWNER = "owner@imed.local"
 ACCOUNTANT = "accountant@imed.local"
+# Sara runs Azarita's library: she records its expenses, from its cash box or the group's wallets.
+SARA = "sara@imed.local"
+AZARITA = "مكتبة الأزاريطة - MMG"
+AZARITA_CASH = "خزينة مكتبة الأزاريطة - MMG"
+INSTAPAY = "محفظة InstaPay - MMG"
 
 
 class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
-	"""Every expense is posted only once the owner approves it (owner's decision of 8 Oct 2026)."""
+	"""Every expense is posted only once the accountant approves it, since the money is paid out of his cash
+	(owner's decision of 12 Oct 2026); the owner can approve too."""
 
 	@classmethod
 	def setUpClass(cls):
@@ -409,16 +415,16 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 	def tearDown(self):
 		frappe.set_user("Administrator")
 
-	def draft(self, amount, user=ACCOUNTANT):
+	def draft(self, amount, user=SARA):
 		receipt = self.upload()
 		frappe.set_user(user)
-		return self.new_expense(amount=amount, receipt=receipt).insert()
+		return self.new_expense(amount=amount, activity=AZARITA, treasury=AZARITA_CASH, receipt=receipt).insert()
 
 	def as_user(self, user, expense):
 		frappe.set_user(user)
 		return frappe.get_doc("Expense", expense.name)
 
-	def test_even_a_small_expense_needs_the_owners_approval(self):
+	def test_even_a_small_expense_needs_approval(self):
 		expense = self.draft(50)
 		self.assertRaises(frappe.ValidationError, expense.submit)
 
@@ -428,7 +434,7 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		frappe.set_user(OWNER)
 		self.assertTrue(frappe.has_permission("Expense Settings", "write"))
 
-	def test_above_threshold_needs_the_owners_approval(self):
+	def test_the_accountant_approves(self):
 		expense = self.draft(46000)
 		self.assertRaises(frappe.ValidationError, expense.submit)
 		# A refused submit leaves the copy in memory marked as submitted; the form reloads it too.
@@ -437,26 +443,57 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		expense.request_approval()
 		self.assertEqual(expense.approval_status, "Pending Approval")
 		self.assertTrue(
-			frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": OWNER, "type": "Alert"})
+			frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": ACCOUNTANT, "type": "Alert"})
 		)
-		# The accountant cannot approve his own request.
+		# Sara cannot approve her own request.
 		self.assertRaises(frappe.PermissionError, expense.approve)
 
-		expense = self.as_user(OWNER, expense)
+		expense = self.as_user(ACCOUNTANT, expense)
 		expense.approve()
 		expense.reload()
 		self.assertEqual(expense.docstatus, 1)
 		self.assertEqual(expense.approval_status, "Approved")
-		self.assertEqual(expense.approved_by, OWNER)
+		self.assertEqual(expense.approved_by, ACCOUNTANT)
 		self.assertTrue(expense.journal_entry)
+
+	def test_no_one_approves_by_writing_the_status(self):
+		# The fields are read-only only on the form; written through the API they are refused.
+		expense = self.draft(46000)
+		for field, value in (("approval_status", "Approved"), ("approved_by", ACCOUNTANT)):
+			with self.subTest(field):
+				doc = frappe.get_doc("Expense", expense.name)
+				doc.set(field, value)
+				self.assertRaisesRegex(frappe.ValidationError, "only with Request Approval", doc.save)
+		doc = frappe.get_doc("Expense", expense.name)
+		doc.approval_status = "Approved"
+		self.assertRaises(frappe.ValidationError, doc.submit)
+		self.assertEqual(frappe.db.get_value("Expense", expense.name, ["docstatus", "approval_status"]), (0, None))
+
+		# A pending request cannot be turned into an approval either.
+		doc = frappe.get_doc("Expense", expense.name)
+		doc.request_approval()
+		doc = frappe.get_doc("Expense", expense.name)
+		doc.approval_status = "Approved"
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+	def test_a_new_expense_starts_without_an_approval(self):
+		# An expense made with an approval already on it (a copy, an amendment, the API) is approved afresh.
+		receipt = self.upload()
+		frappe.set_user(SARA)
+		expense = self.new_expense(
+			amount=100, activity=AZARITA, treasury=AZARITA_CASH, receipt=receipt,
+			approval_status="Approved", approved_by=ACCOUNTANT,
+		).insert()
+		self.assertEqual((expense.approval_status, expense.approved_by), (None, None))
+		self.assertRaises(frappe.ValidationError, expense.submit)
 
 	def test_rejected_expense_is_closed(self):
 		expense = self.draft(46000)
 		expense.request_approval()
 
-		expense = self.as_user(OWNER, expense)
-		expense.reject("الإيصال مش واضح")
 		expense = self.as_user(ACCOUNTANT, expense)
+		expense.reject("الإيصال مش واضح")
+		expense = self.as_user(SARA, expense)
 		self.assertEqual(expense.approval_status, "Rejected")
 		self.assertEqual(expense.rejection_reason, "الإيصال مش واضح")
 
@@ -472,41 +509,37 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		self.assertFalse(expense.approval_status)
 		self.assertRaises(frappe.ValidationError, expense.submit)
 
-	def test_owners_own_expense_needs_no_approval(self):
-		expense = self.draft(46000, user=OWNER)
-		expense.submit()
-		self.assertEqual(expense.docstatus, 1)
-		self.assertEqual(expense.approval_status, "Approved")
+	def test_approvers_own_expense_needs_no_approval(self):
+		# The accountant's and the owner's own expenses are approved as they submit them.
+		for user in (ACCOUNTANT, OWNER):
+			with self.subTest(user):
+				receipt = self.upload()
+				frappe.set_user(user)
+				expense = self.new_expense(amount=46000, receipt=receipt).insert()
+				expense.submit()
+				self.assertEqual((expense.docstatus, expense.approval_status, expense.approved_by), (1, "Approved", user))
 
 	def test_decision_goes_to_who_asked_for_approval(self):
-		# A monthly draft is made by the scheduler, as Administrator; the accountant asks for the approval.
-		expense = self.new_expense(amount=46000, receipt=self.upload()).insert()
-		frappe.set_user(ACCOUNTANT)
+		# A monthly draft is made by the scheduler, as Administrator; Sara asks for the approval.
+		expense = self.new_expense(amount=46000, activity=AZARITA, treasury=AZARITA_CASH, receipt=self.upload()).insert()
+		frappe.set_user(SARA)
 		expense = frappe.get_doc("Expense", expense.name)
 		expense.request_approval()
-		self.assertEqual(expense.approval_requested_by, ACCOUNTANT)
+		self.assertEqual(expense.approval_requested_by, SARA)
 
-		self.as_user(OWNER, expense).approve()
-		self.assertTrue(
-			frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": ACCOUNTANT})
-		)
+		self.as_user(ACCOUNTANT, expense).approve()
+		self.assertTrue(frappe.db.exists("Notification Log", {"document_name": expense.name, "for_user": SARA}))
 
 	def test_rejection_reason_is_kept_as_typed(self):
 		expense = self.draft(46000)
 		expense.request_approval()
-		self.as_user(OWNER, expense).reject("المبلغ {0} غلط")
+		self.as_user(ACCOUNTANT, expense).reject("المبلغ {0} غلط")
 		self.assertEqual(frappe.db.get_value("Expense", expense.name, "rejection_reason"), "المبلغ {0} غلط")
 
 	def test_changing_what_was_approved_needs_approval_again(self):
-		other_treasury = frappe.get_all(
-			"Account",
-			filters={"company": COMPANY, "is_group": 0, "account_type": "Cash", "name": ["!=", self.treasury]},
-			limit=1,
-			pluck="name",
-		)[0]
 		for field, value in (
 			("expense_category", self.water),
-			("treasury", other_treasury),
+			("treasury", INSTAPAY),
 			("posting_date", lambda expense: frappe.utils.add_days(expense.posting_date, -1)),
 		):
 			with self.subTest(field):
@@ -516,8 +549,8 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 				expense.save()
 				self.assertFalse(expense.approval_status)
 
-	def test_a_request_sent_again_reaches_the_owner(self):
-		# The notification service skips one the owner already has; each request carries its own time.
+	def test_a_request_sent_again_reaches_the_accountant(self):
+		# The notification service skips one the approver already has; each request carries its own time.
 		from unittest.mock import patch
 
 		expense = self.draft(46000)
@@ -530,5 +563,5 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		):
 			expense.request_approval()
 		self.assertEqual(
-			frappe.db.count("Notification Log", {"document_name": expense.name, "for_user": OWNER, "type": "Alert"}), 2
+			frappe.db.count("Notification Log", {"document_name": expense.name, "for_user": ACCOUNTANT, "type": "Alert"}), 2
 		)
