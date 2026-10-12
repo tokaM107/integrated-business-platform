@@ -30,7 +30,6 @@
   {
    "fieldname": "agreement_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Agreement Name",
    "reqd": 1,
    "unique": 1
@@ -55,7 +54,6 @@
    "default": "Today",
    "fieldname": "start_date",
    "fieldtype": "Date",
-   "in_list_view": 1,
    "label": "Start Date",
    "reqd": 1
   },
@@ -87,7 +85,6 @@
    "description": "Set by the type: a books agreement owes the doctor his amount on copies sold; an app agreement has the doctor owe the group the platform fees.",
    "fieldname": "balance_direction",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "label": "Balance Direction",
    "no_copy": 0,
    "options": "Owed to Doctor\nOwed by Doctor",
