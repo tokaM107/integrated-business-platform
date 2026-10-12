@@ -373,7 +373,7 @@ as in-app alerts, which never send e-mail:
 - a set number of days before a bill's next due date (**Remind Days Before**, default 3);
 - while a draft made from a bill is still unsubmitted after its date, again every few days (**Repeat
   Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for
-  approval reminds the approvers (the accountant and the owner) instead, on the same days.
+  approval reminds the accountant, who approves it, instead, on the same days.
 
 Both numbers are in **Expense Settings**. The drafts and the reminders come from one daily scheduler
 job, `recurring_expense.run_daily` (`hooks.py`), so the month's drafts exist before the reminders look
@@ -388,7 +388,8 @@ owner can approve too. There is no threshold, and Expense Settings (reminder day
 owner only, so nobody else can switch the approval off.
 
 1. A branch manager saves the expense with its receipt and clicks **Request Approval** (Submit is refused
-   while the expense needs approval). The accountant (and the owner) receive an in-app alert.
+   while the expense needs approval). The accountant receives an in-app alert; the owner is not notified
+   of each request but can approve one he opens.
 2. The accountant opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
    reason. The person who asked for the approval is notified either way (not the creator: monthly
    drafts are made by the scheduler).
