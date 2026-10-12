@@ -152,7 +152,7 @@ USERS = [
 		["مكتبة الأزاريطة"],
 		["مخزن الأزاريطة"],
 	),
-	("accountant@imed.local", "المحاسب", ["Accountant", "Accounts User", "Accounts Manager"], [], []),
+	("accountant@imed.local", "المحاسب", ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"], [], []),
 	("hr@imed.local", "شؤون الموظفين", ["HR", "HR Manager"], [], []),
 ]
 AUTOMATIC_ROLES = {"Administrator", "Guest", "All", "Desk User"}
