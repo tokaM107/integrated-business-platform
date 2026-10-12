@@ -205,15 +205,29 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Sales Invoice": {
-		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"validate": [
+			"imed_erp.imederp.library_revenue.set_library_income_account",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.services.clear_service_warehouses",
+		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
-		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_submit": [
+			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
+			"imed_erp.imederp.paper_use.issue_paper_used",
+		],
+		"on_cancel": "imed_erp.imederp.paper_use.cancel_paper_used",
 	},
 	"POS Invoice": {
-		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"validate": [
+			"imed_erp.imederp.library_revenue.set_library_income_account",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.services.clear_service_warehouses",
+		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Invoice": {
+		"validate": "imed_erp.imederp.treasuries.check_entry_treasuries",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -221,6 +235,7 @@ doc_events = {
 		# validate and before_submit: the issue of a branch request (imederp/material_issue.py).
 		"validate": "imed_erp.imederp.material_issue.validate_stock_entry",
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_stock_entry",
+		"before_cancel": "imed_erp.imederp.paper_use.block_cancel_of_paper_issue",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},

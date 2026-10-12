@@ -75,7 +75,7 @@ frappe.ui.form.on("Expense", {
 		} else if (doc.docstatus === 0 && !doc.receipt) {
 			frm.set_intro(__("Attach the receipt before submitting this expense."), "orange");
 		} else if (doc.approval_status === "Pending Approval") {
-			frm.set_intro(__("Waiting for the owner's approval."), "blue");
+			frm.set_intro(__("Waiting for approval."), "blue");
 		} else {
 			frm.set_intro("");
 		}

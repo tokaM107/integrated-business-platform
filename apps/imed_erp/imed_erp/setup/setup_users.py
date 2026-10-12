@@ -30,7 +30,8 @@ EMAIL_DOMAIN = "imed.local"
 # (see FINANCIAL_DOCTYPES). "CRM Staff" has no user yet: nobody is named for it in the requirements.
 BRANCH_ROLES = ["Branch Manager", "Sales User", "Accounts User"]
 LIBRARY_ROLES = [*BRANCH_ROLES, "Stock User"]
-# "Expense Approver" approves expenses above the threshold in Expense Settings; only the owner has it.
+# "Expense Approver" approves every expense: the accountant, whose cash pays them (owner's decision of
+# 12 Oct 2026), and the owner.
 # "Stock Request Approver" approves or rejects the branches' requests from the main warehouse
 # (imederp/material_issue.py), for the warehouses her User Permissions give her; Raghad has it.
 CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff", "Expense Approver", "Stock Request Approver"]
@@ -95,7 +96,7 @@ USERS = [
 		"cost_centers": ["مكتبة الأزاريطة"],
 		"warehouses": ["مخزن الأزاريطة"],
 	},
-	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager"]},
+	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"]},
 	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR", "HR Manager"]},
 ]
 
