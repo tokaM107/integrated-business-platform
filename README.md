@@ -668,6 +668,13 @@ never offset against each other (owner's decision). The agreement screen shows t
 colour (orange: we owe the doctor; blue: the doctor owes us), and the list shows each agreement in the same
 colours, a suspended one in grey.
 
+The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
+the **last settlement** (the latest payment in the doctor's ledger, updated with the balance whenever an
+entry is submitted or cancelled) and the **next settlement** (the end of the nearest academic period of the
+agreement's settlement cycle that has not ended or been closed, worked out each time the agreement is
+opened; empty until such a period is set up). The top of the screen shows the balance and the next
+settlement together.
+
 A books agreement's **Agreement Terms** give the doctor's amount per copy sold from each date (a row with no
 date starts with the agreement). A new amount is a new row from a later date, added without amending the
 agreement; a term already given is never changed or removed. An edition has an **Edition Date** and takes the
