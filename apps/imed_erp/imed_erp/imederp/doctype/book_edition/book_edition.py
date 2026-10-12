@@ -3,6 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt
 
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_active
 from imed_erp.imederp.doctype.printer_reading.printer_reading import LIBRARIES
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 
@@ -50,6 +51,8 @@ class BookEdition(Document):
         )
         if agreement and agreement.agreement_type != "Books":
             frappe.throw(_("Agreement {0} is not a books agreement.").format(self.agreement))
+        if self.docstatus == 0:
+            check_active(self.agreement)
         # The doctor names his amount per copy; the library prices the rest on top of it.
         if agreement and agreement.share_type == "Fixed" and not self.doctor_share:
             self.doctor_share = agreement.share_value
