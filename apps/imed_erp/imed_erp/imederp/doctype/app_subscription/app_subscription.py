@@ -10,7 +10,7 @@ class AppSubscription(Document):
     def validate(self):
         # Records are posted to one business; group cost centers cannot hold transactions.
         if frappe.db.get_value("Cost Center", self.cost_center, "is_group"):
-            frappe.throw(f"Cost Center {self.cost_center} is a group. Choose a branch under it.")
+            frappe.throw(_("Cost Center {0} is a group. Choose a branch under it.").format(self.cost_center))
         # DOC-02: a subscription belongs to an app agreement, not to a books one.
         if frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type") != "App":
             frappe.throw(_("Agreement {0} is not an app agreement.").format(self.agreement))
