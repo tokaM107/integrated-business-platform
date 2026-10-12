@@ -109,7 +109,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
 | Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
-| Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the owner approves it |
+| Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the accountant approves it |
 | Inter Business Transfer | full | Accounts User: read only. Branch Manager: create, edit, submit (no cancel/delete) |
 | Expense Category | full | read only |
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
@@ -135,7 +135,7 @@ and expense numbers would jump whenever a bill or a rule is made.
 | Requirement role | Users | ERPNext roles it comes with |
 |---|---|---|
 | Super Admin | Owner | System Manager, Accounts Manager, Expense Approver |
-| Accountant | Accountant | Accounts User, Accounts Manager |
+| Accountant | Accountant | Accounts User, Accounts Manager, Expense Approver |
 | Branch Manager | Nour, Gilan, Menna, Raghad, Sara | Sales User, Accounts User (+ Stock User for the libraries) |
 | HR | HR | HR Manager |
 | CRM Staff | nobody yet | none yet (the CRM module is not built) |
@@ -153,16 +153,18 @@ and expense numbers would jump whenever a bill or a rule is made.
   only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
   premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
   The accountant changes these three but never deletes them; only the owner does.
-- A branch manager pays expenses, sends transfers and makes journal and payment entries only from their
-  own business's cash box or the
-  group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
+- A branch manager pays expenses, sends transfers, makes journal and payment entries, pays a purchase on
+  the spot (Purchase Invoice, Is Paid) and takes a sale's money at the counter (Sales / POS Invoice) only
+  through their own business's cash box or the group's InstaPay / Vodafone Cash wallets
+  (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
 - Prices (Item Price): only the owner edits them. The accountant's price changes need approval (SEC-02),
   not built yet. Customers: the owner, the accountant and branch managers add them.
 
 **Expense Approver** is not a requirement role but a marker the code checks: its holders approve or
-reject expenses (EXP-06). Only the owner has it.
+reject expenses (EXP-06). The accountant has it, since expenses are paid out of his cash (owner's decision
+of 12 Oct 2026), and the owner keeps it.
 
 Rows for modules not built yet (bookings, integrations, price approval) are listed by `verify_users.py` as
 not checked. The AI assistant is limited to the owner on the server (`assistant/api.py`).
@@ -370,8 +372,8 @@ as in-app alerts, which never send e-mail:
 
 - a set number of days before a bill's next due date (**Remind Days Before**, default 3);
 - while a draft made from a bill is still unsubmitted after its date, again every few days (**Repeat
-  Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for the
-  owner's approval reminds the owner instead, on the same days.
+  Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for
+  approval reminds the approvers (the accountant and the owner) instead, on the same days.
 
 Both numbers are in **Expense Settings**. The drafts and the reminders come from one daily scheduler
 job, `recurring_expense.run_daily` (`hooks.py`), so the month's drafts exist before the reminders look
@@ -380,13 +382,14 @@ skips a notification a user already has for the same document, so a second run t
 
 ### Expense approval (EXP-06)
 
-**Every expense** is paid and posted only once the owner approves it, whatever its amount (owner's decision
-of 8 Oct 2026). There is no threshold, and Expense Settings (reminder days) can be changed by the owner
-only, so nobody else can switch the approval off.
+**Every expense** is paid and posted only once the accountant approves it, whatever its amount: the money
+comes out of his cash (owner's decision of 12 Oct 2026, replacing the owner's own approval of 8 Oct). The
+owner can approve too. There is no threshold, and Expense Settings (reminder days) can be changed by the
+owner only, so nobody else can switch the approval off.
 
-1. The accountant saves the expense with its receipt and clicks **Request Approval** (Submit is refused
-   while the expense needs approval). The owner receives an in-app alert.
-2. The owner opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
+1. A branch manager saves the expense with its receipt and clicks **Request Approval** (Submit is refused
+   while the expense needs approval). The accountant (and the owner) receive an in-app alert.
+2. The accountant opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
    reason. The person who asked for the approval is notified either way (not the creator: monthly
    drafts are made by the scheduler).
 3. A rejected expense is closed for good: it can no longer be saved or submitted. If the payment is
@@ -394,9 +397,11 @@ only, so nobody else can switch the approval off.
 
 Changing the amount, category, business, treasury, date or receipt after a request or an approval clears
 it, so the expense as changed needs approval again. Each request carries the time it was sent, so a request
-sent again after a change reaches the owner as a new alert.
-The owner's own expenses are approved as he submits them. Approval is by the
-**Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
+sent again after a change reaches the approver as a new alert.
+The accountant's and the owner's own expenses are approved as they submit them. Approval is by the
+**Expense Approver** role, checked on the server. The approval fields change only through Request
+Approval, Approve and Reject: a save that writes them otherwise, through the API too, is refused, and an
+expense made with an approval already on it (a copy, an amendment) starts without one. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
 
 ### Splitting the shared premises' expenses (EXP-03/04)
@@ -483,6 +488,15 @@ branch is the store's.
 - **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
   in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
+
+**Paper used for printing and copying** (`imederp/paper_use.py`, owner's decision of 12 Oct 2026):
+printing and copying are services, so selling them took no paper out of stock and the next count showed the
+sheets used as a shortage. Now a submitted Sales Invoice (a POS shift reaches it as the closing invoice)
+issues one sheet of A4 per unit of `PRINT-SVC` and `COPY-SVC` from the library's raw materials store
+(`خامات المواساة` / `خامات الأزاريطة`), as a Material Issue linked by its Sales Invoice field, to cost of goods
+sold on the library's cost center. If the store shows fewer sheets than were sold, the sale stands and the
+issue is saved as a draft for the accountant. Cancelling the sale cancels the issue (or removes the draft);
+the issue is never cancelled on its own. A return does not bring printed paper back.
 
 **Stock Count Variance** (report): every item on the submitted counts of a period, with its branch and
 store, recorded and counted quantity, difference in quantity and value, count type, who counted and the
@@ -690,6 +704,8 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "A
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_use
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_treasuries
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue
