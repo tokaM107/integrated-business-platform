@@ -304,7 +304,7 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. The customer group `طبيب`: a doctor is a Customer in it (CRM-01). |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
@@ -652,6 +652,10 @@ document linked to a closed academic period cannot be saved either.
 `نقدي — مكتبة الأزاريطة`, which posts to that library's cash box (ERPNext's `Cash` posts to the company's
 main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`). The other businesses take cash the same
 way into their own cash boxes: `نقدي — قاعات Imed` (the center's), `نقدي — استوديو X` and `نقدي — تطبيق BA Plus`.
+
+**Doctors.** A doctor is a Customer in the group `طبيب` (CRM-01), one record whatever they buy or earn. A
+Doctor Agreement's doctor can only be one of them: the screen lists only that group, and the server refuses
+any other customer.
 
 **Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
 copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
