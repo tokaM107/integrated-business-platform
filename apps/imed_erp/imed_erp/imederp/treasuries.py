@@ -62,16 +62,34 @@ def user_treasuries(user=None):
     return allowed
 
 
+def entry_accounts(doc):
+    """The accounts a document moves money through: its treasuries are among them."""
+    if doc.doctype == "Journal Entry":
+        return [row.account for row in doc.accounts]
+    if doc.doctype == "Payment Entry":
+        return [doc.paid_from, doc.paid_to]
+    if doc.doctype == "Purchase Invoice":
+        # Paid on the spot: the cash comes out of this treasury.
+        return [doc.cash_bank_account] if doc.is_paid else []
+    # Sales and POS invoices paid at the counter: each payment goes into its method's account, which ERPNext
+    # fills in on the row only after validate.
+    if not doc.get("is_pos"):
+        return []
+    return [
+        row.account
+        or frappe.db.get_value("Mode of Payment Account", {"parent": row.mode_of_payment, "company": doc.company}, "default_account")
+        for row in doc.get("payments") or []
+    ]
+
+
 def check_entry_treasuries(doc, method=None):
-    """Journal Entry and Payment Entry validate hook: a branch manager may make regular entries (owner's
-    decision of 7 Oct 2026), but only on their own business's cash box or the group's wallets (8 Oct 2026).
-    Expenses and transfers check their treasury themselves and post their entries in the system's name."""
+    """Validate hook on Journal Entry, Payment Entry, Purchase Invoice, Sales Invoice and POS Invoice: a
+    branch manager may make regular entries (owner's decision of 7 Oct 2026), pay a purchase and take a sale's
+    money, but only through their own business's cash box or the group's wallets (8 Oct 2026). Expenses and
+    transfers check their treasury themselves and post their entries in the system's name."""
     if ANY_TREASURY_ROLE in frappe.get_roles() or doc.flags.from_expense or doc.flags.from_inter_business_transfer:
         return
-    if doc.doctype == "Journal Entry":
-        accounts = [row.account for row in doc.accounts]
-    else:
-        accounts = [doc.paid_from, doc.paid_to]
+    accounts = entry_accounts(doc)
     treasuries = [a for a in accounts if a and frappe.db.get_value("Account", a, "account_type") in ("Cash", "Bank")]
     if not treasuries:
         return
