@@ -28,6 +28,8 @@ FINANCIAL_DOCTYPES = [
 	"Printer Reading",
 	"Allocation Rule",
 	"Stock Count",
+	"Damaged Stock Entry",
+	"Damaged Stock Sale",
 ]
 
 

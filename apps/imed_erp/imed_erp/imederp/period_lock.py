@@ -18,6 +18,8 @@ LOCKED_DOCTYPES = [
 	"App Subscription",
 	"Printer Reading",
 	"Stock Count",
+	"Damaged Stock Entry",
+	"Damaged Stock Sale",
 ]
 
 DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date")

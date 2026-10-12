@@ -352,3 +352,85 @@ Net Difference,صافي الفرق
 Item,الصنف
 Request Store Approval,اطلب موافقة المخزن
 "A branch request is submitted by approving it. Click Request Store Approval, then Raghad approves it.",طلب الفرع بيتعمله اعتماد لما رغد توافق عليه. دوس اطلب موافقة المخزن، وبعدين رغد توافق.
+Damaged Stock,التالف
+Damaged Stock Entry,تسجيل تالف
+Damaged Stock Entries,تسجيلات التالف
+Damaged Stock Item,صنف تالف
+Damaged Stock Sale,بيع تالف بالوزن
+Damaged Stock Sales,مبيعات التالف بالوزن
+Damaged Stock Sale Item,صنف تالف مُباع
+Damaged Store,مخزن التالف
+"Damaged stock is moved here at zero value until it is sold by weight (Damaged Stock Entry, Damaged Stock Sale).","التالف بيتنقل هنا بقيمة صفر لحد ما يتباع بالوزن (تسجيل تالف، بيع تالف بالوزن)."
+Damage Date,تاريخ التلف
+Damaged In (Store),اتلف في (مخزن)
+"The store the damaged items were in. They leave it at their cost, a loss on its branch.","المخزن اللي كانت فيه الأصناف التالفة. بتخرج منه بتكلفتها، وتتسجل خسارة على فرعه."
+The library the loss is on (from the store).,المكتبة اللي الخسارة عليها (من المخزن).
+"Where the damaged items are kept, at zero value, until they are sold by weight.","المكان اللي التالف بيتحفظ فيه بقيمة صفر لحد ما يتباع بالوزن."
+Responsible,المسؤول
+Who is responsible for this record.,مين المسؤول عن التسجيل ده.
+Damage Reason,سبب التلف
+"What happened: wet, torn, printing fault, ...","إيه اللي حصل: اتبل، اتقطع، عيب طباعة، ..."
+Damaged Items,الأصناف التالفة
+Total Loss,إجمالي الخسارة
+Stock Entries,حركات المخزون
+Loss Entry,حركة الخسارة
+"Takes the damaged items out of their store; the cost goes to الهالك والتالف.","بتطلّع الأصناف التالفة من مخزنها، وتكلفتها بتروح على الهالك والتالف."
+Damaged Store Entry,حركة مخزن التالف
+Puts them in the damaged store at zero value.,بتدخّلها مخزن التالف بقيمة صفر.
+Damaged Qty,الكمية التالفة
+"In the item's stock unit (sheets for paper, copies for books).","بوحدة مخزن الصنف (ورقة للورق، ونسخة للكتب)."
+Loss,الخسارة
+Sold by Weight,اتباع بالوزن
+Sale Date,تاريخ البيع
+The library the revenue is on (from the damaged store).,المكتبة اللي الإيراد عليها (من مخزن التالف).
+Buyer,المشتري
+Weight Sold,الوزن المُباع
+What the scale showed.,اللي الميزان قاله.
+Weight Unit,وحدة الوزن
+Price per Kg,سعر الكيلو
+Total Amount,الإجمالي
+Paid in Cash,اتدفع كاش
+"Received in cash now, into the branch's cash box. Untick if the buyer pays later.","اتقبض كاش دلوقتي في خزينة الفرع. شيل العلامة لو المشتري هيدفع بعدين."
+Cash Box,الخزينة
+Damaged Items Taken Out,الأصناف التالفة اللي خرجت
+Posted Documents,المستندات المسجّلة
+Qty Taken Out,الكمية اللي خرجت
+"How much of it left with this sale, in the item's stock unit. Not converted to weight.","الكمية اللي خرجت مع البيعة دي بوحدة مخزن الصنف. مش بتتحول لوزن."
+In Damaged Store,في مخزن التالف
+From Damage Record,من تسجيل التالف
+"Optional: the damage record these came from, to trace one to the other.","اختياري: تسجيل التالف اللي الكمية دي جاية منه، عشان نربط الاتنين ببعض."
+{0} is a group of stores. Choose the store the items were damaged in.,{0} مجموعة مخازن. اختار المخزن اللي الأصناف اتلفت فيه.
+{0} is the damaged store; choose the store the items were damaged in.,{0} هو مخزن التالف؛ اختار المخزن اللي الأصناف اتلفت فيه.
+{0} is not a damaged store (Warehouse > Damaged Store).,{0} مش مخزن تالف (المخزن > مخزن التالف).
+{0} and {1} belong to different companies.,{0} و{1} تبع شركتين مختلفين.
+{0} is not a store of a library branch.,{0} مش مخزن تبع فرع مكتبة.
+Enter the reason for the damage.,اكتب سبب التلف.
+Missing Reason,السبب ناقص
+Row #{0}: {1} is listed twice.,سطر #{0}: {1} مكتوب مرتين.
+Row #{0}: the damaged quantity must be more than zero.,سطر #{0}: الكمية التالفة لازم تكون أكبر من صفر.
+Row #{0}: {1} is not an active stock item.,سطر #{0}: {1} مش صنف مخزني شغال.
+Row #{0}: {1} has only {2} {3} in {4}.,سطر #{0}: {1} موجود منه {2} {3} بس في {4}.
+Not Enough Stock,الرصيد مش كفاية
+Damaged stock {0}: {1},تالف {0}: {1}
+Part of this damaged stock was already sold by weight ({0}). Cancel the sale first.,جزء من التالف ده اتباع بالوزن خلاص ({0}). ألغي البيعة الأول.
+"{0} is not your branch's. You can work for: {1}.","{0} مش تبع فرعك. تقدر تشتغل على: {1}."
+"{0} was posted by {1} {2}. Cancel the {1} instead.","{0} اتسجل من {1} {2}. ألغي {1} بدل كده."
+"Enter the weight sold, more than zero.","اكتب الوزن المُباع، أكبر من صفر."
+Missing Weight,الوزن ناقص
+"Enter the price per kilogram, more than zero.","اكتب سعر الكيلو، أكبر من صفر."
+Missing Price,السعر ناقص
+{0} has no cash box. Untick Paid in Cash and record the payment separately.,{0} مالوش خزينة. شيل علامة اتدفع كاش وسجّل الدفع لوحده.
+Row #{0}: the quantity taken out must be more than zero.,سطر #{0}: الكمية اللي خرجت لازم تكون أكبر من صفر.
+Row #{0}: {1} is not a stock item.,سطر #{0}: {1} مش صنف مخزني.
+Row #{0}: the damaged store holds only {1} {2} of {3}.,سطر #{0}: مخزن التالف فيه {1} {2} بس من {3}.
+Not Enough Damaged Stock,التالف مش كفاية
+Row #{0}: damage record {1} is not submitted.,سطر #{0}: تسجيل التالف {1} لسه ماتعملهوش اعتماد.
+Row #{0}: damage record {1} went to {2}.,سطر #{0}: تسجيل التالف {1} راح لـ {2}.
+Row #{0}: damage record {1} has no {2}.,سطر #{0}: تسجيل التالف {1} مفيهوش {2}.
+Row #{0}: only {1} {2} of {3} from damage record {4} are left to sell.,سطر #{0}: فاضل {1} {2} بس من {3} من تسجيل التالف {4} للبيع.
+Damaged stock sold by weight: {0},تالف اتباع بالوزن: {0}
+The invoice total {0} differs from the sale's {1}.,إجمالي الفاتورة {0} مختلف عن إجمالي البيعة {1}.
+"Taken out of {0} as a loss of {1} on {2}; kept in {3} at zero value until sold by weight.","خرج من {0} كخسارة {1} على {2}، ومحفوظ في {3} بقيمة صفر لحد ما يتباع بالوزن."
+{0} has {1} {2} in {3},{0} موجود منه {1} {2} في {3}
+"Sold {0} {1} at {2}: {3}, invoiced in {4}.","اتباع {0} {1} بسعر {2}: {3}، في الفاتورة {4}."
+Row #{0}: {1} is the damaged store. Damaged items go in through Damaged Stock Entry and out through Damaged Stock Sale.,سطر #{0}: {1} هو مخزن التالف. التالف بيدخل من تسجيل تالف ويخرج من بيع تالف بالوزن بس.

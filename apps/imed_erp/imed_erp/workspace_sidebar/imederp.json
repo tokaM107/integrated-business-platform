@@ -29,7 +29,10 @@
   {"child": 0, "collapsible": 1, "icon": "package", "indent": 1, "keep_closed": 0, "label": "Branch Requests", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Material Requests", "link_to": "Material Request", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Material Issues", "link_to": "Material Issues", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Machines", "link_to": "Printing Machine", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Machines", "link_to": "Printing Machine", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 0, "collapsible": 1, "icon": "trash-2", "indent": 1, "keep_closed": 0, "label": "Damaged Stock", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Damaged Stock Entries", "link_to": "Damaged Stock Entry", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Damaged Stock Sales", "link_to": "Damaged Stock Sale", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
  ],
  "modified": "2026-10-08 12:00:00.000000",
  "modified_by": "Administrator",

@@ -1,0 +1,185 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "DMG-.YYYY.-.#####",
+ "creation": "2026-10-12 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "posting_date",
+  "source_store",
+  "branch",
+  "column_break_main",
+  "damaged_store",
+  "responsible",
+  "company",
+  "section_reason",
+  "reason",
+  "section_items",
+  "items",
+  "total_loss",
+  "section_posted",
+  "loss_entry",
+  "column_break_posted",
+  "damaged_store_entry",
+  "posting_time",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Damage Date",
+   "reqd": 1
+  },
+  {
+   "description": "The store the damaged items were in. They leave it at their cost, a loss on its branch.",
+   "fieldname": "source_store",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Damaged In (Store)",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "description": "The library the loss is on (from the store).",
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Branch",
+   "options": "Cost Center",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Where the damaged items are kept, at zero value, until they are sold by weight.",
+   "fieldname": "damaged_store",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "label": "Damaged Store",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "default": "__user",
+   "description": "Who is responsible for this record.",
+   "fieldname": "responsible",
+   "fieldtype": "Link",
+   "ignore_user_permissions": 1,
+   "in_standard_filter": 1,
+   "label": "Responsible",
+   "options": "User",
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_reason",
+   "fieldtype": "Section Break"
+  },
+  {
+   "description": "What happened: wet, torn, printing fault, ...",
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Damage Reason",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_items",
+   "fieldtype": "Section Break",
+   "label": "Damaged Items"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Damaged Stock Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "total_loss",
+   "fieldtype": "Currency",
+   "label": "Total Loss",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.docstatus > 0",
+   "fieldname": "section_posted",
+   "fieldtype": "Section Break",
+   "label": "Stock Entries"
+  },
+  {
+   "description": "Takes the damaged items out of their store; the cost goes to الهالك والتالف.",
+   "fieldname": "loss_entry",
+   "fieldtype": "Link",
+   "label": "Loss Entry",
+   "no_copy": 1,
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_posted",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Puts them in the damaged store at zero value.",
+   "fieldname": "damaged_store_entry",
+   "fieldtype": "Link",
+   "label": "Damaged Store Entry",
+   "no_copy": 1,
+   "options": "Stock Entry",
+   "read_only": 1
+  },
+  {
+   "default": "Now",
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "hidden": 1,
+   "label": "Posting Time"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Damaged Stock Entry",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-12 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Damaged Stock Entry",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {"amend": 1, "cancel": 1, "create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "submit": 1, "write": 1},
+  {"amend": 1, "cancel": 1, "create": 1, "delete": 0, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Accounts Manager", "share": 1, "submit": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Branch Manager", "submit": 1, "write": 1}
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "source_store",
+ "track_changes": 1
+}

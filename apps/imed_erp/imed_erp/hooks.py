@@ -202,15 +202,23 @@ doc_events = {
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 		],
+		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Sales Invoice": {
-		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"validate": [
+			"imed_erp.imederp.library_revenue.set_library_income_account",
+			"imed_erp.imederp.damaged_stock.guard_damaged_store",
+		],
+		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 	},
 	"POS Invoice": {
-		"validate": "imed_erp.imederp.library_revenue.set_library_income_account",
+		"validate": [
+			"imed_erp.imederp.library_revenue.set_library_income_account",
+			"imed_erp.imederp.damaged_stock.guard_damaged_store",
+		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Invoice": {
@@ -218,13 +226,20 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Entry": {
-		# validate and before_submit: the issue of a branch request (imederp/material_issue.py).
-		"validate": "imed_erp.imederp.material_issue.validate_stock_entry",
+		# validate and before_submit: the issue of a branch request (imederp/material_issue.py); the damaged
+		# store moves only through a damage record or a sale by weight (imederp/damaged_stock.py).
+		"validate": [
+			"imed_erp.imederp.material_issue.validate_stock_entry",
+			"imed_erp.imederp.damaged_stock.guard_damaged_store",
+		],
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_stock_entry",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		# Entries posted by a damage record or a sale by weight are cancelled through it (imederp/damaged_stock.py).
+		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Delivery Note": {
+		"validate": "imed_erp.imederp.damaged_stock.guard_damaged_store",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -280,6 +295,17 @@ doc_events = {
 	"Allocation Rule": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
+	# Damaged stock and its sale by weight (LIB-09, PRN-07, DOC-19; imederp/damaged_stock.py).
+	"Damaged Stock Entry": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Damaged Stock Sale": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
 	"Item": {
 		"validate": "imed_erp.imederp.stock_reorder.validate_reorder_levels",
 	},
@@ -298,10 +324,20 @@ period_closing_doctypes = [
 	"App Subscription",
 	"Printer Reading",
 	"Stock Count",
+	"Damaged Stock Entry",
+	"Damaged Stock Sale",
 ]
 
-# The custom fields the app's code relies on, kept in step with it on every migrate.
-after_migrate = ["imed_erp.imederp.material_issue.make_custom_fields"]
+# The custom fields the app's code relies on: made when the app is installed (install-app does not run
+# after_migrate) and kept in step with the code on every migrate.
+after_install = [
+	"imed_erp.imederp.material_issue.make_custom_fields",
+	"imed_erp.imederp.damaged_stock.make_custom_fields",
+]
+after_migrate = [
+	"imed_erp.imederp.material_issue.make_custom_fields",
+	"imed_erp.imederp.damaged_stock.make_custom_fields",
+]
 
 # Scheduled Tasks
 # ---------------
