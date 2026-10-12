@@ -22,6 +22,7 @@ FINANCIAL_DOCTYPES = [
 	# The app
 	"Expense",
 	"Inter Business Transfer",
+	"Doctor Agreement",
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Book Edition",

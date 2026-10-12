@@ -13,6 +13,8 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
+
 # Every doctype these tests link to is made here or already exists on the site. Without this Frappe builds
 # ERPNext's "_Test ..." records for them and commits them to the site.
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
@@ -28,7 +30,7 @@ def make_doctor(name="_Test Doctor"):
 			{
 				"doctype": "Customer",
 				"customer_name": name,
-				"customer_group": frappe.get_all("Customer Group", filters={"is_group": 0}, limit=1, pluck="name")[0],
+				"customer_group": DOCTOR_GROUP,
 				"territory": frappe.get_all("Territory", filters={"is_group": 0}, limit=1, pluck="name")[0],
 			}
 		)
@@ -37,9 +39,10 @@ def make_doctor(name="_Test Doctor"):
 	)
 
 
-def make_agreement(agreement_type, share_type="Fixed", share_value=0):
-	# Named after agreement_name, so tests asking for the same terms share one.
-	name = f"_Test {agreement_type} {share_type} {share_value}"
+def make_agreement(agreement_type, amount_per_copy=80):
+	# Named after agreement_name, so tests asking for the same terms share one. A books agreement gives the
+	# doctor's amount per copy from the start of the year.
+	name = f"_Test {agreement_type} {amount_per_copy}"
 	if frappe.db.exists("Doctor Agreement", name):
 		return name
 	return (
@@ -49,8 +52,9 @@ def make_agreement(agreement_type, share_type="Fixed", share_value=0):
 				"agreement_name": name,
 				"doctor": make_doctor(),
 				"agreement_type": agreement_type,
-				"share_type": share_type,
-				"share_value": share_value,
+				"start_date": "2026-01-01",
+				"settlement_cycle": "Term",
+				"terms": [{"valid_from": "2026-01-01", "amount_per_copy": amount_per_copy}],
 			}
 		)
 		.insert()
@@ -85,7 +89,7 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 	def test_price_is_per_copy_with_no_rounding(self, _):
 		# Paper 0.26 average + 0.04 waste = 0.30; + 0.10 ink + 0.05 overheads + 0.25 profit = 0.70 a sheet.
 		# 0.70 x 210 sheets = 147, + 20 binding + 80 the doctor asked for = 247, sold at 247.
-		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
+		edition = self.make_edition(make_agreement("Books", 80))
 		self.assertEqual(edition.paper_cost, 0.30)
 		self.assertEqual(edition.doctor_share, 80)
 		self.assertEqual(edition.calculated_price, 247)
@@ -94,7 +98,7 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 
 	@patch(PAPER_COST, return_value=0.30)
 	def test_marketing_is_optional_and_added_per_copy(self, _):
-		edition = self.make_edition(make_agreement("Books", "Fixed", 80), marketing_cost=10)
+		edition = self.make_edition(make_agreement("Books", 80), marketing_cost=10)
 		self.assertEqual(edition.calculated_price, 257)
 		self.assertEqual(edition.selling_price, 257)
 
@@ -107,7 +111,7 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 			{
 				"doctype": "Book Edition",
 				"edition_name": f"_Test Edition {frappe.generate_hash(length=6)}",
-				"agreement": make_agreement("Books", "Fixed", 80),
+				"agreement": make_agreement("Books", 80),
 				"cost_center": LIBRARY,
 				"pages": 100,
 			}
@@ -130,7 +134,7 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 
 	@patch(PAPER_COST, return_value=0.30)
 	def test_price_set_by_hand_higher_or_lower(self, _):
-		agreement = make_agreement("Books", "Fixed", 80)
+		agreement = make_agreement("Books", 80)
 		# Higher: 13 more for the library.
 		self.assertEqual(self.make_edition(agreement, selling_price=260).rounding_diff, 13)
 		# Lower, to sell more: 7 less for the library; the doctor's 80 stays.
@@ -141,7 +145,7 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 
 	@patch(PAPER_COST, return_value=0)
 	def test_no_approval_without_a_paper_price(self, _):
-		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
+		edition = self.make_edition(make_agreement("Books", 80))
 		self.assertRaises(frappe.ValidationError, edition.submit)
 
 	def test_edition_belongs_to_a_books_agreement(self):
@@ -149,25 +153,12 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 
 	@patch(PAPER_COST, return_value=0.30)
 	def test_edition_belongs_to_a_library(self, _):
-		agreement = make_agreement("Books", "Fixed", 80)
+		agreement = make_agreement("Books", 80)
 		self.assertRaises(frappe.ValidationError, self.make_edition, agreement, cost_center="قاعات Imed - MMG")
 
 	@patch(PAPER_COST, return_value=0.30)
-	def test_percentage_agreement_warns_that_the_doctors_amount_is_missing(self, _):
-		agreement = make_agreement("Books", "Percentage", 10)
-		frappe.clear_messages()
-		edition = self.make_edition(agreement)
-		self.assertFalse(edition.doctor_share)
-		self.assertIn(agreement, " ".join(str(m) for m in frappe.get_message_log()))
-
-		# Once the amount is typed in, there is nothing to warn about.
-		frappe.clear_messages()
-		self.make_edition(agreement, doctor_share=80)
-		self.assertNotIn(agreement, " ".join(str(m) for m in frappe.get_message_log()))
-
-	@patch(PAPER_COST, return_value=0.30)
 	def test_editing_a_draft_updates_its_price(self, _):
-		edition = self.make_edition(make_agreement("Books", "Fixed", 80))
+		edition = self.make_edition(make_agreement("Books", 80))
 		self.assertEqual(edition.selling_price, 247)
 		edition.pages = 220
 		edition.save()
@@ -176,14 +167,14 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 
 	@patch(PAPER_COST, return_value=0.30)
 	def test_price_set_by_hand_is_kept_when_the_draft_changes(self, _):
-		edition = self.make_edition(make_agreement("Books", "Fixed", 80), selling_price=230)
+		edition = self.make_edition(make_agreement("Books", 80), selling_price=230)
 		edition.pages = 220
 		edition.save()
 		self.assertEqual((edition.calculated_price, edition.selling_price), (254, 230))
 
 	@patch(PAPER_COST, return_value=0.30)
 	def test_one_books_profit_does_not_change_another(self, _):
-		agreement = make_agreement("Books", "Fixed", 80)
+		agreement = make_agreement("Books", 80)
 		cheaper = self.make_edition(agreement, owner_share=0.15)
 		other = self.make_edition(agreement)
 		self.assertEqual((cheaper.owner_share, other.owner_share), (0.15, 0.25))

@@ -119,7 +119,7 @@
   },
   {
    "create": 1,
-   "delete": 1,
+   "delete": 0,
    "read": 1,
    "role": "Accounts Manager",
    "write": 1

@@ -152,7 +152,7 @@ USERS = [
 		["مكتبة الأزاريطة"],
 		["مخزن الأزاريطة"],
 	),
-	("accountant@imed.local", "المحاسب", ["Accountant", "Accounts User", "Accounts Manager"], [], []),
+	("accountant@imed.local", "المحاسب", ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"], [], []),
 	("hr@imed.local", "شؤون الموظفين", ["HR", "HR Manager"], [], []),
 ]
 AUTOMATIC_ROLES = {"Administrator", "Guest", "All", "Desk User"}
@@ -272,6 +272,13 @@ def run():
 			report("Item Group", group, [] if found == parent else [f"parent is {found}, expected {parent}"])
 	machine = frappe.db.get_value("Item Group", "ورق", "custom_requires_printing_machine")
 	report("Item Group", "ورق: needs printing machine", [] if machine else ["Needs Printing Machine is not ticked"])
+
+	# ---------- Customer groups: doctors (CRM-01) ----------
+	if frappe.db.exists("Customer Group", "طبيب"):
+		found = frappe.db.get_value("Customer Group", "طبيب", "parent_customer_group")
+		report("Customer Group", "طبيب", [] if found == "All Customer Groups" else [f"parent is {found}, expected All Customer Groups"])
+	else:
+		report("Customer Group", "طبيب", ["missing"])
 
 	# ---------- UOMs ----------
 	for uom in UOMS:

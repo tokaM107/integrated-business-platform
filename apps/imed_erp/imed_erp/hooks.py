@@ -208,20 +208,30 @@ doc_events = {
 	"Sales Invoice": {
 		"validate": [
 			"imed_erp.imederp.library_revenue.set_library_income_account",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.services.clear_service_warehouses",
 			"imed_erp.imederp.damaged_stock.guard_damaged_store",
 		],
 		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
-		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_submit": [
+			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
+			"imed_erp.imederp.paper_use.issue_paper_used",
+		],
+		"on_cancel": "imed_erp.imederp.paper_use.cancel_paper_used",
 	},
 	"POS Invoice": {
 		"validate": [
 			"imed_erp.imederp.library_revenue.set_library_income_account",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.services.clear_service_warehouses",
 			"imed_erp.imederp.damaged_stock.guard_damaged_store",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Invoice": {
+		"validate": "imed_erp.imederp.treasuries.check_entry_treasuries",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -233,9 +243,13 @@ doc_events = {
 			"imed_erp.imederp.damaged_stock.guard_damaged_store",
 		],
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_stock_entry",
+		# Entries posted by a printing sale's paper, a damage record or a sale by weight are cancelled only
+		# through it (imederp/paper_use.py, imederp/damaged_stock.py).
+		"before_cancel": [
+			"imed_erp.imederp.paper_use.block_cancel_of_paper_issue",
+			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
+		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
-		# Entries posted by a damage record or a sale by weight are cancelled through it (imederp/damaged_stock.py).
-		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Delivery Note": {
@@ -268,6 +282,9 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
 		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Doctor Agreement": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Doctor Ledger Entry": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",

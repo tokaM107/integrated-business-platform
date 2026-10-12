@@ -30,9 +30,10 @@ cards = [
     dict(label="Outstanding from Customers", doc="Sales Invoice",
          func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
-    dict(label="Total Purchases", doc="Purchase Receipt",
+    # The library buys with one Purchase Invoice that updates stock (setup_buying.py), without a receipt.
+    dict(label="Total Purchases", doc="Purchase Invoice",
          func="Sum", field="grand_total", color=SLATE, full=1,
-         filters=[["Purchase Receipt", "docstatus", "=", 1]]),
+         filters=[["Purchase Invoice", "docstatus", "=", 1]]),
     # A customer is never submitted (docstatus is always 0), so a disabled one is what is left out.
     dict(label="Customers", doc="Customer",
          func="Count", field="", color=SLATE,

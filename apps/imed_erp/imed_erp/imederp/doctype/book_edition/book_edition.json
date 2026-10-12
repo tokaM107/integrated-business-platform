@@ -10,6 +10,7 @@
  "field_order": [
   "edition_name",
   "agreement",
+  "edition_date",
   "period",
   "pages",
   "doctor_qty",
@@ -132,7 +133,8 @@
    "fieldname": "doctor_share",
    "fieldtype": "Currency",
    "label": "Doctor's Amount per Copy",
-   "description": "What the doctor asked for each copy; filled in from his agreement when it is a fixed amount."
+   "description": "From the agreement's terms in force on the edition's date. Kept once the edition is submitted.",
+   "read_only": 1
   },
   {
    "fieldname": "price_section",
@@ -185,6 +187,15 @@
    "label": "Cost Center",
    "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
    "options": "Cost Center",
+   "reqd": 1
+  },
+  {
+   "default": "Today",
+   "description": "The doctor's amount per copy is the one the agreement has in force on this date.",
+   "fieldname": "edition_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Edition Date",
    "reqd": 1
   }
  ],

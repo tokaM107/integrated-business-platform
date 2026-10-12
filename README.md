@@ -110,14 +110,17 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Academic Period, Doctor Agreement, Doctor Ledger Entry | full | read only |
 | Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
-| Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the owner approves it |
+| Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the accountant approves it |
 | Inter Business Transfer | full | Accounts User: read only. Branch Manager: create, edit, submit (no cancel/delete) |
 | Expense Category | full | read only |
 | Recurring Expense (monthly bills) | full | read only (so the bill can be picked on an expense) |
-| Expense Settings | full | read only |
+| Expense Settings | read only (only the owner edits it) | read only |
 | Allocation Rule | full | read only |
 | Stock Count | full | Branch Manager: create, edit, submit, own branch's stores only (no cancel/delete) |
 | Printing Machine | full (Super Admin, Stock Manager; Stock Request Approver can add and edit) | read only (Stock User, Branch Manager) |
+
+"Full" never includes delete: on every one of these only the owner deletes, and only a draft that was never
+posted (owner's decision of 7 Oct 2026; `verify_users.py` checks it).
 
 Branch managers also have Accounts User (to create sales invoices), so both roles get the same rights
 here, except on Inter Business Transfer, which Branch Manager may send. Agreements, the doctors' ledger and edition pricing are approved by Accounts Manager (Owner,
@@ -136,7 +139,7 @@ and expense numbers would jump whenever a bill or a rule is made.
 | Requirement role | Users | ERPNext roles it comes with |
 |---|---|---|
 | Super Admin | Owner | System Manager, Accounts Manager, Expense Approver |
-| Accountant | Accountant | Accounts User, Accounts Manager |
+| Accountant | Accountant | Accounts User, Accounts Manager, Expense Approver |
 | Branch Manager | Nour, Gilan, Menna, Raghad, Sara | Sales User, Accounts User (+ Stock User for the libraries) |
 | HR | HR | HR Manager |
 | CRM Staff | nobody yet | none yet (the CRM module is not built) |
@@ -154,16 +157,18 @@ and expense numbers would jump whenever a bill or a rule is made.
   only read month-end closing (Accounting Period), the chart of accounts and the split of the shared
   premises' expenses (Cost Center Allocation), which ERPNext's Accounts User could otherwise change.
   The accountant changes these three but never deletes them; only the owner does.
-- A branch manager pays expenses, sends transfers and makes journal and payment entries only from their
-  own business's cash box or the
-  group's InstaPay / Vodafone Cash wallets (`imederp/treasuries.py`); Owner and Accountant may use any.
+- A branch manager pays expenses, sends transfers, makes journal and payment entries, pays a purchase on
+  the spot (Purchase Invoice, Is Paid) and takes a sale's money at the counter (Sales / POS Invoice) only
+  through their own business's cash box or the group's InstaPay / Vodafone Cash wallets
+  (`imederp/treasuries.py`); Owner and Accountant may use any.
 - Branch managers see only their own cost center (and warehouse); Owner and Accountant see all.
 - Employees: Super Admin and HR manage them, Accountant can view them.
 - Prices (Item Price): only the owner edits them. The accountant's price changes need approval (SEC-02),
   not built yet. Customers: the owner, the accountant and branch managers add them.
 
 **Expense Approver** is not a requirement role but a marker the code checks: its holders approve or
-reject expenses (EXP-06). Only the owner has it.
+reject expenses (EXP-06). The accountant has it, since expenses are paid out of his cash (owner's decision
+of 12 Oct 2026), and the owner keeps it.
 
 Rows for modules not built yet (bookings, integrations, price approval) are listed by `verify_users.py` as
 not checked. The AI assistant is limited to the owner on the server (`assistant/api.py`).
@@ -263,6 +268,12 @@ Sales invoices print with the app's own format, **MMG Sales Invoice**
 - It draws its own header (logo, company, title, number) instead of the site letter head, which
   prints the English doctype name.
 
+
+Notification templates (`notification_service.py` `EVENTS`) are translated before they are filled in, so
+alerts such as reorder levels reach Arabic users in Arabic. Some of ERPNext's own Arabic is wrong and is
+corrected in `translations/ar.csv` with the same meaning: `Draft` (مسودة, not «مشروع»), `In Stock`, `Stock UOM`,
+`Request Type`, `Due Date`, `Age (Days)`.
+
 ## Setup scripts
 
 The scripts in `apps/imed_erp/imed_erp/setup/` are run from bench console:
@@ -294,7 +305,7 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. The customer group `طبيب`: a doctor is a Customer in it (CRM-01). |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
@@ -308,7 +319,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق`, `الهالك والتالف` and `الاشتراكات والسيرفرات` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). The monthly bills sit in two groups: `المرافق` (electricity, water, internet, gas, and rent, which keeps its own account) and `الاشتراكات والسيرفرات` (the app's server and AI subscriptions). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
-| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
+| `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, Stock Count, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
 `setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
@@ -371,8 +382,8 @@ as in-app alerts, which never send e-mail:
 
 - a set number of days before a bill's next due date (**Remind Days Before**, default 3);
 - while a draft made from a bill is still unsubmitted after its date, again every few days (**Repeat
-  Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for the
-  owner's approval reminds the owner instead, on the same days.
+  Overdue Reminder Every (Days)**, default 2). A rejected draft is not reminded; one waiting for
+  approval reminds the accountant, who approves it, instead, on the same days.
 
 Both numbers are in **Expense Settings**. The drafts and the reminders come from one daily scheduler
 job, `recurring_expense.run_daily` (`hooks.py`), so the month's drafts exist before the reminders look
@@ -381,13 +392,15 @@ skips a notification a user already has for the same document, so a second run t
 
 ### Expense approval (EXP-06)
 
-**Every expense** is paid and posted only once the owner approves it, whatever its amount (owner's decision
-of 8 Oct 2026). There is no threshold, and Expense Settings (reminder days) can be changed by the owner
-only, so nobody else can switch the approval off.
+**Every expense** is paid and posted only once the accountant approves it, whatever its amount: the money
+comes out of his cash (owner's decision of 12 Oct 2026, replacing the owner's own approval of 8 Oct). The
+owner can approve too. There is no threshold, and Expense Settings (reminder days) can be changed by the
+owner only, so nobody else can switch the approval off.
 
-1. The accountant saves the expense with its receipt and clicks **Request Approval** (Submit is refused
-   while the expense needs approval). The owner receives an in-app alert.
-2. The owner opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
+1. A branch manager saves the expense with its receipt and clicks **Request Approval** (Submit is refused
+   while the expense needs approval). The accountant receives an in-app alert; the owner is not notified
+   of each request but can approve one he opens.
+2. The accountant opens it and clicks **Approve**, which submits and posts it, or **Reject**, with an optional
    reason. The person who asked for the approval is notified either way (not the creator: monthly
    drafts are made by the scheduler).
 3. A rejected expense is closed for good: it can no longer be saved or submitted. If the payment is
@@ -395,9 +408,11 @@ only, so nobody else can switch the approval off.
 
 Changing the amount, category, business, treasury, date or receipt after a request or an approval clears
 it, so the expense as changed needs approval again. Each request carries the time it was sent, so a request
-sent again after a change reaches the owner as a new alert.
-The owner's own expenses are approved as he submits them. Approval is by the
-**Expense Approver** role, checked on the server, so it also holds for the API. The form shows the
+sent again after a change reaches the approver as a new alert.
+The accountant's and the owner's own expenses are approved as they submit them. Approval is by the
+**Expense Approver** role, checked on the server. The approval fields change only through Request
+Approval, Approve and Reject: a save that writes them otherwise, through the API too, is refused, and an
+expense made with an approval already on it (a copy, an amendment) starts without one. The form shows the
 status (*Pending Approval*, *Approved*, *Rejected*), who decided and the rejection reason.
 
 ### Splitting the shared premises' expenses (EXP-03/04)
@@ -482,8 +497,23 @@ branch is the store's.
   shortage of 100 sheets, 26 at 0.26 a sheet, a loss on the library; a surplus is posted the other way round.
   That reconciliation is cancelled only by cancelling the count.
 - **Who:** branch managers create and submit counts of their own branch's stores only (their cost center
-  in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
+  in User Permission); the owner and the accountant count any store and cancel a count. A branch manager's
+  count is dated when it is saved, and one saved on another day is counted again; only the owner and the
+  accountant date a count in the past, since its reconciliation reposts every stock entry after that date. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
+
+**Services have no warehouse.** Printing, copying, binding, hall and studio hours are not stock, so
+`imederp/services.py` clears the warehouse ERPNext puts on their Sales / POS Invoice rows anyway. Without it, a
+branch manager's desk invoice for a service was refused for a store outside her branch.
+
+**Paper used for printing and copying** (`imederp/paper_use.py`, owner's decision of 12 Oct 2026):
+printing and copying are services, so selling them took no paper out of stock and the next count showed the
+sheets used as a shortage. Now a submitted Sales Invoice (a POS shift reaches it as the closing invoice)
+issues one sheet of A4 per unit of `PRINT-SVC` and `COPY-SVC` from the library's raw materials store
+(`خامات المواساة` / `خامات الأزاريطة`), as a Material Issue linked by its Sales Invoice field, to cost of goods
+sold on the library's cost center. If the store shows fewer sheets than were sold, the sale stands and the
+issue is saved as a draft for the accountant. Cancelling the sale cancels the issue (or removes the draft);
+the issue is never cancelled on its own. A return does not bring printed paper back.
 
 **Stock Count Variance** (report): every item on the submitted counts of a period, with its branch and
 store, recorded and counted quantity, difference in quantity and value, count type, who counted and the
@@ -670,8 +700,36 @@ document linked to a closed academic period cannot be saved either.
 main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`). The other businesses take cash the same
 way into their own cash boxes: `نقدي — قاعات Imed` (the center's), `نقدي — استوديو X` and `نقدي — تطبيق BA Plus`.
 
+**Doctors.** A doctor is a Customer in the group `طبيب` (CRM-01), one record whatever they buy or earn. A
+Doctor Agreement's doctor can only be one of them: the screen lists only that group, and the server refuses
+any other customer.
+
+A **Doctor Agreement** holds the doctor, the type (Books or App), the start date, the settlement cycle
+(Module, Term or Round) and its status. **Suspended** (it can be set after the agreement is submitted, with no
+amendment) stops new editions and subscriptions on it, while its account can still be settled. **Balance**
+is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
+add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
+**Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
+App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
+never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
+colour (orange: we owe the doctor; blue: the doctor owes us), and the list shows each agreement in the same
+colours, a suspended one in grey.
+
+The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
+the **last settlement** (the latest payment in the doctor's ledger, updated with the balance whenever an
+entry is submitted or cancelled) and the **next settlement** (the end of the nearest academic period of the
+agreement's settlement cycle that has not ended or been closed, worked out each time the agreement is
+opened; empty until such a period is set up). The top of the screen shows the balance and the next
+settlement together.
+
+A books agreement's **Agreement Terms** give the doctor's amount per copy sold from each date (a row with no
+date starts with the agreement). A new amount is a new row from a later date, added without amending the
+agreement; a term already given is never changed or removed. An edition has an **Edition Date** and takes the
+amount in force on it, read-only on the edition, and a submitted edition keeps its amount: going from 80 to
+100 a copy from 1 November leaves the editions priced at 80 as they were.
+
 **Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
-copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
+copy (from his agreement's terms in force on the edition's date), with the library's costs and profit on top:
 
 > (paper + ink + overheads + profit) per sheet × sheets per copy + binding + marketing (optional) + the
 > doctor's amount.
@@ -679,8 +737,7 @@ copy (from his agreement, as a fixed amount), with the library's costs and profi
 The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
 hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
 the doctor's amount, and a price below the cost of a copy is saved with a warning. Editions belong to a
-library only. A books agreement with a percentage gives no amount per copy: the edition warns that the
-doctor's amount is missing until it is typed in.
+library only. A books agreement is always a fixed amount per copy, never a percentage (owner's decision).
 
 The rates change several times a year, so the owner and the accountant set them on **Printing Cost
 Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
@@ -734,9 +791,14 @@ docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_use
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_treasuries
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue

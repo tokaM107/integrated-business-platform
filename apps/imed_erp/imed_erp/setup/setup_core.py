@@ -394,6 +394,18 @@ def run():
 		print(f"update Item A4-PAPER: group -> {PAPER_GROUP}")
 	ensure_paper_items()
 
+	# ---------- 6) Customer groups ----------
+	# A doctor is a Customer in the doctor group (CRM-01); a Doctor Agreement accepts only those.
+	from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
+
+	if frappe.db.exists("Customer Group", DOCTOR_GROUP):
+		print(f"exists Customer Group {DOCTOR_GROUP}")
+	else:
+		frappe.get_doc(
+			{"doctype": "Customer Group", "customer_group_name": DOCTOR_GROUP, "parent_customer_group": "All Customer Groups"}
+		).insert()
+		print(f"create Customer Group {DOCTOR_GROUP}")
+
 	frappe.db.commit()
 	print(f"DONE   Core setup finished for {COMPANY} ({ABBR}).")
 

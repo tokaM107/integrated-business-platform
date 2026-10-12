@@ -5,7 +5,7 @@
 # himself. Two reminders keep them from being forgotten:
 #   - upcoming: a set number of days before the next one is due, for every bill;
 #   - overdue:  while a generated expense is still a draft after its date, again every few days; one waiting
-#               for the owner's approval reminds the owner instead.
+#               for approval reminds the accountant, who approves it, instead.
 # Both numbers come from Expense Settings.
 #
 # Reminders, like the approval notices on Expense, go through the unified notification service (CORE-10) as
@@ -69,7 +69,7 @@ def remind_overdue(users, every_days):
             "docstatus": 0,
             "recurring_expense": ["is", "set"],
             "posting_date": ["<", today()],
-            # Waiting on the owner, or closed by him: not for the accountant to submit.
+            # Waiting on the approver, or closed by him: not to be submitted as it is.
             "approval_status": ["is", "not set"],
         },
         fields=["name", "expense_category", "activity", "posting_date"],
@@ -89,7 +89,7 @@ def remind_overdue(users, every_days):
 
 
 def remind_pending_approvals(every_days):
-    """A monthly draft waiting for the owner's approval past its date reminds the owner, not the accountant."""
+    """An expense waiting for approval past its date reminds the accountant, who approves it."""
     from imed_erp.imederp.doctype.expense.expense import PENDING, get_approvers
 
     approvers = get_approvers()
