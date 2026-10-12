@@ -15,8 +15,8 @@
   "settlement_cycle",
   "status",
   "balance",
-  "share_type",
-  "share_value",
+  "terms_section",
+  "terms",
   "amended_from"
  ],
  "fields": [
@@ -81,15 +81,19 @@
    "in_list_view": 1
   },
   {
-   "fieldname": "share_type",
-   "fieldtype": "Select",
-   "label": "Doctor Share Type",
-   "options": "Percentage\nFixed"
+   "depends_on": "eval:doc.agreement_type==\"Books\"",
+   "fieldname": "terms_section",
+   "fieldtype": "Section Break",
+   "label": "Agreement Terms"
   },
   {
-   "fieldname": "share_value",
-   "fieldtype": "Currency",
-   "label": "Share Value"
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.agreement_type==\"Books\"",
+   "description": "The doctor's amount per copy sold, from each date. A new amount is a new row from a later date; an edition takes the amount in force on its date, so earlier editions keep theirs.",
+   "fieldname": "terms",
+   "fieldtype": "Table",
+   "label": "Agreement Terms",
+   "options": "Doctor Agreement Term"
   },
   {
    "fieldname": "amended_from",
