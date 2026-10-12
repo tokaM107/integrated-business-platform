@@ -46,6 +46,10 @@ CHECKS = [
 	("Cancel the shared expenses split", "Cost Center Allocation", "cancel", (1, 1, 0, 0)),
 	("Approve edition pricing", "Book Edition", "submit", (1, 1, 0, 0)),
 	("Doctor settlements", "Doctor Ledger Entry", "submit", (1, 1, 0, 0)),
+	# The doctors' accounts are the accountant's: branch managers only pick an agreement on an edition.
+	("Read doctor agreements", "Doctor Agreement", "read", (1, 1, 0, 0)),
+	("Pick a doctor agreement", "Doctor Agreement", "select", (1, 1, 1, 0)),
+	("Read the doctors' ledger", "Doctor Ledger Entry", "read", (1, 1, 0, 0)),
 	("View employees", "Employee", "read", (1, 1, 0, 1)),
 	("Manage employees", "Employee", "write", (1, 0, 0, 1)),
 	("Edit prices", "Item Price", "write", (1, 0, 0, 0)),
