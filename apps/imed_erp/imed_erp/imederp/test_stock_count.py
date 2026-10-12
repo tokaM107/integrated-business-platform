@@ -322,3 +322,42 @@ class IntegrationTestStockCount(IntegrationTestCase):
 		count.submit()
 		self.assertTrue(count.stock_reconciliation)
 		self.assertEqual((frappe.session.user, session.sid, session.data.csrf_token), (RAGHAD, "browser-session-id", "token"))
+
+	def test_a_count_keeps_the_time_it_was_first_saved(self):
+		# Raghad counts 5,000 sheets and saves; 300 are used before she fixes a typo and saves again. The count
+		# still compares with the stock at the time she counted, so the 300 used since are not a surplus.
+		receipt = frappe.get_doc(
+			{
+				"doctype": "Stock Entry",
+				"stock_entry_type": "Material Receipt",
+				"company": COMPANY,
+				"set_posting_time": 1,
+				"posting_date": today(),
+				"posting_time": "00:00:01",
+				"items": [{"item_code": PAPER, "qty": 5000, "basic_rate": 0.26, "t_warehouse": STORE}],
+			}
+		).insert()
+		receipt.submit()
+		frappe.set_user(RAGHAD)
+		count = frappe.get_doc(
+			{"doctype": "Stock Count", "store": STORE, "items": [{"item_code": PAPER, "counted_qty": 5000}]}
+		).insert()
+		frappe.set_user("Administrator")
+		# As if she had counted early in the morning, before the other stock of the day moved.
+		frappe.db.set_value("Stock Count", count.name, "posting_time", "00:00:02")
+		issue = frappe.get_doc(
+			{
+				"doctype": "Stock Entry",
+				"stock_entry_type": "Material Issue",
+				"company": COMPANY,
+				"items": [{"item_code": PAPER, "qty": 300, "s_warehouse": STORE}],
+			}
+		).insert()
+		issue.submit()
+
+		frappe.set_user(RAGHAD)
+		count = frappe.get_doc("Stock Count", count.name)
+		count.posting_time = "23:59:59"  # sent through the API: ignored
+		count.save()
+		self.assertEqual(str(count.posting_time), "0:00:02")
+		self.assertEqual((count.items[0].recorded_qty, count.items[0].difference_qty), (5000, 0))
