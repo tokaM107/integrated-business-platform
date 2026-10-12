@@ -663,8 +663,14 @@ amendment) stops new editions and subscriptions on it, while its account can sti
 is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
 add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
 
+A books agreement's **Agreement Terms** give the doctor's amount per copy sold from each date (a row with no
+date starts with the agreement). A new amount is a new row from a later date, added without amending the
+agreement; a term already given is never changed or removed. An edition has an **Edition Date** and takes the
+amount in force on it, read-only on the edition, and a submitted edition keeps its amount: going from 80 to
+100 a copy from 1 November leaves the editions priced at 80 as they were.
+
 **Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
-copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
+copy (from his agreement's terms in force on the edition's date), with the library's costs and profit on top:
 
 > (paper + ink + overheads + profit) per sheet × sheets per copy + binding + marketing (optional) + the
 > doctor's amount.
