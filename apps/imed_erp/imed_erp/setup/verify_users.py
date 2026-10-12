@@ -33,6 +33,11 @@ CHECKS = [
 	# Only the owner deletes, and only a draft; posted and cancelled documents never are (imederp/no_delete.py).
 	("Delete a draft", "Sales Invoice", "delete", (1, 0, 0, 0)),
 	("Delete a draft", "Expense", "delete", (1, 0, 0, 0)),
+	# The app's own records too: only the owner deletes (owner's decision of 7 Oct 2026).
+	("Delete a doctor agreement", "Doctor Agreement", "delete", (1, 0, 0, 0)),
+	("Delete an academic period", "Academic Period", "delete", (1, 0, 0, 0)),
+	("Delete a monthly bill", "Recurring Expense", "delete", (1, 0, 0, 0)),
+	("Delete an expense category", "Expense Category", "delete", (1, 0, 0, 0)),
 	("Delete a month closing", "Accounting Period", "delete", (1, 0, 0, 0)),
 	("Delete the shared expenses split", "Cost Center Allocation", "delete", (1, 0, 0, 0)),
 	("Close or reopen a month", "Accounting Period", "write", (1, 1, 0, 0)),
