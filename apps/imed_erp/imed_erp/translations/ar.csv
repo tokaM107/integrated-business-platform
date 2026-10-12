@@ -386,3 +386,10 @@ Accounting period {{ period }} closed,الفترة المحاسبية {{ period 
 Posting dated {{ start }} to {{ end }} is now blocked.,التسجيل بتاريخ من {{ start }} لـ {{ end }} بقى مقفول.
 "{0} is not a doctor. Choose a customer in the {1} group, or move this customer to it.",{0} مش طبيب. اختار عميل من مجموعة {1}، أو انقل العميل ده ليها.
 Not a Doctor,مش طبيب
+Term,ترم
+Round,راوند
+Suspended,موقوف
+"Worked out from the doctor's ledger: what is owed under this agreement after accruals, payments, charges and adjustments.",بيتحسب من دفتر الطبيب: المتبقي على الاتفاقية دي بعد المستحقات والمدفوعات والخصومات والتسويات.
+"A suspended agreement takes no new editions or subscriptions; its account can still be settled.",الاتفاقية الموقوفة مابتاخدش إصدارات ولا اشتراكات جديدة؛ بس حسابها ينفع يتسوّى.
+Agreement {0} is suspended. Make it Active again before adding to it.,الاتفاقية {0} موقوفة. رجّعها نشطة الأول قبل ما تضيف عليها.
+Agreement Suspended,اتفاقية موقوفة
