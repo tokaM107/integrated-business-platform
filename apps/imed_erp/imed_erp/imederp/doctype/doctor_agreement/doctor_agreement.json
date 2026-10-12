@@ -14,6 +14,7 @@
   "start_date",
   "settlement_cycle",
   "status",
+  "balance_direction",
   "balance",
   "terms_section",
   "terms",
@@ -70,6 +71,16 @@
    "label": "Status",
    "options": "Active\nSuspended",
    "reqd": 1
+  },
+  {
+   "description": "Set by the type: a books agreement owes the doctor his amount on copies sold; an app agreement has the doctor owe the group the platform fees.",
+   "fieldname": "balance_direction",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Balance Direction",
+   "no_copy": 0,
+   "options": "Owed to Doctor\nOwed by Doctor",
+   "read_only": 1
   },
   {
    "fieldname": "balance",
