@@ -22,7 +22,6 @@
   {
    "fieldname": "agreement",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Agreement",
    "options": "Doctor Agreement",
    "reqd": 1
@@ -128,5 +127,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1
+ "track_changes": 1,
+ "title_field": "agreement"
 }
