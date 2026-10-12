@@ -401,3 +401,9 @@ The term from {0} was already in force. Add a new row from a later date instead 
 Term Already Given,شرط ساري قبل كده
 Agreement {0} has no amount per copy in force on {1}. Add a term from that date or earlier.,الاتفاقية {0} مافيهاش حق للطبيب ساري يوم {1}. ضيف شرط من التاريخ ده أو قبله.
 No Agreement Term,مفيش شرط ساري
+Balance Direction,اتجاه الرصيد
+Owed to Doctor,مستحق للطبيب
+Owed by Doctor,مستحق على الطبيب
+"Set by the type: a books agreement owes the doctor his amount on copies sold; an app agreement has the doctor owe the group the platform fees.",بيتحدد من النوع: اتفاقية الكتب علينا فيها حق الطبيب على النسخ المباعة؛ واتفاقية التطبيق على الطبيب فيها رسوم المنصة للمجموعة.
+We owe the doctor {0} under this agreement.,علينا للطبيب {0} في الاتفاقية دي.
+The doctor owes us {0} under this agreement.,على الطبيب لينا {0} في الاتفاقية دي.
