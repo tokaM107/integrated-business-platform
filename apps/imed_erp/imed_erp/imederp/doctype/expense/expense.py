@@ -20,6 +20,8 @@ EVERY_MONTH = "Every Month"
 # replaces the owner's own approval of 8 Oct), and the owner keeps it. Every expense is posted only once a
 # holder approves it; an expense a holder records himself is approved as he submits it.
 APPROVER_ROLE = "Expense Approver"
+# The requirement role of the accountant (setup_users.py); approval requests and reminders go to him.
+ACCOUNTANT_ROLE = "Accountant"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
 
 # Set only by Request Approval, Approve and Reject. The form shows them read-only, but the server does not
@@ -278,6 +280,15 @@ def is_approver(user=None):
 
 
 def get_approvers():
+    """Who is asked to approve and reminded: the approvers who are accountants (owner's decision of 12 Oct
+    2026). The owner holds the role too and can approve an expense he opens, but is not notified of each one.
+    Should no accountant hold the role, every approver is asked, so a request never goes unseen."""
+    approvers = all_approvers()
+    accountants = set(frappe.get_all("Has Role", filters={"role": ACCOUNTANT_ROLE, "parenttype": "User"}, pluck="parent"))
+    return [user for user in approvers if user in accountants] or approvers
+
+
+def all_approvers():
     users = frappe.get_all("Has Role", filters={"role": APPROVER_ROLE, "parenttype": "User"}, pluck="parent")
     # Administrator holds every role but is the developers' account, not a person to ask.
     users = [user for user in users if user != "Administrator"]
