@@ -13,6 +13,7 @@ from frappe.model.document import Document
 from frappe.utils import flt, getdate, nowtime, today
 
 from imed_erp.imederp.stock_count import branch_of
+from imed_erp.imederp.system_user import as_administrator
 
 # Holders may date a count other than now (a count made yesterday, entered today); the reconciliation it makes
 # is posted at that date and reposts everything after it, so branch managers cannot.
@@ -108,13 +109,9 @@ class StockCount(Document):
 		# user's own Stock Reconciliation rights while working out the balance, whatever the flags say.
 		# Counted By keeps who counted.
 		reconciliation.flags.from_stock_count = True
-		user = frappe.session.user
-		frappe.set_user("Administrator")
-		try:
+		with as_administrator():
 			reconciliation.insert()
 			reconciliation.submit()
-		finally:
-			frappe.set_user(user)
 		self.db_set("stock_reconciliation", reconciliation.name)
 
 	def on_cancel(self):
