@@ -489,6 +489,10 @@ branch is the store's.
   in User Permission); the owner and the accountant count any store and cancel a count. A posted count is
   never deleted, and none is saved or cancelled in a closed month.
 
+**Services have no warehouse.** Printing, copying, binding, hall and studio hours are not stock, so
+`imederp/services.py` clears the warehouse ERPNext puts on their Sales / POS Invoice rows anyway. Without it, a
+branch manager's desk invoice for a service was refused for a store outside her branch.
+
 **Paper used for printing and copying** (`imederp/paper_use.py`, owner's decision of 12 Oct 2026):
 printing and copying are services, so selling them took no paper out of stock and the next count showed the
 sheets used as a shortage. Now a submitted Sales Invoice (a POS shift reaches it as the closing invoice)
