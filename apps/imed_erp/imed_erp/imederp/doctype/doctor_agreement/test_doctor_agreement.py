@@ -292,3 +292,24 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.entry(app.name, "Accrual", 150)
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", books.name, ["balance", "last_settlement_amount"]), (0, 500))
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", app.name, ["balance", "last_settlement_amount"]), (150, 0))
+
+	def test_a_books_agreement_cannot_be_a_percentage(self):
+		# Owner's decision: the doctor's share is a fixed amount per copy. No field takes a percentage, and an
+		# agreement sent with one (through the API) and no amount per copy is refused.
+		for doctype in ("Doctor Agreement", "Doctor Agreement Term"):
+			meta = frappe.get_meta(doctype)
+			with self.subTest(doctype):
+				self.assertFalse([f.fieldname for f in meta.fields if f.fieldtype == "Percent"])
+				self.assertFalse([f.fieldname for f in meta.fields if f.fieldtype == "Select" and "Percentage" in (f.options or "")])
+		agreement = frappe.get_doc(
+			{
+				"doctype": "Doctor Agreement",
+				"agreement_name": "_Test Percentage",
+				"doctor": make_doctor(),
+				"agreement_type": "Books",
+				"settlement_cycle": "Term",
+				"share_type": "Percentage",
+				"share_value": 10,
+			}
+		)
+		self.assertRaisesRegex(frappe.ValidationError, "amount per copy", agreement.insert)
