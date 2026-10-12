@@ -42,11 +42,15 @@ class StockCount(Document):
 		self.set_differences()
 
 	def set_count_time(self):
-		# A branch manager's count is dated when it is saved, whatever was typed; submitting keeps that date,
-		# and before_submit refuses one saved on another day.
-		if self.docstatus == 0 and not can_date_counts():
-			self.posting_date = today()
-			self.posting_time = nowtime()
+		# A branch manager's count is dated when it is first saved, whatever was typed: the quantities were
+		# counted then, and later saves (a typo fixed) keep that moment so they are compared with the stock as
+		# it was. Submitting keeps it too, and before_submit refuses one saved on another day.
+		if self.docstatus != 0 or can_date_counts():
+			return
+		if self.is_new():
+			self.posting_date, self.posting_time = today(), nowtime()
+		else:
+			self.posting_date, self.posting_time = frappe.db.get_value("Stock Count", self.name, ["posting_date", "posting_time"])
 
 	def check_own_branch(self):
 		# A branch manager counts only their own branch's stores (their cost centers in User Permission).
