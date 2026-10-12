@@ -37,7 +37,6 @@
   {
    "fieldname": "edition_name",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Edition Name",
    "reqd": 1,
    "unique": 1
@@ -152,7 +151,8 @@
    "fieldname": "selling_price",
    "fieldtype": "Currency",
    "label": "Final Selling Price per Copy",
-   "description": "Left empty, the calculated price. Another price can be set by hand, higher or lower (to sell more); the difference is the library's."
+   "description": "Left empty, the calculated price. Another price can be set by hand, higher or lower (to sell more); the difference is the library's.",
+   "in_list_view": 1
   },
   {
    "fieldname": "rounding_diff",
