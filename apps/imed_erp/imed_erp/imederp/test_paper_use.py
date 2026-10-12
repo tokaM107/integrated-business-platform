@@ -21,8 +21,6 @@ AZARITA = f"مكتبة الأزاريطة - {ABBR}"
 MAWASAH_STORE = f"خامات المواساة - {ABBR}"
 AZARITA_STORE = f"خامات الأزاريطة - {ABBR}"
 COGS = f"تكلفة البضاعة المباعة - {ABBR}"
-# The warehouse each library's point of sale sells from (setup_library.py POS_PROFILES).
-SALES_WAREHOUSE = {MAWASAH: f"إصدارات الأطباء — المواساة - {ABBR}", AZARITA: f"إصدارات الأطباء — الأزاريطة - {ABBR}"}
 RAGHAD = "raghad@imed.local"
 
 
@@ -67,10 +65,7 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 					"customer": self.customer,
 					"posting_date": today(),
 					"cost_center": library,
-					"items": [
-						{"item_code": item, "qty": qty, "rate": 1, "cost_center": library, "warehouse": SALES_WAREHOUSE[library]}
-						for item, qty in rows
-					],
+					"items": [{"item_code": item, "qty": qty, "rate": 1, "cost_center": library} for item, qty in rows],
 				}
 			).insert()
 			invoice.submit()
@@ -153,3 +148,10 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		self.assertIn("imed_erp.imederp.stock_reorder.alert_on_reorder_level", events["Sales Invoice"]["on_submit"])
 		self.assertIn("imed_erp.imederp.paper_use.cancel_paper_used", events["Sales Invoice"]["on_cancel"])
 		self.assertIn("imed_erp.imederp.paper_use.block_cancel_of_paper_issue", events["Stock Entry"]["before_cancel"])
+
+	def test_a_branch_manager_sells_services_from_the_desk(self):
+		# Services carry no warehouse, so Sara's User Permissions (her branch's stores only) do not stop her.
+		self.receive(100, AZARITA_STORE)
+		invoice = self.sell([("COPY-SVC", 5), ("BINDING-SVC", 1)], library=AZARITA, user="sara@imed.local")
+		self.assertEqual(invoice.docstatus, 1)
+		self.assertEqual({row.warehouse for row in invoice.items}, {None})
