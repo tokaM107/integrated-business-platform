@@ -23,7 +23,7 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GR
 EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 # Linked records already exist on the site or are made by the tests; without this list Frappe builds
 # ERPNext's "_Test ..." records and commits them to the site.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
 
 
 
@@ -235,3 +235,60 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.assertEqual(
 			frappe.db.get_value("Doctor Agreement", app.name, ["balance_direction", "balance"]), ("Owed by Doctor", 200)
 		)
+
+	def period(self, name, period_type, start, end, parent=None, closed=0):
+		return frappe.get_doc(
+			{
+				"doctype": "Academic Period",
+				"period_name": name,
+				"period_type": period_type,
+				"parent_period": parent,
+				"start_date": start,
+				"end_date": end,
+				"is_closed": closed,
+			}
+		).insert().name
+
+	def test_the_summary_shows_the_last_settlement_and_the_next(self):
+		from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import next_settlement_date
+
+		# Two terms: one already ended, one ending in the future. The next settlement is the open one's end.
+		self.period("_Test Past Term", "Term", "2025-09-01", "2026-01-31")
+		self.period("_Test Next Term", "Term", "2026-02-01", "2099-01-31")
+		self.assertEqual(str(next_settlement_date("Term", "2026-10-12")), "2099-01-31")
+		# A closed period is not waited for.
+		self.period("_Test Closed Term", "Term", "2026-02-01", "2098-01-31", closed=1)
+		self.assertEqual(str(next_settlement_date("Term", "2026-10-12")), "2099-01-31")
+
+		agreement = self.agreement(make_doctor(), "_Test Summary").insert()
+		self.assertEqual(str(agreement.next_settlement_date), "2099-01-31")
+
+		# The last settlement is the latest payment; an accrual is not one.
+		self.entry(agreement.name, "Accrual", 800)
+		self.entry(agreement.name, "Payment", 300)
+		later = frappe.get_doc(
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2099-01-01", "entry_type": "Payment", "amount": 200}
+		).insert()
+		later.submit()
+		self.assertEqual(
+			frappe.db.get_value("Doctor Agreement", agreement.name, ["balance", "last_settlement_date", "last_settlement_amount"]),
+			(300, frappe.utils.getdate("2099-01-01"), 200),
+		)
+		later.cancel()
+		self.assertEqual(
+			frappe.db.get_value("Doctor Agreement", agreement.name, ["last_settlement_date", "last_settlement_amount"]),
+			(frappe.utils.getdate(today()), 300),
+		)
+
+	def test_each_agreement_has_its_own_summary(self):
+		# DOC-29: a doctor's agreements keep separate balances and settlements; nothing is offset.
+		doctor = make_doctor("_Test Summary Doctor")
+		books = self.agreement(doctor, "_Test Summary Books").insert()
+		app = self.agreement(doctor, "_Test Summary App")
+		app.agreement_type = "App"
+		app.insert()
+		self.entry(books.name, "Accrual", 500)
+		self.entry(books.name, "Payment", 500)
+		self.entry(app.name, "Accrual", 150)
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", books.name, ["balance", "last_settlement_amount"]), (0, 500))
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", app.name, ["balance", "last_settlement_amount"]), (150, 0))
