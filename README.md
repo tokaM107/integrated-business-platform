@@ -678,8 +678,7 @@ copy (from his agreement's terms in force on the edition's date), with the libra
 The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
 hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
 the doctor's amount, and a price below the cost of a copy is saved with a warning. Editions belong to a
-library only. A books agreement with a percentage gives no amount per copy: the edition warns that the
-doctor's amount is missing until it is typed in.
+library only. A books agreement is always a fixed amount per copy, never a percentage (owner's decision).
 
 The rates change several times a year, so the owner and the accountant set them on **Printing Cost
 Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
