@@ -419,4 +419,17 @@ The start of the period being settled.,بداية الفترة اللي بتتس
 Enter the settlement period's dates.,اكتب تواريخ فترة التسوية.
 The settlement period ends before it starts. Check its dates.,فترة التسوية بتخلص قبل ما تبدأ. راجع التواريخ.
 Settlement Period,فترة التسوية
-Money paid out is recorded as an Expense, which the accountant approves. Make an Expense instead.,أي فلوس بتتصرف بتتسجل مصروف، والمحاسب بيوافق عليه. اعمل مصروف بدل كده.
+"Money paid out is recorded as an Expense, which the accountant approves. Make an Expense instead.",أي فلوس بتتصرف بتتسجل مصروف، والمحاسب بيوافق عليه. اعمل مصروف بدل كده.
+Accrual,مستحق
+Cancellation Charge,خصم إلغاء
+Adjustment,تسوية
+Doctor Agreement Term,شرط اتفاقية طبيب
+Agreement {0} is not submitted yet. Submit it before adding to it.,الاتفاقية {0} لسه ماتسجلتش. سجّلها الأول قبل ما تضيف عليها.
+Agreement Not Submitted,اتفاقية مش متسجلة
+Agreement {0} was cancelled. Use its amended copy.,الاتفاقية {0} اتلغت. استخدم النسخة المعدّلة منها.
+Agreement Cancelled,اتفاقية ملغية
+"A new term starts after the last one, {0}. An earlier date would change editions already priced.",الشرط الجديد لازم يبدأ بعد آخر شرط، {0}. التاريخ الأقدم هيغيّر إصدارات اتسعّرت خلاص.
+The amount must be greater than zero; an Adjustment carries its own sign.,المبلغ لازم يبقى أكبر من صفر؛ التسوية بس هي اللي بتتكتب بإشارتها.
+An adjustment needs an amount.,التسوية محتاجة مبلغ.
+A cancellation charge is for a books agreement.,خصم الإلغاء لاتفاقية الكتب بس.
+Edition {0} belongs to another agreement.,الإصدار {0} تبع اتفاقية تانية.
