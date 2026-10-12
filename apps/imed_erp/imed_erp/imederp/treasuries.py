@@ -100,3 +100,21 @@ def check_entry_treasuries(doc, method=None):
                 _("{0} is not your business's treasury. You can use: {1}.").format(treasury, ", ".join(sorted(allowed)) or "-"),
                 title=_("Wrong Treasury"),
             )
+
+
+def block_spending_without_approval(doc, method=None):
+    """Purchase Invoice and Payment Entry validate hook: money paid out is an Expense, which the accountant
+    approves (owner's decision of 12 Oct 2026). Only an approver (the accountant, the owner) pays a purchase on
+    the spot or records a payment out; a branch manager still takes payments in."""
+    from imed_erp.imederp.doctype.expense.expense import is_approver
+
+    if is_approver() or doc.flags.from_expense or doc.flags.from_inter_business_transfer:
+        return
+    paying = (doc.doctype == "Purchase Invoice" and doc.is_paid) or (
+        doc.doctype == "Payment Entry" and doc.payment_type in ("Pay", "Internal Transfer")
+    )
+    if paying:
+        frappe.throw(
+            _("Money paid out is recorded as an Expense, which the accountant approves. Make an Expense instead."),
+            title=_("Approval Needed"),
+        )
