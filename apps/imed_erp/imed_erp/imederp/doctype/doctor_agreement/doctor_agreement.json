@@ -11,10 +11,12 @@
   "agreement_name",
   "doctor",
   "agreement_type",
+  "start_date",
+  "settlement_cycle",
+  "status",
+  "balance",
   "share_type",
   "share_value",
-  "settlement_cycle",
-  "balance",
   "amended_from"
  ],
  "fields": [
@@ -43,6 +45,42 @@
    "reqd": 1
   },
   {
+   "default": "Today",
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Start Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "settlement_cycle",
+   "fieldtype": "Select",
+   "label": "Settlement Cycle",
+   "options": "Module\nTerm\nRound",
+   "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "Active",
+   "description": "A suspended agreement takes no new editions or subscriptions; its account can still be settled.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Active\nSuspended",
+   "reqd": 1
+  },
+  {
+   "fieldname": "balance",
+   "fieldtype": "Currency",
+   "label": "Balance",
+   "read_only": 1,
+   "description": "Worked out from the doctor's ledger: what is owed under this agreement after accruals, payments, charges and adjustments.",
+   "no_copy": 1,
+   "in_list_view": 1
+  },
+  {
    "fieldname": "share_type",
    "fieldtype": "Select",
    "label": "Doctor Share Type",
@@ -52,18 +90,6 @@
    "fieldname": "share_value",
    "fieldtype": "Currency",
    "label": "Share Value"
-  },
-  {
-   "fieldname": "settlement_cycle",
-   "fieldtype": "Select",
-   "label": "Settlement Cycle",
-   "options": "Module\nRound\nTerm"
-  },
-  {
-   "fieldname": "balance",
-   "fieldtype": "Currency",
-   "label": "Balance",
-   "read_only": 1
   },
   {
    "fieldname": "amended_from",
@@ -80,7 +106,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 18:00:00.000000",
+ "modified": "2026-10-12 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Agreement",
