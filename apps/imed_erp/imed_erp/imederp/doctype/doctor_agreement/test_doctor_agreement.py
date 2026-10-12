@@ -236,32 +236,35 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 			frappe.db.get_value("Doctor Agreement", app.name, ["balance_direction", "balance"]), ("Owed by Doctor", 200)
 		)
 
-	def period(self, name, period_type, start, end, parent=None, closed=0):
-		return frappe.get_doc(
-			{
-				"doctype": "Academic Period",
-				"period_name": name,
-				"period_type": period_type,
-				"parent_period": parent,
-				"start_date": start,
-				"end_date": end,
-				"is_closed": closed,
-			}
-		).insert().name
+	def test_the_settlement_period_is_entered_by_the_accountant(self):
+		# Each year has its own dates (owner, 12 Oct 2026): the next settlement is the end of the period the
+		# accountant enters, and it can move on after the agreement is submitted.
+		agreement = self.agreement(make_doctor(), "_Test Settlement Period")
+		agreement.settlement_from, agreement.next_settlement_date = "2026-10-01", "2026-09-01"
+		self.assertRaisesRegex(frappe.ValidationError, "ends before it starts", agreement.insert)
+		agreement.next_settlement_date = "2026-12-31"
+		agreement.insert()
+		agreement.submit()
 
-	def test_the_summary_shows_the_last_settlement_and_the_next(self):
-		from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import next_settlement_date
+		agreement = frappe.get_doc("Doctor Agreement", agreement.name)
+		agreement.settlement_from, agreement.next_settlement_date = "2027-01-01", "2027-03-31"
+		agreement.save()
+		self.assertEqual(str(frappe.db.get_value("Doctor Agreement", agreement.name, "next_settlement_date")), "2027-03-31")
 
-		# Two terms: one already ended, one ending in the future. The next settlement is the open one's end.
-		self.period("_Test Past Term", "Term", "2025-09-01", "2026-01-31")
-		self.period("_Test Next Term", "Term", "2026-02-01", "2099-01-31")
-		self.assertEqual(str(next_settlement_date("Term", "2026-10-12")), "2099-01-31")
-		# A closed period is not waited for.
-		self.period("_Test Closed Term", "Term", "2026-02-01", "2098-01-31", closed=1)
-		self.assertEqual(str(next_settlement_date("Term", "2026-10-12")), "2099-01-31")
+	def test_a_submitted_agreement_opened_on_screen_can_be_suspended(self):
+		# The form was opened, then a ledger entry changed the balance before it was saved: the save still
+		# goes through, with the balance read again from the ledger.
+		agreement = self.agreement(make_doctor(), "_Test Open Form").insert()
+		agreement.submit()
+		on_screen = frappe.get_doc("Doctor Agreement", agreement.name)
+		on_screen.run_method("onload")
+		self.entry(agreement.name, "Accrual", 400)
+		on_screen.status = "Suspended"
+		on_screen.save()
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, ["status", "balance"]), ("Suspended", 400))
 
+	def test_the_summary_shows_the_last_settlement(self):
 		agreement = self.agreement(make_doctor(), "_Test Summary").insert()
-		self.assertEqual(str(agreement.next_settlement_date), "2099-01-31")
 
 		# The last settlement is the latest payment; an accrual is not one.
 		self.entry(agreement.name, "Accrual", 800)
