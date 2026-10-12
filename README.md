@@ -662,6 +662,11 @@ A **Doctor Agreement** holds the doctor, the type (Books or App), the start date
 amendment) stops new editions and subscriptions on it, while its account can still be settled. **Balance**
 is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
 add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
+**Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
+App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
+never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
+colour (orange: we owe the doctor; blue: the doctor owes us), and the list shows each agreement in the same
+colours, a suspended one in grey.
 
 A books agreement's **Agreement Terms** give the doctor's amount per copy sold from each date (a row with no
 date starts with the agreement). A new amount is a new row from a later date, added without amending the
