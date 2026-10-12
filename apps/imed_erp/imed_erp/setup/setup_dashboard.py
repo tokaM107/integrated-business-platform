@@ -130,39 +130,74 @@ for ch in charts:
 frappe.db.commit()
 
 # ---------------- Shortcuts ----------------
-shortcuts = [
+# The owner follows everything himself and mostly confirms (owner, 12 Oct 2026): what waits for him comes
+# first, with its count, then one click to every list of the staff's work, then the reports. The section
+# headers are written in Arabic (a workspace header is shown as written); the shortcut labels are translated.
+def waiting(doctype, label, filters):
+    return {
+        "type": "DocType", "link_to": doctype, "label": label, "doc_view": "List", "color": "Orange",
+        "stats_filter": frappe.as_json([[doctype, *f] for f in filters]), "format": "{} مستني",
+    }
+
+
+approvals = [
+    waiting("Expense", "Expenses Waiting for Approval", [["approval_status", "=", "Pending Approval"], ["docstatus", "=", 0]]),
+    waiting("Book Edition", "Editions to Approve", [["docstatus", "=", 0]]),
+    waiting("Inter Business Transfer", "Transfers to Confirm", [["status", "=", "Sent"]]),
+]
+follow_up = []
+for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
+                     ("Expense", "Expenses", "Orange"),
+                     ("Purchase Invoice", "Purchases", "Blue"),
+                     ("Stock Count", "Stock Counts", "Cyan"),
+                     ("Stock Entry", "Stock Movements", "Grey"),
+                     ("Material Request", "Branch Requests", "Grey"),
+                     ("Doctor Agreement", "Doctor Agreements", "Purple"),
+                     ("Book Edition", "Book Editions", "Purple"),
+                     ("Printer Reading", "Paper Counters", "Cyan"),
+                     ("App Subscription", "App Subscriptions", "Pink"),
+                     ("Version", "All Changes", "Grey")]:
+    if frappe.db.exists("DocType", dt):
+        follow_up.append({"type": "DocType", "link_to": dt, "label": lbl, "color": col, "doc_view": "List"})
+reports = [
     {"type": "Report", "link_to": "Profit and Loss Statement", "label": "Profit per Business", "color": "Green", "doc_view": ""},
     {"type": "Report", "link_to": "Stock Balance", "label": "Stock & Paper", "color": "Blue", "doc_view": ""},
     {"type": "Report", "link_to": "General Ledger", "label": "Cash Movements", "color": "Grey", "doc_view": ""},
     {"type": "Report", "link_to": "Accounts Receivable", "label": "Who Owes Us", "color": "Orange", "doc_view": ""},
 ]
-for dt, lbl, col in [("Doctor Agreement", "Doctor Agreements", "Purple"),
-                     ("Book Edition", "Book Editions", "Purple"),
-                     ("Printer Reading", "Paper Counters", "Cyan"),
-                     ("App Subscription", "App Subscriptions", "Pink")]:
-    if frappe.db.exists("DocType", dt):
-        shortcuts.append({"type": "DocType", "link_to": dt, "label": lbl, "color": col})
+for report, lbl, col in [("Expense Report", "Expense Report", "Orange"), ("Stock Count Variance", "Stock Count Variance", "Red")]:
+    if frappe.db.exists("Report", report):
+        reports.append({"type": "Report", "link_to": report, "label": lbl, "color": col, "doc_view": ""})
+shortcuts = approvals + follow_up + reports
+
+
+def header(text):
+    return [{"type": "header", "data": {"text": f"<span class=\"h4\"><b>{text}</b></span>", "col": 12}}]
+
+
+def spacer():
+    return [{"type": "spacer", "data": {"col": 12}}]
+
 
 # ---------------- Content layout ----------------
-content = [{"type": "header", "data": {"text": "<span>Key Numbers</span>", "col": 12}}]
+content = header("محتاج موافقتك")
+content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 4}} for s in approvals]
+
+content += spacer() + header("الأرقام")
 for c in created_cards:
     content.append({"type": "number_card", "data": {"number_card_name": c["real"], "col": 4}})
 
 if created_charts:
-    content += [
-        {"type": "spacer", "data": {"col": 12}},
-        {"type": "header", "data": {"text": "<span>Charts</span>", "col": 12}},
-    ]
+    content += spacer() + header("الرسوم")
     for ch in created_charts:
         col = 12 if ch["ctype"] == "Line" else 6
         content.append({"type": "chart", "data": {"chart_name": ch["real"], "col": col}})
 
-content += [
-    {"type": "spacer", "data": {"col": 12}},
-    {"type": "header", "data": {"text": "<span>Reports & Modules</span>", "col": 12}},
-]
-for s in shortcuts:
-    content.append({"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 3}})
+content += spacer() + header("متابعة شغل الموظفين")
+content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 3}} for s in follow_up]
+
+content += spacer() + header("التقارير")
+content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 3}} for s in reports]
 
 # ---------------- Workspace ----------------
 if frappe.db.exists("Workspace", "Owner Dashboard"):
@@ -184,6 +219,12 @@ ws = frappe.get_doc({
     "charts": [{"chart_name": ch["real"], "label": ch["label"]} for ch in created_charts],
     "shortcuts": shortcuts,
 }).insert()
+
+# The owner lands on his dashboard when he logs in.
+for user in frappe.get_all("Has Role", filters={"role": "Super Admin", "parenttype": "User"}, pluck="parent"):
+    if user != "Administrator" and frappe.db.get_value("User", user, "default_workspace") != ws.name:
+        frappe.db.set_value("User", user, "default_workspace", ws.name)
+        print(f"set    User {user}: opens on {ws.name}")
 
 frappe.db.commit()
 print("\nWorkspace ready:", ws.name)
