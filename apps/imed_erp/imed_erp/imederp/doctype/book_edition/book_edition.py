@@ -3,6 +3,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt
 
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_active, get_amount_per_copy
 from imed_erp.imederp.doctype.printer_reading.printer_reading import LIBRARIES
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 
@@ -45,21 +46,23 @@ class BookEdition(Document):
 
     def validate_agreement(self):
         # DOC-02: an edition belongs to a books agreement, not to an app one.
-        agreement = frappe.db.get_value(
-            "Doctor Agreement", self.agreement, ["agreement_type", "share_type", "share_value"], as_dict=True
-        )
-        if agreement and agreement.agreement_type != "Books":
+        if frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type") != "Books":
             frappe.throw(_("Agreement {0} is not a books agreement.").format(self.agreement))
-        # The doctor names his amount per copy; the library prices the rest on top of it.
-        if agreement and agreement.share_type == "Fixed" and not self.doctor_share:
-            self.doctor_share = agreement.share_value
-        # The price is built on an amount per copy; a percentage gives none, so the doctor would get nothing.
-        if agreement and agreement.share_type == "Percentage" and not flt(self.doctor_share):
-            frappe.msgprint(
-                _("Agreement {0} gives the doctor a percentage, not an amount per copy. Enter it in Doctor's Amount per Copy, or the doctor gets nothing from this edition.").format(self.agreement),
-                title=_("Doctor's Amount Missing"),
-                indicator="orange",
+        if self.docstatus != 0:
+            # A submitted edition keeps the amount it was priced with.
+            return
+        check_active(self.agreement)
+        # The doctor names his amount per copy (the agreement's term in force on the edition's date); the
+        # library prices the rest on top of it. A later term does not change this edition.
+        amount = get_amount_per_copy(self.agreement, self.edition_date)
+        if amount is None:
+            frappe.throw(
+                _("Agreement {0} has no amount per copy in force on {1}. Add a term from that date or earlier.").format(
+                    self.agreement, frappe.format_value(self.edition_date, {"fieldtype": "Date"})
+                ),
+                title=_("No Agreement Term"),
             )
+        self.doctor_share = amount
 
     def set_rates(self):
         rates = get_rates()

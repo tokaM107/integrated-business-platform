@@ -304,7 +304,7 @@ without changing anything if they do not (so a user is never created without the
 
 | Script | What it does |
 |---|---|
-| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. |
+| `setup_core.py` | Run first. On a new site it completes the setup wizard (company MMG, EGP, fiscal year Sep–Aug). Then: cost center tree, warehouses (Mawasah, the main one, with its raw materials, doctors' editions and damaged stock; Azarita's raw materials and editions as a separate branch; the center's office supplies), UOMs (`ورقة` sheet, `رزمة` ream = 500 sheets, `كرتونة` box = 5 reams = 2500 sheets, `ساعة` hour) and items. Paper (item group `ورق`) is stocked in sheets, bought by the box and valued at moving average (see *Paper units and cost* below); the hall and studio hours are sold by the hour. Runs `setup_coa.py` itself, after the warehouses. The customer group `طبيب`: a doctor is a Customer in it (CRM-01). |
 | `setup_regional.py` | Regional settings: EGP currency (symbol `EGP`, 2 decimals), fiscal years 2026-2027 and 2027-2028 (1 Sep – 31 Aug, linked to the company; a wrongly dated year with nothing posted in it, e.g. the Jul–Jun one the browser wizard creates, is replaced), Arabic interface for users / English for Administrator, rounded totals off, MMG Sales Invoice as the default invoice print format, date format `dd-mm-yyyy`, 24-hour time, number format `1,234,567.89`, commercial (half-up) rounding, week starting Saturday. |
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
@@ -653,8 +653,36 @@ document linked to a closed academic period cannot be saved either.
 main treasury), plus `InstaPay` and `Vodafone Cash`, which post to the group's wallets (`setup_library.py`). The other businesses take cash the same
 way into their own cash boxes: `نقدي — قاعات Imed` (the center's), `نقدي — استوديو X` and `نقدي — تطبيق BA Plus`.
 
+**Doctors.** A doctor is a Customer in the group `طبيب` (CRM-01), one record whatever they buy or earn. A
+Doctor Agreement's doctor can only be one of them: the screen lists only that group, and the server refuses
+any other customer.
+
+A **Doctor Agreement** holds the doctor, the type (Books or App), the start date, the settlement cycle
+(Module, Term or Round) and its status. **Suspended** (it can be set after the agreement is submitted, with no
+amendment) stops new editions and subscriptions on it, while its account can still be settled. **Balance**
+is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
+add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
+**Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
+App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
+never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
+colour (orange: we owe the doctor; blue: the doctor owes us), and the list shows each agreement in the same
+colours, a suspended one in grey.
+
+The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
+the **last settlement** (the latest payment in the doctor's ledger, updated with the balance whenever an
+entry is submitted or cancelled) and the **next settlement** (the end of the nearest academic period of the
+agreement's settlement cycle that has not ended or been closed, worked out each time the agreement is
+opened; empty until such a period is set up). The top of the screen shows the balance and the next
+settlement together.
+
+A books agreement's **Agreement Terms** give the doctor's amount per copy sold from each date (a row with no
+date starts with the agreement). A new amount is a new row from a later date, added without amending the
+agreement; a term already given is never changed or removed. An edition has an **Edition Date** and takes the
+amount in force on it, read-only on the edition, and a submitted edition keeps its amount: going from 80 to
+100 a copy from 1 November leaves the editions priced at 80 as they were.
+
 **Doctors' editions and the app.** An edition's price per copy is built on what the doctor asks for each
-copy (from his agreement, as a fixed amount), with the library's costs and profit on top:
+copy (from his agreement's terms in force on the edition's date), with the library's costs and profit on top:
 
 > (paper + ink + overheads + profit) per sheet × sheets per copy + binding + marketing (optional) + the
 > doctor's amount.
@@ -662,8 +690,7 @@ copy (from his agreement, as a fixed amount), with the library's costs and profi
 The price is not rounded (owner's decision, instead of DOC-28's rounding). Another price can be set by
 hand, higher or lower (to sell more): the difference is added to or taken from the library's profit, never
 the doctor's amount, and a price below the cost of a copy is saved with a warning. Editions belong to a
-library only. A books agreement with a percentage gives no amount per copy: the edition warns that the
-doctor's amount is missing until it is typed in.
+library only. A books agreement is always a fixed amount per copy, never a percentage (owner's decision).
 
 The rates change several times a year, so the owner and the accountant set them on **Printing Cost
 Settings** (waste, ink, overheads and profit per sheet; binding per copy), and every change is recorded.
@@ -717,6 +744,9 @@ docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
