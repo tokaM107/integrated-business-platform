@@ -280,3 +280,32 @@ class IntegrationTestStockCount(IntegrationTestCase):
 		count.items[0].counted_qty = 0
 		count.insert()
 		self.assertEqual(count.items[0].difference_qty, -self.on_hand()[0])
+
+	def test_a_branch_manager_counts_now_not_in_the_past(self):
+		# A backdated count would repost every stock entry after it; only the accountant dates a count.
+		self.receive_two_boxes()
+		frappe.set_user(RAGHAD)
+		count = frappe.get_doc(
+			{
+				"doctype": "Stock Count",
+				"store": STORE,
+				"posting_date": frappe.utils.add_days(today(), -20),
+				"items": [{"item_code": PAPER, "counted_qty": self.on_hand()[0]}],
+			}
+		).insert()
+		self.assertEqual(str(count.posting_date), today())
+
+		# Saved one day, submitted another: counted again.
+		frappe.db.set_value("Stock Count", count.name, "posting_date", frappe.utils.add_days(today(), -1))
+		self.assertRaisesRegex(frappe.ValidationError, "count again today", frappe.get_doc("Stock Count", count.name).submit)
+
+		frappe.set_user(ACCOUNTANT)
+		dated = frappe.get_doc(
+			{
+				"doctype": "Stock Count",
+				"store": STORE,
+				"posting_date": frappe.utils.add_days(today(), -1),
+				"items": [{"item_code": PAPER, "counted_qty": self.on_hand()[0]}],
+			}
+		).insert()
+		self.assertEqual(str(dated.posting_date), frappe.utils.add_days(today(), -1))
