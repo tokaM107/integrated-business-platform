@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate
+from frappe.utils import flt, getdate, today
 
 # A doctor is a Customer in this group (CRM-01): one record for the person, whatever they buy or earn.
 # setup/setup_core.py makes it.
@@ -24,7 +24,12 @@ BALANCE_SIGN = {"Accrual": 1, "Payment": -1, "Cancellation Charge": -1, "Adjustm
 
 
 class DoctorAgreement(Document):
+	def onload(self):
+		# The next settlement moves on as periods end, so it is worked out each time the agreement is opened.
+		self.next_settlement_date = next_settlement_date(self.settlement_cycle)
+
 	def validate(self):
+		self.next_settlement_date = next_settlement_date(self.settlement_cycle)
 		self.validate_doctor()
 		self.balance_direction = DIRECTION.get(self.agreement_type)
 		self.validate_terms()
@@ -92,6 +97,33 @@ def get_amount_per_copy(agreement, date):
 	return flt(terms[0].amount_per_copy) if terms else None
 
 
+def next_settlement_date(cycle, on=None):
+	"""DOC-05/29: the end of the nearest academic period of the agreement's cycle that has not ended or been
+	closed. None when no such period is set up yet."""
+	if not cycle:
+		return None
+	periods = frappe.get_all(
+		"Academic Period",
+		filters={"period_type": cycle, "is_closed": 0, "end_date": [">=", on or today()]},
+		pluck="end_date",
+		order_by="end_date asc",
+		limit=1,
+	)
+	return periods[0] if periods else None
+
+
+def last_settlement(agreement):
+	"""(date, amount) of the latest payment on the agreement in the doctor's ledger, or (None, 0)."""
+	payments = frappe.get_all(
+		"Doctor Ledger Entry",
+		filters={"agreement": agreement, "entry_type": "Payment", "docstatus": 1},
+		fields=["entry_date", "amount"],
+		order_by="entry_date desc, creation desc",
+		limit=1,
+	)
+	return (payments[0].entry_date, flt(payments[0].amount)) if payments else (None, 0)
+
+
 def get_balance(agreement):
 	"""What is owed under the agreement: its submitted ledger entries, each with the sign of its kind."""
 	entries = frappe.get_all(
@@ -101,8 +133,15 @@ def get_balance(agreement):
 
 
 def update_balance(agreement):
-	"""The Balance field is read-only and kept up to date from the ledger (Doctor Ledger Entry submit and cancel)."""
-	frappe.db.set_value("Doctor Agreement", agreement, "balance", get_balance(agreement), update_modified=False)
+	"""The account summary is read-only and kept up to date from the ledger (Doctor Ledger Entry submit and
+	cancel): the balance and the last settlement. Each agreement has its own; none is offset against another."""
+	date, amount = last_settlement(agreement)
+	frappe.db.set_value(
+		"Doctor Agreement",
+		agreement,
+		{"balance": get_balance(agreement), "last_settlement_date": date, "last_settlement_amount": amount},
+		update_modified=False,
+	)
 
 
 def check_active(agreement):
