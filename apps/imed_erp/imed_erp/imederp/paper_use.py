@@ -15,7 +15,9 @@ from frappe import _
 from frappe.utils import flt
 
 from imed_erp.imederp.doctype.book_edition.book_edition import LIBRARY_PAPER_STORE, PAPER
+from imed_erp.imederp.doctype.expense.expense import get_approvers
 from imed_erp.imederp.system_user import as_administrator
+from imed_erp.notification_service import notify
 
 # Service item -> sheets of A4 paper per unit sold. Both are sold by the sheet (1 EGP a sheet).
 SHEETS_PER_UNIT = {"PRINT-SVC": 1, "COPY-SVC": 1}
@@ -69,20 +71,22 @@ def issue_paper_used(doc, method=None):
 		)
 		issue.flags.from_paper_use = True
 		# Posted in the system's name: the cashier sells printing, she does not issue stock.
+		enough = on_hand(store, doc.posting_date, doc.posting_time) >= sheets
+		if not enough:
+			# The store shows fewer sheets than were sold: the sale stands, and the issue waits as a draft for
+			# the accountant. It is not tied to the sale's time, so once the missing paper is received he
+			# submits it as it is, dated the day he does.
+			issue.set_posting_time = 0
 		with as_administrator():
 			issue.insert()
-			if on_hand(store, doc.posting_date, doc.posting_time) >= sheets:
+			if enough:
 				issue.submit()
-			else:
-				# The store shows fewer sheets than were sold: the sale stands, and the issue waits as a draft
-				# for the accountant, who receives the missing paper or corrects the count first.
-				frappe.msgprint(
-					_("{0} has fewer sheets than the {1} sold for printing and copying. The paper issue {2} is saved as a draft for the accountant.").format(
-						store, sheets, issue.name
-					),
-					title=_("Paper Not Issued"),
-					indicator="orange",
-				)
+		if not enough:
+			message = _("{0} has fewer sheets than the {1} sold for printing and copying. The paper issue {2} is saved as a draft for the accountant.").format(
+				store, sheets, issue.name
+			)
+			frappe.msgprint(message, title=_("Paper Not Issued"), indicator="orange")
+			notify("paper_issue_pending", get_approvers(), {"subject": message}, document=("Stock Entry", issue.name))
 
 
 def cancel_paper_used(doc, method=None):
