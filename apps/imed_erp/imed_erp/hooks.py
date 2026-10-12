@@ -200,6 +200,7 @@ doc_events = {
 	"Payment Entry": {
 		"validate": [
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
+			"imed_erp.imederp.treasuries.block_spending_without_approval",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
@@ -227,7 +228,10 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Invoice": {
-		"validate": "imed_erp.imederp.treasuries.check_entry_treasuries",
+		"validate": [
+			"imed_erp.imederp.treasuries.block_spending_without_approval",
+			"imed_erp.imederp.treasuries.check_entry_treasuries",
+		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
