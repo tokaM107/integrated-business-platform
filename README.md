@@ -21,6 +21,7 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
                         Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
                         Expense, Expense Category, Expense Report, Recurring Expense,
                         Expense Settings, Allocation Rule, Printing Cost Settings, Printing Machine,
+                        Damaged Stock Entry, Damaged Stock Sale,
                         Inter Business Transfer (and its report), Material Issues report;
                         shared rules: treasuries.py (each business's cash box), no_delete.py,
                         period_lock.py (closed months), library_revenue.py, expense_reminders.py,
@@ -532,6 +533,52 @@ count type, `Opening`: an opening count is ERPNext's purpose `Opening Stock`, wh
 opening account, and only that. One reconciliation covers one branch's stores, and its cost center is set
 from them whatever was typed.
 
+### Damaged stock and its sale by weight (LIB-09, PRN-07, DOC-19)
+
+Requirements v1.2: damaged stock is recorded with its quantity and reason and taken off the balance, and its
+sale by weight is recorded as revenue (LIB-09, PRN-07); copies damaged in storage are **a loss on the library,
+never charged to the doctor** (DOC-19). The libraries take no customer returns: only damaged stock is sold,
+by weight. Decided with the owner's representative on 12 Oct 2026: the loss is taken when the damage is
+recorded; the branch manager records and submits it; Azarita's damaged stock goes to the damaged store at
+Mawasah, its loss stays Azarita's.
+
+**Damaged Stock Entry** (ImedERP > Damaged Stock): Damage Date, the store the items were damaged in, the
+Damage Reason, Responsible (whoever records it, by default), and the items with their quantity in the item's
+own unit (sheets, copies). Each item's stock and cost show as soon as it is picked. On submit, in the
+system's name (`imederp/damaged_stock.py`):
+
+1. a **Material Issue** takes the items out of their store at their moving-average cost, posted to
+   `الهالك والتالف` on the store's library (Mawasah's or Azarita's): 1,000 sheets at 0.26 is a loss of 260.
+   No Doctor Ledger Entry is ever made;
+2. a **Material Receipt** puts the same quantity into the store ticked **Damaged Store**, `التالف — المواساة`,
+   at **zero value**: the store counts what waits to be sold, without carrying its cost a second time.
+
+**Damaged Stock Sale** (sale by weight): Sale Date, Buyer (`مشتري التالف` for a buyer not kept as a customer),
+the **weight the scale showed in Kg**, the **price per Kg**, Total Amount = weight × price to the piastre, Paid
+in Cash, and the damaged items that left with the sale, each in its own unit, optionally with the damage
+record it came from. **Sheets and copies are never converted to kilograms**: no conversion is documented,
+so the weight is what was weighed and the quantities are what left the store. On submit:
+
+1. a Material Issue takes those items out of the damaged store (zero value: no cost of sale);
+2. a **Sales Invoice** of `DAMAGED-BY-WEIGHT`, the weight in Kg at the price per Kg: revenue to
+   `إيراد بيع التالف بالوزن` on the damaged store's library (Mawasah);
+3. if Paid in Cash, a **Payment Entry** into that library's cash box (`imederp/treasuries.py`); otherwise
+   the invoice stays outstanding on the buyer.
+
+A sale row naming its damage record adds to that record's *Sold by Weight*; selling more than is left of
+it is refused, and a damage record partly sold cannot be cancelled before its sale.
+
+- **Only these two move the damaged store.** A plain Stock Entry, Delivery Note or stock-moving invoice
+  into or out of it is refused (it would bring stock in at its cost with no reason and no loss, or take it
+  out without a sale by weight); the owner and the accountant may, to correct a mistake. Stock counts of the
+  damaged store are allowed.
+- **Who:** branch managers record damage of their own branch's stores and sell from the damaged store if it
+  is theirs (Raghad). The owner and the accountant cancel. Cancelling reverses everything it posted; those
+  entries cannot be cancelled on their own. Neither document is deleted once submitted, nor saved or
+  cancelled in a closed month.
+- **Setup:** `setup_core.py` ticks Damaged Store on `التالف — المواساة`; `setup_library.py` makes the
+  non-stock item `DAMAGED-BY-WEIGHT` (Kg, revenue `إيراد بيع التالف بالوزن`) and the buyer `مشتري التالف`.
+
 ### Library products (LIB-06)
 
 | Requirement | Where it is in ERPNext |
@@ -587,8 +634,8 @@ Balance, Bin, API) or submit a stock entry with Mawasah on any row, even through
 **Transfer Mawasah → Azarita** is an ERPNext **Stock Entry** of type *Material Transfer* (Stock > Stock
 Entry), never a purchase: one ledger line out of the source warehouse and one into the target, the total
 stays the same, and the value only moves between the two warehouses' stock accounts. ERPNext refuses a
-transfer of more than the source holds (negative stock is off). Moving goods to the damaged store is the
-same kind of transfer.
+transfer of more than the source holds (negative stock is off). Damaged goods are not transferred: they go
+to the damaged store through a Damaged Stock Entry (see Damaged stock below).
 
 **Reorder levels** are set per item **and** per warehouse in the item's *Reorder Levels* table (Inventory
 tab): e.g. A4 paper at 1,000 in `خامات المواساة` (request type Purchase) and 500 in `خامات الأزاريطة`
@@ -768,6 +815,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_damaged_stock
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

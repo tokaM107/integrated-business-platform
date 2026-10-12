@@ -249,6 +249,20 @@ def run():
 		if frappe.db.get_value("Warehouse", acc(name), "custom_supplies_branches"):
 			report("Supplier", acc(name), ["must not supply the branches"])
 
+	# ---------- Damaged stock (LIB-09, PRN-07): its store, the item invoiced by weight, the buyer ----------
+	damaged = frappe.get_all("Warehouse", filters={"company": COMPANY, "custom_is_damaged_store": 1}, pluck="name")
+	report("Damaged", "damaged store", [] if damaged == [acc("التالف — المواساة")] else [f"Damaged Store ticked on {damaged or 'none'}, expected only {acc('التالف — المواساة')}"])
+	scrap = frappe.db.get_value("Item", "DAMAGED-BY-WEIGHT", ["is_stock_item", "stock_uom"], as_dict=True)
+	if not scrap:
+		report("Damaged", "DAMAGED-BY-WEIGHT", ["missing"])
+	else:
+		income = frappe.db.get_value("Item Default", {"parent": "DAMAGED-BY-WEIGHT", "company": COMPANY}, "income_account")
+		errors = [] if not scrap.is_stock_item and scrap.stock_uom == "Kg" else ["must be a non-stock item sold in Kg"]
+		if income != acc("إيراد بيع التالف بالوزن"):
+			errors.append(f"revenue goes to {income}, expected {acc('إيراد بيع التالف بالوزن')}")
+		report("Damaged", "DAMAGED-BY-WEIGHT", errors)
+	report("Damaged", "buyer مشتري التالف", [] if frappe.db.exists("Customer", "مشتري التالف") else ["missing"])
+
 	# ---------- Item groups ----------
 	for group, parent in ITEM_GROUPS:
 		found = frappe.db.get_value("Item Group", group, "parent_item_group")

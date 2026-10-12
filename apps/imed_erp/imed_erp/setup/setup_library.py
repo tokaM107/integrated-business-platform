@@ -386,6 +386,62 @@ def make_pos_profile(name, cost_center, warehouse, user):
 	print(f"create POS Profile {name}")
 
 
+def make_scrap_sale_item():
+	"""The non-stock item a sale of damaged stock by weight is invoiced with (imederp/damaged_stock.py): the
+	kilograms sold at the price per kilogram, revenue to إيراد بيع التالف بالوزن. The damaged items
+	themselves leave the damaged store on a Stock Entry of the sale."""
+	from imed_erp.imederp.damaged_stock import SCRAP_ITEM, SCRAP_REVENUE_ACCOUNT, WEIGHT_UOM
+
+	revenue = acc(SCRAP_REVENUE_ACCOUNT)
+	if not frappe.db.exists("Account", revenue):
+		wait(f"Item {SCRAP_ITEM}", f"Account {revenue} does not exist yet (setup_coa.py)")
+		return
+	if frappe.db.exists("Item", SCRAP_ITEM):
+		print(f"exists Item {SCRAP_ITEM}")
+		return
+	frappe.get_doc(
+		{
+			"doctype": "Item",
+			"item_code": SCRAP_ITEM,
+			"item_name": "بيع تالف بالوزن",
+			"item_group": SERVICES_GROUP,
+			"stock_uom": WEIGHT_UOM,
+			"is_stock_item": 0,
+			"include_item_in_manufacturing": 0,
+			"item_defaults": [
+				{
+					"company": COMPANY,
+					"income_account": revenue,
+					"selling_cost_center": acc(CENTRAL_COST_CENTER),
+					"default_warehouse": acc(CENTRAL_WAREHOUSE),
+				}
+			],
+		}
+	).insert()
+	print(f"create Item {SCRAP_ITEM}")
+
+
+def make_scrap_buyer():
+	"""A buyer for sales of damaged stock to someone not kept as a customer."""
+	from imed_erp.imederp.damaged_stock import SCRAP_BUYER
+
+	if frappe.db.exists("Customer", SCRAP_BUYER):
+		print(f"exists Customer {SCRAP_BUYER}")
+		return
+	group = frappe.db.get_value("Customer Group", {"is_group": 0}, "name", order_by="lft")
+	territory = frappe.db.get_value("Territory", {"is_group": 0}, "name", order_by="lft")
+	frappe.get_doc(
+		{
+			"doctype": "Customer",
+			"customer_name": SCRAP_BUYER,
+			"customer_type": "Individual",
+			"customer_group": group,
+			"territory": territory,
+		}
+	).insert()
+	print(f"create Customer {SCRAP_BUYER}")
+
+
 def run():
 	if frappe.db.get_value("Company", COMPANY, "abbr") != ABBR:
 		print(f"STOP   Company '{COMPANY}' with abbr '{ABBR}' not found; run setup_core.py first.")
@@ -419,6 +475,10 @@ def run():
 
 		# ---------- 7) Stock counts (LIB-03, PRN-06): count type and who counted ----------
 		make_stock_count_fields()
+
+		# ---------- 8) Damaged stock sold by weight (LIB-09, PRN-07): the item invoiced and a buyer ----------
+		make_scrap_sale_item()
+		make_scrap_buyer()
 
 		frappe.db.commit()
 	except Exception:
