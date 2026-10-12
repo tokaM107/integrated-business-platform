@@ -19,7 +19,8 @@ COLUMNS = ["Super Admin", "Accountant", "Branch Manager", "HR"]
 CHECKS = [
 	("Record revenue / a sale", "Sales Invoice", "create", (1, 1, 1, 0)),
 	("Record an expense", "Expense", "create", (1, 1, 1, 0)),
-	("Journal entry", "Journal Entry", "create", (1, 1, 1, 0)),
+	# Spending goes through an Expense the accountant approves (owner's decision of 12 Oct 2026).
+	("Journal entry", "Journal Entry", "create", (1, 1, 0, 0)),
 	("Submit a sale", "Sales Invoice", "submit", (1, 1, 1, 0)),
 	("Cancel a financial transaction", "Sales Invoice", "cancel", (1, 1, 0, 0)),
 	("Cancel a financial transaction", "Journal Entry", "cancel", (1, 1, 0, 0)),
