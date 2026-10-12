@@ -16,6 +16,13 @@
 
 frappe.ui.form.on("Sales Invoice", {
 	refresh(frm) {
+		// The paper a printing sale issued (imederp/paper_use.py) goes back when the invoice is cancelled; the
+		// Cancel button must not try to cancel that Stock Entry first, which is refused on its own.
+		frm.ignore_doctypes_on_cancel_all = frm.ignore_doctypes_on_cancel_all || [];
+		if (!frm.ignore_doctypes_on_cancel_all.includes("Stock Entry")) {
+			frm.ignore_doctypes_on_cancel_all.push("Stock Entry");
+		}
+
 		imed.screen.apply(frm, {
 			// Generic noise MMG never uses (one Egyptian company, EGP only, domestic, no e-invoicing):
 			//   tax         — no VAT / withholding charged on these invoices
