@@ -41,7 +41,7 @@ def make_doctor(name="_Test Doctor"):
 
 def make_agreement(agreement_type, amount_per_copy=80):
 	# Named after agreement_name, so tests asking for the same terms share one. A books agreement gives the
-	# doctor's amount per copy from the start of the year.
+	# doctor's amount per copy from the start of the year. Submitted: editions go on submitted agreements.
 	name = f"_Test {agreement_type} {amount_per_copy}"
 	if frappe.db.exists("Doctor Agreement", name):
 		return name
@@ -58,6 +58,7 @@ def make_agreement(agreement_type, amount_per_copy=80):
 			}
 		)
 		.insert()
+		.submit()
 		.name
 	)
 
