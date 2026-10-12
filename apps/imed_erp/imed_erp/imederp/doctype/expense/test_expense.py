@@ -567,3 +567,15 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		self.assertEqual(
 			frappe.db.count("Notification Log", {"document_name": expense.name, "for_user": ACCOUNTANT, "type": "Alert"}), 2
 		)
+
+	def test_a_rejection_is_kept_in_the_history(self):
+		from unittest.mock import patch
+
+		expense = self.draft(46000)
+		expense.request_approval()
+		# Frappe keeps no change history while tests run; here it does, as on the site.
+		with patch.object(frappe, "in_test", False):
+			self.as_user(ACCOUNTANT, expense).reject("مش واضح")
+		frappe.set_user("Administrator")
+		versions = frappe.get_all("Version", filters={"ref_doctype": "Expense", "docname": expense.name}, pluck="data")
+		self.assertTrue(any("Rejected" in data for data in versions))
