@@ -288,6 +288,30 @@ def ensure_docperm(doctype, role, rights, create):
 		print(f"exists Permission {doctype} -> {role}")
 
 
+# The owner follows everything himself (owner, 12 Oct 2026): Super Admin reads every record of these modules,
+# not only the financial documents. Read only: what he may change is set above.
+OWNER_READ_MODULES = ["Accounts", "Stock", "Selling", "Buying", "Setup", "ImedERP"]
+OWNER_READ = {"read": 1, "select": 1, "report": 1, "print": 1, "export": 1}
+
+
+def owner_unreadable():
+	"""The documents of OWNER_READ_MODULES the owner's role cannot read yet."""
+	doctypes = frappe.get_all(
+		"DocType", filters={"module": ["in", OWNER_READ_MODULES], "istable": 0, "issingle": 0, "is_virtual": 0}, pluck="name"
+	)
+	owner = frappe.get_all("Has Role", filters={"role": "Super Admin", "parenttype": "User", "parent": ["!=", "Administrator"]}, pluck="parent")
+	return [dt for dt in doctypes if owner and not frappe.has_permission(dt, "read", user=owner[0])]
+
+
+def let_the_owner_read_everything():
+	from frappe.core.doctype.doctype.doctype import validate_permissions_for_doctype
+
+	for doctype in owner_unreadable():
+		ensure_docperm(doctype, "Super Admin", OWNER_READ, create=True)
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
+
+
 def apply_permission_matrix():
 	from frappe.core.doctype.doctype.doctype import validate_permissions_for_doctype
 
@@ -381,6 +405,7 @@ def run():
 		# ---------- 4) Permissions matrix (section 3.2) on financial documents ----------
 		apply_permission_matrix()
 		ensure_items_visible_to_branches()
+		let_the_owner_read_everything()
 
 		# ---------- 5) Strict user permissions: OFF ----------
 		# Strict mode hides every record that has an EMPTY Cost Center / Warehouse / Company link.
