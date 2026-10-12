@@ -204,3 +204,34 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		agreement.append("terms", {"valid_from": "2026-11-01", "amount_per_copy": 100})
 		agreement.terms = agreement.terms[1:]
 		self.assertRaisesRegex(frappe.ValidationError, "already in force", agreement.save)
+
+	def test_the_balance_direction_comes_from_the_type(self):
+		books = self.agreement(make_doctor(), "_Test Direction Books")
+		books.balance_direction = "Owed by Doctor"  # typed by mistake: the type decides
+		books.insert()
+		self.assertEqual(books.balance_direction, "Owed to Doctor")
+
+		app = self.agreement(make_doctor(), "_Test Direction App")
+		app.agreement_type = "App"
+		app.insert()
+		self.assertEqual(app.balance_direction, "Owed by Doctor")
+
+	def test_one_doctor_two_agreements_two_balances(self):
+		# The definition of done of card A6: one doctor with a books agreement at 80 a copy, owed to him, and an
+		# app agreement, owed by him. Each keeps its own balance: nothing is offset between them.
+		doctor = make_doctor("_Test Doctor Two Agreements")
+		books = self.agreement(doctor, "_Test Two Books").insert()
+		app = self.agreement(doctor, "_Test Two App")
+		app.agreement_type = "App"
+		app.insert()
+
+		self.entry(books.name, "Accrual", 800)  # 10 copies sold at 80
+		self.entry(app.name, "Accrual", 200)  # platform fees
+
+		self.assertEqual(books.terms[0].amount_per_copy, 80)
+		self.assertEqual(
+			frappe.db.get_value("Doctor Agreement", books.name, ["balance_direction", "balance"]), ("Owed to Doctor", 800)
+		)
+		self.assertEqual(
+			frappe.db.get_value("Doctor Agreement", app.name, ["balance_direction", "balance"]), ("Owed by Doctor", 200)
+		)
