@@ -12,6 +12,12 @@ DOCTOR_GROUP = "طبيب"
 
 ACTIVE, SUSPENDED = "Active", "Suspended"
 
+# DOC-30: which way the balance runs, set by the type. Books: the group owes the doctor his amount on the
+# copies sold. App: the doctor owes the group the platform fees. A doctor's agreements are never offset
+# against each other (owner's decision), so each keeps its own direction.
+OWED_TO_DOCTOR, OWED_BY_DOCTOR = "Owed to Doctor", "Owed by Doctor"
+DIRECTION = {"Books": OWED_TO_DOCTOR, "App": OWED_BY_DOCTOR}
+
 # How each kind of ledger entry moves the balance: what is owed under the agreement grows with an accrual and
 # shrinks with a payment or a cancellation charge; an adjustment counts with its own sign.
 BALANCE_SIGN = {"Accrual": 1, "Payment": -1, "Cancellation Charge": -1, "Adjustment": 1}
@@ -20,6 +26,7 @@ BALANCE_SIGN = {"Accrual": 1, "Payment": -1, "Cancellation Charge": -1, "Adjustm
 class DoctorAgreement(Document):
 	def validate(self):
 		self.validate_doctor()
+		self.balance_direction = DIRECTION.get(self.agreement_type)
 		self.validate_terms()
 
 	def before_update_after_submit(self):
