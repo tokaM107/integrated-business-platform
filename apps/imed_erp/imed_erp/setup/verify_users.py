@@ -126,6 +126,16 @@ def run():
 					problems.append(f"{user}: {row} ({doctype} {right}) is {'allowed' if can else 'denied'}, matrix says {'allowed' if want else 'denied'}")
 			print(f"    {'yes' if can else 'no ':<4}{mark:<5}{row:<34}{doctype} {right}")
 
+	# The owner reads every record of the business modules (setup_users.py OWNER_READ_MODULES).
+	modules = ["Accounts", "Stock", "Selling", "Buying", "Setup", "ImedERP"]
+	doctypes = frappe.get_all("DocType", filters={"module": ["in", modules], "istable": 0, "issingle": 0, "is_virtual": 0}, pluck="name")
+	for user in users:
+		if "Super Admin" in frappe.get_roles(user):
+			unreadable = [dt for dt in doctypes if not frappe.has_permission(dt, "read", user=user)]
+			print(f"\n=== {user} reads every document of {', '.join(modules)}: {'yes' if not unreadable else 'no'}")
+			if unreadable:
+				problems.append(f"{user}: cannot read {', '.join(sorted(unreadable))}")
+
 	print()
 	print("Not built yet, so not checked: " + "; ".join(NOT_BUILT))
 	print()

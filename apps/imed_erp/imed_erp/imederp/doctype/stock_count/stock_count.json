@@ -41,7 +41,6 @@
   {
    "fieldname": "store",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Store",
    "options": "Warehouse",
@@ -77,7 +76,8 @@
    "in_standard_filter": 1,
    "label": "Counted By",
    "options": "User",
-   "reqd": 1
+   "reqd": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "items_section",

@@ -14,8 +14,8 @@
    "label": "Stock Value by Warehouse"
   }
  ],
- "content": "[\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Key Numbers</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Sales\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Invoices Count\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Outstanding from Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Purchases\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Charts</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Sales Trend\",\n   \"col\": 12\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Revenue by Business\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Stock Value by Warehouse\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span>Reports & Modules</span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Profit per Business\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock & Paper\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Cash Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Who Owes Us\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Book Editions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Paper Counters\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"App Subscriptions\"\n  },\n  \"type\": \"shortcut\"\n }\n]",
- "creation": "2026-10-07 17:36:26.926502",
+ "content": "[\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0645\\u062d\\u062a\\u0627\\u062c \\u0645\\u0648\\u0627\\u0641\\u0642\\u062a\\u0643</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Expenses Waiting for Approval\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Editions to Approve\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Transfers to Confirm\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u0623\\u0631\\u0642\\u0627\\u0645</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Sales\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Invoices Count\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Outstanding from Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Purchases\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u0631\\u0633\\u0648\\u0645</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Sales Trend\",\n   \"col\": 12\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Revenue by Business\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Stock Value by Warehouse\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0645\\u062a\\u0627\\u0628\\u0639\\u0629 \\u0634\\u063a\\u0644 \\u0627\\u0644\\u0645\\u0648\\u0638\\u0641\\u064a\\u0646</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Sales\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Expenses\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Purchases\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Counts\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Branch Requests\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Book Editions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Paper Counters\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"App Subscriptions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"All Changes\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u062a\\u0642\\u0627\\u0631\\u064a\\u0631</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Profit per Business\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock & Paper\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Cash Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Who Owes Us\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Expense Report\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Count Variance\"\n  },\n  \"type\": \"shortcut\"\n }\n]",
+ "creation": "2026-10-12 17:39:55.272078",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -27,7 +27,7 @@
  "label": "Owner Dashboard",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-10-07 17:36:26.926502",
+ "modified": "2026-10-12 17:39:55.272078",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Owner Dashboard",
@@ -71,6 +71,110 @@
  "sequence_id": 1.0,
  "shortcuts": [
   {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} \u0645\u0633\u062a\u0646\u064a",
+   "label": "Expenses Waiting for Approval",
+   "link_to": "Expense",
+   "stats_filter": "[\n [\n  \"Expense\",\n  \"approval_status\",\n  \"=\",\n  \"Pending Approval\"\n ],\n [\n  \"Expense\",\n  \"docstatus\",\n  \"=\",\n  0\n ]\n]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} \u0645\u0633\u062a\u0646\u064a",
+   "label": "Editions to Approve",
+   "link_to": "Book Edition",
+   "stats_filter": "[\n [\n  \"Book Edition\",\n  \"docstatus\",\n  \"=\",\n  0\n ]\n]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} \u0645\u0633\u062a\u0646\u064a",
+   "label": "Transfers to Confirm",
+   "link_to": "Inter Business Transfer",
+   "stats_filter": "[\n [\n  \"Inter Business Transfer\",\n  \"status\",\n  \"=\",\n  \"Sent\"\n ]\n]",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "Sales",
+   "link_to": "Sales Invoice",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "Expenses",
+   "link_to": "Expense",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "Purchases",
+   "link_to": "Purchase Invoice",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "label": "Stock Counts",
+   "link_to": "Stock Count",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Stock Movements",
+   "link_to": "Stock Entry",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Branch Requests",
+   "link_to": "Material Request",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Doctor Agreements",
+   "link_to": "Doctor Agreement",
+   "type": "DocType"
+  },
+  {
+   "color": "Purple",
+   "doc_view": "List",
+   "label": "Book Editions",
+   "link_to": "Book Edition",
+   "type": "DocType"
+  },
+  {
+   "color": "Cyan",
+   "doc_view": "List",
+   "label": "Paper Counters",
+   "link_to": "Printer Reading",
+   "type": "DocType"
+  },
+  {
+   "color": "Pink",
+   "doc_view": "List",
+   "label": "App Subscriptions",
+   "link_to": "App Subscription",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "All Changes",
+   "link_to": "Version",
+   "type": "DocType"
+  },
+  {
    "color": "Green",
    "doc_view": "",
    "label": "Profit per Business",
@@ -103,32 +207,20 @@
    "type": "Report"
   },
   {
-   "color": "Purple",
+   "color": "Orange",
    "doc_view": "",
-   "label": "Doctor Agreements",
-   "link_to": "Doctor Agreement",
-   "type": "DocType"
+   "label": "Expense Report",
+   "link_to": "Expense Report",
+   "report_ref_doctype": "Expense",
+   "type": "Report"
   },
   {
-   "color": "Purple",
+   "color": "Red",
    "doc_view": "",
-   "label": "Book Editions",
-   "link_to": "Book Edition",
-   "type": "DocType"
-  },
-  {
-   "color": "Cyan",
-   "doc_view": "",
-   "label": "Paper Counters",
-   "link_to": "Printer Reading",
-   "type": "DocType"
-  },
-  {
-   "color": "Pink",
-   "doc_view": "",
-   "label": "App Subscriptions",
-   "link_to": "App Subscription",
-   "type": "DocType"
+   "label": "Stock Count Variance",
+   "link_to": "Stock Count Variance",
+   "report_ref_doctype": "Stock Count",
+   "type": "Report"
   }
  ],
  "title": "Owner Dashboard",

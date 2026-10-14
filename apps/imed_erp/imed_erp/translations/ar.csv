@@ -515,6 +515,11 @@ The amount must be greater than zero; an Adjustment carries its own sign.,الم
 An adjustment needs an amount.,التسوية محتاجة مبلغ.
 A cancellation charge is for a books agreement.,خصم الإلغاء لاتفاقية الكتب بس.
 Edition {0} belongs to another agreement.,الإصدار {0} تبع اتفاقية تانية.
+Expenses Waiting for Approval,مصروفات مستنية موافقتك
+Editions to Approve,إصدارات مستنية الاعتماد
+Transfers to Confirm,تحويلات مستنية التأكيد
+Stock Movements,حركة المخزن
+All Changes,كل التعديلات
 College,الكلية
 Academic Year,الفرقة
 Phone Key,مفتاح الهاتف
