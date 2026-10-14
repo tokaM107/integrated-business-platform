@@ -818,6 +818,13 @@ an invoice again adds nothing. Cancelling the invoice cancels its entries and th
 note's rows add an **Adjustment** of minus their amount. The seller does not need to open the doctors'
 accounts: the sale posts the entry for them. Rows with no edition (services, other items) add nothing.
 
+In the accounts, the sale's new rows make one **Journal Entry**, named on each entry (Journal Entry): Dr
+`حصة الأطباء` / Cr `مستحقات للأطباء — الكتب`, each row on the cost center of the library that sold; a credit note
+posts the other way round. `مستحقات للأطباء — الكتب` is a plain liability with no party: ERPNext does not take a
+Customer (the doctor, CRM-01) as the party of a Payable account, so which doctor is owed what is in the doctor's
+ledger and each agreement's balance. Cancelling the sale cancels the journal entry too; the entry and its journal
+entry cannot be cancelled on their own while the sale stands.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
