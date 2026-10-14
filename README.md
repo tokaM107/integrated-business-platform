@@ -25,7 +25,8 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
                         Inter Business Transfer (and its report), Material Issues report;
                         shared rules: treasuries.py (each business's cash box), no_delete.py,
                         period_lock.py (closed months), library_revenue.py, expense_reminders.py,
-                        stock_reorder.py (reorder levels), material_issue.py (branch requests)
+                        stock_reorder.py (reorder levels), material_issue.py (branch requests),
+                        customers.py (one customer per phone), sales_cancellation.py (reason to cancel a sale)
   imed_erp/assistant/   AI assistant (chat window; no model connected yet)
   imed_erp/notification_service.py   Unified notifications (CORE-10)
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
@@ -269,6 +270,9 @@ Sales invoices print with the app's own format, **MMG Sales Invoice**
   the exact total, not rounded to the pound.
 - It draws its own header (logo, company, title, number) instead of the site letter head, which
   prints the English doctype name.
+- It is also the **receipt** of a sale at the point of sale (SEC-06): the library POS Profiles name no print
+  format, so Print Receipt uses this default. For a sale at the counter it adds how it was paid (each payment
+  method and its amount) and the change given (الباقي للعميل).
 
 
 Notification templates (`notification_service.py` `EVENTS`) are translated before they are filled in, so
@@ -313,6 +317,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
 | `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `setup_customer_phones.py` | One customer per phone number (CRM-04). Run once after `bench migrate` added the Phone Key field: gives each customer saved before it the key of its number, so a new customer with the same number is refused. Changes no phone number and merges nothing: invalid numbers and numbers already on several customers are listed (the oldest customer of a number gets its key). `FILL = False` only prints the report. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
@@ -579,6 +584,73 @@ it is refused, and a damage record partly sold cannot be cancelled before its sa
 - **Setup:** `setup_core.py` ticks Damaged Store on `التالف — المواساة`; `setup_library.py` makes the
   non-stock item `DAMAGED-BY-WEIGHT` (Kg, revenue `إيراد بيع التالف بالوزن`) and the buyer `مشتري التالف`.
 
+### Point of sale, customers and cancelling a sale (LIB-01, CRM-01/02/04, ACC-06, SEC-06)
+
+**The point of sale** is ERPNext's own (Point of Sale page, one POS Profile per library, `setup_library.py`).
+POS Settings make each sale a **Sales Invoice**, so a counter sale goes through the same rules as any other:
+the library's revenue account (`library_revenue.py`), its cash box (`treasuries.py`), the paper a print or
+copy uses (`paper_use.py`), no warehouse on services (`services.py`). `public/js/point_of_sale.js` adds, above
+the item list:
+
+- the three steps of a sale (choose the customer; add books, memos or a service; check the total, then Checkout
+  and take the payment), for someone using the screen for the first time;
+- one button per library service, **تصوير مستندات** (`COPY-SVC`), **تصوير وطباعة** (`PRINT-SVC`) and
+  **تجليد** (`BINDING-SVC`), each with its price. A button adds one unit, exactly as clicking the service in
+  the item list does, at the Item Price of the POS Profile's price list (only the owner changes prices); the
+  quantity is then typed on the number pad (sheets for copying and printing). A service the profile does not
+  sell, or that has no price, shows *غير متاح* and adds nothing. Services carry no tax (none is charged) and no
+  stock; printing and copying take their sheets of A4 from the library's raw materials store when the sale is
+  submitted (see *Paper used for printing and copying*).
+
+Change is given from the same drawer: each library POS Profile's **Account for Change Amount** is its own cash
+box (`setup_library.py`). Without it ERPNext used the company's main treasury, and since POS Settings post no
+separate change entry, a sale of 315 paid with 350 left 350 in the library's cash box and a credit of 35 on
+the customer.
+
+**One customer per person** (`imederp/customers.py`). The customer is ERPNext's Customer, the same record for
+every business (CRM-02: its Connections list its invoices, payments and, later, bookings). CRM-01 adds
+**College** and **Academic Year** (الفرقة); the category is the customer group (`طبيب` for doctors). The phone is
+ERPNext's own (Mobile No, kept on the customer's primary contact) and stays as it was typed. Next to it a hidden
+**Phone Key** keeps one spelling of the number, unique in the database:
+
+| Typed | Key |
+|---|---|
+| `01012345678`, `010 1234 5678`, `(010) 12345678`, `1012345678`, `٠١٠١٢٣٤٥٦٧٨` | `+201012345678` |
+| `+201012345678`, `+20 010 1234 5678`, `00201012345678`, `201012345678` | `+201012345678` |
+| `03 4567890` (landline) | `+2034567890` |
+| `+966 50 123 4567`, `00966501234567` | `+966501234567` |
+
+- A second customer with the same number, in any spelling, is refused with the name of the customer who has it,
+  from the customer screen, the point of sale's "new customer", the API, or a change of number on the
+  customer's contact. Two people saving the same number at the same moment cannot both succeed: the database
+  refuses the second.
+- Egyptian numbers are mobile (010, 011, 012, 015 and 8 digits) or landline (area code and number); a foreign
+  number needs its country code. Anything else is refused as not a phone number.
+- A customer may have **no number** (a walk-in buyer, `مشتري التالف`): blank is allowed and is never a
+  duplicate. This is an open question (see docs/known-issues.md), not a decision.
+- Customers saved before this get their key from `setup_customer_phones.py`, which lists the duplicates and
+  invalid numbers already there instead of merging or changing them. Such a customer can still be edited:
+  only a new or changed number is checked.
+- Only a customer's own contact is checked; a supplier's or a user's contact keeps whatever number it has.
+
+**Cancelling a sale** (`imederp/sales_cancellation.py`). The libraries take no returns: a sale made by mistake is
+cancelled (ACC-06), and only by the owner or the accountant (SEC-03: the cancel right on Sales Invoice,
+`setup_users.py`; branch managers do not have it). **Cancel** first asks for the reason, then cancels with
+ERPNext's own cancel, which reverses the ledger and the stock and keeps the invoice as Cancelled (ACC-07). The
+reason is saved on the invoice as plain text, at most 1,000 characters (**Cancellation Reason**), and its history (Version) shows who cancelled, when
+and why (SEC-01). The reason and the cancellation are saved together: if ERPNext refuses the cancel, the reason
+is not kept either. A cancel without a reason, through the API too, is refused; the invoice a Damaged Stock
+Sale posted is cancelled with that sale and says so. Amend starts the corrected invoice without the old reason.
+
+When cancelling is not the way:
+
+- **A payment received on its own** (Payment Entry against the invoice): cancel the payment first, or let Cancel
+  list it and cancel both.
+- **A closed month** (`close_period.py`): ERPNext refuses the cancel until the month is reopened
+  (see *To reopen a closed month* below).
+- **The paper a sale issued, a sale by weight's invoice**: cancelled only with the sale (`paper_use.py`,
+  `damaged_stock.py`).
+
 ### Library products (LIB-06)
 
 | Requirement | Where it is in ERPNext |
@@ -816,6 +888,8 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_damaged_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_customers
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_sales_cancellation
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

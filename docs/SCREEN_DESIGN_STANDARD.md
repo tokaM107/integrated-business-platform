@@ -269,3 +269,15 @@ disclosure by role**, not hiding noise (`expense.js`).
 - **Note:** branch managers also hold *Accounts User* but not *Accounts Manager*, so by the default
   boundary they get the simpler view (see §13 to confirm this line).
 - **Arabic / RTL, font, buttons, colours:** inherited from the theme and translations; no overrides.
+
+## Worked example — Point of Sale (`public/js/point_of_sale.js`)
+
+ERPNext's own page, not a form, so `imed.screen.apply` does not apply; the same rules do. Attached via
+`hooks.py` `page_js` and only **adds** to the page:
+
+- **First-time employee:** the three steps of a sale, in one muted line above the item list (§6: core first).
+- **Service buttons:** one secondary (`.btn-default`) button per library service, with its price, so they never
+  compete with Checkout, the page's primary action (§9). They add the service through the page's own item
+  event, so prices, accounts and checks stay ERPNext's (Scope: no business rules in the UI).
+- **Arabic / RTL:** labels from translations (`translations/ar.csv`); styles in `imed_theme.css` §20 use logical
+  properties and theme tokens only; prices are isolated left-to-right (§7, §8).
