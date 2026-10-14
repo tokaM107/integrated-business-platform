@@ -228,10 +228,13 @@ doc_events = {
 			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
 			"imed_erp.imederp.paper_use.issue_paper_used",
 			"imed_erp.imederp.edition_sales.update_sold",
+			# The doctor's amount on each copy sold goes to his ledger (DOC-07; imederp/doctor_accrual.py).
+			"imed_erp.imederp.doctor_accrual.accrue",
 		],
 		"on_cancel": [
 			"imed_erp.imederp.paper_use.cancel_paper_used",
 			"imed_erp.imederp.edition_sales.update_sold",
+			"imed_erp.imederp.doctor_accrual.cancel_accruals",
 		],
 	},
 	"POS Invoice": {
