@@ -341,16 +341,21 @@ def make_pos_profile(name, cost_center, warehouse, user):
 		return
 	# The library's cash first, as the default; then the wallets.
 	payments = [{"mode_of_payment": mode[0], "default": int(i == 0)} for i, mode in enumerate(modes)]
+	# Change is given from the same drawer. Without it ERPNext takes the company's main treasury, and as POS
+	# Settings post no separate change entry, the library's cash box would show the whole amount handed over
+	# (350 for a sale of 315) and the customer a credit of the change.
+	change_account = acc(CASH_MODES[cost_center][2])
 
 	if frappe.db.exists("POS Profile", name):
 		profile = frappe.get_doc("POS Profile", name)
 		current = [(p.mode_of_payment, p.default) for p in profile.payments]
-		if current == [(p["mode_of_payment"], p["default"]) for p in payments]:
+		if current == [(p["mode_of_payment"], p["default"]) for p in payments] and profile.account_for_change_amount == change_account:
 			print(f"exists POS Profile {name}")
 		else:
 			profile.set("payments", payments)
+			profile.account_for_change_amount = change_account
 			profile.save()
-			print(f"update POS Profile {name}: payments {', '.join(p['mode_of_payment'] for p in payments)}")
+			print(f"update POS Profile {name}: payments {', '.join(p['mode_of_payment'] for p in payments)}, change from {change_account}")
 		return
 
 	missing = [
@@ -376,6 +381,7 @@ def make_pos_profile(name, cost_center, warehouse, user):
 			"cost_center": acc(cost_center),
 			"write_off_account": write_off,
 			"write_off_cost_center": acc(cost_center),
+			"account_for_change_amount": change_account,
 			"selling_price_list": frappe.db.get_single_value("Selling Settings", "selling_price_list"),
 			"update_stock": 1,
 			"payments": payments,

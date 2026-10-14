@@ -1513,3 +1513,47 @@ body:has(.modal.imed-search-anchored.show) .modal-backdrop.show {
 		padding-inline: 0;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 20. Point of sale: the steps and the library service buttons       */
+/*     (public/js/point_of_sale.js)                                   */
+/* ------------------------------------------------------------------ */
+.point-of-sale-app .imed-pos-services {
+	padding: 0 var(--padding-lg) var(--padding-sm);
+	background-color: var(--fg-color);
+}
+.point-of-sale-app .imed-pos-steps {
+	margin: 0 0 var(--margin-sm);
+	padding-inline-start: 1.25rem;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	line-height: 1.6;
+}
+.point-of-sale-app .imed-pos-service-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--margin-sm);
+}
+.point-of-sale-app .imed-pos-service {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	min-width: 9rem;
+	padding: 8px 14px;
+	text-align: start;
+}
+.point-of-sale-app .imed-pos-service-name {
+	font-size: var(--text-base);
+	font-weight: 600;
+	color: var(--text-color);
+}
+.point-of-sale-app .imed-pos-service-price {
+	font-size: var(--text-sm);
+	color: var(--text-muted);
+	/* Amounts read left to right in Arabic too. */
+	direction: ltr;
+	unicode-bidi: isolate;
+}
+.point-of-sale-app .imed-pos-service:disabled .imed-pos-service-name {
+	color: var(--text-muted);
+}

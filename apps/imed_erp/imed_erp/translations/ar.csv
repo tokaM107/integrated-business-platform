@@ -515,3 +515,24 @@ The amount must be greater than zero; an Adjustment carries its own sign.,الم
 An adjustment needs an amount.,التسوية محتاجة مبلغ.
 A cancellation charge is for a books agreement.,خصم الإلغاء لاتفاقية الكتب بس.
 Edition {0} belongs to another agreement.,الإصدار {0} تبع اتفاقية تانية.
+College,الكلية
+Academic Year,الفرقة
+Phone Key,مفتاح الهاتف
+"The mobile number in one spelling (+20...), so the same number cannot be on two customers.","رقم الموبايل بصيغة واحدة (+20...)، عشان نفس الرقم ميتسجلش على عميلين."
+"{0} is not a valid phone number. Type an Egyptian number such as 01012345678, or a foreign one with its country code, such as +966...","{0} مش رقم تليفون صحيح. اكتب رقم مصري زي 01012345678، أو رقم أجنبي بكود الدولة، زي +966..."
+Invalid Phone Number,رقم تليفون غير صحيح
+The phone number {0} already belongs to customer {1}. Choose that customer instead of adding another one.,رقم التليفون {0} متسجل على العميل {1}. اختار العميل ده بدل ما تضيف عميل جديد.
+Customer Already Exists,العميل متسجل قبل كده
+Cancellation Reason,سبب الإلغاء
+Cancelled with the Damaged Stock Sale that posted it.,اتلغت مع بيعة التالف اللي عملتها.
+Give the reason for cancelling {0}.,اكتب سبب إلغاء {0}.
+Cancellation Reason Required,لازم سبب للإلغاء
+{0} is not cancelled this way.,{0} مش بيتلغي بالطريقة دي.
+Only a submitted {0} can be cancelled.,{0} بيتلغي بس لو كان متسجل (Submitted).
+Why is this sale cancelled? The reason is kept on the invoice.,ليه البيعة دي هتتلغي؟ السبب هيتحفظ على الفاتورة.
+Choose the customer,اختار العميل
+"Add books, memos or a service","ضيف كتب أو مذكرات أو خدمة"
+"Check the total, then Checkout and take the payment","راجع الإجمالي، وبعدين اضغط الدفع واستلم الفلوس"
+"Not sold at this point of sale, or it has no price.","مش بيتباع في نقطة البيع دي، أو ملوش سعر."
+Not available,غير متاح
+The cancellation reason is too long: at most {0} characters.,سبب الإلغاء طويل: أقصى حد {0} حرف.
