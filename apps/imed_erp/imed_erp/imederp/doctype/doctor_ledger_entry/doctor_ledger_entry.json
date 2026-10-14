@@ -16,6 +16,11 @@
   "qty",
   "amount",
   "remarks",
+  "source_section",
+  "sales_invoice",
+  "invoice_item",
+  "column_break_source",
+  "journal_entry",
   "amended_from"
  ],
  "fields": [
@@ -44,7 +49,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Type",
-   "options": "Accrual\nPayment\nCancellation Charge\nAdjustment",
+   "options": "Accrual\nPayout\nUnsold Copies Charge\nAdjustment\nCollection",
    "reqd": 1
   },
   {
@@ -71,6 +76,41 @@
    "label": "Remarks"
   },
   {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "label": "Sales Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1,
+   "no_copy": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "invoice_item",
+   "fieldtype": "Data",
+   "label": "Invoice Line",
+   "read_only": 1,
+   "no_copy": 1,
+   "search_index": 1,
+   "depends_on": "sales_invoice"
+  },
+  {
+   "fieldname": "column_break_source",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -85,7 +125,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-14 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Ledger Entry",

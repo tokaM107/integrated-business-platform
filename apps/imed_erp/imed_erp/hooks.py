@@ -196,6 +196,8 @@ doc_events = {
 		"before_cancel": [
 			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
+			# The doctor's amount posted by a sale goes only with the sale (imederp/doctor_accrual.py).
+			"imed_erp.imederp.doctor_accrual.block_cancel_of_accrual",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -228,10 +230,13 @@ doc_events = {
 			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
 			"imed_erp.imederp.paper_use.issue_paper_used",
 			"imed_erp.imederp.edition_sales.update_sold",
+			# The doctor's amount on each copy sold goes to his ledger (DOC-07; imederp/doctor_accrual.py).
+			"imed_erp.imederp.doctor_accrual.accrue",
 		],
 		"on_cancel": [
 			"imed_erp.imederp.paper_use.cancel_paper_used",
 			"imed_erp.imederp.edition_sales.update_sold",
+			"imed_erp.imederp.doctor_accrual.cancel_accruals",
 		],
 	},
 	"POS Invoice": {
@@ -305,7 +310,10 @@ doc_events = {
 	"Doctor Ledger Entry": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
-		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": [
+			"imed_erp.imederp.period_lock.validate_closed_period",
+			"imed_erp.imederp.doctor_accrual.block_cancel_of_accrual",
+		],
 	},
 	"App Subscription": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
@@ -410,6 +418,8 @@ after_migrate = [
 scheduler_events = {
 	"daily": [
 		"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily",
+		# The doctor's amount on any sale the hooks missed, e.g. imported ones (imederp/doctor_accrual.py).
+		"imed_erp.imederp.doctor_accrual.run_daily",
 	],
 }
 

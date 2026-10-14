@@ -248,8 +248,8 @@ class IntegrationTestEditionSales(IntegrationTestCase):
 		later = self.sell([(self.items[0], 5)], rate=175)
 		self.assertEqual((later.items[0].book_edition, later.items[0].rate), (edition.name, 175))
 		self.assertEqual(self.qty(edition), (120, 25, 95))
-		# Nothing for the doctor's account is posted from here (that is the doctors' accounts' part).
-		self.assertFalse(frappe.db.exists("Doctor Ledger Entry", {"edition": edition.name}))
+		# Carrying forward posts nothing to the doctor's account; only the sales do (imederp/doctor_accrual.py).
+		self.assertFalse(frappe.db.exists("Doctor Ledger Entry", {"edition": edition.name, "sales_invoice": ["is", "not set"]}))
 
 	def test_carry_forward_only_to_a_later_open_period(self):
 		edition = self.edition()
@@ -289,7 +289,7 @@ class IntegrationTestEditionSales(IntegrationTestCase):
 		self.assertEqual(frappe.db.count("Stock Ledger Entry", {"voucher_no": sale.name}), stock_entries)
 		self.assertEqual(frappe.db.count("GL Entry", {"voucher_no": sale.name}), gl_entries)
 		self.assertEqual(self.qty(edition), (120, 30, 90))
-		self.assertFalse(frappe.db.exists("Doctor Ledger Entry", {"edition": edition.name}))
+		self.assertFalse(frappe.db.exists("Doctor Ledger Entry", {"edition": edition.name, "sales_invoice": ["is", "not set"]}))
 		version = frappe.get_all("Version", filters={"ref_doctype": "Book Edition", "docname": edition.name}, fields=["owner", "data"])
 		self.assertTrue(any(v.owner == RAGHAD and "Cancelled" in v.data for v in version), version)
 		# No more copies are sold, and it is not cancelled or carried forward twice.

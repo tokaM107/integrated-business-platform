@@ -75,11 +75,11 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.assertEqual((str(agreement.start_date), agreement.status, flt(agreement.balance)), (today(), "Active", 0))
 
 	def test_the_balance_comes_from_the_doctors_ledger(self):
-		# 800 owed for copies sold, 300 paid, 50 charged for a cancellation, -20 adjusted: 430 left.
+		# 800 owed for copies sold, 300 paid out, 50 charged for unsold copies, -20 adjusted: 430 left.
 		agreement = self.agreement(make_doctor(), "_Test Balance").insert()
 		self.entry(agreement.name, "Accrual", 800)
-		payment = self.entry(agreement.name, "Payment", 300)
-		self.entry(agreement.name, "Cancellation Charge", 50)
+		payment = self.entry(agreement.name, "Payout", 300)
+		self.entry(agreement.name, "Unsold Copies Charge", 50)
 		self.entry(agreement.name, "Adjustment", -20)
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, "balance"), 430)
 
@@ -126,7 +126,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 
 		# Its account can still be settled.
 		self.entry(books.name, "Accrual", 100)
-		self.entry(books.name, "Payment", 100)
+		self.entry(books.name, "Payout", 100)
 
 	def books(self, name, terms, start_date="2026-01-01"):
 		agreement = self.agreement(make_doctor(), name)
@@ -273,11 +273,11 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 	def test_the_summary_shows_the_last_settlement(self):
 		agreement = self.agreement(make_doctor(), "_Test Summary").insert()
 
-		# The last settlement is the latest payment; an accrual is not one.
+		# The last settlement is the latest payout; an accrual is not one.
 		self.entry(agreement.name, "Accrual", 800)
-		self.entry(agreement.name, "Payment", 300)
+		self.entry(agreement.name, "Payout", 300)
 		later = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2099-01-01", "entry_type": "Payment", "amount": 200}
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2099-01-01", "entry_type": "Payout", "amount": 200}
 		).insert()
 		later.submit()
 		self.assertEqual(
@@ -298,7 +298,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		app.agreement_type = "App"
 		app.insert()
 		self.entry(books.name, "Accrual", 500)
-		self.entry(books.name, "Payment", 500)
+		self.entry(books.name, "Payout", 500)
 		self.entry(app.name, "Accrual", 150)
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", books.name, ["balance", "last_settlement_amount"]), (0, 500))
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", app.name, ["balance", "last_settlement_amount"]), (150, 0))
@@ -385,7 +385,10 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 			)
 
 		self.assertRaisesRegex(frappe.ValidationError, "greater than zero", entry(books.name, "Accrual", -50).insert)
-		self.assertRaisesRegex(frappe.ValidationError, "books agreement", entry(app.name, "Cancellation Charge", 50).insert)
+		# Paying out and charging unsold copies are for books, collecting fees for the app.
+		for wrong, entry_type, right in ((app, "Unsold Copies Charge", "Books"), (app, "Payout", "Books"), (books, "Collection", "App")):
+			with self.subTest(entry_type):
+				self.assertRaisesRegex(frappe.ValidationError, f"for a {right} agreement only", entry(wrong.name, entry_type, 50).insert)
 		other = self.books("_Test Other Books", [("2026-01-01", 70)]).insert()
 		other.submit()
 		edition = self.edition(other.name, "2026-10-01", "_Test Other Edition")

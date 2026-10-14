@@ -787,12 +787,49 @@ any other customer.
 A **Doctor Agreement** holds the doctor, the type (Books or App), the start date, the settlement cycle
 (Module, Term or Round) and its status. **Suspended** (it can be set after the agreement is submitted, with no
 amendment) stops new editions and subscriptions on it, while its account can still be settled. **Balance**
-is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled: accruals
-add to it, payments and cancellation charges take from it, an adjustment counts with its own sign.
+is read-only, worked out from the doctor's ledger each time an entry is submitted or cancelled.
 Editions, subscriptions and ledger entries go only on a **submitted** agreement (a draft's terms can still
 change; a cancelled one is replaced by its amended copy), and submitting an edition checks its agreement
-again. A ledger entry's amount is positive except an Adjustment, which carries its own sign; a Cancellation
-Charge is for a books agreement; an entry's edition belongs to the same agreement.
+again.
+
+The **doctor's ledger** (Doctor Ledger Entry) holds the agreement, the academic period, the date, the type, the
+edition, the quantity, the amount and its **source**: the sales invoice and the invoice line an accrual comes
+from, and the journal entry behind it. The source is filled in by the system, read-only and not copied. The
+types (DOC-07):
+
+| Type | Arabic | Agreement | Balance |
+|---|---|---|---|
+| Accrual | استحقاق | Books or App | adds |
+| Payout | صرف (paid out to the doctor) | Books | takes |
+| Unsold Copies Charge | خصم متبقي (copies he asked for and left unsold, owner's decision of 10 Oct 2026) | Books | takes |
+| Adjustment | تسوية | Books or App | its own sign |
+| Collection | تحصيل (collected from the doctor) | App | takes |
+
+An entry's amount is positive except an Adjustment's; its edition belongs to the same agreement; an invoice
+line is on the invoice named with it, and is counted once per type (a cancelled entry no longer counts, so the
+line may be counted again).
+
+**The doctor's amount on each copy sold** (DOC-07, LIB-05; `imederp/doctor_accrual.py`). When a sales invoice is
+submitted (the point of sale makes Sales Invoices too), each row that names a Book Edition adds an **Accrual** to
+the doctor's ledger: the row's quantity × the edition's Doctor's Amount per Copy (kept on the edition when it was
+approved), with the edition's agreement and period, the invoice's date, and the invoice and line as its source.
+Three copies at 80 add 240. The invoice and line are the key: a line already in the ledger is skipped, so counting
+an invoice again adds nothing. Cancelling the invoice cancels its entries and the balance goes back; a credit
+note's rows add an **Adjustment** of minus their amount. The seller does not need to open the doctors'
+accounts: the sale posts the entry for them. Rows with no edition (services, other items) add nothing.
+
+In the accounts, the sale's new rows make one **Journal Entry**, named on each entry (Journal Entry): Dr
+`حصة الأطباء` / Cr `مستحقات للأطباء — الكتب`, each row on the cost center of the library that sold; a credit note
+posts the other way round. `مستحقات للأطباء — الكتب` is a plain liability with no party: ERPNext does not take a
+Customer (the doctor, CRM-01) as the party of a Payable account, so which doctor is owed what is in the doctor's
+ledger and each agreement's balance. Cancelling the sale cancels the journal entry too; the entry and its journal
+entry cannot be cancelled on their own while the sale stands.
+
+A **daily job** (`doctor_accrual.run_daily`, with the scheduler on) is the safety net for sales that reach the
+books without these hooks, such as the daily import: every submitted invoice line with an edition (and an amount
+per copy) that is not in the doctor's ledger is counted, with the same invoice-and-line key, and the entries of an
+invoice that was cancelled are cancelled. Running it again changes nothing. One invoice that fails is rolled back
+and written to the Error Log, and the others go on; the next run tries it again.
 
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
@@ -804,7 +841,7 @@ than he earned owes the group, and is shown so.
 The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
 the **settlement period** (from and to, entered by the accountant: each year has its own dates, owner's
 decision of 12 Oct 2026; the next settlement is due at its end, and after settling he enters the next period,
-with no amendment) and the **last settlement** (the latest payment in the doctor's ledger, updated with the
+with no amendment) and the **last settlement** (the latest payout or collection in the doctor's ledger, updated with the
 balance whenever an entry is submitted or cancelled). Saving a submitted agreement reads the balance and the
 last settlement again from the ledger, so a form opened before an entry was posted still saves. The top of the
 screen shows the balance and the next settlement together.
@@ -905,12 +942,14 @@ Each doctype has integration tests next to it; the expense reminders have their 
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests true
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_test_records  # first: catches a missing IGNORE entry before it commits _Test records
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance

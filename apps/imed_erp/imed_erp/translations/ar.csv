@@ -502,8 +502,10 @@ Enter the settlement period's dates.,اكتب تواريخ فترة التسوي
 The settlement period ends before it starts. Check its dates.,فترة التسوية بتخلص قبل ما تبدأ. راجع التواريخ.
 Settlement Period,فترة التسوية
 "Money paid out is recorded as an Expense, which the accountant approves. Make an Expense instead.",أي فلوس بتتصرف بتتسجل مصروف، والمحاسب بيوافق عليه. اعمل مصروف بدل كده.
-Accrual,مستحق
-Cancellation Charge,خصم إلغاء
+Accrual,استحقاق
+Payout,صرف
+Unsold Copies Charge,خصم متبقي
+Collection,تحصيل
 Adjustment,تسوية
 Doctor Agreement Term,شرط اتفاقية طبيب
 Agreement {0} is not submitted yet. Submit it before adding to it.,الاتفاقية {0} لسه ماتسجلتش. سجّلها الأول قبل ما تضيف عليها.
@@ -513,7 +515,11 @@ Agreement Cancelled,اتفاقية ملغية
 "A new term starts after the last one, {0}. An earlier date would change editions already priced.",الشرط الجديد لازم يبدأ بعد آخر شرط، {0}. التاريخ الأقدم هيغيّر إصدارات اتسعّرت خلاص.
 The amount must be greater than zero; an Adjustment carries its own sign.,المبلغ لازم يبقى أكبر من صفر؛ التسوية بس هي اللي بتتكتب بإشارتها.
 An adjustment needs an amount.,التسوية محتاجة مبلغ.
-A cancellation charge is for a books agreement.,خصم الإلغاء لاتفاقية الكتب بس.
+{0} is for a {1} agreement only.,{0} لاتفاقية {1} بس.
+Invoice Line,سطر الفاتورة
+Invoice line {0} is not on invoice {1}.,سطر الفاتورة {0} مش في الفاتورة {1}.
+Invoice line {0} of {1} is already in the doctor's ledger: {2}.,سطر الفاتورة {0} من {1} متسجل خلاص في حساب الطبيب: {2}.
+Already Counted,متحسوب قبل كده
 Edition {0} belongs to another agreement.,الإصدار {0} تبع اتفاقية تانية.
 Expenses Waiting for Approval,مصروفات مستنية موافقتك
 Editions to Approve,إصدارات مستنية الاعتماد
@@ -599,3 +605,11 @@ Another sale of edition {0} was saved at the same moment. Submit this invoice ag
 Submit Again,اعتمد تاني
 Row #{0}: {1} has no edition on sale; its editions were cancelled because the curriculum changed.,صف #{0}: {1} ملوش إصدار متاح للبيع؛ إصداراته اتلغت لتغيّر المنهج.
 Edition {0} was cancelled because the curriculum changed; its copies are no longer sold.,الإصدار {0} اتلغى لتغيّر المنهج؛ نسخه مبقتش بتتباع.
+{0} was posted by Sales Invoice {1} for the doctor's amount. Cancel the invoice instead.,{0} اتعمل من فاتورة البيع {1} لحق الطبيب. الغي الفاتورة بدل كده.
+Posted by a Sale,متسجل من بيعة
+The doctor's amount on the copies sold in {0}.,حق الطبيب في النسخ المباعة في {0}.
+Account {0} is missing for {1}. Run setup_coa.py.,الحساب {0} مش موجود في {1}. شغّل setup_coa.py.
+Missing Account,حساب ناقص
+{0} row #{1}: {2} x {3},{0} سطر #{1}: {2} × {3}
+Sales Invoice {0}: the doctor's amount could not be counted,فاتورة البيع {0}: حق الطبيب ماتحسبش
+Sales Invoice {0}: the doctor's amount could not be cancelled,فاتورة البيع {0}: حق الطبيب مااتلغاش
