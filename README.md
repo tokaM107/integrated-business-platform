@@ -809,6 +809,15 @@ An entry's amount is positive except an Adjustment's; its edition belongs to the
 line is on the invoice named with it, and is counted once per type (a cancelled entry no longer counts, so the
 line may be counted again).
 
+**The doctor's amount on each copy sold** (DOC-07, LIB-05; `imederp/doctor_accrual.py`). When a sales invoice is
+submitted (the point of sale makes Sales Invoices too), each row that names a Book Edition adds an **Accrual** to
+the doctor's ledger: the row's quantity × the edition's Doctor's Amount per Copy (kept on the edition when it was
+approved), with the edition's agreement and period, the invoice's date, and the invoice and line as its source.
+Three copies at 80 add 240. The invoice and line are the key: a line already in the ledger is skipped, so counting
+an invoice again adds nothing. Cancelling the invoice cancels its entries and the balance goes back; a credit
+note's rows add an **Adjustment** of minus their amount. The seller does not need to open the doctors'
+accounts: the sale posts the entry for them. Rows with no edition (services, other items) add nothing.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
@@ -927,6 +936,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "A
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
