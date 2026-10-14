@@ -3,7 +3,8 @@
 
 # The doctor's amount on every copy sold goes to his ledger (DOC-07, LIB-05; imederp/doctor_accrual.py): one entry
 # per invoice line, never twice, cancelled with the sale and taken back by a credit note; in the accounts, Dr
-# حصة الأطباء / Cr مستحقات للأطباء — الكتب on the library's cost center. Real stores and accounts; rolled back.
+# حصة الأطباء / Cr مستحقات للأطباء — الكتب on the library's cost center. The edition's Sold Qty follows the same
+# sales (imederp/edition_sales.py), at the desk and at the point of sale. Real stores and accounts; rolled back.
 #
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual
@@ -12,7 +13,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import flt, getdate
+from frappe.utils import flt, getdate, now_datetime, nowdate
 
 from imed_erp.imederp.doctor_accrual import accrue
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
@@ -21,6 +22,7 @@ from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH, RAGHAD
 
 LEDGER = "Doctor Ledger Entry"
+POS_PROFILE = "نقطة بيع مكتبة المواساة"
 EXPENSE = "حصة الأطباء - MMG"
 PAYABLE = "مستحقات للأطباء — الكتب - MMG"
 
@@ -121,6 +123,9 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 			net[g.account] = net.get(g.account, 0) + flt(g.debit) - flt(g.credit)
 		return net
 
+	def sold(self, edition):
+		return frappe.db.get_value("Book Edition", edition.name, ["sold_qty", "remaining_qty"])
+
 	def balance(self, agreement):
 		return flt(frappe.db.get_value("Doctor Agreement", agreement, "balance"))
 
@@ -177,7 +182,9 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		before = self.balance(edition.agreement)
 		sale = self.sell([(self.items[0], 3)])
 		[entry] = self.entries(sale.name)
+		self.assertEqual(self.sold(edition), (3, 47))
 		cancel_with_reason("Sales Invoice", sale.name, "Test: wrong copies")
+		self.assertEqual(self.sold(edition), (0, 50))
 		self.assertEqual(frappe.db.get_value(LEDGER, entry.name, "docstatus"), 2)
 		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
 		self.assertEqual(self.gl(entry.journal_entry), [])
@@ -212,12 +219,14 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 			[(EXPENSE, MAWASAH, None, 0, 80), (PAYABLE, MAWASAH, None, 80, 0)],
 		)
 		self.assertEqual(self.balance(edition.agreement) - before, 160)
+		self.assertEqual(self.sold(edition), (2, 48))
 
 		# Cancelling the credit note gives the copies back to the sale: 240 owed again.
 		cancel_with_reason("Sales Invoice", credit.name, "Test: return made by mistake")
 		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
 		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 0, PAYABLE: 0})
 		self.assertEqual(self.balance(edition.agreement) - before, 240)
+		self.assertEqual(self.sold(edition), (3, 47))
 
 	def test_a_branch_manager_s_sale_posts_to_the_ledger_she_cannot_read(self):
 		edition = self.edition()
@@ -227,3 +236,42 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		[entry] = self.entries(sale.name)
 		self.assertEqual((entry.amount, frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus")), (160, 1))
+
+	def test_a_point_of_sale_sale_counts_too(self):
+		# The till makes a Sales Invoice (POS Settings); the row takes the edition by itself, since the point of
+		# sale cannot show the field.
+		edition = self.edition()
+		before = self.balance(edition.agreement)
+		cashier = frappe.db.get_value("POS Profile User", {"parent": POS_PROFILE, "default": 1}, "user")
+		frappe.get_doc(
+			{
+				"doctype": "POS Opening Entry",
+				"company": COMPANY,
+				"pos_profile": POS_PROFILE,
+				"user": cashier,
+				"period_start_date": now_datetime(),
+				"posting_date": nowdate(),
+				"balance_details": [{"mode_of_payment": "Cash", "opening_amount": 0}],
+			}
+		).insert().submit()
+		sale = frappe.get_doc(
+			{
+				"doctype": "Sales Invoice",
+				"company": COMPANY,
+				"customer": self.customer,
+				"is_pos": 1,
+				"pos_profile": POS_PROFILE,
+				"items": [{"item_code": self.items[0], "qty": 2, "rate": 150}],
+			}
+		)
+		sale.set_missing_values()
+		sale.insert()
+		sale.payments[0].amount = sale.grand_total
+		sale.save()
+		sale.submit()
+		self.assertEqual(sale.items[0].book_edition, edition.name)
+		self.assertEqual(self.sold(edition), (2, 48))
+		[entry] = self.entries(sale.name)
+		self.assertEqual(entry.amount, 160)
+		self.assertEqual(self.balance(edition.agreement) - before, 160)
+		self.assertEqual(self.gl(entry.journal_entry), [(EXPENSE, MAWASAH, None, 160, 0), (PAYABLE, MAWASAH, None, 0, 160)])
