@@ -825,6 +825,12 @@ Customer (the doctor, CRM-01) as the party of a Payable account, so which doctor
 ledger and each agreement's balance. Cancelling the sale cancels the journal entry too; the entry and its journal
 entry cannot be cancelled on their own while the sale stands.
 
+A **daily job** (`doctor_accrual.run_daily`, with the scheduler on) is the safety net for sales that reach the
+books without these hooks, such as the daily import: every submitted invoice line with an edition (and an amount
+per copy) that is not in the doctor's ledger is counted, with the same invoice-and-line key, and the entries of an
+invoice that was cancelled are cancelled. Running it again changes nothing. One invoice that fails is rolled back
+and written to the Error Log, and the others go on; the next run tries it again.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
