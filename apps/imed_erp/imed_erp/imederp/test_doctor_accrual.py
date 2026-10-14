@@ -114,6 +114,13 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 			)
 		)
 
+	def net(self, journal_entry):
+		"""Debit minus credit per account over all the journal entry's GL lines, the reversing ones too."""
+		net = {}
+		for g in frappe.get_all("GL Entry", filters={"voucher_no": journal_entry}, fields=["account", "debit", "credit"]):
+			net[g.account] = net.get(g.account, 0) + flt(g.debit) - flt(g.credit)
+		return net
+
 	def balance(self, agreement):
 		return flt(frappe.db.get_value("Doctor Agreement", agreement, "balance"))
 
@@ -174,6 +181,9 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value(LEDGER, entry.name, "docstatus"), 2)
 		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
 		self.assertEqual(self.gl(entry.journal_entry), [])
+		# ERPNext reverses the journal entry: each line is matched by one the other way round.
+		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 0, PAYABLE: 0})
+		self.assertEqual(frappe.db.count("GL Entry", {"voucher_no": entry.journal_entry}), 4)
 		self.assertEqual(self.balance(edition.agreement), before)
 
 	def test_what_a_sale_posted_goes_only_with_the_sale(self):
@@ -202,6 +212,12 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 			[(EXPENSE, MAWASAH, None, 0, 80), (PAYABLE, MAWASAH, None, 80, 0)],
 		)
 		self.assertEqual(self.balance(edition.agreement) - before, 160)
+
+		# Cancelling the credit note gives the copies back to the sale: 240 owed again.
+		cancel_with_reason("Sales Invoice", credit.name, "Test: return made by mistake")
+		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
+		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 0, PAYABLE: 0})
+		self.assertEqual(self.balance(edition.agreement) - before, 240)
 
 	def test_a_branch_manager_s_sale_posts_to_the_ledger_she_cannot_read(self):
 		edition = self.edition()
