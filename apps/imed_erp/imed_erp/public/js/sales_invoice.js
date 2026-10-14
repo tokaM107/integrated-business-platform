@@ -23,6 +23,8 @@ frappe.ui.form.on("Sales Invoice", {
 			frm.ignore_doctypes_on_cancel_all.push("Stock Entry");
 		}
 
+		imed.sales_cancellation.ask_reason_on_cancel(frm);
+
 		imed.screen.apply(frm, {
 			// Generic noise MMG never uses (one Egyptian company, EGP only, domestic, no e-invoicing):
 			//   tax         — no VAT / withholding charged on these invoices
@@ -56,4 +58,80 @@ frappe.ui.form.on("Sales Invoice", {
 			//   tax_id / company_tax_id — Egyptian tax-registration numbers may be legally required.
 		});
 	},
+
+	// The reason is asked before anything is cancelled (see ask_reason_on_cancel); the invoice is then cancelled
+	// with it on the server, so this stops Frappe's own cancel request, which would carry no reason.
+	async before_cancel(frm) {
+		const reason = frm.__imed_cancel_reason || (await imed.sales_cancellation.prompt_reason(frm));
+		frm.__imed_cancel_reason = null;
+		frappe.validated = false;
+		if (!reason) return;
+		let r;
+		try {
+			r = await frappe.call({
+				method: "imed_erp.imederp.sales_cancellation.cancel_with_reason",
+				args: { doctype: frm.doctype, name: frm.docname, reason },
+				freeze: true,
+				freeze_message: __("Cancelling"),
+			});
+		} catch (e) {
+			// Refused on the server (no right, a closed month...): its message is already shown. Returning lets
+			// Frappe end the cancel and enable the button again.
+			return;
+		}
+		if (r && !r.exc) {
+			frappe.utils.play_sound("cancel");
+			frappe.show_alert({ message: __("Cancelled"), indicator: "red" });
+			await frm.reload_doc();
+		}
+	},
 });
+
+/*
+ * A sale is cancelled only with its reason (ACC-06; imederp/sales_cancellation.py, which also refuses a cancel
+ * without one). Cancel first asks for the reason, before Frappe cancels any linked document, then goes on with
+ * Frappe's own steps (linked documents, confirmation); before_cancel above sends the reason with the cancel.
+ */
+frappe.provide("imed.sales_cancellation");
+
+/* Resolves with the reason typed, or null when the dialog is closed without one. */
+imed.sales_cancellation.prompt_reason = function (frm) {
+	return new Promise((resolve) => {
+		let reason = null;
+		const dialog = new frappe.ui.Dialog({
+			title: __("Cancel {0}", [frm.docname]),
+			fields: [
+				{
+					fieldname: "reason",
+					fieldtype: "Small Text",
+					label: __("Cancellation Reason"),
+					description: __("Why is this sale cancelled? The reason is kept on the invoice."),
+					reqd: 1,
+				},
+			],
+			primary_action_label: __("Continue"),
+			primary_action(values) {
+				reason = (values.reason || "").trim();
+				if (!reason) {
+					frappe.msgprint(__("Give the reason for cancelling {0}.", [frm.docname]));
+					return;
+				}
+				dialog.hide();
+			},
+		});
+		dialog.onhide = () => resolve(reason || null);
+		dialog.show();
+	});
+};
+
+imed.sales_cancellation.ask_reason_on_cancel = function (frm) {
+	if (frm.__imed_cancel_wrapped) return;
+	frm.__imed_cancel_wrapped = true;
+	const frappe_savecancel = frm.savecancel;
+	frm.savecancel = async function (btn, callback, on_error) {
+		const reason = await imed.sales_cancellation.prompt_reason(frm);
+		if (!reason) return frm.handle_save_fail(btn, on_error);
+		frm.__imed_cancel_reason = reason;
+		return frappe_savecancel.call(frm, btn, callback, on_error);
+	};
+};
