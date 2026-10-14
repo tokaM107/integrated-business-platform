@@ -11,6 +11,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
+from imed_erp.imederp.sales_cancellation import cancel_with_reason
+
 # A test module outside a doctype folder builds no "_Test ..." records, so it needs (and may have) no
 # IGNORE_TEST_RECORD_DEPENDENCIES; keep it here, not under a doctype.
 COMPANY = "Mohamed Mamdouh group"
@@ -73,6 +75,10 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		finally:
 			frappe.set_user("Administrator")
 
+	def cancel(self, invoice):
+		# A sale is cancelled with its reason (imederp/sales_cancellation.py), as the Cancel button does.
+		cancel_with_reason("Sales Invoice", invoice.name, "Test: sold by mistake")
+
 	def issues(self, invoice):
 		return frappe.get_all(
 			"Stock Entry", filters={"sales_invoice_no": invoice.name}, fields=["name", "docstatus"], order_by="creation"
@@ -114,7 +120,7 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		[issue] = self.issues(invoice)
 		self.assertRaisesRegex(frappe.ValidationError, "Cancel the invoice", frappe.get_doc("Stock Entry", issue.name).cancel)
 
-		frappe.get_doc("Sales Invoice", invoice.name).cancel()
+		self.cancel(invoice)
 		self.assertEqual(frappe.db.get_value("Stock Entry", issue.name, "docstatus"), 2)
 		self.assertEqual(self.sheets(), before)
 
@@ -144,7 +150,7 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		self.assertEqual(issue.docstatus, 0)
 
 		# Cancelling the sale removes the draft issue.
-		frappe.get_doc("Sales Invoice", invoice.name).cancel()
+		self.cancel(invoice)
 		self.assertEqual(self.issues(invoice), [])
 
 	def test_a_count_after_printing_finds_no_shortage(self):
@@ -213,5 +219,5 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		skipped = ["Journal Entry", "Payment Entry", "Serial and Batch Bundle", "Stock Entry"]
 		linked = get_submitted_linked_docs("Sales Invoice", invoice.name, ignore_doctypes_on_cancel_all=skipped)
 		self.assertNotIn("Stock Entry", [d["doctype"] for d in linked.get("docs", [])])
-		frappe.get_doc("Sales Invoice", invoice.name).cancel()
+		self.cancel(invoice)
 		self.assertEqual(self.sheets(), before)

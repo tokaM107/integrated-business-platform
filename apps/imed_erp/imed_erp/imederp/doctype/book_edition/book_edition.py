@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, getdate, now_datetime, today
 
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_active, get_amount_per_copy
 from imed_erp.imederp.doctype.printer_reading.printer_reading import LIBRARIES
@@ -15,6 +15,26 @@ LIBRARY_PAPER_STORE = {"مكتبة المواساة": "خامات المواسا
 # No rounding (owner's decision of 8 Oct 2026, instead of DOC-28): the price is the calculated price, unless
 # another one is set by hand. A higher price adds to the library's profit; a lower one, to sell more, comes
 # out of it. The doctor's amount never changes.
+
+# DOC-15, DOC-17: an edition is Active once approved; Carry Forward and Cancel: Curriculum Changed are the only
+# ways its status changes, each recording when and by whom (carry_forward, cancel_for_curriculum_change below).
+ACTIVE, CARRIED_FORWARD, CANCELLED = "Active", "Carried Forward", "Cancelled"
+# Copies of these can still be sold (DOC-15: carried copies stay on sale).
+SELLABLE = (ACTIVE, CARRIED_FORWARD)
+# Set only by those two actions or by the edition's sales (imederp/edition_sales.py), never typed or sent
+# through the API.
+HISTORY_FIELDS = (
+    "status",
+    "sold_qty",
+    "remaining_qty",
+    "carried_to_period",
+    "carried_forward_on",
+    "carried_forward_by",
+    "notice_date",
+    "notice_received_by",
+    "cancellation_recorded_on",
+)
+COUNTED_FIELDS = ("sold_qty", "remaining_qty")
 
 # Rate on the edition <- rate in Printing Cost Settings, filled in when left empty.
 DEFAULT_RATES = {
@@ -35,14 +55,59 @@ class BookEdition(Document):
         if frappe.db.get_value("Cost Center", self.cost_center, "parent_cost_center") != f"{LIBRARIES} - {abbr}":
             frappe.throw(_("{0} is not a library. Editions are printed and sold by a library.").format(self.cost_center))
         self.validate_agreement()
+        self.validate_item()
+        self.set_quantities()
+        if self.docstatus == 0:
+            # A draft is not on sale yet: Active whatever was sent, with nothing sold.
+            self.status = ACTIVE
         # DOC-25: the rates are taken while the edition is a draft and kept once it is submitted.
         if self.docstatus == 0:
             self.set_rates()
         self.set_price()
 
     def before_submit(self):
+        if cint(self.total_qty) <= 0:
+            frappe.throw(_("Enter the copies to print: Doctor Requested Qty, Library Extra Qty or both."), title=_("No Quantity"))
         if not flt(self.paper_cost):
             frappe.throw(_("A4 paper has no price yet in {0}; receive paper before approving the edition.").format(self.cost_center))
+
+    def before_update_after_submit(self):
+        # Status and its history change only through the edition's actions, which set this flag.
+        if self.flags.edition_action:
+            return
+        before = self.get_doc_before_save()
+        if not before:
+            return
+        # Worked out from the sales, which may have changed them since this copy was opened: kept as they are.
+        for field in COUNTED_FIELDS:
+            self.set(field, before.get(field))
+        changed = [f for f in HISTORY_FIELDS if before.get(f) != self.get(f)]
+        if changed:
+            frappe.throw(
+                _("{0} change only through Carry Forward or Cancel: Curriculum Changed.").format(
+                    ", ".join(_(self.meta.get_label(f)) for f in changed)
+                )
+            )
+
+    def validate_item(self):
+        if not self.item_code:
+            return
+        item = frappe.db.get_value("Item", self.item_code, ["is_stock_item", "disabled"], as_dict=True)
+        if not item or not item.is_stock_item or item.disabled:
+            frappe.throw(
+                _("Item {0} is not an active stock item; an edition is sold as a book or memo kept in stock.").format(self.item_code)
+            )
+
+    def set_quantities(self):
+        # DOC-14: the doctor's copies and the library's extra copies are kept apart; the total is their sum.
+        for field in ("doctor_qty", "extra_qty"):
+            if cint(self.get(field)) < 0:
+                frappe.throw(_("{0} cannot be negative.").format(_(self.meta.get_label(field))))
+        if self.docstatus == 0:
+            # Sold copies come only from submitted invoices, which name a submitted edition.
+            self.sold_qty = 0
+        self.total_qty = cint(self.doctor_qty) + cint(self.extra_qty)
+        self.remaining_qty = self.total_qty - cint(self.sold_qty)
 
     def validate_agreement(self):
         # DOC-02: an edition belongs to a books agreement, not to an app one.
@@ -110,3 +175,110 @@ def get_paper_cost(cost_center, waste_per_sheet=None):
     store = LIBRARY_PAPER_STORE.get(library)
     rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": f"{store} - {abbr}"}, "valuation_rate")) if store else 0
     return flt(rate + flt(waste_per_sheet), 4) if rate else 0
+
+
+def get_sold_qty(edition, exclude_invoice=None, for_update=False):
+    """Copies of the edition sold: the submitted sales invoice rows that name it, in the item's stock unit. A
+    credit note's rows are negative and take theirs back; a cancelled invoice counts for nothing. Worked out from
+    the invoices every time, never added to, so a sale is never counted twice.
+
+    for_update: a locking read. A plain read inside a transaction sees the database as it was at the
+    transaction's first read (REPEATABLE READ), so a sale another user committed meanwhile would be missed."""
+    exclude = "and si.name != %(invoice)s" if exclude_invoice else ""
+    lock = "for update" if for_update else ""
+    return flt(
+        frappe.db.sql(
+            f"""select sum(sii.stock_qty) from `tabSales Invoice Item` sii
+            join `tabSales Invoice` si on si.name = sii.parent
+            where sii.book_edition = %(edition)s and si.docstatus = 1 {exclude} {lock}""",
+            {"edition": edition, "invoice": exclude_invoice},
+        )[0][0]
+    )
+
+
+def update_sold_qty(edition):
+    sold = cint(get_sold_qty(edition))
+    total = cint(frappe.db.get_value("Book Edition", edition, "total_qty"))
+    frappe.db.set_value("Book Edition", edition, {"sold_qty": sold, "remaining_qty": total - sold}, update_modified=False)
+
+
+def edition_for_action(name):
+    """The submitted edition, for someone allowed to change it: the write right on Book Edition, for their own
+    library only (User Permission on its cost center)."""
+    doc = frappe.get_doc("Book Edition", name)
+    doc.check_permission("write")
+    if doc.docstatus != 1:
+        frappe.throw(_("Edition {0} is not approved (submitted) yet.").format(doc.name))
+    update_sold_qty(doc.name)
+    doc.reload()
+    return doc
+
+
+def save_action(doc):
+    doc.flags.edition_action = True
+    # The right was checked in edition_for_action. Saving a submitted edition otherwise asks for the submit right,
+    # which approves pricing and which branch managers do not have.
+    doc.flags.ignore_permissions = True
+    doc.save()
+
+
+@frappe.whitelist(methods=["POST"])
+def carry_forward(edition, period):
+    """DOC-15: the unsold copies go on to a later academic period at their original cost (the edition's approved
+    costs are not touched) and stay on sale. DOC-16: they are sold at the price in force when sold, ERPNext's
+    Item Price."""
+    doc = edition_for_action(edition)
+    if doc.status not in SELLABLE:
+        frappe.throw(_("Edition {0} is cancelled; it is not carried forward.").format(doc.name))
+    if cint(doc.remaining_qty) <= 0:
+        frappe.throw(_("Every copy of edition {0} is sold; there is nothing to carry forward.").format(doc.name))
+
+    target = frappe.db.get_value("Academic Period", period, ["start_date", "is_closed"], as_dict=True)
+    if not target:
+        frappe.throw(_("Academic Period {0} not found.").format(period))
+    if target.is_closed:
+        frappe.throw(_("Academic Period {0} is closed.").format(period))
+    current = doc.carried_to_period or doc.period
+    if current:
+        if period == current:
+            frappe.throw(_("Edition {0} is already in {1}.").format(doc.name, period))
+        current_end = frappe.db.get_value("Academic Period", current, "end_date")
+        if current_end and (not target.start_date or getdate(target.start_date) <= getdate(current_end)):
+            frappe.throw(_("{0} does not start after {1} ends. Carry the edition forward to a later period.").format(period, current))
+
+    doc.status = CARRIED_FORWARD
+    doc.carried_to_period = period
+    doc.carried_forward_on = now_datetime()
+    doc.carried_forward_by = frappe.session.user
+    save_action(doc)
+    return doc.name
+
+
+@frappe.whitelist(methods=["POST"])
+def cancel_for_curriculum_change(edition, notice_date):
+    """DOC-17: the doctor said, by word of mouth, that the curriculum changed. The edition is marked Cancelled with
+    the day of the notice, the employee who received it (the one recording it, from the login, never a typed
+    name) and when it was recorded. Nothing posted changes: its sales, stock and approved costs stay as they are;
+    no more copies are sold (imederp/edition_sales.py). What the remaining copies cost the doctor or the library
+    (DOC-18, approved under DOC-22) belongs to the doctors' accounts and is not posted here."""
+    doc = edition_for_action(edition)
+    if doc.status not in SELLABLE:
+        frappe.throw(_("Edition {0} is already cancelled.").format(doc.name))
+    if not notice_date:
+        frappe.throw(_("Enter the day the doctor gave the notice."), title=_("Notice Date Required"))
+    notice_date = getdate(notice_date)
+    if notice_date > getdate(today()):
+        frappe.throw(_("The notice date cannot be in the future."))
+    if notice_date < getdate(doc.edition_date):
+        frappe.throw(
+            _("The notice date cannot be before the edition date, {0}.").format(
+                frappe.format_value(doc.edition_date, {"fieldtype": "Date"})
+            )
+        )
+
+    doc.status = CANCELLED
+    doc.notice_date = notice_date
+    doc.notice_received_by = frappe.session.user
+    doc.cancellation_recorded_on = now_datetime()
+    save_action(doc)
+    return doc.name

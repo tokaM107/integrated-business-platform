@@ -70,6 +70,8 @@ doctype_js = {
 	"Material Request": "public/js/material_request.js",
 	"Stock Entry": "public/js/stock_entry.js",
 }
+# The point of sale (LIB-01): one-click buttons for the library services, added to ERPNext's own page.
+page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -212,15 +214,25 @@ doc_events = {
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 			"imed_erp.imederp.services.clear_service_warehouses",
 			"imed_erp.imederp.damaged_stock.guard_damaged_store",
+			# Each copy of a book or memo sold names its edition (DOC-14..17; imederp/edition_sales.py).
+			"imed_erp.imederp.edition_sales.set_editions",
 		],
-		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
+		"before_cancel": [
+			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
+			# A sale is cancelled only with its reason (ACC-06; imederp/sales_cancellation.py).
+			"imed_erp.imederp.sales_cancellation.require_cancel_reason",
+		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"on_submit": [
 			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
 			"imed_erp.imederp.paper_use.issue_paper_used",
+			"imed_erp.imederp.edition_sales.update_sold",
 		],
-		"on_cancel": "imed_erp.imederp.paper_use.cancel_paper_used",
+		"on_cancel": [
+			"imed_erp.imederp.paper_use.cancel_paper_used",
+			"imed_erp.imederp.edition_sales.update_sold",
+		],
 	},
 	"POS Invoice": {
 		"validate": [
@@ -330,6 +342,14 @@ doc_events = {
 	"Item": {
 		"validate": "imed_erp.imederp.stock_reorder.validate_reorder_levels",
 	},
+	# One customer per phone number (CRM-01, CRM-04; imederp/customers.py).
+	"Customer": {
+		"validate": "imed_erp.imederp.customers.set_phone_key",
+	},
+	"Contact": {
+		"validate": "imed_erp.imederp.customers.check_contact_phone",
+		"on_update": "imed_erp.imederp.customers.sync_contact_phone",
+	},
 	# Branch requests from the main warehouse: Raghad's approval, then the issue (imederp/material_issue.py).
 	"Material Request": {
 		"onload": "imed_erp.imederp.material_issue.material_request_onload",
@@ -354,10 +374,16 @@ period_closing_doctypes = [
 after_install = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
+	"imed_erp.imederp.customers.make_custom_fields",
+	"imed_erp.imederp.sales_cancellation.make_custom_fields",
+	"imed_erp.imederp.edition_sales.make_custom_fields",
 ]
 after_migrate = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
+	"imed_erp.imederp.customers.make_custom_fields",
+	"imed_erp.imederp.sales_cancellation.make_custom_fields",
+	"imed_erp.imederp.edition_sales.make_custom_fields",
 ]
 
 # Scheduled Tasks
