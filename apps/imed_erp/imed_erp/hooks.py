@@ -418,6 +418,8 @@ after_migrate = [
 scheduler_events = {
 	"daily": [
 		"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily",
+		# The doctor's amount on any sale the hooks missed, e.g. imported ones (imederp/doctor_accrual.py).
+		"imed_erp.imederp.doctor_accrual.run_daily",
 	],
 }
 
