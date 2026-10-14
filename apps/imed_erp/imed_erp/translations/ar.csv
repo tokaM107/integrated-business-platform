@@ -605,3 +605,9 @@ Another sale of edition {0} was saved at the same moment. Submit this invoice ag
 Submit Again,اعتمد تاني
 Row #{0}: {1} has no edition on sale; its editions were cancelled because the curriculum changed.,صف #{0}: {1} ملوش إصدار متاح للبيع؛ إصداراته اتلغت لتغيّر المنهج.
 Edition {0} was cancelled because the curriculum changed; its copies are no longer sold.,الإصدار {0} اتلغى لتغيّر المنهج؛ نسخه مبقتش بتتباع.
+{0} was posted by Sales Invoice {1} for the doctor's amount. Cancel the invoice instead.,{0} اتعمل من فاتورة البيع {1} لحق الطبيب. الغي الفاتورة بدل كده.
+Posted by a Sale,متسجل من بيعة
+The doctor's amount on the copies sold in {0}.,حق الطبيب في النسخ المباعة في {0}.
+Account {0} is missing for {1}. Run setup_coa.py.,الحساب {0} مش موجود في {1}. شغّل setup_coa.py.
+Missing Account,حساب ناقص
+{0} row #{1}: {2} x {3},{0} سطر #{1}: {2} × {3}
