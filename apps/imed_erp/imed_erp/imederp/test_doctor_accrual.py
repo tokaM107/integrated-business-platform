@@ -4,7 +4,8 @@
 # The doctor's amount on every copy sold goes to his ledger (DOC-07, LIB-05; imederp/doctor_accrual.py): one entry
 # per invoice line, never twice, cancelled with the sale and taken back by a credit note; in the accounts, Dr
 # حصة الأطباء / Cr مستحقات للأطباء — الكتب on the library's cost center. The edition's Sold Qty follows the same
-# sales (imederp/edition_sales.py), at the desk and at the point of sale. Real stores and accounts; rolled back.
+# sales (imederp/edition_sales.py), at the desk and at the point of sale. The daily job catches what the hooks
+# missed (imported sales). Real stores and accounts; rolled back.
 #
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual
@@ -15,7 +16,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, getdate, now_datetime, nowdate
 
-from imed_erp.imederp.doctor_accrual import accrue
+from imed_erp.imederp import doctor_accrual
+from imed_erp.imederp.doctor_accrual import accrue, missed_sales, run_daily
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
 from imed_erp.imederp.sales_cancellation import cancel_with_reason
 from imed_erp.imederp import test_edition_sales
@@ -275,3 +277,68 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		self.assertEqual(entry.amount, 160)
 		self.assertEqual(self.balance(edition.agreement) - before, 160)
 		self.assertEqual(self.gl(entry.journal_entry), [(EXPENSE, MAWASAH, None, 160, 0), (PAYABLE, MAWASAH, None, 0, 160)])
+
+	# ---------- The daily safety net (run_daily) ----------
+
+	def test_the_daily_job_counts_a_sale_the_hooks_missed(self):
+		# An imported sale reaches the books without the submit hook.
+		edition = self.edition()
+		before = self.balance(edition.agreement)
+		with patch.object(doctor_accrual, "accrue"):
+			sale = self.sell([(self.items[0], 3)])
+		self.assertEqual(self.entries(sale.name), [])
+		self.assertIn(sale.name, missed_sales())
+
+		run_daily()
+		[entry] = self.entries(sale.name)
+		self.assertEqual((entry.amount, entry.invoice_item), (240, sale.items[0].name))
+		self.assertEqual(self.gl(entry.journal_entry), [(EXPENSE, MAWASAH, None, 240, 0), (PAYABLE, MAWASAH, None, 0, 240)])
+		# Again, as often as it runs: the same key, nothing added.
+		run_daily()
+		self.assertEqual([e.name for e in self.entries(sale.name)], [entry.name])
+		self.assertEqual(self.balance(edition.agreement) - before, 240)
+		self.assertNotIn(sale.name, missed_sales())
+
+	def test_the_daily_job_cancels_what_a_cancelled_sale_left(self):
+		edition = self.edition()
+		before = self.balance(edition.agreement)
+		sale = self.sell([(self.items[0], 3)])
+		[entry] = self.entries(sale.name)
+		# ERPNext refuses to cancel a sale its entry still links to, so only an import that writes the invoice's
+		# state straight to the database leaves one behind.
+		frappe.db.set_value("Sales Invoice", sale.name, "docstatus", 2)
+		self.assertEqual(frappe.db.get_value(LEDGER, entry.name, "docstatus"), 1)
+
+		self.assertEqual(run_daily()[1], 1)
+		self.assertEqual(frappe.db.get_value(LEDGER, entry.name, "docstatus"), 2)
+		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
+		self.assertEqual(self.balance(edition.agreement), before)
+		self.assertEqual(run_daily()[1], 0)
+
+	def test_one_bad_sale_does_not_stop_the_others(self):
+		self.edition()
+		with patch.object(doctor_accrual, "accrue"):
+			bad, good = self.sell([(self.items[0], 1)]), self.sell([(self.items[0], 2)])
+		post = doctor_accrual.post
+
+		def fail_on_bad(doc, accruals):
+			if doc.name == bad.name:
+				raise frappe.ValidationError("_Test failure")
+			return post(doc, accruals)
+
+		with patch.object(doctor_accrual, "post", side_effect=fail_on_bad), patch.object(frappe, "log_error") as log:
+			run_daily()
+		self.assertEqual(self.entries(bad.name), [])
+		self.assertEqual([e.amount for e in self.entries(good.name)], [160])
+		self.assertIn(bad.name, log.call_args.kwargs["title"])
+		# Nothing of the failed one is left half done; the next run counts it.
+		self.assertFalse(frappe.db.exists("Journal Entry", {"user_remark": ["like", f"%{bad.name}%"]}))
+		run_daily()
+		self.assertEqual([e.amount for e in self.entries(bad.name)], [80])
+
+	def test_an_edition_with_no_amount_is_not_looked_at_every_day(self):
+		self.edition(amount_per_copy=0)
+		sale = self.sell([(self.items[0], 1)])
+		self.assertEqual(self.entries(sale.name), [])
+		self.assertNotIn(sale.name, missed_sales())
+
