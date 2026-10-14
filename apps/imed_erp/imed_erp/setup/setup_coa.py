@@ -58,8 +58,10 @@ ACCOUNTS = [
 	# The center's office supplies (printer ink, toner, ...).
 	("مخزون سنتر Imed — أدوات مكتبية", "المخزون", "Stock", 0),
 	# ---- Liabilities ----
-	# Money held for doctors from book sales; not group profit (RPT-11).
-	("مستحقات للأطباء — الكتب", "الذمم الدائنة", "Payable", 0),
+	# Money held for doctors from book sales; not group profit (RPT-11). A plain liability, not Payable: a doctor
+	# is a Customer (CRM-01), which ERPNext does not allow as the party of a payable account, so each doctor's
+	# share is kept in the doctor's ledger (Doctor Ledger Entry) instead (14 Oct 2026).
+	("مستحقات للأطباء — الكتب", "الذمم الدائنة", None, 0),
 	# Lecturers' share under the hall revenue-share model (HAL-12).
 	("مستحقات للمحاضرين", "الذمم الدائنة", "Payable", 0),
 	# ---- Income: one account per business ----
@@ -104,7 +106,13 @@ REPLACED_ACCOUNTS = {
 def make_account(name, parent, account_type, is_group):
 	full = acc(name)
 	if frappe.db.exists("Account", full):
-		print(f"exists Account {full}")
+		if (frappe.db.get_value("Account", full, "account_type") or None) != account_type:
+			doc = frappe.get_doc("Account", full)
+			doc.account_type = account_type
+			doc.save()
+			print(f"update Account {full}: type {account_type or 'none'}")
+		else:
+			print(f"exists Account {full}")
 		return full
 	if not frappe.db.exists("Account", acc(parent)):
 		print(f"SKIP   Account {full}: parent {acc(parent)} not found")
