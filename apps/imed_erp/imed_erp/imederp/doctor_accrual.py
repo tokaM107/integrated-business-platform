@@ -21,6 +21,10 @@
 #                                 cancelled before ERPNext checks for documents still linked to the invoice.
 # and before_cancel on Doctor Ledger Entry and Journal Entry (block_cancel_of_accrual): what a sale posted is
 # cancelled only by cancelling the sale.
+#
+# run_daily (scheduler, daily) is the safety net, for sales that reached the books without these hooks (the daily
+# import of week B) or failed on the way: every submitted invoice line with an edition and no entry is counted,
+# with the same key, and the entries of a cancelled invoice are cancelled. Running it again changes nothing.
 
 import frappe
 from frappe import _
@@ -162,3 +166,50 @@ def block_cancel_of_accrual(doc, method=None):
 			_("{0} was posted by Sales Invoice {1} for the doctor's amount. Cancel the invoice instead.").format(doc.name, invoice),
 			title=_("Posted by a Sale"),
 		)
+
+
+def run_daily():
+	"""Run by the scheduler (hooks.py). Returns (invoices counted, invoices whose entries were cancelled)."""
+	return (
+		catch_up(missed_sales(), accrue, _("Sales Invoice {0}: the doctor's amount could not be counted")),
+		catch_up(cancelled_sales(), cancel_accruals, _("Sales Invoice {0}: the doctor's amount could not be cancelled")),
+	)
+
+
+def missed_sales():
+	"""Submitted invoices with an edition line not in the doctor's ledger. Editions with no amount per copy are
+	left out: they never make an entry, so they would be picked up every day."""
+	return frappe.db.sql_list(
+		f"""select distinct sii.parent from `tabSales Invoice Item` sii
+		join `tabSales Invoice` si on si.name = sii.parent
+		join `tabBook Edition` be on be.name = sii.{FIELD}
+		where si.docstatus = 1 and be.doctor_share != 0 and not exists (
+			select 1 from `tabDoctor Ledger Entry` dle where dle.invoice_item = sii.name and dle.docstatus < 2
+		)
+		order by si.posting_date, si.name"""
+	)
+
+
+def cancelled_sales():
+	"""Cancelled invoices whose entries still count."""
+	return frappe.db.sql_list(
+		"""select distinct dle.sales_invoice from `tabDoctor Ledger Entry` dle
+		join `tabSales Invoice` si on si.name = dle.sales_invoice
+		where dle.docstatus = 1 and si.docstatus = 2
+		order by dle.sales_invoice"""
+	)
+
+
+def catch_up(invoices, action, error_title):
+	count = 0
+	for name in invoices:
+		frappe.db.savepoint("doctor_accrual")
+		try:
+			action(frappe.get_doc("Sales Invoice", name))
+			count += 1
+		except Exception:
+			frappe.db.rollback(save_point="doctor_accrual")
+			# One bad invoice must not stop the others; the error log shows what went wrong.
+			frappe.log_error(title=error_title.format(name))
+	return count
+
