@@ -148,6 +148,32 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 			[(EXPENSE, MAWASAH, None, 240, 0), (PAYABLE, MAWASAH, None, 0, 240)],
 		)
 
+	def test_card_a8_definition_of_done(self):
+		"""3 copies at 80 -> 240 in the ledger, the journal entry and the agreement's balance; counted twice -> still
+		240; the sale cancelled -> nothing left."""
+		edition = self.edition()
+		agreement = edition.agreement
+		before = self.balance(agreement)
+
+		sale = self.sell([(self.items[0], 3)])
+		[entry] = self.entries(sale.name)
+		self.assertEqual(entry.amount, 240)
+		self.assertEqual(self.balance(agreement) - before, 240)
+		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 240, PAYABLE: -240})
+
+		# Twice: the submit hook and the daily job again, both keyed on the invoice and line.
+		accrue(frappe.get_doc("Sales Invoice", sale.name))
+		run_daily()
+		self.assertEqual([e.name for e in self.entries(sale.name)], [entry.name])
+		self.assertEqual(self.balance(agreement) - before, 240)
+		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 240, PAYABLE: -240})
+
+		# Cancelled: zero in the ledger, the accounts and the balance.
+		cancel_with_reason("Sales Invoice", sale.name, "Test: wrong copies")
+		self.assertEqual(self.entries(sale.name), [])
+		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 0, PAYABLE: 0})
+		self.assertEqual(self.balance(agreement) - before, 0)
+
 	def test_counting_an_invoice_again_adds_nothing(self):
 		edition = self.edition()
 		before = self.balance(edition.agreement)
