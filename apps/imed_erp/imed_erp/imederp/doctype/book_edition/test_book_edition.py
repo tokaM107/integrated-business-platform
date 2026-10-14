@@ -17,7 +17,7 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GR
 
 # Every doctype these tests link to is made here or already exists on the site. Without this Frappe builds
 # ERPNext's "_Test ..." records for them and commits them to the site.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement", "Item", "User"]
 
 LIBRARY = "مكتبة المواساة - MMG"
 
@@ -82,6 +82,8 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 				"overhead_cost": 0.05,
 				"owner_share": 0.25,
 				"binding_cost": 20,
+				# An edition is approved with the copies to print (DOC-14).
+				"doctor_qty": 100,
 				**values,
 			}
 		).insert()
@@ -115,6 +117,7 @@ class IntegrationTestBookEdition(IntegrationTestCase):
 				"agreement": make_agreement("Books", 80),
 				"cost_center": LIBRARY,
 				"pages": 100,
+				"doctor_qty": 100,
 			}
 		).insert()
 		self.assertEqual(

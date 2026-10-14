@@ -214,6 +214,8 @@ doc_events = {
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 			"imed_erp.imederp.services.clear_service_warehouses",
 			"imed_erp.imederp.damaged_stock.guard_damaged_store",
+			# Each copy of a book or memo sold names its edition (DOC-14..17; imederp/edition_sales.py).
+			"imed_erp.imederp.edition_sales.set_editions",
 		],
 		"before_cancel": [
 			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
@@ -225,8 +227,12 @@ doc_events = {
 			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
 			"imed_erp.imederp.paper_use.issue_paper_used",
+			"imed_erp.imederp.edition_sales.update_sold",
 		],
-		"on_cancel": "imed_erp.imederp.paper_use.cancel_paper_used",
+		"on_cancel": [
+			"imed_erp.imederp.paper_use.cancel_paper_used",
+			"imed_erp.imederp.edition_sales.update_sold",
+		],
 	},
 	"POS Invoice": {
 		"validate": [
@@ -370,12 +376,14 @@ after_install = [
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
+	"imed_erp.imederp.edition_sales.make_custom_fields",
 ]
 after_migrate = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
+	"imed_erp.imederp.edition_sales.make_custom_fields",
 ]
 
 # Scheduled Tasks

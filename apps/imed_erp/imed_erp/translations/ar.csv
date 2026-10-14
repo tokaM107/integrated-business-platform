@@ -536,3 +536,61 @@ Choose the customer,اختار العميل
 "Not sold at this point of sale, or it has no price.","مش بيتباع في نقطة البيع دي، أو ملوش سعر."
 Not available,غير متاح
 The cancellation reason is too long: at most {0} characters.,سبب الإلغاء طويل: أقصى حد {0} حرف.
+Quantities,الكميات
+Total Qty,إجمالي الكمية
+Remaining Qty,الكمية المتبقية
+Carried to Period,مُرحّل إلى الفترة
+Carried Forward On,تاريخ الترحيل
+Carried Forward By,رحّله
+Cancelled: Curriculum Changed,ملغى لتغيّر المنهج
+Notice Date,تاريخ الإخطار
+Notice Received By,الموظف المستلم للإخطار
+Recorded On,تاريخ التسجيل
+Carry Forward,ترحيل
+Carry to Period,الترحيل إلى الفترة
+Cancel Edition,إلغاء الإصدار
+Choose the Edition,اختار الإصدار
+Wrong Edition,إصدار غلط
+Edition Cancelled,الإصدار ملغى
+Not Enough Copies,النسخ مش كفاية
+No Quantity,مفيش كمية
+Notice Date Required,لازم تاريخ الإخطار
+no item,من غير صنف
+Copies printed because the doctor asked for them (DOC-14).,النسخ اللي اتطبعت بطلب الطبيب (DOC-14).
+Copies added by the library's own decision (DOC-14).,النسخ اللي المكتبة زوّدتها بقرارها (DOC-14).
+From the submitted sales invoices that name this edition.,من فواتير البيع المعتمدة اللي عليها الإصدار ده.
+Changed only by Carry Forward (DOC-15) and Cancel: Curriculum Changed (DOC-17).,بتتغير بس من زرار الترحيل (DOC-15) وزرار الإلغاء لتغيّر المنهج (DOC-17).
+The book or memo this edition is sold as. A sale of this item names the edition.,الكتاب أو المذكرة اللي الإصدار ده بيتباع بيه. أي بيعة للصنف ده بتتسجل على الإصدار.
+Doctor Requested Qty + Library Extra Qty.,الكمية بطلب الطبيب + الكمية الإضافية للمكتبة.
+Total Qty - Sold Qty.,إجمالي الكمية - الكمية المباعة.
+"The day the doctor told the library, by word of mouth, that the curriculum changed.","اليوم اللي الطبيب بلّغ فيه المكتبة شفهيًا إن المنهج اتغير."
+The employee who received the notice and recorded it.,الموظف اللي استلم الإخطار وسجّله.
+"The edition the copies sold come from. Filled in when the item has one edition on sale.","الإصدار اللي النسخ المباعة منه. بيتملى لوحده لو الصنف ليه إصدار واحد متاح للبيع."
+"Enter the copies to print: Doctor Requested Qty, Library Extra Qty or both.",اكتب عدد النسخ اللي هتتطبع: الكمية بطلب الطبيب أو الكمية الإضافية أو الاتنين.
+{0} change only through Carry Forward or Cancel: Curriculum Changed.,{0} بيتغير بس من زرار الترحيل أو الإلغاء لتغيّر المنهج.
+Item {0} is not an active stock item; an edition is sold as a book or memo kept in stock.,الصنف {0} مش صنف مخزني شغال؛ الإصدار بيتباع ككتاب أو مذكرة في المخزن.
+{0} cannot be negative.,{0} مينفعش يكون بالسالب.
+Edition {0} is not approved (submitted) yet.,الإصدار {0} لسه ما اتعتمدش.
+Edition {0} is cancelled; it is not carried forward.,الإصدار {0} ملغى؛ مش هيترحّل.
+Every copy of edition {0} is sold; there is nothing to carry forward.,كل نسخ الإصدار {0} اتباعت؛ مفيش حاجة تترحّل.
+Academic Period {0} not found.,الفترة الأكاديمية {0} مش موجودة.
+Academic Period {0} is closed.,الفترة الأكاديمية {0} مقفولة.
+Edition {0} is already in {1}.,الإصدار {0} موجود بالفعل في {1}.
+{0} does not start after {1} ends. Carry the edition forward to a later period.,{0} مش بتبدأ بعد ما {1} تخلص. رحّل الإصدار لفترة بعدها.
+Edition {0} is already cancelled.,الإصدار {0} ملغى بالفعل.
+Enter the day the doctor gave the notice.,اكتب اليوم اللي الطبيب بلّغ فيه.
+The notice date cannot be in the future.,تاريخ الإخطار مينفعش يكون في المستقبل.
+"The notice date cannot be before the edition date, {0}.","تاريخ الإخطار مينفعش يكون قبل تاريخ الإصدار، {0}."
+"Row #{0}: {1} has more than one edition on sale ({2}). Choose the edition the copies come from.","صف #{0}: {1} ليه أكتر من إصدار متاح للبيع ({2}). اختار الإصدار اللي النسخ منه."
+Row #{0}: Book Edition {1} not found.,صف #{0}: الإصدار {1} مش موجود.
+"Row #{0}: edition {1} is sold as {2}, not {3}.","صف #{0}: الإصدار {1} بيتباع كـ {2}، مش {3}."
+Row #{0}: edition {1} is not approved (submitted) yet.,صف #{0}: الإصدار {1} لسه ما اتعتمدش.
+Row #{0}: edition {1} was cancelled because the curriculum changed; its copies are no longer sold.,صف #{0}: الإصدار {1} اتلغى لتغيّر المنهج؛ نسخه مبقتش بتتباع.
+Edition {0} has {1} copies left; this invoice sells {2}.,الإصدار {0} فاضل منه {1} نسخة؛ والفاتورة دي بتبيع {2}.
+"Cancelled because the curriculum changed: notice of {0}, received by {1}.","ملغى لتغيّر المنهج: إخطار يوم {0}، استلمه {1}."
+The {0} unsold copies go on to this period at their original cost and stay on sale.,النسخ الـ {0} اللي ما اتباعتش هتترحّل للفترة دي بتكلفتها الأصلية وتفضل متاحة للبيع.
+The day the doctor said the curriculum changed. You are recorded as the employee who received it.,اليوم اللي الطبيب قال فيه إن المنهج اتغير. هتتسجل إنت كالموظف اللي استلم الإخطار.
+Another sale of edition {0} was saved at the same moment. Submit this invoice again.,بيعة تانية من الإصدار {0} اتسجلت في نفس اللحظة. اعتمد الفاتورة دي تاني.
+Submit Again,اعتمد تاني
+Row #{0}: {1} has no edition on sale; its editions were cancelled because the curriculum changed.,صف #{0}: {1} ملوش إصدار متاح للبيع؛ إصداراته اتلغت لتغيّر المنهج.
+Edition {0} was cancelled because the curriculum changed; its copies are no longer sold.,الإصدار {0} اتلغى لتغيّر المنهج؛ نسخه مبقتش بتتباع.
