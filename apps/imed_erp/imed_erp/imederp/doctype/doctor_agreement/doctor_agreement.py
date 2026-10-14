@@ -19,8 +19,12 @@ OWED_TO_DOCTOR, OWED_BY_DOCTOR = "Owed to Doctor", "Owed by Doctor"
 DIRECTION = {"Books": OWED_TO_DOCTOR, "App": OWED_BY_DOCTOR}
 
 # How each kind of ledger entry moves the balance: what is owed under the agreement grows with an accrual and
-# shrinks with a payment or a cancellation charge; an adjustment counts with its own sign.
-BALANCE_SIGN = {"Accrual": 1, "Payment": -1, "Cancellation Charge": -1, "Adjustment": 1}
+# shrinks with a payout to the doctor, a charge for unsold copies or a collection from him; an adjustment
+# counts with its own sign.
+BALANCE_SIGN = {"Accrual": 1, "Payout": -1, "Unsold Copies Charge": -1, "Adjustment": 1, "Collection": -1}
+
+# A settlement is money changing hands: paid out to the doctor (books) or collected from him (app).
+SETTLEMENTS = ["Payout", "Collection"]
 
 
 class DoctorAgreement(Document):
@@ -115,10 +119,10 @@ def get_amount_per_copy(agreement, date):
 
 
 def last_settlement(agreement):
-	"""(date, amount) of the latest payment on the agreement in the doctor's ledger, or (None, 0)."""
+	"""(date, amount) of the latest payout or collection on the agreement in the doctor's ledger, or (None, 0)."""
 	payments = frappe.get_all(
 		"Doctor Ledger Entry",
-		filters={"agreement": agreement, "entry_type": "Payment", "docstatus": 1},
+		filters={"agreement": agreement, "entry_type": ["in", SETTLEMENTS], "docstatus": 1},
 		fields=["entry_date", "amount"],
 		order_by="entry_date desc, creation desc",
 		limit=1,
