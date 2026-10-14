@@ -2,8 +2,8 @@
 # See license.txt
 
 # The doctor's amount on every copy sold goes to his ledger (DOC-07, LIB-05; imederp/doctor_accrual.py): one entry
-# per invoice line, never twice, cancelled with the sale and taken back by a credit note. Real stores and
-# accounts; rolled back.
+# per invoice line, never twice, cancelled with the sale and taken back by a credit note; in the accounts, Dr
+# حصة الأطباء / Cr مستحقات للأطباء — الكتب on the library's cost center. Real stores and accounts; rolled back.
 #
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual
@@ -21,6 +21,8 @@ from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH, RAGHAD
 
 LEDGER = "Doctor Ledger Entry"
+EXPENSE = "حصة الأطباء - MMG"
+PAYABLE = "مستحقات للأطباء — الكتب - MMG"
 
 
 class IntegrationTestDoctorAccrual(IntegrationTestCase):
@@ -97,8 +99,19 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		return frappe.get_all(
 			LEDGER,
 			filters={"sales_invoice": invoice, "docstatus": 1},
-			fields=["name", "agreement", "period", "entry_type", "edition", "qty", "amount", "invoice_item", "entry_date"],
+			fields=["name", "journal_entry", "agreement", "period", "entry_type", "edition", "qty", "amount", "invoice_item", "entry_date"],
 			order_by="creation",
+		)
+
+	def gl(self, journal_entry):
+		"""(account, cost center, party, debit, credit) of the journal entry's ledger lines, if submitted."""
+		return sorted(
+			(g.account, g.cost_center, g.party, g.debit, g.credit)
+			for g in frappe.get_all(
+				"GL Entry",
+				filters={"voucher_type": "Journal Entry", "voucher_no": journal_entry, "is_cancelled": 0},
+				fields=["account", "cost_center", "party", "debit", "credit"],
+			)
 		)
 
 	def balance(self, agreement):
@@ -115,6 +128,11 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 			(edition.agreement, self.term, "Accrual", edition.name, 3, 240, sale.items[0].name, getdate(sale.posting_date)),
 		)
 		self.assertEqual(self.balance(edition.agreement) - before, 240)
+		# In the accounts: the doctors' share is a cost of the library that sold, owed to this doctor.
+		self.assertEqual(
+			self.gl(entry.journal_entry),
+			[(EXPENSE, MAWASAH, None, 240, 0), (PAYABLE, MAWASAH, None, 0, 240)],
+		)
 
 	def test_counting_an_invoice_again_adds_nothing(self):
 		edition = self.edition()
@@ -124,6 +142,7 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		accrue(frappe.get_doc("Sales Invoice", sale.name))
 		self.assertEqual([e.amount for e in self.entries(sale.name)], [240])
 		self.assertEqual(self.balance(edition.agreement) - before, 240)
+		self.assertEqual(frappe.db.count("Journal Entry", {"user_remark": ["like", f"%{sale.name}%"], "docstatus": 1}), 1)
 
 	def test_one_entry_per_line(self):
 		# Two lines of the same edition are two entries, each keyed by its own line; a line with no edition (a
@@ -139,6 +158,12 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 				(second.name, 280, sale.items[2].name),
 			],
 		)
+		# One journal entry for the sale, with a debit and a credit for each line.
+		[journal_entry] = {e.journal_entry for e in self.entries(sale.name)}
+		self.assertEqual(
+			[(g[0], g[3], g[4]) for g in self.gl(journal_entry)],
+			[(EXPENSE, 80, 0), (EXPENSE, 160, 0), (EXPENSE, 280, 0), (PAYABLE, 0, 80), (PAYABLE, 0, 160), (PAYABLE, 0, 280)],
+		)
 
 	def test_a_cancelled_sale_takes_its_amount_back(self):
 		edition = self.edition()
@@ -147,7 +172,18 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		[entry] = self.entries(sale.name)
 		cancel_with_reason("Sales Invoice", sale.name, "Test: wrong copies")
 		self.assertEqual(frappe.db.get_value(LEDGER, entry.name, "docstatus"), 2)
+		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
+		self.assertEqual(self.gl(entry.journal_entry), [])
 		self.assertEqual(self.balance(edition.agreement), before)
+
+	def test_what_a_sale_posted_goes_only_with_the_sale(self):
+		edition = self.edition()
+		sale = self.sell([(self.items[0], 3)])
+		[entry] = self.entries(sale.name)
+		for doctype, name in ((LEDGER, entry.name), ("Journal Entry", entry.journal_entry)):
+			with self.subTest(doctype):
+				self.assertRaisesRegex(frappe.ValidationError, "Cancel the invoice instead", frappe.get_doc(doctype, name).cancel)
+				self.assertEqual(frappe.db.get_value(doctype, name, "docstatus"), 1)
 
 	def test_copies_returned_are_taken_off(self):
 		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
@@ -161,6 +197,10 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		credit.submit()
 		[entry] = self.entries(credit.name)
 		self.assertEqual((entry.entry_type, entry.qty, entry.amount, entry.edition), ("Adjustment", -1, -80, edition.name))
+		self.assertEqual(
+			self.gl(entry.journal_entry),
+			[(EXPENSE, MAWASAH, None, 0, 80), (PAYABLE, MAWASAH, None, 80, 0)],
+		)
 		self.assertEqual(self.balance(edition.agreement) - before, 160)
 
 	def test_a_branch_manager_s_sale_posts_to_the_ledger_she_cannot_read(self):
@@ -169,4 +209,5 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		self.assertFalse(frappe.has_permission(LEDGER, "read"))
 		sale = self.sell([(self.items[0], 2)])
 		frappe.set_user("Administrator")
-		self.assertEqual([e.amount for e in self.entries(sale.name)], [160])
+		[entry] = self.entries(sale.name)
+		self.assertEqual((entry.amount, frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus")), (160, 1))
