@@ -61,3 +61,22 @@ Built without a decision on these; the behaviour named is what the system does u
 | 10 | **Requirement IDs.** In requirements v1.2, SEC-06 is "a receipt for every sale or collection"; cancelling with a reason is ACC-06. The task named the cancellation SEC-06. | Code and README cite ACC-06 for the reason and SEC-06 for the receipt. | Team |
 | 11 | **POS change account** (fixed, to confirm). The library POS Profiles had no change account, so change was left as a credit on the customer and the whole amount handed over showed in the cash box. Each profile now gives change from its own cash box. | Applied by `setup_library.py`. | Accountant |
 | 12 | **Libraries' existing sales system.** Requirements §4.6 say the libraries keep their current sales system as the sales interface, with its data received through integrations (LIB-11), while LIB-01 asks for a POS screen here. Will the counter use ERPNext's POS, or only receive sales from the old system? | Both are possible; the POS is ready. | Owner |
+
+## Open questions: edition quantities, carry forward and cancellation (DOC-14..17)
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **Which copies sell first: the doctor's or the library's extra ones?** DOC-14 tracks them apart, and DOC-18 charges the doctor for *his* copies left at cancellation, so the order decides what he pays. | Sold Qty and Remaining Qty are for the edition as a whole; they are not split between the two quantities. | Owner |
+| 2 | **Two editions of the same book on sale at once** (a new one while the last one's copies are carried forward): which is sold first? | The seller chooses the edition on the invoice row; none is picked for them. The point of sale cannot show the field, so such a sale is made from the desk. | Owner / Libraries |
+| 3 | **One Item per edition, or one per title?** Stock is valued per item (FIFO by default; one generic `BOOK` item today), so copies of different editions of one item share one cost: the carried copies' original cost (DOC-15/16) is kept on the edition, not in the stock value. One Item per edition (or batches) would keep it in stock too. | Any item can be named on an edition; nothing in valuation changed. | Owner / Accountant / Taqa |
+| 4 | **How printed copies enter the store, and at what cost.** Approving an edition posts nothing; stock of the item comes from receipts or purchases at the rate typed there, not from the edition's approved costs. | Not built; no stock or ledger entry from editions. | Accountant / Taqa |
+| 5 | **The edition's selling price and the Item Price.** DOC-16 sells carried copies at the price of the day; the price on the invoice is ERPNext's Item Price, which only the owner changes (SEC-02). Should approving an edition set it? | Not linked; the Item Price is set by the owner as before. | Owner |
+| 6 | **The copies of a cancelled edition.** They are no longer sold here. Are they sold by weight as damaged stock, returned to the doctor, or kept? | Still in the store; no stock movement made. | Owner / Libraries |
+| 7 | **Who received the notice.** DOC-17 asks for the employee who received the verbal notice. The one recording it is taken as that employee. If someone else may record it for them, which name is kept? | The logged-in employee recording it. | Owner |
+| 8 | **Carry forward at period end.** Manual (button) for now. Should every unsold edition be carried forward automatically when its period ends, and to the next period of which cycle? | Manual, to any later open period. | Owner / Accountant |
+| 9 | **Damaged copies of an edition** (DOC-19). Damaged Stock Entry does not name an edition, so damaged copies are not taken off the edition's Remaining Qty. | Not linked. | Libraries |
+
+**Depends on the doctors' accounts (Taqa):** what the doctor is due per copy sold (DOC-07) and the cancellation
+charge (DOC-18, approved under DOC-22) should read the sales from Sales Invoice Item › Book Edition, the edition's
+approved costs, and its Remaining Qty at cancellation; split between the doctor's and the library's copies once
+question 1 is answered. Nothing here makes a Doctor Ledger Entry.

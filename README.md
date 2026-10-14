@@ -26,7 +26,8 @@ apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
                         shared rules: treasuries.py (each business's cash box), no_delete.py,
                         period_lock.py (closed months), library_revenue.py, expense_reminders.py,
                         stock_reorder.py (reorder levels), material_issue.py (branch requests),
-                        customers.py (one customer per phone), sales_cancellation.py (reason to cancel a sale)
+                        customers.py (one customer per phone), sales_cancellation.py (reason to cancel a sale),
+                        edition_sales.py (which edition each copy sold comes from)
   imed_erp/assistant/   AI assistant (chat window; no model connected yet)
   imed_erp/notification_service.py   Unified notifications (CORE-10)
   imed_erp/setup/       One-off setup scripts run from bench console (see below)
@@ -111,7 +112,7 @@ If a script says "Module ImedERP not found" after a rebuild, clear the cache:
 | Academic Period | full | read only |
 | Doctor Agreement | full | pick one on an edition or subscription only (select); the agreements are not opened |
 | Doctor Ledger Entry | full | none |
-| Book Edition | full | create, edit (no submit: submitting approves the edition's pricing) |
+| Book Edition | full | create, edit (no submit: submitting approves the edition's pricing); Carry Forward and Cancel: Curriculum Changed on their own library's approved editions |
 | Printer Reading, App Subscription | full | create, edit, submit (no cancel/delete) |
 | Expense | full | create, edit, request approval (no cancel/delete); every expense is submitted only once the accountant approves it |
 | Inter Business Transfer | full | Accounts User: read only. Branch Manager: create, edit, submit (no cancel/delete) |
@@ -832,6 +833,35 @@ changed for that edition only, and they are kept once it is submitted, so a late
 touches an approved edition (DOC-24/25). It cannot be submitted before the library has a paper price. Marketing is an optional amount per copy that
 goes to the library, not to the doctor.
 
+**Edition quantities and sales (DOC-14..17).** An edition keeps the copies printed because the doctor asked for
+them (**Doctor Requested Qty**) apart from those the library added (**Library Extra Qty**); **Total Qty** is their
+sum. Neither can be negative, an edition is approved with at least one copy, and once approved the quantities
+change only by Cancel and Amend.
+
+- **Which edition a copy came from.** The edition names the **Item** it is sold as. Every sales invoice row of
+  that item names the edition (**Book Edition** on the row): it is filled in when the item has one approved
+  edition on sale, and must be chosen when it has several (a new edition while the last one's copies are
+  carried forward). A row cannot name another item's edition, a draft edition or a cancelled one, an item whose
+  editions were all cancelled is not sold without one, and an edition never sells more copies than its Total
+  Qty, also when two invoices are submitted at the same moment (the second is asked to submit again).
+- **Sold Qty and Remaining Qty** come from the submitted invoices that name the edition, worked out again on
+  every submit and cancel (`imederp/edition_sales.py`), so a sale is never counted twice and a cancelled one
+  stops counting. The invoice stays the record of the sale; nothing else is posted.
+- **Carry Forward** (DOC-15, approved editions with copies left): the edition goes on to a later, open academic
+  period with who did it and when. Its approved costs are not touched (DOC-25), and its copies stay on sale at
+  the price of the day they are sold, ERPNext's Item Price (DOC-16).
+- **Cancel: Curriculum Changed** (DOC-17): the doctor says by word of mouth that the curriculum changed. The
+  edition is marked Cancelled with the **Notice Date** (not in the future, not before the edition) and the
+  employee who received the notice and records it, taken from the login, never typed; the time it was
+  recorded is kept too. The edition stays approved with its sales, stock and costs; no more copies are sold.
+  What the copies left cost the doctor or the library (DOC-18, approved under DOC-22) belongs to the doctors'
+  accounts and is not posted here.
+- Status and these fields change only through the two buttons (the server refuses them otherwise), and the
+  edition's history shows each change. Branch managers act on their own library's editions; the owner and the
+  accountant on any.
+- An item with no edition sells as before. Open questions (which copies sell first, an Item per edition, how
+  printed copies enter the store): docs/known-issues.md.
+
 An App Subscription records the student and the platform fee due from the doctor only: the course is paid
 by the student to the doctor directly and is not recorded (APP-05, v1.2). Editions belong to books
 agreements and subscriptions to app agreements.
@@ -890,6 +920,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_damaged_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_customers
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_sales_cancellation
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is
