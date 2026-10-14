@@ -147,6 +147,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 				"edition_date": edition_date,
 				"cost_center": LIBRARY,
 				"pages": 10,
+				"doctor_qty": 100,
 			}
 		).insert()
 

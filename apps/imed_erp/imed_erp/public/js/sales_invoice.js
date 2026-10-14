@@ -15,6 +15,17 @@
  */
 
 frappe.ui.form.on("Sales Invoice", {
+	setup(frm) {
+		// A row's edition is one of its item's approved editions still on sale (imederp/edition_sales.py).
+		frm.set_query("book_edition", "items", (doc, cdt, cdn) => ({
+			filters: {
+				item_code: locals[cdt][cdn].item_code,
+				docstatus: 1,
+				status: ["in", ["Active", "Carried Forward"]],
+			},
+		}));
+	},
+
 	refresh(frm) {
 		// The paper a printing sale issued (imederp/paper_use.py) goes back when the invoice is cancelled; the
 		// Cancel button must not try to cancel that Stock Entry first, which is refused on its own.
