@@ -905,6 +905,7 @@ Each doctype has integration tests next to it; the expense reminders have their 
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests true
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_test_records  # first: catches a missing IGNORE entry before it commits _Test records
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
