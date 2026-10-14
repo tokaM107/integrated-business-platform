@@ -611,3 +611,5 @@ The doctor's amount on the copies sold in {0}.,حق الطبيب في النسخ
 Account {0} is missing for {1}. Run setup_coa.py.,الحساب {0} مش موجود في {1}. شغّل setup_coa.py.
 Missing Account,حساب ناقص
 {0} row #{1}: {2} x {3},{0} سطر #{1}: {2} × {3}
+Sales Invoice {0}: the doctor's amount could not be counted,فاتورة البيع {0}: حق الطبيب ماتحسبش
+Sales Invoice {0}: the doctor's amount could not be cancelled,فاتورة البيع {0}: حق الطبيب مااتلغاش
