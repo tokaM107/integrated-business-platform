@@ -4,9 +4,10 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import cint, flt, today
 
 from imed_erp.imederp.doctor_accrual import PAYABLE_ACCOUNT, account, cancel
+from imed_erp.imederp.doctype.book_edition.book_edition import get_copy_cost, get_sold_qty
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_submitted, get_balance, update_balance
 
 # Which agreement each kind of entry is for. Books: the group owes the doctor and pays him out; copies he asked
@@ -111,3 +112,62 @@ class DoctorLedgerEntry(Document):
 			if frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
 				cancel("Journal Entry", self.journal_entry)
 		update_balance(self.agreement)
+
+
+UNSOLD = "Unsold Copies Charge"
+
+
+def charge_unsold_copies(period):
+	"""When a term or a module ends (its Academic Period is closed), the copies the doctor asked for and did not
+	sell are charged to him at what they cost to make (owner, 10 Oct 2026; DOC-18). Copies the library added are
+	its own, so sales count against the doctor's copies first. Each charge is a draft: it is applied only when the
+	accountant or the owner submits it (DOC-22). An edition already charged for the period is skipped, so closing
+	again adds nothing. Returns the drafts made."""
+	periods = [period, *descendants(period)]
+	drafts = []
+	for edition in frappe.get_all(
+		"Book Edition",
+		filters={"docstatus": 1},
+		fields=["name", "agreement", "period", "carried_to_period", "status", "doctor_qty", "edition_name",
+			"paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"],
+	):
+		# An edition carried forward ends with the period it was carried to.
+		current = edition.carried_to_period or edition.period
+		if current not in periods:
+			continue
+		unsold = cint(edition.doctor_qty) - cint(get_sold_qty(edition.name))
+		amount = flt(max(unsold, 0) * get_copy_cost(edition), 2)
+		if amount <= 0 or frappe.db.exists(
+			"Doctor Ledger Entry", {"edition": edition.name, "period": current, "entry_type": UNSOLD, "docstatus": ["<", 2]}
+		):
+			continue
+		entry = frappe.get_doc(
+			{
+				"doctype": "Doctor Ledger Entry",
+				"agreement": edition.agreement,
+				"period": current,
+				"entry_date": today(),
+				"entry_type": UNSOLD,
+				"edition": edition.name,
+				"qty": unsold,
+				"amount": amount,
+				"remarks": _("{0}: {1} of the doctor's {2} copies unsold x {3} a copy, when {4} ended.").format(
+					edition.edition_name, unsold, cint(edition.doctor_qty), get_copy_cost(edition), period
+				),
+			}
+		)
+		# Closing a period is the accountant's or the owner's (Academic Period), and so is approving the charge.
+		entry.insert()
+		drafts.append(entry.name)
+	return drafts
+
+
+def descendants(period):
+	"""The rounds and modules under a period, at any depth."""
+	found, parents = [], [period]
+	while parents:
+		children = frappe.get_all("Academic Period", filters={"parent_period": ["in", parents]}, pluck="name")
+		found += children
+		parents = children
+	return found
+
