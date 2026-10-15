@@ -875,6 +875,22 @@ A closed academic period takes no new entries (`period_lock.py`), except the one
 the Unsold Copies Charge and the Payout. A sale of an edition whose period is closed is refused until the edition
 is carried forward.
 
+**Approving a deduction** (DOC-22). A deduction from the doctor, a charge for unsold copies or an adjustment
+taking money off him by hand, is applied only once the owner or the accountant approves it, the same way as an
+expense (role Expense Approver). A charge raised when a period closes is a draft **Pending Approval** and the
+accountant is notified; the form shows **Approve** (which submits it) and **Reject** (with a reason; a rejected
+one is closed for good). An approver's own deduction is approved as he submits it. Approval Status, Approved /
+Rejected By and Rejection Reason are set only by the system, Approve and Reject, never by editing or the API. The
+owner's page counts the deductions waiting. A credit note's adjustment is not a deduction: the copies came back.
+
+**A negative balance stays a debt** (DOC-20). A books doctor charged more than he earned owes the group. The
+balance stays below zero and is never closed on its own: what he earns next pays it off first, and nothing is paid
+out to him while he owes (a payout is never more than the balance). The report **Doctor Debts** lists, as of a
+date, every agreement under which the doctor owes the group: a books agreement below zero and an app agreement's
+platform fees not collected yet, with the amount, since when it is owed and its age in 0-30 / 31-60 / 61-90 /
+90+ days. Later amounts pay off the oldest part first, so the age is that of the oldest part still unpaid. It is
+worked out from the doctor's ledger; on the owner's page under the reports and in the sidebar.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
@@ -995,6 +1011,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "B
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
