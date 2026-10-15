@@ -289,7 +289,16 @@ class IntegrationTestEditionSales(IntegrationTestCase):
 		self.assertEqual(frappe.db.count("Stock Ledger Entry", {"voucher_no": sale.name}), stock_entries)
 		self.assertEqual(frappe.db.count("GL Entry", {"voucher_no": sale.name}), gl_entries)
 		self.assertEqual(self.qty(edition), (120, 30, 90))
-		self.assertFalse(frappe.db.exists("Doctor Ledger Entry", {"edition": edition.name, "sales_invoice": ["is", "not set"]}))
+		# DOC-18/22: the doctor's 70 unsold copies (of his 100) are charged to him, as a draft waiting for approval;
+		# the library's 20 extra are not.
+		self.assertEqual(
+			frappe.get_all(
+				"Doctor Ledger Entry",
+				filters={"edition": edition.name, "sales_invoice": ["is", "not set"]},
+				fields=["entry_type", "qty", "docstatus", "approval_status"],
+			),
+			[{"entry_type": "Unsold Copies Charge", "qty": 70, "docstatus": 0, "approval_status": "Pending Approval"}],
+		)
 		version = frappe.get_all("Version", filters={"ref_doctype": "Book Edition", "docname": edition.name}, fields=["owner", "data"])
 		self.assertTrue(any(v.owner == RAGHAD and "Cancelled" in v.data for v in version), version)
 		# No more copies are sold, and it is not cancelled or carried forward twice.
