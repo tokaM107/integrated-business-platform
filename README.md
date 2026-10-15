@@ -850,6 +850,13 @@ ink + overheads) per sheet × sheets + binding (`book_edition.get_copy_cost`). A
 names; one entered with no period belongs to the period its date falls in. Accounts Manager and System Manager
 open it (the accountant and the owner).
 
+**Paying the doctor** (DOC-09, ACC-11). A **Payout** in the doctor's ledger names the **Treasury** it is paid from
+(a cash box or a wallet). On submit it posts a Journal Entry: Dr `مستحقات للأطباء — الكتب` / Cr the treasury.
+That journal entry runs the usual treasury check (`treasuries.check_entry_treasuries`): the accountant pays from
+any treasury, anyone else only from their own business's cash box or the group's wallets. A doctor may be paid in
+parts and as often as needed, but never more than he is owed at that moment (that would leave him a debt by
+mistake). Cancelling the payout cancels its journal entry; the journal entry is not cancelled on its own.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
