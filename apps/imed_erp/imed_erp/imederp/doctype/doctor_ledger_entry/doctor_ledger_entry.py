@@ -176,6 +176,18 @@ class DoctorLedgerEntry(Document):
 	# The agreement's Balance is worked out from these entries (doctor_agreement.py).
 	def on_submit(self):
 		update_balance(self.agreement, self)
+		self.send_statement()
+
+	def send_statement(self):
+		# DOC-23: a settlement by hand (a payout, an approved charge, an adjustment, a collection) sends the doctor
+		# his statement. Sales do not: there would be one a copy.
+		if self.sales_invoice or self.entry_type == "Accrual":
+			return
+		from imed_erp.imederp.report.doctor_statement.doctor_statement import send_statement, statement_period
+
+		period = statement_period(self)
+		if period:
+			send_statement(self.agreement, period, _("{0} {1} of {2}").format(_(self.entry_type), self.name, abs(flt(self.amount))))
 
 	def on_cancel(self):
 		# A payout's journal entry goes with it; a sale's goes with the sale (doctor_accrual.cancel_accruals).
