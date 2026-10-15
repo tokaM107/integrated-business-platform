@@ -80,3 +80,14 @@ Built without a decision on these; the behaviour named is what the system does u
 charge (DOC-18, approved under DOC-22) should read the sales from Sales Invoice Item › Book Edition, the edition's
 approved costs, and its Remaining Qty at cancellation; split between the doctor's and the library's copies once
 question 1 is answered. Nothing here makes a Doctor Ledger Entry.
+
+## Open questions: doctor reports, daily import and opening stock (RPT-08, RPT-10, INT, opening stock)
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **Platform fees in the doctor's ledger.** App Subscriptions post nothing to the ledger, so an app agreement's balance holds only its collections, and Doctor Debts (RPT-10, read from the ledger) shows a fee as owed only once it is in the ledger. Should each subscription's fee be posted to the ledger as an Accrual? | Fees on subscriptions alone do not show as debts. | Owner / Taqa |
+| 2 | **Payouts by library.** RPT-08 asks for receivables by library. A payout made for the agreement as a whole has no library, so the libraries' rows do not each show what is still owed to them. Should a payout name its library? | Shown as *Not by branch*; the agreement's row is the balance. | Accountant / Taqa |
+| 3 | **Who sees the reports.** RPT-08 and RPT-10 are Super Admin reports. | The owner and the accountant (Accounts Manager, who may open the doctor's ledger). | Owner |
+| 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |
+| 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
+| 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |

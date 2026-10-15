@@ -1,0 +1,2 @@
+source_system,source_id,source_line_id,branch,receipt_date,receipt_time,item_code,book_edition,qty,rate,customer_phone,payment_method,paid_amount,cashier
+library_pos,EXAMPLE-R-0001,EXAMPLE-R-0001-1,مكتبة المواساة,2026-10-15,10:30:00,PRINT-SVC,,40,1.00,01012345678,cash,40.00,EXAMPLE

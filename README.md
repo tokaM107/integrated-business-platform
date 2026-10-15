@@ -84,6 +84,10 @@ all setup scripts about 40 seconds, so the whole system is built in about 2.5 mi
 
 Problems met while setting up, and their fixes: [docs/setup-issues.md](docs/setup-issues.md).
 
+Going live: the opening stock ([docs/OPENING_STOCK.md](docs/OPENING_STOCK.md)), the daily import's data standard
+([docs/IMPORT_DATA_STANDARD.md](docs/IMPORT_DATA_STANDARD.md), sample files in `docs/import/`), and checking two
+doctor statements by hand ([docs/DOCTOR_STATEMENT_RECONCILIATION.md](docs/DOCTOR_STATEMENT_RECONCILIATION.md)).
+
 ## How the imed_erp app is loaded
 
 `pwd.yml` mounts this repository's `apps/imed_erp` folder into the backend, worker, scheduler and
@@ -320,6 +324,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
 | `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `check_opening_stock.py` | Opening stock (INT-08). Checks the libraries' count sheet (`setup/data/opening_stock.csv`, from `opening_stock_template.csv`) row by row and prints the total per store; with `MAKE_DRAFTS = True` and no errors, makes one **draft** Stock Reconciliation (Opening Stock) per branch, for the owner or the accountant to submit. Never submits, never posts twice to a store. See [docs/OPENING_STOCK.md](docs/OPENING_STOCK.md). |
 | `setup_customer_phones.py` | One customer per phone number (CRM-04). Run once after `bench migrate` added the Phone Key field: gives each customer saved before it the key of its number, so a new customer with the same number is refused. Changes no phone number and merges nothing: invalid numbers and numbers already on several customers are listed (the oldest customer of a number gets its key). `FILL = False` only prints the report. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. The owner follows everything himself and mostly confirms (owner, 12 Oct 2026), so the dashboard is his home page (`default_workspace`), with Arabic section headers: what waits for him first, with counts (expenses waiting for approval, editions to approve, transfers to confirm), then the key numbers and charts, one click to every list of the staff's work (sales, expenses, purchases, counts, stock movements, branch requests, agreements, editions, counters, subscriptions, and All Changes, Frappe's change history), then the reports. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
@@ -905,6 +910,14 @@ colour (orange: we owe the doctor; blue: the doctor owes us), and the list shows
 colours, a suspended one in grey. A negative balance runs the other way (DOC-20): a books doctor charged more
 than he earned owes the group, and is shown so.
 
+**Doctor Receivables** (RPT-08, ImedERP > Doctors and Editions) lists the books agreements that still owe the
+doctor, read from the same ledger (`imederp/doctor_balances.py`); it posts nothing. Only the owner and the
+accountant (who may open the ledger) see it. What doctors owe the group is **Doctor Debts** (RPT-10), above.
+
+| Shows | Filters |
+|---|---|
+| Opening (balance before From Date), Accrued, Adjustments, Unsold Copies Charges, Paid, **Outstanding** (on To Date, the balance the agreement screen shows), Last Settlement, and the number of entries, which opens them. Under each agreement, a row per library: an entry's library is its invoice line's, else its edition's, else its journal entry's one cost center; a payout for the agreement as a whole is *Not by branch*. | From / To Date, Doctor, Agreement, Branch (that library's entries only), Show Settled Agreements |
+
 The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
 the **settlement period** (from and to, entered by the accountant: each year has its own dates, owner's
 decision of 12 Oct 2026; the next settlement is due at its end, and after settling he enters the next period,
@@ -1031,6 +1044,8 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_customers
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_sales_cancellation
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

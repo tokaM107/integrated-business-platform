@@ -29,3 +29,7 @@ node_modules/
 # Empty npm lock files created by running npm outside a package
 /package-lock.json
 /frappe_docker/package-lock.json
+
+# The real opening count (quantities and costs): business data, never pushed to the repository, which is public.
+# Only the empty template is kept (apps/imed_erp/imed_erp/setup/data/opening_stock_template.csv).
+apps/imed_erp/imed_erp/setup/data/opening_stock.csv
