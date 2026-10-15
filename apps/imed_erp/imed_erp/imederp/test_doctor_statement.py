@@ -207,7 +207,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		return frappe.get_all(
 			LEDGER,
 			filters={"edition": edition.name, "entry_type": "Unsold Copies Charge", "docstatus": ["<", 2]},
-			fields=["name", "docstatus", "period", "qty", "amount"],
+			fields=["name", "docstatus", "approval_status", "period", "qty", "amount"],
 		)
 
 	def test_closing_the_term_charges_the_doctor_s_unsold_copies_as_a_draft(self):
@@ -218,8 +218,12 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 
 		[charge] = self.charges(edition)
 		self.assertEqual(
-			(charge.docstatus, charge.period, charge.qty, charge.amount),
-			(0, self.term2, 20, round(20 * get_copy_cost(edition), 2)),
+			(charge.docstatus, charge.approval_status, charge.period, charge.qty, charge.amount),
+			(0, "Pending Approval", self.term2, 20, round(20 * get_copy_cost(edition), 2)),
+		)
+		# The accountant is told, as for an expense.
+		self.assertTrue(
+			frappe.db.exists("Notification Log", {"for_user": "accountant@imed.local", "document_name": charge.name})
 		)
 		# Waiting for approval: nothing is taken from the doctor yet.
 		self.assertEqual((self.opening(), self.statement()[1][-1]["balance"]), before)
