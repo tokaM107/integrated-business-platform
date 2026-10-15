@@ -831,6 +831,25 @@ per copy) that is not in the doctor's ledger is counted, with the same invoice-a
 invoice that was cancelled are cancelled. Running it again changes nothing. One invoice that fails is rolled back
 and written to the Error Log, and the others go on; the next run tries it again.
 
+A sale of an edition carried forward (DOC-15) is entered in the period it was carried to, once that period has
+started, so it shows on that period's statement.
+
+**The doctor's statement** (DOC-08, DOC-13; report **Doctor Statement**, under Doctors and Editions and on the
+owner's page). One agreement and one academic period on their own, from the doctor's ledger:
+
+| Row | What it shows |
+|---|---|
+| Balance Brought Forward | the balance from before the period; a negative one stays a debt and is taken from what comes next (DOC-20) |
+| Copies Sold (one per edition) | the edition, copies sold in the period (less returns), the selling price, the cost of a copy, the doctor's amount per copy, and what he earned on them |
+| Other entries, by date | payouts, charges for unsold copies, adjustments, each with its date and remarks |
+| Balance at the End of the Period | where the account stands; the summary says which way it runs |
+
+It leaves out the library's side (owner's decision): its profit per sheet, its marketing and any difference
+between the calculated price and the price set by hand. The **cost of a copy** is what it costs to make, (paper +
+ink + overheads) per sheet × sheets + binding (`book_edition.get_copy_cost`). An entry belongs to the period it
+names; one entered with no period belongs to the period its date falls in. Accounts Manager and System Manager
+open it (the accountant and the owner).
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
@@ -950,6 +969,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "D
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
