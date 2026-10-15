@@ -11,7 +11,7 @@ import frappe
 from frappe import _
 from frappe.utils import date_diff, flt, getdate
 
-from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_SIGN, DIRECTION, OWED_BY_DOCTOR
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import open_amounts
 
 BUCKETS = ((30, "0-30"), (60, "31-60"), (90, "61-90"), (None, "90+"))
 
@@ -43,8 +43,8 @@ def get_data(filters, as_of):
 	for agreement in frappe.get_all(
 		"Doctor Agreement", filters=conditions, fields=["name", "doctor", "agreement_type"], order_by="doctor, name"
 	):
-		layers = debt_layers(agreement, as_of)
-		debt = flt(sum(amount for _, amount in layers), 2)
+		layers = [(part.date, part.amount) for part in open_amounts(agreement.name, as_of, owed_by_doctor=True)]
+		debt = flt(sum(amount for _date, amount in layers), 2)
 		if debt <= 0:
 			continue
 		row = {
@@ -64,32 +64,3 @@ def get_data(filters, as_of):
 
 def bucket(days):
 	return next(label for limit, label in BUCKETS if limit is None or days <= limit)
-
-
-def debt_layers(agreement, as_of):
-	"""What the doctor still owes under the agreement, as (date it arose, amount) from the oldest, after what came
-	later paid it off oldest first."""
-	# For a books agreement the balance is what the group owes the doctor, so his debt is the balance below zero;
-	# for an app agreement the balance is what he owes.
-	owes = 1 if DIRECTION.get(agreement.agreement_type) == OWED_BY_DOCTOR else -1
-	position, layers = 0, []
-	for entry in frappe.get_all(
-		"Doctor Ledger Entry",
-		filters={"agreement": agreement.name, "docstatus": 1, "entry_date": ["<=", as_of]},
-		fields=["entry_date", "entry_type", "amount"],
-		order_by="entry_date, creation",
-	):
-		before = max(position, 0)
-		position += owes * BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount)
-		after = max(position, 0)
-		if after > before:
-			layers.append([getdate(entry.entry_date), after - before])
-		else:
-			paid = before - after
-			while paid > 0 and layers:
-				taken = min(paid, layers[0][1])
-				layers[0][1] -= taken
-				paid -= taken
-				if not layers[0][1]:
-					layers.pop(0)
-	return [(date, flt(amount, 2)) for date, amount in layers if flt(amount, 2)]
