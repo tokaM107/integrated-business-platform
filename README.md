@@ -857,6 +857,12 @@ any treasury, anyone else only from their own business's cash box or the group's
 parts and as often as needed, but never more than he is owed at that moment (that would leave him a debt by
 mistake). Cancelling the payout cancels its journal entry; the journal entry is not cancelled on its own.
 
+The payout prints as a **receipt** with **MMG Doctor Payout** (`imederp/print_format/mmg_doctor_payout`), the
+default print format of Doctor Ledger Entry: who was paid, the agreement, period, date and treasury, the amount in
+figures and in words (`فقط ألف و مئتان و خمسون جنيه مصري وخمسون قرشًا لا غير`), and lines for the doctor's and the
+accountant's signatures. Arabic when printed in Arabic, like the invoice. A simple version; the final design comes
+in week C. Any other ledger entry prints the same way under the title حركة حساب طبيب.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
