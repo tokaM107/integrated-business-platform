@@ -28,7 +28,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt, getdate
 
 from imed_erp.imederp.edition_sales import FIELD
 
@@ -57,7 +57,9 @@ def counted(row):
 
 
 def make_accrual(doc, row):
-	edition = frappe.db.get_value("Book Edition", row.get(FIELD), ["agreement", "period", "doctor_share"], as_dict=True)
+	edition = frappe.db.get_value(
+		"Book Edition", row.get(FIELD), ["agreement", "period", "carried_to_period", "doctor_share"], as_dict=True
+	)
 	qty = flt(row.stock_qty or row.qty)
 	amount = flt(qty * flt(edition.doctor_share), frappe.get_precision(LEDGER, "amount"))
 	if not amount:
@@ -66,7 +68,7 @@ def make_accrual(doc, row):
 		{
 			"doctype": LEDGER,
 			"agreement": edition.agreement,
-			"period": edition.period,
+			"period": sale_period(edition, doc.posting_date),
 			"entry_date": doc.posting_date,
 			# A credit note takes the copies back: an adjustment carries its own sign.
 			"entry_type": "Adjustment" if amount < 0 else "Accrual",
@@ -80,6 +82,16 @@ def make_accrual(doc, row):
 	)
 	entry.flags.cost_center = row.cost_center or doc.cost_center
 	return entry
+
+
+def sale_period(edition, posting_date):
+	"""The period a copy is sold in, for the doctor's statement of that period (DOC-08): the edition's own, or the
+	period it was carried forward to (DOC-15) once that period has started."""
+	if edition.carried_to_period:
+		start = frappe.db.get_value("Academic Period", edition.carried_to_period, "start_date")
+		if start and getdate(posting_date) >= getdate(start):
+			return edition.carried_to_period
+	return edition.period
 
 
 def account(company, account_name):
