@@ -621,3 +621,12 @@ Owed,المستحق
 Paid / Deducted,المصروف / المخصوم
 Balance Brought Forward,رصيد أول الفترة
 Balance at the End of the Period,رصيد آخر الفترة
+The cash box or wallet the money is paid from.,الخزنة أو المحفظة اللي الفلوس هتتصرف منها.
+Choose the treasury the money is paid from.,اختار الخزنة اللي الفلوس هتتصرف منها.
+Treasury Required,الخزنة مطلوبة
+{0} is not a treasury. Choose a cash box or a wallet.,{0} مش خزنة. اختار خزنة أو محفظة.
+The doctor is owed {0} under {1}; a payout of {2} is more than that. Pay {0} or less.,مستحق الطبيب على {1} هو {0}؛ صرف {2} أكتر منه. اصرف {0} أو أقل.
+More Than Owed,أكتر من المستحق
+Payout to {0} under {1} ({2}).,صرف لـ {0} على {1} ({2}).
+{0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.,{0} اتعمل من حركة حساب الطبيب {1}. الغي الحركة دي بدل كده.
+Posted by the Doctor's Ledger,متسجل من حساب الطبيب
