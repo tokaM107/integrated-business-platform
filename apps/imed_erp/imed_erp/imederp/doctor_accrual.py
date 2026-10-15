@@ -166,13 +166,21 @@ def cancel(doctype, name):
 
 def block_cancel_of_accrual(doc, method=None):
 	"""Doctor Ledger Entry and Journal Entry before_cancel hook: what a sale posted for the doctor goes only when
-	the sale is cancelled, otherwise his ledger and the accounts would no longer agree with the copies sold."""
+	the sale is cancelled, and a payout's journal entry only with the payout, otherwise his ledger and the accounts
+	would no longer agree."""
 	if doc.flags.from_doctor_accrual:
 		return
 	if doc.doctype == LEDGER:
 		invoice = doc.sales_invoice
 	else:
-		invoice = frappe.db.get_value(LEDGER, {"journal_entry": doc.name, "sales_invoice": ["is", "set"]}, "sales_invoice")
+		entry = frappe.db.get_value(LEDGER, {"journal_entry": doc.name, "docstatus": 1}, ["name", "sales_invoice"], as_dict=True)
+		if entry and not entry.sales_invoice:
+			# A payout's journal entry goes with the payout.
+			frappe.throw(
+				_("{0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.").format(doc.name, entry.name),
+				title=_("Posted by the Doctor's Ledger"),
+			)
+		invoice = entry.sales_invoice if entry else None
 	if invoice and frappe.db.get_value("Sales Invoice", invoice, "docstatus") == 1:
 		frappe.throw(
 			_("{0} was posted by Sales Invoice {1} for the doctor's amount. Cancel the invoice instead.").format(doc.name, invoice),
