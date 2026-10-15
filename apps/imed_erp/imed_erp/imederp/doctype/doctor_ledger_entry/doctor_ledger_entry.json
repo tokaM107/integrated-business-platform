@@ -21,6 +21,7 @@
   "source_section",
   "sales_invoice",
   "invoice_item",
+  "branch",
   "column_break_source",
   "journal_entry",
   "approval_section",
@@ -114,6 +115,16 @@
    "depends_on": "sales_invoice"
   },
   {
+   "fieldname": "branch",
+   "fieldtype": "Link",
+   "label": "Branch",
+   "options": "Cost Center",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "branch",
+   "description": "The library that sold the copies."
+  },
+  {
    "fieldname": "column_break_source",
    "fieldtype": "Column Break"
   },
@@ -171,7 +182,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-15 18:00:00.000000",
+ "modified": "2026-10-15 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Ledger Entry",
