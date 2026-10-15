@@ -77,6 +77,8 @@ def make_accrual(doc, row):
 			"amount": amount,
 			"sales_invoice": doc.name,
 			"invoice_item": row.name,
+			# RPT-08: what the doctors are owed, by the library that sold.
+			"branch": row.cost_center or doc.cost_center,
 			"remarks": _("{0} row #{1}: {2} x {3}").format(doc.name, row.idx, qty, flt(edition.doctor_share)),
 		}
 	)
