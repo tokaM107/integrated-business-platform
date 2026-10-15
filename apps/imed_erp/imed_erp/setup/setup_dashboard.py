@@ -145,7 +145,7 @@ approvals = [
     waiting("Book Edition", "Editions to Approve", [["docstatus", "=", 0]]),
     waiting("Inter Business Transfer", "Transfers to Confirm", [["status", "=", "Sent"]]),
     # DOC-22: a charge on a doctor is applied only once the owner or the accountant approves (submits) it.
-    waiting("Doctor Ledger Entry", "Doctor Charges to Approve", [["entry_type", "=", "Unsold Copies Charge"], ["docstatus", "=", 0]]),
+    waiting("Doctor Ledger Entry", "Doctor Charges to Approve", [["approval_status", "=", "Pending Approval"], ["docstatus", "=", 0]]),
 ]
 follow_up = []
 for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
@@ -171,6 +171,7 @@ for report, lbl, col in [
     ("Expense Report", "Expense Report", "Orange"),
     ("Stock Count Variance", "Stock Count Variance", "Red"),
     ("Doctor Statement", "Doctor Statement", "Purple"),
+    ("Doctor Debts", "Doctor Debts", "Red"),
 ]:
     if frappe.db.exists("Report", report):
         reports.append({"type": "Report", "link_to": report, "label": lbl, "color": col, "doc_view": ""})
