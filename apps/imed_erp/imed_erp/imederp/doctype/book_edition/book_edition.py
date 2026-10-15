@@ -162,6 +162,14 @@ class BookEdition(Document):
             )
 
 
+def get_copy_cost(edition):
+	"""What a copy costs to make (DOC-18): (paper + ink + overheads) per sheet x sheets, plus binding. Without the
+	library's profit, its marketing, the doctor's own amount or a price set by hand. `edition` is the edition's
+	document or a dict of its fields."""
+	per_sheet = flt(edition.get("paper_cost")) + flt(edition.get("ink_cost")) + flt(edition.get("overhead_cost"))
+	return flt(per_sheet * cint(edition.get("pages")) + flt(edition.get("binding_cost")), 2)
+
+
 def get_paper_cost(cost_center, waste_per_sheet=None):
     """Moving average price of a sheet of A4 paper in the library's store, plus waste.
 

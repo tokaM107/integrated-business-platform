@@ -33,6 +33,13 @@ class DoctorAgreement(Document):
 		self.balance_direction = DIRECTION.get(self.agreement_type)
 		self.validate_terms()
 		self.validate_settlement_period()
+		self.set_summary()
+
+	def set_summary(self):
+		# SEC-07: the balance is never typed, not even through the API; it is the doctor's ledger, where every
+		# change is an entry made by the accountant or the owner.
+		self.balance = get_balance(self.name) if not self.is_new() else 0
+		self.last_settlement_date, self.last_settlement_amount = last_settlement(self.name) if not self.is_new() else (None, 0)
 
 	def before_update_after_submit(self):
 		# A submitted agreement takes new terms, a new status and the next settlement period without an
@@ -40,8 +47,7 @@ class DoctorAgreement(Document):
 		# ledger, so a form opened before an entry was posted saves the right figures.
 		self.validate_terms()
 		self.validate_settlement_period()
-		self.balance = get_balance(self.name)
-		self.last_settlement_date, self.last_settlement_amount = last_settlement(self.name)
+		self.set_summary()
 
 	def validate_settlement_period(self):
 		# DOC-05/29: each year has its own dates (owner, 12 Oct 2026), so the accountant enters the period
@@ -138,16 +144,38 @@ def get_balance(agreement):
 	return sum(BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount) for entry in entries)
 
 
-def update_balance(agreement):
+def update_balance(agreement, entry=None):
 	"""The account summary is read-only and kept up to date from the ledger (Doctor Ledger Entry submit and
-	cancel): the balance and the last settlement. Each agreement has its own; none is offset against another."""
+	cancel): the balance and the last settlement. Each agreement has its own; none is offset against another.
+
+	SEC-07: a change made by hand (`entry` not posted by a sale) goes into the agreement's history too, with the
+	balance before and after, who and when, as if the field had been edited. Sales post too many to list there;
+	each one is on its invoice."""
 	date, amount = last_settlement(agreement)
-	frappe.db.set_value(
-		"Doctor Agreement",
-		agreement,
-		{"balance": get_balance(agreement), "last_settlement_date": date, "last_settlement_amount": amount},
-		update_modified=False,
+	before = frappe.db.get_value(
+		"Doctor Agreement", agreement, ["balance", "last_settlement_date", "last_settlement_amount"], as_dict=True
 	)
+	after = {"balance": get_balance(agreement), "last_settlement_date": date, "last_settlement_amount": amount}
+	frappe.db.set_value("Doctor Agreement", agreement, after, update_modified=False)
+	if entry is not None and not entry.get("sales_invoice"):
+		changed = [
+			[field, before.get(field), value]
+			for field, value in after.items()
+			if (
+				str(before.get(field) or "") != str(value or "")
+				if field == "last_settlement_date"
+				else flt(before.get(field)) != flt(value)
+			)
+		]
+		if changed:
+			frappe.get_doc(
+				{
+					"doctype": "Version",
+					"ref_doctype": "Doctor Agreement",
+					"docname": agreement,
+					"data": frappe.as_json({"changed": changed, "added": [], "removed": [], "row_changed": []}),
+				}
+			).insert(ignore_permissions=True)
 
 
 def check_submitted(agreement):

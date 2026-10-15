@@ -4,6 +4,7 @@
  "allow_rename": 1,
  "autoname": "hash",
  "creation": "2026-09-26 17:59:39.046822",
+ "default_print_format": "MMG Doctor Payout",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -15,12 +16,17 @@
   "edition",
   "qty",
   "amount",
+  "treasury",
   "remarks",
   "source_section",
   "sales_invoice",
   "invoice_item",
   "column_break_source",
   "journal_entry",
+  "approval_section",
+  "approval_status",
+  "approved_by",
+  "rejection_reason",
   "amended_from"
  ],
  "fields": [
@@ -71,6 +77,15 @@
    "reqd": 1
   },
   {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "label": "Treasury",
+   "options": "Account",
+   "depends_on": "eval:doc.entry_type=='Payout'",
+   "mandatory_depends_on": "eval:doc.entry_type=='Payout'",
+   "description": "The cash box or wallet the money is paid from."
+  },
+  {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
@@ -111,6 +126,37 @@
    "no_copy": 1
   },
   {
+   "fieldname": "approval_section",
+   "fieldtype": "Section Break",
+   "label": "Approval",
+   "depends_on": "eval:doc.approval_status"
+  },
+  {
+   "fieldname": "approval_status",
+   "fieldtype": "Select",
+   "label": "Approval Status",
+   "options": "\nPending Approval\nApproved\nRejected",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "label": "Approved / Rejected By",
+   "options": "User",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "rejection_reason",
+   "fieldtype": "Small Text",
+   "label": "Rejection Reason",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "eval:doc.approval_status=='Rejected'"
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -125,7 +171,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-10-15 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Ledger Entry",
@@ -167,6 +213,6 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 1,
- "title_field": "agreement"
+ "title_field": "agreement",
+ "track_changes": 1
 }

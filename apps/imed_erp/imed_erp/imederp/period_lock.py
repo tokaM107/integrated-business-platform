@@ -65,7 +65,14 @@ def validate_closed_period(doc, method=None):
 		)
 
 
+# Settling a term or module comes after it ends (DOC-09, DOC-18): the charge for the doctor's unsold copies, raised
+# when the period is closed and approved later, and the payout to the doctor. They name the closed period on purpose.
+SETTLEMENT_ENTRIES = ("Unsold Copies Charge", "Payout")
+
+
 def validate_academic_period(doc):
+	if doc.doctype == "Doctor Ledger Entry" and doc.get("entry_type") in SETTLEMENT_ENTRIES:
+		return
 	period = doc.get("period")
 	if period and frappe.db.get_value("Academic Period", period, "is_closed"):
 		frappe.throw(_("Period {0} is closed. Choose an open period.").format(period), title=_("Period Closed"))

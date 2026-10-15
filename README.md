@@ -831,6 +831,73 @@ per copy) that is not in the doctor's ledger is counted, with the same invoice-a
 invoice that was cancelled are cancelled. Running it again changes nothing. One invoice that fails is rolled back
 and written to the Error Log, and the others go on; the next run tries it again.
 
+A sale of an edition carried forward (DOC-15) is entered in the period it was carried to, once that period has
+started, so it shows on that period's statement.
+
+**The doctor's statement** (DOC-08, DOC-13; report **Doctor Statement**, under Doctors and Editions and on the
+owner's page). One agreement and one academic period on their own, from the doctor's ledger:
+
+| Row | What it shows |
+|---|---|
+| Balance Brought Forward | the balance from before the period; a negative one stays a debt and is taken from what comes next (DOC-20) |
+| Copies Sold (one per edition) | the edition, copies sold in the period (less returns), the selling price, the cost of a copy, the doctor's amount per copy, and what he earned on them |
+| Other entries, by date | payouts, charges for unsold copies, adjustments, each with its date and remarks |
+| Balance at the End of the Period | where the account stands; the summary says which way it runs |
+
+It leaves out the library's side (owner's decision): its profit per sheet, its marketing and any difference
+between the calculated price and the price set by hand. The **cost of a copy** is what it costs to make, (paper +
+ink + overheads) per sheet × sheets + binding (`book_edition.get_copy_cost`). An entry belongs to the period it
+names; one entered with no period belongs to the period its date falls in. Accounts Manager and System Manager
+open it (the accountant and the owner).
+
+**Paying the doctor** (DOC-09, ACC-11). A **Payout** in the doctor's ledger names the **Treasury** it is paid from
+(a cash box or a wallet). On submit it posts a Journal Entry: Dr `مستحقات للأطباء — الكتب` / Cr the treasury.
+That journal entry runs the usual treasury check (`treasuries.check_entry_treasuries`): the accountant pays from
+any treasury, anyone else only from their own business's cash box or the group's wallets. A doctor may be paid in
+parts and as often as needed, but never more than he is owed at that moment (that would leave him a debt by
+mistake). Cancelling the payout cancels its journal entry; the journal entry is not cancelled on its own.
+
+The payout prints as a **receipt** with **MMG Doctor Payout** (`imederp/print_format/mmg_doctor_payout`), the
+default print format of Doctor Ledger Entry: who was paid, the agreement, period, date and treasury, the amount in
+figures and in words (`فقط ألف و مئتان و خمسون جنيه مصري وخمسون قرشًا لا غير`), and lines for the doctor's and the
+accountant's signatures. Arabic when printed in Arabic, like the invoice. A simple version; the final design comes
+in week C. Any other ledger entry prints the same way under the title حركة حساب طبيب.
+
+**The end of a term or module** (DOC-18, DOC-22). When the accountant or the owner closes an Academic Period, every
+approved edition whose period is that one or one under it (its rounds and modules) gets a **draft Unsold Copies
+Charge**: the copies the doctor asked for and did not sell × the cost of a copy (owner's decision of 10 Oct 2026).
+Sales count against the doctor's copies first, so the library's extra copies are never charged to him. An edition
+carried forward ends with the period it was carried to. The charge is applied only when the accountant or the
+owner submits it; until then it is listed on the owner's page under «خصومات أطباء مستنية الاعتماد» and does not
+touch the balance. An edition already charged for the period is skipped, so closing again adds nothing.
+
+A closed academic period takes no new entries (`period_lock.py`), except the ones that settle it after it ends:
+the Unsold Copies Charge and the Payout. A sale of an edition whose period is closed is refused until the edition
+is carried forward.
+
+**Approving a deduction** (DOC-22). A deduction from the doctor, a charge for unsold copies or an adjustment
+taking money off him by hand, is applied only once the owner or the accountant approves it, the same way as an
+expense (role Expense Approver). A charge raised when a period closes is a draft **Pending Approval** and the
+accountant is notified; the form shows **Approve** (which submits it) and **Reject** (with a reason; a rejected
+one is closed for good). An approver's own deduction is approved as he submits it. Approval Status, Approved /
+Rejected By and Rejection Reason are set only by the system, Approve and Reject, never by editing or the API. The
+owner's page counts the deductions waiting. A credit note's adjustment is not a deduction: the copies came back.
+
+**A negative balance stays a debt** (DOC-20). A books doctor charged more than he earned owes the group. The
+balance stays below zero and is never closed on its own: what he earns next pays it off first, and nothing is paid
+out to him while he owes (a payout is never more than the balance). The report **Doctor Debts** lists, as of a
+date, every agreement under which the doctor owes the group: a books agreement below zero and an app agreement's
+platform fees not collected yet, with the amount, since when it is owed and its age in 0-30 / 31-60 / 61-90 /
+90+ days. Later amounts pay off the oldest part first, so the age is that of the oldest part still unpaid. It is
+worked out from the doctor's ledger; on the owner's page under the reports and in the sidebar.
+
+**Changing a doctor's balance by hand** (SEC-07). The balance is never typed: it is read-only on the screen, and
+saving an agreement (also through the API, also a draft) works it out again from the ledger. A change by hand is an
+entry in the doctor's ledger (an adjustment, a payout, a charge), which only the accountant and the owner can make
+(Accounts Manager), a deduction only once approved. Each one submitted or cancelled goes into the agreement's own
+history (Version) as the balance before and after, with the user and the time, alongside the entry's own history
+(track changes). Sales are not changes by hand and are not listed there: each is on its invoice.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
@@ -950,6 +1017,8 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "D
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
