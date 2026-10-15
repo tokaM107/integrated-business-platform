@@ -144,6 +144,75 @@ def get_balance(agreement):
 	return sum(BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount) for entry in entries)
 
 
+@frappe.whitelist()
+def get_doctor_summary(doctor):
+	"""DOC-29: the doctor's file (his Customer) shows every agreement of his with its balance, which way it runs and
+	when it is next settled. The balances stay apart: nothing is offset between them. Empty for whoever may not
+	read the agreements (a branch manager adding a customer)."""
+	if not frappe.has_permission("Doctor Agreement", "read"):
+		return []
+	summary = []
+	for agreement in frappe.get_all(
+		"Doctor Agreement",
+		filters={"doctor": doctor, "docstatus": 1},
+		fields=["name", "agreement_type", "status", "balance", "next_settlement_date"],
+		order_by="agreement_type, name",
+	):
+		direction = DIRECTION.get(agreement.agreement_type)
+		if flt(agreement.balance) < 0:
+			# DOC-20, DOC-30: below zero it runs the other way.
+			direction = OWED_BY_DOCTOR if direction == OWED_TO_DOCTOR else OWED_TO_DOCTOR
+		summary.append(
+			{
+				"agreement": agreement.name,
+				"agreement_type": _(agreement.agreement_type),
+				"status": _(agreement.status),
+				"balance": abs(flt(agreement.balance)),
+				"direction": _(direction),
+				"owed_by_doctor": direction == OWED_BY_DOCTOR,
+				"next_settlement_date": agreement.next_settlement_date,
+			}
+		)
+	return summary
+
+
+def open_amounts(agreement, as_of, owed_by_doctor=False):
+	"""What is still open under the agreement up to `as_of`, as the parts it arose in, oldest first: each a dict of
+	the date, period, branch and amount still open. Later movements the other way settle the oldest parts first, so
+	a payout pays the oldest dues and the next amount earned pays the oldest debt (DOC-20).
+
+	owed_by_doctor: the doctor's debt (a books balance below zero, an app's fees not collected); otherwise what the
+	group owes him. Doctor Dues and Doctor Debts are built on this."""
+	agreement_type = frappe.db.get_value("Doctor Agreement", agreement, "agreement_type")
+	# The balance runs in the agreement's own direction (DIRECTION); turn it to the side asked for.
+	side = 1 if (DIRECTION.get(agreement_type) == OWED_BY_DOCTOR) == bool(owed_by_doctor) else -1
+	position, parts = 0, []
+	for entry in frappe.get_all(
+		"Doctor Ledger Entry",
+		filters={"agreement": agreement, "docstatus": 1, "entry_date": ["<=", as_of]},
+		fields=["entry_date", "entry_type", "amount", "period", "branch"],
+		order_by="entry_date, creation",
+	):
+		before = max(position, 0)
+		position += side * BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount)
+		after = max(position, 0)
+		if after > before:
+			parts.append(
+				frappe._dict(date=getdate(entry.entry_date), period=entry.period, branch=entry.branch, amount=after - before)
+			)
+			continue
+		settled = before - after
+		while settled > 0 and parts:
+			taken = min(settled, parts[0].amount)
+			parts[0].amount -= taken
+			settled -= taken
+			if not parts[0].amount:
+				parts.pop(0)
+	for part in parts:
+		part.amount = flt(part.amount, 2)
+	return [part for part in parts if part.amount]
+
+
 def update_balance(agreement, entry=None):
 	"""The account summary is read-only and kept up to date from the ledger (Doctor Ledger Entry submit and
 	cancel): the balance and the last settlement. Each agreement has its own; none is offset against another.
