@@ -80,3 +80,15 @@ Built without a decision on these; the behaviour named is what the system does u
 charge (DOC-18, approved under DOC-22) should read the sales from Sales Invoice Item › Book Edition, the edition's
 approved costs, and its Remaining Qty at cancellation; split between the doctor's and the library's copies once
 question 1 is answered. Nothing here makes a Doctor Ledger Entry.
+
+## Open questions: doctor reports, daily import and opening stock (RPT-08, RPT-10, INT, opening stock)
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **Platform fees in the doctor's ledger.** App Subscriptions post nothing to the ledger, so an app agreement's balance holds only its collections. Should each subscription's fee be posted to the ledger as an Accrual? | Doctor Debts reads the fees from the subscriptions; an agreement with Accruals is read from the ledger alone. | Owner / Taqa |
+| 2 | **Payouts by library.** RPT-08 asks for receivables by library. A payout made for the agreement as a whole has no library, so the libraries' rows do not each show what is still owed to them. Should a payout name its library? | Shown as *Not by branch*; the agreement's row is the balance. | Accountant / Taqa |
+| 3 | **How a debt is aged.** Not written down. | What pays a debt settles its oldest part first (like ERPNext's receivables), ranges 30/60/90 days, changeable on the report. | Accountant |
+| 4 | **Who sees the reports.** RPT-08 and RPT-10 are Super Admin reports. | The owner and the accountant (whoever may open the doctor's ledger). | Owner |
+| 5 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |
+| 6 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
+| 7 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |

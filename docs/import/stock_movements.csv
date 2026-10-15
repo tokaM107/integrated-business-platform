@@ -1,0 +1,2 @@
+source_system,source_id,source_line_id,movement_date,movement_type,from_store,to_store,item_code,uom,qty,rate,received_by
+library_pos,EXAMPLE-M-0001,EXAMPLE-M-0001-1,2026-10-15,transfer,خامات المواساة,خامات الأزاريطة,A4-PAPER,كرتونة,1,,EXAMPLE
