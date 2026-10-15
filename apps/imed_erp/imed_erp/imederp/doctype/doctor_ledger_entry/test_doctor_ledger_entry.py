@@ -179,3 +179,21 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		self.assertEqual(self.gl(payout.journal_entry), [])
 		self.assertEqual(get_balance(agreement), before)
 
+	def test_the_payout_receipt(self):
+		# A simple receipt until the final design (week C): who was paid, from which treasury, how much in figures
+		# and in words, and room for both signatures. The ledger prints with it by default.
+		self.assertEqual(frappe.get_meta("Doctor Ledger Entry").default_print_format, "MMG Doctor Payout")
+		self.new_entry(today(), amount=500).insert().submit()
+		payout = self.payout(150)
+		doctor = frappe.db.get_value("Doctor Agreement", payout.agreement, "doctor")
+		lang = frappe.local.lang
+		try:
+			frappe.local.lang = "ar"
+			html = frappe.get_print("Doctor Ledger Entry", payout.name, print_format="MMG Doctor Payout")
+		finally:
+			frappe.local.lang = lang
+		for text in ("إيصال صرف للطبيب", doctor, "خزينة مكتبة المواساة", "فقط", "جنيه مصري", "توقيع المستلم (الطبيب)", payout.name):
+			with self.subTest(text):
+				self.assertIn(text, html)
+		self.assertIn("Doctor Payout Receipt", frappe.get_print("Doctor Ledger Entry", payout.name, print_format="MMG Doctor Payout"))
+
