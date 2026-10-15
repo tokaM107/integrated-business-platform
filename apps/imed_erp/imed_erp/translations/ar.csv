@@ -613,3 +613,48 @@ Missing Account,حساب ناقص
 {0} row #{1}: {2} x {3},{0} سطر #{1}: {2} × {3}
 Sales Invoice {0}: the doctor's amount could not be counted,فاتورة البيع {0}: حق الطبيب ماتحسبش
 Sales Invoice {0}: the doctor's amount could not be cancelled,فاتورة البيع {0}: حق الطبيب مااتلغاش
+Doctor Receivables,مستحقات الأطباء
+Doctor Debts,مديونيات الأطباء
+You are not allowed to see the doctors' accounts.,مش مسموح لك تشوف حسابات الأطباء.
+From Date is after To Date.,تاريخ البداية بعد تاريخ النهاية.
+Opening,رصيد أول المدة
+Accrued,المستحق
+Adjustments,التسويات
+Unsold Copies Charges,خصم النسخ غير المباعة
+Paid,المدفوع
+Outstanding,المتبقي
+Entries,القيود
+Not by branch,غير موزّع على فرع
+Agreements,الاتفاقيات
+Doctors,الأطباء
+Owed to Doctors,مستحق للأطباء
+Show Settled Agreements,إظهار الاتفاقيات المسددة
+Debt,المديونية
+Owed,المستحق عليه
+Collected or Offset,المحصّل أو المخصوم
+Outstanding Debt,المديونية المتبقية
+Oldest Debt Date,تاريخ أقدم مديونية
+Negative Balance,رصيد سالب
+Uncollected Platform Fees,رسوم منصة غير محصّلة
+As On,في تاريخ
+Ageing Range,فترات الأعمار
+The count sheet has no column {0}.,ملف الجرد مفيهوش عمود {0}.
+{0} is empty.,{0} فاضي.
+Item {0} not found.,الصنف {0} مش موجود.
+Item {0} is not an active stock item.,الصنف {0} مش صنف مخزني شغال.
+"Item {0} has batches or serial numbers, which the sheet does not record.",الصنف {0} ليه دفعات أو أرقام مسلسلة، والملف مبيسجلهاش.
+Item name on the sheet is {0}; the item is {1}.,اسم الصنف في الملف {0}؛ والصنف في السيستم {1}.
+Store {0} not found.,المخزن {0} مش موجود.
+Store {0} is not one of {1}'s stores that hold stock.,المخزن {0} مش من مخازن {1} اللي بتشيل بضاعة.
+Counted quantity {0} is not a number.,الكمية المعدودة {0} مش رقم.
+Counted quantity cannot be negative.,الكمية المعدودة مينفعش تكون بالسالب.
+Cost per unit {0} is not a number.,تكلفة الوحدة {0} مش رقم.
+{0} is not a unit of {1}; its units are: {2}.,{0} مش وحدة من وحدات {1}؛ وحداته: {2}.
+{0} is counted in whole {1}.,{0} بيتعد بـ {1} كاملة.
+"{0} is the damaged store, which holds stock at zero value.",{0} مخزن التالف، والبضاعة فيه بقيمة صفر.
+"Cost per unit is missing: enter the approved cost, it is never guessed.",تكلفة الوحدة ناقصة: اكتب التكلفة المعتمدة، مبتتخمنش.
+Same item and store as line {0}.,نفس الصنف والمخزن اللي في سطر {0}.
+Store {0} already has an opening balance: {1}.,المخزن {0} ليه رصيد افتتاحي بالفعل: {1}.
+{0} {1} already recorded in the store on {2}; the opening count replaces it (difference {3}).,{0} {1} متسجلين في المخزن يوم {2}؛ جرد الافتتاح هيحل محلهم (الفرق {3}).
+Fix every row with an error before making the opening balance.,صلّح كل سطر فيه خطأ قبل عمل الرصيد الافتتاحي.
+{0} has no temporary opening account.,{0} ملوش حساب أرصدة افتتاحية مؤقتة.
