@@ -175,14 +175,14 @@ class DoctorLedgerEntry(Document):
 
 	# The agreement's Balance is worked out from these entries (doctor_agreement.py).
 	def on_submit(self):
-		update_balance(self.agreement)
+		update_balance(self.agreement, self)
 
 	def on_cancel(self):
 		# A payout's journal entry goes with it; a sale's goes with the sale (doctor_accrual.cancel_accruals).
 		if self.entry_type == "Payout" and self.journal_entry:
 			if frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
 				cancel("Journal Entry", self.journal_entry)
-		update_balance(self.agreement)
+		update_balance(self.agreement, self)
 
 
 UNSOLD = "Unsold Copies Charge"
