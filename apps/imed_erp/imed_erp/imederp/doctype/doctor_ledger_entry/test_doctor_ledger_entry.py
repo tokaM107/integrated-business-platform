@@ -25,6 +25,7 @@ IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"Academic Period",
 	"Account",
 	"Book Edition",
+	"Cost Center",
 	"Customer",
 	"Doctor Agreement",
 	"Doctor Ledger Entry",
