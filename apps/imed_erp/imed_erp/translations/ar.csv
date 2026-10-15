@@ -630,3 +630,7 @@ More Than Owed,أكتر من المستحق
 Payout to {0} under {1} ({2}).,صرف لـ {0} على {1} ({2}).
 {0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.,{0} اتعمل من حركة حساب الطبيب {1}. الغي الحركة دي بدل كده.
 Posted by the Doctor's Ledger,متسجل من حساب الطبيب
+"{0}: {1} of the doctor's {2} copies unsold x {3} a copy, when {4} ended.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، لما {4} خلصت.
+{0} charges for unsold copies are waiting for approval in the doctors' ledger: {1},{0} خصم على نسخ متبقية مستني الاعتماد في حسابات الأطباء: {1}
+Unsold Copies,النسخ المتبقية
+Doctor Charges to Approve,خصومات أطباء مستنية الاعتماد
