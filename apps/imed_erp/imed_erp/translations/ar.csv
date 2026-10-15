@@ -613,3 +613,11 @@ Missing Account,حساب ناقص
 {0} row #{1}: {2} x {3},{0} سطر #{1}: {2} × {3}
 Sales Invoice {0}: the doctor's amount could not be counted,فاتورة البيع {0}: حق الطبيب ماتحسبش
 Sales Invoice {0}: the doctor's amount could not be cancelled,فاتورة البيع {0}: حق الطبيب مااتلغاش
+Doctor Statement,كشف حساب الطبيب
+Copies Sold,النسخ المباعة
+Selling Price,سعر البيع
+Cost per Copy,تكلفة النسخة
+Owed,المستحق
+Paid / Deducted,المصروف / المخصوم
+Balance Brought Forward,رصيد أول الفترة
+Balance at the End of the Period,رصيد آخر الفترة
