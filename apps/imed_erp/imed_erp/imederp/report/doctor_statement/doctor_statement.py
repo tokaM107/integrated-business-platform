@@ -147,3 +147,71 @@ def get_summary(agreement, totals):
 			"indicator": "Orange" if direction == OWED_TO_DOCTOR else "Blue",
 		},
 	]
+
+
+def statement_period(entry):
+	"""The period an entry's statement covers: the one it names, or else the term its date falls in."""
+	if entry.period:
+		return entry.period
+	return frappe.db.get_value(
+		"Academic Period",
+		{"period_type": "Term", "start_date": ["<=", entry.entry_date], "end_date": [">=", entry.entry_date]},
+		"name",
+	)
+
+
+def send_statement(agreement, period, reason):
+	"""DOC-23: after a settlement or a cancellation the doctor gets his statement for the period, so he knows his
+	balance; by email to the address on his file. With none on file, the accountant is told instead. Returns the
+	address it went to, or None."""
+	from imed_erp.imederp.doctype.expense.expense import get_approvers
+	from imed_erp.imederp.expense_reminders import notify
+
+	doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+	email = frappe.db.get_value("Customer", doctor, "email_id")
+	if not email:
+		notify(
+			get_approvers(),
+			_("{0} has no email on file, so the statement of {1} for {2} was not sent. Add his email and send it again.").format(
+				doctor, agreement, period
+			),
+			"Doctor Agreement",
+			agreement,
+			event="expense_approval",
+		)
+		return None
+	columns, data, _message, _chart, summary = execute({"agreement": agreement, "period": period})
+	frappe.sendmail(
+		recipients=[email],
+		subject=_("Your statement for {0}: {1}").format(period, agreement),
+		message=statement_html(doctor, agreement, period, columns, data, summary, reason),
+		reference_doctype="Doctor Agreement",
+		reference_name=agreement,
+	)
+	return email
+
+
+def statement_html(doctor, agreement, period, columns, data, summary, reason):
+	esc = frappe.utils.escape_html
+	head = "".join(f"<th>{esc(column['label'])}</th>" for column in columns)
+	body = ""
+	for row in data:
+		cells = []
+		for column in columns:
+			value = row.get(column["fieldname"])
+			if value is None or value == "":
+				cells.append("<td></td>")
+				continue
+			formatted = frappe.format_value(value, {"fieldtype": column["fieldtype"]})
+			cells.append(f"<td>{'<b>' if row.get('is_total') else ''}{esc(str(formatted))}</td>")
+		body += f"<tr>{''.join(cells)}</tr>"
+	totals = "".join(
+		f"<p>{esc(item['label'])}: <b>{esc(frappe.format_value(item['value'], {'fieldtype': 'Currency'}))}</b></p>" for item in summary
+	)
+	return f"""<div dir="rtl">
+		<p>{esc(_("Dear Dr. {0},").format(frappe.db.get_value("Customer", doctor, "customer_name")))}</p>
+		<p>{esc(_("Your statement for {0} under {1}, sent after: {2}.").format(period, agreement, reason))}</p>
+		<table border="1" cellpadding="4" style="border-collapse: collapse"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>
+		{totals}
+	</div>"""
+
