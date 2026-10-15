@@ -11,14 +11,15 @@
 # any difference between the calculated price and the price set by hand. The cost of a copy is what it costs to
 # make (book_edition.get_copy_cost).
 #
-# An entry belongs to the period it names; an entry with no period (a payout entered without one) belongs to the
-# period its date falls in.
+# An entry belongs to the period it names, or to the term above it; an entry with no period (a payout entered
+# without one) belongs to the period its date falls in.
 
 import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
 from imed_erp.imederp.doctype.book_edition.book_edition import get_copy_cost
+from imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry import descendants
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_SIGN, DIRECTION, OWED_BY_DOCTOR, OWED_TO_DOCTOR
 
 
@@ -57,9 +58,12 @@ def get_data(filters):
 	period = frappe.db.get_value("Academic Period", filters.period, ["start_date", "end_date"], as_dict=True)
 	start, end = getdate(period.start_date), getdate(period.end_date)
 
+	# A term's statement takes in its rounds and modules (books settle by module, DOC-05).
+	periods = {filters.period, *descendants(filters.period)}
+
 	def in_period(entry):
 		if entry.period:
-			return entry.period == filters.period
+			return entry.period in periods
 		return start <= getdate(entry.entry_date) <= end
 
 	def signed(entry):
