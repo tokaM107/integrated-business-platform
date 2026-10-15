@@ -904,6 +904,21 @@ entry in the doctor's ledger (an adjustment, a payout, a charge), which only the
 history (Version) as the balance before and after, with the user and the time, alongside the entry's own history
 (track changes). Sales are not changes by hand and are not listed there: each is on its invoice.
 
+**The rest of the doctors' reports** (all from the doctor's ledger; under Doctors and Editions in the sidebar):
+
+| Report | Requirement | What it shows |
+|---|---|---|
+| Doctor Dues | DOC-10, RPT-08 | What the group owes the doctors and has not paid, as of a date, by doctor, agreement, period and the branch that sold (each sale's line keeps its **Branch**); payouts settle the oldest dues first. On the owner's page. |
+| Unsold Editions | DOC-21 | Editions still on sale whose period (or the one they were carried to) ended before a date, e.g. the next module's start, with the copies left split between the doctor's and the library's. Branch managers see their own library's. |
+| Owner Share Plan vs Actual | DOC-27 | For each edition sold: the owner's share planned in its price (profit per sheet × sheets × copies sold) against what the sales actually brought after the rest of the planned price; a price set by hand, a discount or a carried copy sold at today's price shows as the difference. On the owner's page. |
+
+**The doctor's file** (DOC-29): a doctor's Customer form shows his agreements with their balance, which way each
+runs and when it is next settled, kept apart (no offsetting), for the accountant and the owner.
+
+**The statement goes to the doctor** (DOC-23): after a settlement by hand (a payout, an approved charge, an
+adjustment, a collection), the doctor is emailed his statement for that period, to the email on his file. With
+none on file, the accountant is notified instead. Sales send nothing (one a copy would be too many).
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
@@ -1025,6 +1040,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "D
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
