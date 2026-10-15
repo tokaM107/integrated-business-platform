@@ -15,6 +15,7 @@
   "edition",
   "qty",
   "amount",
+  "treasury",
   "remarks",
   "source_section",
   "sales_invoice",
@@ -71,6 +72,15 @@
    "reqd": 1
   },
   {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "label": "Treasury",
+   "options": "Account",
+   "depends_on": "eval:doc.entry_type=='Payout'",
+   "mandatory_depends_on": "eval:doc.entry_type=='Payout'",
+   "description": "The cash box or wallet the money is paid from."
+  },
+  {
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
@@ -125,7 +135,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-14 12:00:00.000000",
+ "modified": "2026-10-15 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Ledger Entry",
