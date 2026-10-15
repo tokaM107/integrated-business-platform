@@ -891,6 +891,13 @@ platform fees not collected yet, with the amount, since when it is owed and its 
 90+ days. Later amounts pay off the oldest part first, so the age is that of the oldest part still unpaid. It is
 worked out from the doctor's ledger; on the owner's page under the reports and in the sidebar.
 
+**Changing a doctor's balance by hand** (SEC-07). The balance is never typed: it is read-only on the screen, and
+saving an agreement (also through the API, also a draft) works it out again from the ledger. A change by hand is an
+entry in the doctor's ledger (an adjustment, a payout, a charge), which only the accountant and the owner can make
+(Accounts Manager), a deduction only once approved. Each one submitted or cancelled goes into the agreement's own
+history (Version) as the balance before and after, with the user and the time, alongside the entry's own history
+(track changes). Sales are not changes by hand and are not listed there: each is on its invoice.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
