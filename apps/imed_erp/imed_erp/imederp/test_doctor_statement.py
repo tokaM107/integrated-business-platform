@@ -2,7 +2,8 @@
 # See license.txt
 
 # The doctor's statement (DOC-08, DOC-13; report Doctor Statement): one agreement and one period, from the balance
-# brought forward to the balance at the end, without the library's profit or a price set by hand. Real stores and
+# brought forward to the balance at the end, without the library's profit or a price set by hand. Closing a term or
+# module charges the doctor's unsold copies at cost, as drafts to approve (DOC-18, DOC-22). Real stores and
 # accounts; rolled back.
 #
 # Run:
@@ -18,7 +19,7 @@ from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.doctype.book_edition.book_edition import carry_forward, get_copy_cost
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
 from imed_erp.imederp.report.doctor_statement.doctor_statement import execute
-from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH
+from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH, RAGHAD
 
 LEDGER = "Doctor Ledger Entry"
 TREASURY = "الخزينة الرئيسية - MMG"
@@ -194,3 +195,91 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 	def test_only_the_accounts_read_it(self):
 		roles = {r.role for r in frappe.get_doc("Report", "Doctor Statement").roles}
 		self.assertEqual(roles, {"System Manager", "Accounts Manager"})
+
+	# ---------- The end of a term or module: unsold copies (DOC-18, DOC-22) ----------
+
+	def close(self, period):
+		doc = frappe.get_doc("Academic Period", period)
+		doc.is_closed = 1
+		doc.save()
+
+	def charges(self, edition):
+		return frappe.get_all(
+			LEDGER,
+			filters={"edition": edition.name, "entry_type": "Unsold Copies Charge", "docstatus": ["<", 2]},
+			fields=["name", "docstatus", "period", "qty", "amount"],
+		)
+
+	def test_closing_the_term_charges_the_doctor_s_unsold_copies_as_a_draft(self):
+		edition = self.edition()
+		self.sell(self.items[0], 30)
+		before = self.opening(), self.statement()[1][-1]["balance"]
+		self.close(self.term2)
+
+		[charge] = self.charges(edition)
+		self.assertEqual(
+			(charge.docstatus, charge.period, charge.qty, charge.amount),
+			(0, self.term2, 20, round(20 * get_copy_cost(edition), 2)),
+		)
+		# Waiting for approval: nothing is taken from the doctor yet.
+		self.assertEqual((self.opening(), self.statement()[1][-1]["balance"]), before)
+
+		# The accountant or the owner approves it by submitting it.
+		frappe.get_doc(LEDGER, charge.name).submit()
+		self.assertEqual(self.statement()[1][-1]["balance"], before[1] - charge.amount)
+
+	def test_the_library_s_extra_copies_are_not_charged(self):
+		# 10 for the doctor and 20 more for the library: 5 sold leaves 5 of his; 15 sold leaves none.
+		some = self.edition(doctor_qty=10, extra_qty=20)
+		self.sell(self.items[0], 5)
+		none = self.edition(item=self.items[1], doctor_qty=10, extra_qty=20)
+		self.sell(self.items[1], 15)
+		self.close(self.term2)
+		self.assertEqual([c.qty for c in self.charges(some)], [5])
+		self.assertEqual(self.charges(none), [])
+
+	def test_closing_again_charges_nothing_more(self):
+		edition = self.edition()
+		self.close(self.term2)
+		frappe.db.set_value("Academic Period", self.term2, "is_closed", 0)
+		self.close(self.term2)
+		self.assertEqual(len(self.charges(edition)), 1)
+
+	def test_a_module_ends_with_its_term(self):
+		round_ = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": "_Test Statement Round", "period_type": "Round",
+				"parent_period": self.term2, "start_date": "2026-07-01", "end_date": "2026-12-31"}
+		).insert().name
+		module = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": "_Test Statement Module", "period_type": "Module",
+				"parent_period": round_, "start_date": "2026-07-01", "end_date": "2026-12-31"}
+		).insert().name
+		edition = self.edition(period=module)
+		self.close(self.term2)
+		self.assertEqual([c.period for c in self.charges(edition)], [module])
+
+	def test_a_carried_forward_edition_ends_with_the_period_it_was_carried_to(self):
+		edition = self.edition(period=self.term1)
+		carry_forward(edition.name, self.term2)
+		self.close(self.term1)
+		self.assertEqual(self.charges(edition), [])
+		self.close(self.term2)
+		self.assertEqual([c.period for c in self.charges(edition)], [self.term2])
+
+	def test_closing_a_term_is_the_accounts_job(self):
+		# A branch manager neither closes the term nor approves a charge on a doctor.
+		self.edition()
+		frappe.set_user(RAGHAD)
+		self.assertRaises(frappe.PermissionError, self.close, self.term2)
+		self.assertFalse(frappe.has_permission(LEDGER, "submit"))
+
+	def test_settling_a_closed_term(self):
+		# The charge is approved and the doctor paid after the term is closed; nothing else goes into it.
+		edition = self.edition()
+		self.sell(self.items[0], 45)
+		self.close(self.term2)
+		[charge] = self.charges(edition)
+		frappe.get_doc(LEDGER, charge.name).submit()
+		self.entry("Payout", 100, period=self.term2)
+		self.assertRaisesRegex(frappe.ValidationError, "is closed", self.entry, "Adjustment", 10, period=self.term2)
+
