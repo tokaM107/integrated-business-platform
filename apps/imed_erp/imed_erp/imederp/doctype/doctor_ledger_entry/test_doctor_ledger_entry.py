@@ -3,21 +3,24 @@
 
 # A doctor's ledger has no company or cost center, so the month lock (CORE-09) uses the default company:
 # no entry is saved or cancelled in a closed month. An accrual names the invoice line it comes from, and a line
-# is counted once (DOC-07). Rolled back afterwards.
+# is counted once (DOC-07). A payout comes out of a treasury, in part and as often as needed, with its journal
+# entry (DOC-09, ACC-11). Rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import today
+from frappe.utils import flt, today
 
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreement, make_doctor
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_balance
 
 # Linked records already exist on the site or are made by the tests; without this list Frappe builds
 # ERPNext's "_Test ..." records and commits them to the site.
 IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"Academic Period",
+	"Account",
 	"Book Edition",
 	"Customer",
 	"Doctor Agreement",
@@ -28,6 +31,9 @@ IGNORE_TEST_RECORD_DEPENDENCIES = [
 
 COMPANY = "Mohamed Mamdouh group"
 MAWASAH = "مكتبة المواساة - MMG"
+CASH_BOX = "خزينة مكتبة المواساة - MMG"
+WALLET = "محفظة InstaPay - MMG"
+PAYABLE = "مستحقات للأطباء — الكتب - MMG"
 
 
 class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
@@ -111,3 +117,65 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		# Once the month is open again, the entry is cancelled as usual.
 		entry.reload()
 		entry.cancel()
+
+	# ---------- Payouts (DOC-09, ACC-11) ----------
+
+	def payout(self, amount, treasury=CASH_BOX, submit=True):
+		entry = self.new_entry(today(), entry_type="Payout", amount=amount, treasury=treasury).insert()
+		if submit:
+			entry.submit()
+		return entry
+
+	def gl(self, journal_entry):
+		return sorted(
+			(g.account, g.debit, g.credit)
+			for g in frappe.get_all(
+				"GL Entry",
+				filters={"voucher_type": "Journal Entry", "voucher_no": journal_entry, "is_cancelled": 0},
+				fields=["account", "debit", "credit"],
+			)
+		)
+
+	def test_a_payout_in_parts_from_any_treasury(self):
+		agreement = make_agreement("Books")
+		self.new_entry(today(), amount=500).insert().submit()
+		owed = get_balance(agreement)
+
+		first = self.payout(200)
+		second = self.payout(owed - 200, WALLET)
+		self.assertEqual(self.gl(first.journal_entry), sorted([(PAYABLE, 200, 0), (CASH_BOX, 0, 200)]))
+		self.assertEqual(self.gl(second.journal_entry), sorted([(PAYABLE, owed - 200, 0), (WALLET, 0, owed - 200)]))
+		self.assertEqual(flt(frappe.db.get_value("Doctor Agreement", agreement, "balance")), 0)
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "last_settlement_amount"), owed - 200)
+
+	def test_no_payout_beyond_what_is_owed(self):
+		agreement = make_agreement("Books")
+		self.new_entry(today(), amount=100).insert().submit()
+		owed = get_balance(agreement)
+		self.assertRaisesRegex(frappe.ValidationError, "more than that", self.payout, owed + 1)
+		self.payout(owed)
+		self.assertRaisesRegex(frappe.ValidationError, "more than that", self.payout, 1)
+
+	def test_a_payout_needs_a_treasury(self):
+		self.new_entry(today(), amount=100).insert().submit()
+		self.assertRaisesRegex(frappe.ValidationError, "Choose the treasury", self.payout, 10, None)
+		self.assertRaisesRegex(frappe.ValidationError, "is not a treasury", self.payout, 10, PAYABLE)
+		# Other kinds of entry keep no treasury.
+		accrual = self.new_entry(today(), treasury=CASH_BOX).insert()
+		self.assertIsNone(accrual.treasury)
+
+	def test_a_cancelled_payout_takes_its_journal_entry_with_it(self):
+		agreement = make_agreement("Books")
+		self.new_entry(today(), amount=300).insert().submit()
+		before = get_balance(agreement)
+		payout = self.payout(100)
+		# The journal entry alone is not cancelled: the ledger would still show the money paid.
+		self.assertRaisesRegex(
+			frappe.ValidationError, "Cancel that entry instead", frappe.get_doc("Journal Entry", payout.journal_entry).cancel
+		)
+		payout.reload()
+		payout.cancel()
+		self.assertEqual(frappe.db.get_value("Journal Entry", payout.journal_entry, "docstatus"), 2)
+		self.assertEqual(self.gl(payout.journal_entry), [])
+		self.assertEqual(get_balance(agreement), before)
+
