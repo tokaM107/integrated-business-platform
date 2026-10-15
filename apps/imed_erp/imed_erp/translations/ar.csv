@@ -305,7 +305,7 @@ Every expense is paid only once the accountant approves it. Request approval fir
 Count Type,نوع الجرد
 Counted By,المسؤول عن الجرد
 Periodic (Consumables),دوري للمستهلكات
-"Daily: the library's daily count. Periodic: paper and ink every 7-15 days. Opening: the opening balance (Purpose: Opening Stock).","يومي: جرد المكتبة اليومي. دوري: الورق والحبر كل 7–15 يوم. افتتاحي: الرصيد الافتتاحي (الغرض: مخزون أول المدة)."
+Daily: the library's daily count. Periodic: paper and ink every 7-15 days. Opening: the opening balance (Purpose: Opening Stock).,يومي: جرد المكتبة اليومي. دوري: الورق والحبر كل 7–15 يوم. افتتاحي: الرصيد الافتتاحي (الغرض: مخزون أول المدة).
 An opening count records the opening balance: set Purpose to {0}.,الجرد الافتتاحي بيسجل الرصيد الافتتاحي: اختار الغرض {0}.
 Opening Count,جرد افتتاحي
 A count covers one branch's stores. Count each branch separately: {0}.,الجرد الواحد بيبقى لمخازن فرع واحد. اعمل جرد لكل فرع لوحده: {0}.
@@ -323,7 +323,7 @@ Difference Value,قيمة الفرق
 Cost per Unit,تكلفة الوحدة
 "What the system shows in the store, at the count's date and time.",اللي السيستم شايفه في المخزن وقت الجرد.
 "Counted minus recorded: negative is a shortage, positive a surplus.",الفعلي ناقص المسجل: بالسالب يبقى عجز، وبالموجب زيادة.
-"The branch of the store; its shortage or surplus is posted on this cost center.",فرع المخزن؛ العجز أو الزيادة بيتسجلوا على مركز التكلفة ده.
+The branch of the store; its shortage or surplus is posted on this cost center.,فرع المخزن؛ العجز أو الزيادة بيتسجلوا على مركز التكلفة ده.
 Negative is a loss to the branch.,بالسالب يبقى خسارة على الفرع.
 Made on submit for the items with a difference; none when everything matched.,بيتعمل لما الجرد يتسجل للأصناف اللي فيها فرق؛ ومش بيتعمل لو كله مظبوط.
 {0} is a group of stores. Choose the store that was counted.,{0} مجموعة مخازن. اختار المخزن اللي اتجرد.
@@ -334,9 +334,9 @@ Row #{0}: the counted quantity cannot be negative.,سطر {0}: الكمية ال
 {0} was posted by Stock Count {1}. Cancel the count instead.,{0} اتعمل من الجرد {1}. الغي الجرد نفسه.
 Get Items in Store,هات كل أصناف المخزن
 Choose the store first.,اختار المخزن الأول.
-"{0} items. Type the counted quantity of each, 0 if there is none.","{0} صنف. اكتب الكمية الفعلية لكل صنف، و0 لو مفيش منه."
+"{0} items. Type the counted quantity of each, 0 if there is none.",{0} صنف. اكتب الكمية الفعلية لكل صنف، و0 لو مفيش منه.
 Replace the items already listed with every item in the store?,تستبدل الأصناف اللي في الجدول بكل أصناف المخزن؟
-"Row #{0}: enter the counted quantity of {1}, 0 if there is none.","سطر {0}: اكتب الكمية الفعلية لـ {1}، و0 لو مفيش منه."
+"Row #{0}: enter the counted quantity of {1}, 0 if there is none.",سطر {0}: اكتب الكمية الفعلية لـ {1}، و0 لو مفيش منه.
 Not Counted,ماتجردش
 Stock Count Variance,فروقات الجرد (تقرير)
 Only Differences,الفروق بس
@@ -355,25 +355,25 @@ Damaged Stock Sale,بيع تالف بالوزن
 Damaged Stock Sales,مبيعات التالف بالوزن
 Damaged Stock Sale Item,صنف تالف مُباع
 Damaged Store,مخزن التالف
-"Damaged stock is moved here at zero value until it is sold by weight (Damaged Stock Entry, Damaged Stock Sale).","التالف بيتنقل هنا بقيمة صفر لحد ما يتباع بالوزن (تسجيل تالف، بيع تالف بالوزن)."
+"Damaged stock is moved here at zero value until it is sold by weight (Damaged Stock Entry, Damaged Stock Sale).",التالف بيتنقل هنا بقيمة صفر لحد ما يتباع بالوزن (تسجيل تالف، بيع تالف بالوزن).
 Damage Date,تاريخ التلف
 Damaged In (Store),اتلف في (مخزن)
-"The store the damaged items were in. They leave it at their cost, a loss on its branch.","المخزن اللي كانت فيه الأصناف التالفة. بتخرج منه بتكلفتها، وتتسجل خسارة على فرعه."
+"The store the damaged items were in. They leave it at their cost, a loss on its branch.",المخزن اللي كانت فيه الأصناف التالفة. بتخرج منه بتكلفتها، وتتسجل خسارة على فرعه.
 The library the loss is on (from the store).,المكتبة اللي الخسارة عليها (من المخزن).
-"Where the damaged items are kept, at zero value, until they are sold by weight.","المكان اللي التالف بيتحفظ فيه بقيمة صفر لحد ما يتباع بالوزن."
+"Where the damaged items are kept, at zero value, until they are sold by weight.",المكان اللي التالف بيتحفظ فيه بقيمة صفر لحد ما يتباع بالوزن.
 Responsible,المسؤول
 Who is responsible for this record.,مين المسؤول عن التسجيل ده.
 Damage Reason,سبب التلف
-"What happened: wet, torn, printing fault, ...","إيه اللي حصل: اتبل، اتقطع، عيب طباعة، ..."
+"What happened: wet, torn, printing fault, ...",إيه اللي حصل: اتبل، اتقطع، عيب طباعة، ...
 Damaged Items,الأصناف التالفة
 Total Loss,إجمالي الخسارة
 Stock Entries,حركات المخزون
 Loss Entry,حركة الخسارة
-"Takes the damaged items out of their store; the cost goes to الهالك والتالف.","بتطلّع الأصناف التالفة من مخزنها، وتكلفتها بتروح على الهالك والتالف."
+Takes the damaged items out of their store; the cost goes to الهالك والتالف.,بتطلّع الأصناف التالفة من مخزنها، وتكلفتها بتروح على الهالك والتالف.
 Damaged Store Entry,حركة مخزن التالف
 Puts them in the damaged store at zero value.,بتدخّلها مخزن التالف بقيمة صفر.
 Damaged Qty,الكمية التالفة
-"In the item's stock unit (sheets for paper, copies for books).","بوحدة مخزن الصنف (ورقة للورق، ونسخة للكتب)."
+"In the item's stock unit (sheets for paper, copies for books).",بوحدة مخزن الصنف (ورقة للورق، ونسخة للكتب).
 Loss,الخسارة
 Sold by Weight,اتباع بالوزن
 Sale Date,تاريخ البيع
@@ -385,15 +385,15 @@ Weight Unit,وحدة الوزن
 Price per Kg,سعر الكيلو
 Total Amount,الإجمالي
 Paid in Cash,اتدفع كاش
-"Received in cash now, into the branch's cash box. Untick if the buyer pays later.","اتقبض كاش دلوقتي في خزينة الفرع. شيل العلامة لو المشتري هيدفع بعدين."
+"Received in cash now, into the branch's cash box. Untick if the buyer pays later.",اتقبض كاش دلوقتي في خزينة الفرع. شيل العلامة لو المشتري هيدفع بعدين.
 Cash Box,الخزينة
 Damaged Items Taken Out,الأصناف التالفة اللي خرجت
 Posted Documents,المستندات المسجّلة
 Qty Taken Out,الكمية اللي خرجت
-"How much of it left with this sale, in the item's stock unit. Not converted to weight.","الكمية اللي خرجت مع البيعة دي بوحدة مخزن الصنف. مش بتتحول لوزن."
+"How much of it left with this sale, in the item's stock unit. Not converted to weight.",الكمية اللي خرجت مع البيعة دي بوحدة مخزن الصنف. مش بتتحول لوزن.
 In Damaged Store,في مخزن التالف
 From Damage Record,من تسجيل التالف
-"Optional: the damage record these came from, to trace one to the other.","اختياري: تسجيل التالف اللي الكمية دي جاية منه، عشان نربط الاتنين ببعض."
+"Optional: the damage record these came from, to trace one to the other.",اختياري: تسجيل التالف اللي الكمية دي جاية منه، عشان نربط الاتنين ببعض.
 {0} is a group of stores. Choose the store the items were damaged in.,{0} مجموعة مخازن. اختار المخزن اللي الأصناف اتلفت فيه.
 {0} is the damaged store; choose the store the items were damaged in.,{0} هو مخزن التالف؛ اختار المخزن اللي الأصناف اتلفت فيه.
 {0} is not a damaged store (Warehouse > Damaged Store).,{0} مش مخزن تالف (المخزن > مخزن التالف).
@@ -408,11 +408,11 @@ Row #{0}: {1} has only {2} {3} in {4}.,سطر #{0}: {1} موجود منه {2} {3
 Not Enough Stock,الرصيد مش كفاية
 Damaged stock {0}: {1},تالف {0}: {1}
 Part of this damaged stock was already sold by weight ({0}). Cancel the sale first.,جزء من التالف ده اتباع بالوزن خلاص ({0}). ألغي البيعة الأول.
-"{0} is not your branch's. You can work for: {1}.","{0} مش تبع فرعك. تقدر تشتغل على: {1}."
-"{0} was posted by {1} {2}. Cancel the {1} instead.","{0} اتسجل من {1} {2}. ألغي {1} بدل كده."
-"Enter the weight sold, more than zero.","اكتب الوزن المُباع، أكبر من صفر."
+{0} is not your branch's. You can work for: {1}.,{0} مش تبع فرعك. تقدر تشتغل على: {1}.
+{0} was posted by {1} {2}. Cancel the {1} instead.,{0} اتسجل من {1} {2}. ألغي {1} بدل كده.
+"Enter the weight sold, more than zero.",اكتب الوزن المُباع، أكبر من صفر.
 Missing Weight,الوزن ناقص
-"Enter the price per kilogram, more than zero.","اكتب سعر الكيلو، أكبر من صفر."
+"Enter the price per kilogram, more than zero.",اكتب سعر الكيلو، أكبر من صفر.
 Missing Price,السعر ناقص
 {0} has no cash box. Untick Paid in Cash and record the payment separately.,{0} مالوش خزينة. شيل علامة اتدفع كاش وسجّل الدفع لوحده.
 Row #{0}: the quantity taken out must be more than zero.,سطر #{0}: الكمية اللي خرجت لازم تكون أكبر من صفر.
@@ -425,9 +425,9 @@ Row #{0}: damage record {1} has no {2}.,سطر #{0}: تسجيل التالف {1}
 Row #{0}: only {1} {2} of {3} from damage record {4} are left to sell.,سطر #{0}: فاضل {1} {2} بس من {3} من تسجيل التالف {4} للبيع.
 Damaged stock sold by weight: {0},تالف اتباع بالوزن: {0}
 The invoice total {0} differs from the sale's {1}.,إجمالي الفاتورة {0} مختلف عن إجمالي البيعة {1}.
-"Taken out of {0} as a loss of {1} on {2}; kept in {3} at zero value until sold by weight.","خرج من {0} كخسارة {1} على {2}، ومحفوظ في {3} بقيمة صفر لحد ما يتباع بالوزن."
+Taken out of {0} as a loss of {1} on {2}; kept in {3} at zero value until sold by weight.,خرج من {0} كخسارة {1} على {2}، ومحفوظ في {3} بقيمة صفر لحد ما يتباع بالوزن.
 {0} has {1} {2} in {3},{0} موجود منه {1} {2} في {3}
-"Sold {0} {1} at {2}: {3}, invoiced in {4}.","اتباع {0} {1} بسعر {2}: {3}، في الفاتورة {4}."
+"Sold {0} {1} at {2}: {3}, invoiced in {4}.",اتباع {0} {1} بسعر {2}: {3}، في الفاتورة {4}.
 Row #{0}: {1} is the damaged store. Damaged items go in through Damaged Stock Entry and out through Damaged Stock Sale.,سطر #{0}: {1} هو مخزن التالف. التالف بيدخل من تسجيل تالف ويخرج من بيع تالف بالوزن بس.
 "The approval of an expense is changed only with Request Approval, Approve or Reject.",الموافقة على المصروف بتتغير بس من «اطلب الموافقة» أو «موافقة» أو «رفض».
 Paper used for printing and copying sold on {0}.,ورق اتصرف للتصوير والطباعة اللي اتباعوا في {0}.
@@ -442,10 +442,10 @@ Stock UOM,وحدة المخزون
 Request Type,نوع الطلب
 Shortage,النقص
 Count Again,اعمل الجرد تاني
-"This count was saved on {0}. The stock has moved since: count again today.",الجرد ده اتحفظ يوم {0}. المخزون اتحرك من ساعتها: اعمل الجرد تاني النهارده.
-"Row #{0}: reorder level and quantity cannot be negative.",سطر {0}: حد إعادة الطلب والكمية مينفعش يبقوا بالسالب.
-"Row #{0}: warehouse {1} already has a reorder level in row #{2}.",سطر {0}: المخزن {1} ليه حد إعادة طلب في السطر {2}.
-"Row #{0}: {1} is a group warehouse. Set the reorder level on a warehouse that holds stock.",سطر {0}: {1} مجموعة مخازن. حط حد إعادة الطلب على مخزن فيه بضاعة.
+This count was saved on {0}. The stock has moved since: count again today.,الجرد ده اتحفظ يوم {0}. المخزون اتحرك من ساعتها: اعمل الجرد تاني النهارده.
+Row #{0}: reorder level and quantity cannot be negative.,سطر {0}: حد إعادة الطلب والكمية مينفعش يبقوا بالسالب.
+Row #{0}: warehouse {1} already has a reorder level in row #{2}.,سطر {0}: المخزن {1} ليه حد إعادة طلب في السطر {2}.
+Row #{0}: {1} is a group warehouse. Set the reorder level on a warehouse that holds stock.,سطر {0}: {1} مجموعة مخازن. حط حد إعادة الطلب على مخزن فيه بضاعة.
 You are not allowed to use the assistant.,مش مسموحلك تستخدم المساعد.
 Unsupported audio format: {0},نوع الصوت ده مش مدعوم: {0}
 The voice message could not be read.,الرسالة الصوتية ماتقريتش.
@@ -467,14 +467,14 @@ Term,ترم
 Round,راوند
 Suspended,موقوف
 "Worked out from the doctor's ledger: what is owed under this agreement after accruals, payments, charges and adjustments.",بيتحسب من دفتر الطبيب: المتبقي على الاتفاقية دي بعد المستحقات والمدفوعات والخصومات والتسويات.
-"A suspended agreement takes no new editions or subscriptions; its account can still be settled.",الاتفاقية الموقوفة مابتاخدش إصدارات ولا اشتراكات جديدة؛ بس حسابها ينفع يتسوّى.
+A suspended agreement takes no new editions or subscriptions; its account can still be settled.,الاتفاقية الموقوفة مابتاخدش إصدارات ولا اشتراكات جديدة؛ بس حسابها ينفع يتسوّى.
 Agreement {0} is suspended. Make it Active again before adding to it.,الاتفاقية {0} موقوفة. رجّعها نشطة الأول قبل ما تضيف عليها.
 Agreement Suspended,اتفاقية موقوفة
 Agreement Terms,شروط الاتفاقية
 Edition Date,تاريخ الإصدار
 Leave empty for the agreement's start date.,سيبه فاضي لو من تاريخ بداية الاتفاقية.
 "The doctor's amount per copy sold, from each date. A new amount is a new row from a later date; an edition takes the amount in force on its date, so earlier editions keep theirs.",حق الطبيب في كل نسخة بتتباع، من كل تاريخ. المبلغ الجديد بيتكتب في سطر جديد بتاريخ أحدث؛ والإصدار بياخد المبلغ الساري في تاريخه، فالإصدارات القديمة بتفضل على مبلغها.
-"From the agreement's terms in force on the edition's date. Kept once the edition is submitted.",من شروط الاتفاقية السارية في تاريخ الإصدار. بيفضل زي ما هو بعد تسجيل الإصدار.
+From the agreement's terms in force on the edition's date. Kept once the edition is submitted.,من شروط الاتفاقية السارية في تاريخ الإصدار. بيفضل زي ما هو بعد تسجيل الإصدار.
 The doctor's amount per copy is the one the agreement has in force on this date.,حق الطبيب في النسخة هو اللي ساري في الاتفاقية في التاريخ ده.
 A books agreement needs the doctor's amount per copy. Add it under Agreement Terms.,اتفاقية الكتب لازم يبقى فيها حق الطبيب في النسخة. ضيفه في شروط الاتفاقية.
 Row #{0}: the doctor's amount per copy cannot be negative.,سطر {0}: حق الطبيب في النسخة مينفعش يبقى بالسالب.
@@ -486,7 +486,7 @@ No Agreement Term,مفيش شرط ساري
 Balance Direction,اتجاه الرصيد
 Owed to Doctor,مستحق للطبيب
 Owed by Doctor,مستحق على الطبيب
-"Set by the type: a books agreement owes the doctor his amount on copies sold; an app agreement has the doctor owe the group the platform fees.",بيتحدد من النوع: اتفاقية الكتب علينا فيها حق الطبيب على النسخ المباعة؛ واتفاقية التطبيق على الطبيب فيها رسوم المنصة للمجموعة.
+Set by the type: a books agreement owes the doctor his amount on copies sold; an app agreement has the doctor owe the group the platform fees.,بيتحدد من النوع: اتفاقية الكتب علينا فيها حق الطبيب على النسخ المباعة؛ واتفاقية التطبيق على الطبيب فيها رسوم المنصة للمجموعة.
 We owe the doctor {0} under this agreement.,علينا للطبيب {0} في الاتفاقية دي.
 The doctor owes us {0} under this agreement.,على الطبيب لينا {0} في الاتفاقية دي.
 Account Summary,ملخص الحساب
@@ -529,8 +529,8 @@ All Changes,كل التعديلات
 College,الكلية
 Academic Year,الفرقة
 Phone Key,مفتاح الهاتف
-"The mobile number in one spelling (+20...), so the same number cannot be on two customers.","رقم الموبايل بصيغة واحدة (+20...)، عشان نفس الرقم ميتسجلش على عميلين."
-"{0} is not a valid phone number. Type an Egyptian number such as 01012345678, or a foreign one with its country code, such as +966...","{0} مش رقم تليفون صحيح. اكتب رقم مصري زي 01012345678، أو رقم أجنبي بكود الدولة، زي +966..."
+"The mobile number in one spelling (+20...), so the same number cannot be on two customers.",رقم الموبايل بصيغة واحدة (+20...)، عشان نفس الرقم ميتسجلش على عميلين.
+"{0} is not a valid phone number. Type an Egyptian number such as 01012345678, or a foreign one with its country code, such as +966...",{0} مش رقم تليفون صحيح. اكتب رقم مصري زي 01012345678، أو رقم أجنبي بكود الدولة، زي +966...
 Invalid Phone Number,رقم تليفون غير صحيح
 The phone number {0} already belongs to customer {1}. Choose that customer instead of adding another one.,رقم التليفون {0} متسجل على العميل {1}. اختار العميل ده بدل ما تضيف عميل جديد.
 Customer Already Exists,العميل متسجل قبل كده
@@ -542,9 +542,9 @@ Cancellation Reason Required,لازم سبب للإلغاء
 Only a submitted {0} can be cancelled.,{0} بيتلغي بس لو كان متسجل (Submitted).
 Why is this sale cancelled? The reason is kept on the invoice.,ليه البيعة دي هتتلغي؟ السبب هيتحفظ على الفاتورة.
 Choose the customer,اختار العميل
-"Add books, memos or a service","ضيف كتب أو مذكرات أو خدمة"
-"Check the total, then Checkout and take the payment","راجع الإجمالي، وبعدين اضغط الدفع واستلم الفلوس"
-"Not sold at this point of sale, or it has no price.","مش بيتباع في نقطة البيع دي، أو ملوش سعر."
+"Add books, memos or a service",ضيف كتب أو مذكرات أو خدمة
+"Check the total, then Checkout and take the payment",راجع الإجمالي، وبعدين اضغط الدفع واستلم الفلوس
+"Not sold at this point of sale, or it has no price.",مش بيتباع في نقطة البيع دي، أو ملوش سعر.
 Not available,غير متاح
 The cancellation reason is too long: at most {0} characters.,سبب الإلغاء طويل: أقصى حد {0} حرف.
 Quantities,الكميات
@@ -574,9 +574,9 @@ Changed only by Carry Forward (DOC-15) and Cancel: Curriculum Changed (DOC-17).,
 The book or memo this edition is sold as. A sale of this item names the edition.,الكتاب أو المذكرة اللي الإصدار ده بيتباع بيه. أي بيعة للصنف ده بتتسجل على الإصدار.
 Doctor Requested Qty + Library Extra Qty.,الكمية بطلب الطبيب + الكمية الإضافية للمكتبة.
 Total Qty - Sold Qty.,إجمالي الكمية - الكمية المباعة.
-"The day the doctor told the library, by word of mouth, that the curriculum changed.","اليوم اللي الطبيب بلّغ فيه المكتبة شفهيًا إن المنهج اتغير."
+"The day the doctor told the library, by word of mouth, that the curriculum changed.",اليوم اللي الطبيب بلّغ فيه المكتبة شفهيًا إن المنهج اتغير.
 The employee who received the notice and recorded it.,الموظف اللي استلم الإخطار وسجّله.
-"The edition the copies sold come from. Filled in when the item has one edition on sale.","الإصدار اللي النسخ المباعة منه. بيتملى لوحده لو الصنف ليه إصدار واحد متاح للبيع."
+The edition the copies sold come from. Filled in when the item has one edition on sale.,الإصدار اللي النسخ المباعة منه. بيتملى لوحده لو الصنف ليه إصدار واحد متاح للبيع.
 "Enter the copies to print: Doctor Requested Qty, Library Extra Qty or both.",اكتب عدد النسخ اللي هتتطبع: الكمية بطلب الطبيب أو الكمية الإضافية أو الاتنين.
 {0} change only through Carry Forward or Cancel: Curriculum Changed.,{0} بيتغير بس من زرار الترحيل أو الإلغاء لتغيّر المنهج.
 Item {0} is not an active stock item; an edition is sold as a book or memo kept in stock.,الصنف {0} مش صنف مخزني شغال؛ الإصدار بيتباع ككتاب أو مذكرة في المخزن.
@@ -591,14 +591,14 @@ Edition {0} is already in {1}.,الإصدار {0} موجود بالفعل في {
 Edition {0} is already cancelled.,الإصدار {0} ملغى بالفعل.
 Enter the day the doctor gave the notice.,اكتب اليوم اللي الطبيب بلّغ فيه.
 The notice date cannot be in the future.,تاريخ الإخطار مينفعش يكون في المستقبل.
-"The notice date cannot be before the edition date, {0}.","تاريخ الإخطار مينفعش يكون قبل تاريخ الإصدار، {0}."
-"Row #{0}: {1} has more than one edition on sale ({2}). Choose the edition the copies come from.","صف #{0}: {1} ليه أكتر من إصدار متاح للبيع ({2}). اختار الإصدار اللي النسخ منه."
+"The notice date cannot be before the edition date, {0}.",تاريخ الإخطار مينفعش يكون قبل تاريخ الإصدار، {0}.
+Row #{0}: {1} has more than one edition on sale ({2}). Choose the edition the copies come from.,صف #{0}: {1} ليه أكتر من إصدار متاح للبيع ({2}). اختار الإصدار اللي النسخ منه.
 Row #{0}: Book Edition {1} not found.,صف #{0}: الإصدار {1} مش موجود.
-"Row #{0}: edition {1} is sold as {2}, not {3}.","صف #{0}: الإصدار {1} بيتباع كـ {2}، مش {3}."
+"Row #{0}: edition {1} is sold as {2}, not {3}.",صف #{0}: الإصدار {1} بيتباع كـ {2}، مش {3}.
 Row #{0}: edition {1} is not approved (submitted) yet.,صف #{0}: الإصدار {1} لسه ما اتعتمدش.
 Row #{0}: edition {1} was cancelled because the curriculum changed; its copies are no longer sold.,صف #{0}: الإصدار {1} اتلغى لتغيّر المنهج؛ نسخه مبقتش بتتباع.
 Edition {0} has {1} copies left; this invoice sells {2}.,الإصدار {0} فاضل منه {1} نسخة؛ والفاتورة دي بتبيع {2}.
-"Cancelled because the curriculum changed: notice of {0}, received by {1}.","ملغى لتغيّر المنهج: إخطار يوم {0}، استلمه {1}."
+"Cancelled because the curriculum changed: notice of {0}, received by {1}.",ملغى لتغيّر المنهج: إخطار يوم {0}، استلمه {1}.
 The {0} unsold copies go on to this period at their original cost and stay on sale.,النسخ الـ {0} اللي ما اتباعتش هتترحّل للفترة دي بتكلفتها الأصلية وتفضل متاحة للبيع.
 The day the doctor said the curriculum changed. You are recorded as the employee who received it.,اليوم اللي الطبيب قال فيه إن المنهج اتغير. هتتسجل إنت كالموظف اللي استلم الإخطار.
 Another sale of edition {0} was saved at the same moment. Submit this invoice again.,بيعة تانية من الإصدار {0} اتسجلت في نفس اللحظة. اعتمد الفاتورة دي تاني.
@@ -630,7 +630,6 @@ More Than Owed,أكتر من المستحق
 Payout to {0} under {1} ({2}).,صرف لـ {0} على {1} ({2}).
 {0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.,{0} اتعمل من حركة حساب الطبيب {1}. الغي الحركة دي بدل كده.
 Posted by the Doctor's Ledger,متسجل من حساب الطبيب
-"{0}: {1} of the doctor's {2} copies unsold x {3} a copy, when {4} ended.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، لما {4} خلصت.
 {0} charges for unsold copies are waiting for approval in the doctors' ledger: {1},{0} خصم على نسخ متبقية مستني الاعتماد في حسابات الأطباء: {1}
 Unsold Copies,النسخ المتبقية
 Doctor Charges to Approve,خصومات أطباء مستنية الاعتماد
@@ -647,3 +646,29 @@ As Of,حتى تاريخ
 Debt,المديونية
 Owed Since,مستحقة من
 Age (Days),العمر (أيام)
+Doctor Dues,مستحقات الأطباء
+Owed to the Doctor,المستحق للطبيب
+Branch,الفرع
+The library that sold the copies.,المكتبة اللي باعت النسخ.
+Agreements,الاتفاقيات
+Next Settlement,التسوية الجاية
+"{0} has no email on file, so the statement of {1} for {2} was not sent. Add his email and send it again.",{0} مالوش إيميل في ملفه، فكشف {1} عن {2} ماتبعتش. ضيف إيميله وابعته تاني.
+Your statement for {0}: {1},كشف حسابك عن {0}: {1}
+"Dear Dr. {0},",الدكتور {0}،
+"Your statement for {0} under {1}, sent after: {2}.",ده كشف حسابك عن {0} على {1}، اتبعت بعد: {2}.
+{0} {1} of {2},{0} {1} بمبلغ {2}
+Unsold Editions,الإصدارات اللي ماتباعتش
+Period Ended Before,الفترة خلصت قبل
+Library,المكتبة
+Period Ended,الفترة خلصت
+Doctor's Copies Left,الباقي من نسخ الطبيب
+Library's Copies Left,الباقي من نسخ المكتبة
+Owner Share Plan vs Actual,نصيب المالك: المخطط والفعلي
+Planned per Copy,المخطط للنسخة
+Planned Owner Share,نصيب المالك المخطط
+Sales,المبيعات
+Actual Owner Share,نصيب المالك الفعلي
+Difference,الفرق
+cancelled on {0}: the curriculum changed,اتلغى يوم {0}: المنهج اتغير
+when {0} ended,لما {0} خلصت
+"{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، {4}.
