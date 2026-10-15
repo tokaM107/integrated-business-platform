@@ -21,6 +21,7 @@ from imed_erp.imederp.report.doctor_statement.doctor_statement import execute
 from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH
 
 LEDGER = "Doctor Ledger Entry"
+TREASURY = "الخزينة الرئيسية - MMG"
 
 
 class IntegrationTestDoctorStatement(IntegrationTestCase):
@@ -103,6 +104,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 				"entry_date": entry_date or today(),
 				"period": period,
 				"remarks": remarks,
+				"treasury": TREASURY if entry_type == "Payout" else None,
 			}
 		).insert()
 		doc.submit()
@@ -131,7 +133,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		credit.submit()
 		# A payout entered with the period, and one entered without it but dated in the term.
 		self.entry("Payout", 200, period=self.term2)
-		self.entry("Payout", 30, "2026-07-02")
+		self.entry("Payout", 30, "2026-09-02")
 
 		_columns, data, summary = self.statement()
 		opening = before + 50
@@ -144,7 +146,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 				second.name: (1, 150, get_copy_cost(second), 80, 80),
 			},
 		)
-		# By date: the one of 2 July first.
+		# By date: the one of 2 September first.
 		self.assertEqual([row.get("paid") for row in data if row.get("paid")], [30, 200])
 		self.assertEqual(data[-1]["balance"], opening + 320 + 80 - 230)
 		self.assertEqual(
