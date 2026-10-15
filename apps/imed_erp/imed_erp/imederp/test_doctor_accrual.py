@@ -154,6 +154,7 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		edition = self.edition()
 		agreement = edition.agreement
 		before = self.balance(agreement)
+		history = frappe.db.count("Version", {"ref_doctype": "Doctor Agreement", "docname": agreement})
 
 		sale = self.sell([(self.items[0], 3)])
 		[entry] = self.entries(sale.name)
@@ -173,6 +174,8 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		self.assertEqual(self.entries(sale.name), [])
 		self.assertEqual(self.net(entry.journal_entry), {EXPENSE: 0, PAYABLE: 0})
 		self.assertEqual(self.balance(agreement) - before, 0)
+		# Sales are not changes by hand: each is on its invoice, not in the agreement's history (SEC-07).
+		self.assertEqual(frappe.db.count("Version", {"ref_doctype": "Doctor Agreement", "docname": agreement}), history)
 
 	def test_counting_an_invoice_again_adds_nothing(self):
 		edition = self.edition()
