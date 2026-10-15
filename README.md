@@ -863,6 +863,18 @@ figures and in words (`فقط ألف و مئتان و خمسون جنيه مصر
 accountant's signatures. Arabic when printed in Arabic, like the invoice. A simple version; the final design comes
 in week C. Any other ledger entry prints the same way under the title حركة حساب طبيب.
 
+**The end of a term or module** (DOC-18, DOC-22). When the accountant or the owner closes an Academic Period, every
+approved edition whose period is that one or one under it (its rounds and modules) gets a **draft Unsold Copies
+Charge**: the copies the doctor asked for and did not sell × the cost of a copy (owner's decision of 10 Oct 2026).
+Sales count against the doctor's copies first, so the library's extra copies are never charged to him. An edition
+carried forward ends with the period it was carried to. The charge is applied only when the accountant or the
+owner submits it; until then it is listed on the owner's page under «خصومات أطباء مستنية الاعتماد» and does not
+touch the balance. An edition already charged for the period is skipped, so closing again adds nothing.
+
+A closed academic period takes no new entries (`period_lock.py`), except the ones that settle it after it ends:
+the Unsold Copies Charge and the Payout. A sale of an edition whose period is closed is refused until the edition
+is carried forward.
+
 **Balance Direction** (DOC-30) is set by the type: Books is *Owed to Doctor* (his amount on the copies sold),
 App is *Owed by Doctor* (the platform fees). Each agreement keeps its own balance; a doctor's agreements are
 never offset against each other (owner's decision). The agreement screen shows the balance at the top in its
