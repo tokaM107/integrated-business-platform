@@ -614,7 +614,6 @@ Missing Account,حساب ناقص
 Sales Invoice {0}: the doctor's amount could not be counted,فاتورة البيع {0}: حق الطبيب ماتحسبش
 Sales Invoice {0}: the doctor's amount could not be cancelled,فاتورة البيع {0}: حق الطبيب مااتلغاش
 Doctor Receivables,مستحقات الأطباء
-Doctor Debts,مديونيات الأطباء
 You are not allowed to see the doctors' accounts.,مش مسموح لك تشوف حسابات الأطباء.
 From Date is after To Date.,تاريخ البداية بعد تاريخ النهاية.
 Opening,رصيد أول المدة
@@ -629,15 +628,6 @@ Agreements,الاتفاقيات
 Doctors,الأطباء
 Owed to Doctors,مستحق للأطباء
 Show Settled Agreements,إظهار الاتفاقيات المسددة
-Debt,المديونية
-Owed,المستحق عليه
-Collected or Offset,المحصّل أو المخصوم
-Outstanding Debt,المديونية المتبقية
-Oldest Debt Date,تاريخ أقدم مديونية
-Negative Balance,رصيد سالب
-Uncollected Platform Fees,رسوم منصة غير محصّلة
-As On,في تاريخ
-Ageing Range,فترات الأعمار
 The count sheet has no column {0}.,ملف الجرد مفيهوش عمود {0}.
 {0} is empty.,{0} فاضي.
 Item {0} not found.,الصنف {0} مش موجود.
@@ -658,3 +648,37 @@ Store {0} already has an opening balance: {1}.,المخزن {0} ليه رصيد 
 {0} {1} already recorded in the store on {2}; the opening count replaces it (difference {3}).,{0} {1} متسجلين في المخزن يوم {2}؛ جرد الافتتاح هيحل محلهم (الفرق {3}).
 Fix every row with an error before making the opening balance.,صلّح كل سطر فيه خطأ قبل عمل الرصيد الافتتاحي.
 {0} has no temporary opening account.,{0} ملوش حساب أرصدة افتتاحية مؤقتة.
+Doctor Statement,كشف حساب الطبيب
+Copies Sold,النسخ المباعة
+Selling Price,سعر البيع
+Cost per Copy,تكلفة النسخة
+Owed,المستحق
+Paid / Deducted,المصروف / المخصوم
+Balance Brought Forward,رصيد أول الفترة
+Balance at the End of the Period,رصيد آخر الفترة
+The cash box or wallet the money is paid from.,الخزنة أو المحفظة اللي الفلوس هتتصرف منها.
+Choose the treasury the money is paid from.,اختار الخزنة اللي الفلوس هتتصرف منها.
+Treasury Required,الخزنة مطلوبة
+{0} is not a treasury. Choose a cash box or a wallet.,{0} مش خزنة. اختار خزنة أو محفظة.
+The doctor is owed {0} under {1}; a payout of {2} is more than that. Pay {0} or less.,مستحق الطبيب على {1} هو {0}؛ صرف {2} أكتر منه. اصرف {0} أو أقل.
+More Than Owed,أكتر من المستحق
+Payout to {0} under {1} ({2}).,صرف لـ {0} على {1} ({2}).
+{0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.,{0} اتعمل من حركة حساب الطبيب {1}. الغي الحركة دي بدل كده.
+Posted by the Doctor's Ledger,متسجل من حساب الطبيب
+"{0}: {1} of the doctor's {2} copies unsold x {3} a copy, when {4} ended.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، لما {4} خلصت.
+{0} charges for unsold copies are waiting for approval in the doctors' ledger: {1},{0} خصم على نسخ متبقية مستني الاعتماد في حسابات الأطباء: {1}
+Unsold Copies,النسخ المتبقية
+Doctor Charges to Approve,خصومات أطباء مستنية الاعتماد
+{0} was rejected and is closed. Make a new entry if it is still needed.,{0} اترفض واتقفل. اعمل حركة جديدة لو لسه محتاجها.
+Rejected,مرفوض
+A deduction is approved or rejected only with Approve or Reject.,الخصم بيتعتمد أو يترفض بزرار اعتماد أو رفض بس.
+{0} is not a deduction waiting for approval.,{0} مش خصم مستني الاعتماد.
+A deduction from a doctor is applied only once the owner or the accountant approves it.,الخصم من الطبيب مش بيتنفّذ غير لما المالك أو المحاسب يعتمده.
+Charge {0} of {1} on {2} for unsold copies of {3} is waiting for your approval.,خصم {0} بمبلغ {1} على {2} للنسخ المتبقية من {3} مستني اعتمادك.
+This deduction was rejected and is closed.,الخصم ده اترفض واتقفل.
+Reject Deduction,رفض الخصم
+Doctor Debts,مديونيات الأطباء
+As Of,حتى تاريخ
+Debt,المديونية
+Owed Since,مستحقة من
+Age (Days),العمر (أيام)

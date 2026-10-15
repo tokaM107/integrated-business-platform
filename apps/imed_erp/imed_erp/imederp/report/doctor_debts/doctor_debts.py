@@ -1,123 +1,95 @@
 # Copyright (c) 2026, toka mohamed and contributors
 # For license information, please see license.txt
 
-# Doctor debts (RPT-10, APP-08): what doctors owe the group on To Date, with how old it is.
-#
-#   Books agreements whose balance is below zero (DOC-20): the doctor was charged or paid more than his copies
-#   earned. A standing debt, kept until settled, not an error.
-#   App agreements: the platform fees of the students' subscriptions not collected yet (APP-05/08).
-#
-# Read from the doctor's ledger and, for the platform fees, which the ledger does not hold, from the submitted App
-# Subscriptions (imederp/doctor_balances.py). Nothing is posted here.
-#
-# Age: what pays a debt settles its oldest part first (age_debt), so each part still owed keeps the date it arose:
-# the subscription's date for a fee, the entry's date for a charge. Ranges in days, 30, 60, 90 unless set.
+# What the doctors owe the group (DOC-20, APP-05): a books agreement whose balance went below zero (charged more
+# than he earned) and an app agreement's platform fees not collected yet, each with how long it has been owed.
+# Worked out from the doctor's ledger up to the date chosen. A debt is never closed on its own: it stays until
+# what comes next pays it off, oldest part first (the next amount the doctor earns goes to it before anything
+# is paid to him, see Doctor Ledger Entry validate_payout), so its age is that of its oldest unpaid part.
 
 import frappe
 from frappe import _
-from frappe.utils import flt, getdate, today
+from frappe.utils import date_diff, flt, getdate
 
-from imed_erp.imederp.doctor_balances import (
-	age_debt,
-	ageing_buckets,
-	app_fees_in_ledger,
-	check_permission,
-	get_agreements,
-	get_entries,
-	get_subscription_fees,
-	parse_ranges,
-)
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_SIGN, DIRECTION, OWED_BY_DOCTOR
 
-NEGATIVE_BALANCE, PLATFORM_FEES = "Negative Balance", "Uncollected Platform Fees"
+BUCKETS = ((30, "0-30"), (60, "31-60"), (90, "61-90"), (None, "90+"))
 
 
 def execute(filters=None):
-	check_permission()
 	filters = frappe._dict(filters or {})
-	filters.to_date = getdate(filters.to_date or today())
-	ranges = parse_ranges(filters.range)
-	data = get_data(filters, ranges)
-	return get_columns(ranges), data, None, None, get_summary(data)
+	as_of = getdate(filters.as_of)
+	return get_columns(), get_data(filters, as_of)
 
 
-def get_columns(ranges):
-	currency = {"fieldtype": "Currency", "width": 115}
+def get_columns():
 	columns = [
-		{"label": _("Doctor"), "fieldname": "doctor", "fieldtype": "Link", "options": "Customer", "width": 170},
-		{"label": _("Agreement"), "fieldname": "agreement", "fieldtype": "Link", "options": "Doctor Agreement", "width": 170},
-		{"label": _("Agreement Type"), "fieldname": "agreement_type", "fieldtype": "Data", "width": 90},
-		{"label": _("Debt"), "fieldname": "debt_type", "fieldtype": "Data", "width": 170},
-		{"label": _("Owed"), "fieldname": "raised", **currency},
-		{"label": _("Collected or Offset"), "fieldname": "paid", **currency},
-		{"label": _("Outstanding Debt"), "fieldname": "outstanding", **currency},
-		{"label": _("Oldest Debt Date"), "fieldname": "oldest", "fieldtype": "Date", "width": 110},
+		{"label": _("Doctor"), "fieldname": "doctor", "fieldtype": "Link", "options": "Customer", "width": 180},
+		{"label": _("Agreement"), "fieldname": "agreement", "fieldtype": "Link", "options": "Doctor Agreement", "width": 180},
+		{"label": _("Type"), "fieldname": "agreement_type", "fieldtype": "Data", "width": 80},
+		{"label": _("Debt"), "fieldname": "debt", "fieldtype": "Currency", "width": 120},
+		{"label": _("Owed Since"), "fieldname": "since", "fieldtype": "Date", "width": 110},
+		{"label": _("Age (Days)"), "fieldname": "age", "fieldtype": "Int", "width": 90},
 	]
-	lower = 0
-	for i, limit in enumerate(ranges):
-		columns.append({"label": f"{lower}-{limit}", "fieldname": f"range{i + 1}", **currency})
-		lower = limit + 1
-	columns.append({"label": f"{lower}+", "fieldname": f"range{len(ranges) + 1}", **currency})
-	columns.append({"label": _("Last Settlement"), "fieldname": "last_settlement_date", "fieldtype": "Date", "width": 110})
+	columns += [{"label": label, "fieldname": f"age_{label}", "fieldtype": "Currency", "width": 100} for _limit, label in BUCKETS]
 	return columns
 
 
-def get_data(filters, ranges):
-	agreements = {a.name: a for a in get_agreements(filters)}
-	entries = get_entries(list(agreements), to_date=filters.to_date)
-	app_agreements = [name for name, a in agreements.items() if a.agreement_type == "App"]
-	fees = get_subscription_fees(app_agreements, to_date=filters.to_date)
-	fees_in_ledger = app_fees_in_ledger(app_agreements)
-
-	movements = {}
-	for entry in entries:
-		agreement = agreements[entry.agreement]
-		# In debt terms: books entries count against the doctor when they lower what he is owed; app entries
-		# (owed by the doctor) as they are.
-		amount = -entry.signed if agreement.agreement_type == "Books" else entry.signed
-		movements.setdefault(entry.agreement, []).append((entry.entry_date, amount))
-	for name, rows in fees.items():
-		if name not in fees_in_ledger:
-			movements.setdefault(name, []).extend((date, fee) for date, fee, _branch, _sub in rows)
-
-	data = []
-	for name, rows in movements.items():
-		agreement = agreements[name]
-		open_debts = age_debt(rows)
-		outstanding = flt(sum(amount for _date, amount in open_debts), 2)
-		if outstanding <= 0:
+def get_data(filters, as_of):
+	conditions = {"docstatus": 1}
+	if filters.doctor:
+		conditions["doctor"] = filters.doctor
+	rows = []
+	for agreement in frappe.get_all(
+		"Doctor Agreement", filters=conditions, fields=["name", "doctor", "agreement_type"], order_by="doctor, name"
+	):
+		layers = debt_layers(agreement, as_of)
+		debt = flt(sum(amount for _, amount in layers), 2)
+		if debt <= 0:
 			continue
-		raised = flt(sum(amount for _date, amount in rows if amount > 0), 2)
-		buckets = ageing_buckets(open_debts, filters.to_date, ranges)
-		data.append(
-			{
-				"doctor": agreement.doctor,
-				"agreement": name,
-				"agreement_type": _(agreement.agreement_type),
-				"debt_type": _(NEGATIVE_BALANCE if agreement.agreement_type == "Books" else PLATFORM_FEES),
-				"raised": raised,
-				"paid": flt(raised - outstanding, 2),
-				"outstanding": outstanding,
-				"oldest": min(date for date, _amount in open_debts),
-				"last_settlement_date": agreement.last_settlement_date,
-				**{f"range{i + 1}": flt(amount, 2) for i, amount in enumerate(buckets)},
-			}
-		)
-	return sorted(data, key=lambda row: (row["oldest"], row["agreement"]))
+		row = {
+			"doctor": agreement.doctor,
+			"agreement": agreement.name,
+			"agreement_type": _(agreement.agreement_type),
+			"debt": debt,
+			"since": layers[0][0],
+			"age": date_diff(as_of, layers[0][0]),
+		}
+		for date, amount in layers:
+			label = bucket(date_diff(as_of, date))
+			row[f"age_{label}"] = flt(row.get(f"age_{label}")) + amount
+		rows.append(row)
+	return rows
 
 
-def get_summary(data):
-	return [
-		{"label": _("Doctors"), "value": len({row["doctor"] for row in data}), "datatype": "Int"},
-		{
-			"label": _(NEGATIVE_BALANCE),
-			"value": sum(row["outstanding"] for row in data if row["debt_type"] == _(NEGATIVE_BALANCE)),
-			"datatype": "Currency",
-			"indicator": "red",
-		},
-		{
-			"label": _(PLATFORM_FEES),
-			"value": sum(row["outstanding"] for row in data if row["debt_type"] == _(PLATFORM_FEES)),
-			"datatype": "Currency",
-			"indicator": "blue",
-		},
-	]
+def bucket(days):
+	return next(label for limit, label in BUCKETS if limit is None or days <= limit)
+
+
+def debt_layers(agreement, as_of):
+	"""What the doctor still owes under the agreement, as (date it arose, amount) from the oldest, after what came
+	later paid it off oldest first."""
+	# For a books agreement the balance is what the group owes the doctor, so his debt is the balance below zero;
+	# for an app agreement the balance is what he owes.
+	owes = 1 if DIRECTION.get(agreement.agreement_type) == OWED_BY_DOCTOR else -1
+	position, layers = 0, []
+	for entry in frappe.get_all(
+		"Doctor Ledger Entry",
+		filters={"agreement": agreement.name, "docstatus": 1, "entry_date": ["<=", as_of]},
+		fields=["entry_date", "entry_type", "amount"],
+		order_by="entry_date, creation",
+	):
+		before = max(position, 0)
+		position += owes * BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount)
+		after = max(position, 0)
+		if after > before:
+			layers.append([getdate(entry.entry_date), after - before])
+		else:
+			paid = before - after
+			while paid > 0 and layers:
+				taken = min(paid, layers[0][1])
+				layers[0][1] -= taken
+				paid -= taken
+				if not layers[0][1]:
+					layers.pop(0)
+	return [(date, flt(amount, 2)) for date, amount in layers if flt(amount, 2)]

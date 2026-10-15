@@ -6,6 +6,7 @@
 # Run:
 #   bench --site frontend run-tests --doctype "Doctor Agreement"
 
+import json
 from unittest.mock import patch
 
 import frappe
@@ -23,6 +24,11 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GR
 EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 # Linked records already exist on the site or are made by the tests; without this list Frappe builds
 # ERPNext's "_Test ..." records and commits them to the site.
+ACCOUNTANT = "accountant@imed.local"
+
+# A payout comes out of a treasury (Doctor Ledger Entry).
+TREASURY = "الخزينة الرئيسية - MMG"
+
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
 
 
@@ -66,7 +72,10 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 			frappe.get_doc("Doctor Agreement", agreement).submit()
 		entry = frappe.get_doc(
 			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount}
-		).insert()
+		)
+		if entry_type == "Payout":
+			entry.treasury = TREASURY
+		entry.insert()
 		entry.submit()
 		return entry
 
@@ -88,10 +97,50 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, "balance"), 730)
 
 	def test_the_balance_is_not_typed(self):
+		# SEC-07: not on the screen and not through the API; it is always what the ledger says.
 		agreement = self.agreement(make_doctor(), "_Test Typed Balance")
 		agreement.balance = 999
 		agreement.insert()
 		self.assertTrue(frappe.get_meta("Doctor Agreement").get_field("balance").read_only)
+		self.assertEqual(flt(agreement.balance), 0)
+		self.entry(agreement.name, "Accrual", 100)
+		agreement = frappe.get_doc("Doctor Agreement", agreement.name)
+		agreement.balance, agreement.last_settlement_amount = 999, 999
+		agreement.save()
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, ["balance", "last_settlement_amount"]), (100, 0))
+
+	def history(self, agreement):
+		return [
+			json.loads(v.data)["changed"]
+			for v in frappe.get_all(
+				"Version", filters={"ref_doctype": "Doctor Agreement", "docname": agreement}, fields=["data", "owner"], order_by="creation"
+			)
+			if '"balance"' in v.data
+		]
+
+	def test_a_change_by_hand_is_in_the_agreement_s_history(self):
+		# SEC-07: the balance before and after, who and when, for every entry made by hand.
+		agreement = self.agreement(make_doctor(), "_Test Balance History").insert()
+		agreement.submit()
+		frappe.set_user(ACCOUNTANT)
+		try:
+			added = self.entry(agreement.name, "Adjustment", 50)
+			self.entry(agreement.name, "Adjustment", -20)
+			added.cancel()
+		finally:
+			frappe.set_user("Administrator")
+		self.assertEqual(
+			[[c[1:] for c in changed if c[0] == "balance"][0] for changed in self.history(agreement.name)],
+			[[0, 50], [50, 30], [30, -20]],
+		)
+		owners = frappe.get_all("Version", filters={"ref_doctype": "Doctor Agreement", "docname": agreement.name}, pluck="owner")
+		self.assertEqual(set(owners), {ACCOUNTANT})
+
+	def test_only_the_accounts_change_a_doctor_s_balance(self):
+		for user in ("sara@imed.local", "raghad@imed.local", "hr@imed.local"):
+			with self.subTest(user):
+				self.assertFalse(frappe.has_permission("Doctor Ledger Entry", "create", user=user))
+		self.assertTrue(frappe.has_permission("Doctor Ledger Entry", "create", user=ACCOUNTANT))
 
 	def test_a_suspended_agreement_takes_no_new_edition_or_subscription(self):
 		from imed_erp.imederp.doctype.book_edition.test_book_edition import LIBRARY
@@ -277,12 +326,12 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.entry(agreement.name, "Accrual", 800)
 		self.entry(agreement.name, "Payout", 300)
 		later = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2099-01-01", "entry_type": "Payout", "amount": 200}
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2027-06-01", "entry_type": "Payout", "amount": 200, "treasury": TREASURY}
 		).insert()
 		later.submit()
 		self.assertEqual(
 			frappe.db.get_value("Doctor Agreement", agreement.name, ["balance", "last_settlement_date", "last_settlement_amount"]),
-			(300, frappe.utils.getdate("2099-01-01"), 200),
+			(300, frappe.utils.getdate("2027-06-01"), 200),
 		)
 		later.cancel()
 		self.assertEqual(

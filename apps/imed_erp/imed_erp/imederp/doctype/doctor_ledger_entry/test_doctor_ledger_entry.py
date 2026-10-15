@@ -3,31 +3,44 @@
 
 # A doctor's ledger has no company or cost center, so the month lock (CORE-09) uses the default company:
 # no entry is saved or cancelled in a closed month. An accrual names the invoice line it comes from, and a line
-# is counted once (DOC-07). Rolled back afterwards.
+# is counted once (DOC-07). A payout comes out of a treasury, in part and as often as needed, with its journal
+# entry (DOC-09, ACC-11). A deduction from the doctor is applied only once the owner or the accountant approves it
+# (DOC-22). Rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --doctype "Doctor Ledger Entry"
 
 import frappe
+from unittest.mock import patch
+
 from frappe.tests import IntegrationTestCase
-from frappe.utils import today
+from frappe.utils import flt, today
 
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreement, make_doctor
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_balance
 
 # Linked records already exist on the site or are made by the tests; without this list Frappe builds
 # ERPNext's "_Test ..." records and commits them to the site.
 IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"Academic Period",
+	"Account",
 	"Book Edition",
 	"Customer",
 	"Doctor Agreement",
 	"Doctor Ledger Entry",
 	"Journal Entry",
 	"Sales Invoice",
+	"User",
 ]
 
 COMPANY = "Mohamed Mamdouh group"
 MAWASAH = "مكتبة المواساة - MMG"
+CASH_BOX = "خزينة مكتبة المواساة - MMG"
+WALLET = "محفظة InstaPay - MMG"
+PAYABLE = "مستحقات للأطباء — الكتب - MMG"
+LEDGER = "Doctor Ledger Entry"
+ACCOUNTANT = "accountant@imed.local"
+HR = "hr@imed.local"
 
 
 class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
@@ -111,3 +124,151 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		# Once the month is open again, the entry is cancelled as usual.
 		entry.reload()
 		entry.cancel()
+
+	# ---------- Payouts (DOC-09, ACC-11) ----------
+
+	def payout(self, amount, treasury=CASH_BOX, submit=True):
+		entry = self.new_entry(today(), entry_type="Payout", amount=amount, treasury=treasury).insert()
+		if submit:
+			entry.submit()
+		return entry
+
+	def gl(self, journal_entry):
+		return sorted(
+			(g.account, g.debit, g.credit)
+			for g in frappe.get_all(
+				"GL Entry",
+				filters={"voucher_type": "Journal Entry", "voucher_no": journal_entry, "is_cancelled": 0},
+				fields=["account", "debit", "credit"],
+			)
+		)
+
+	def test_a_payout_in_parts_from_any_treasury(self):
+		agreement = make_agreement("Books")
+		self.new_entry(today(), amount=500).insert().submit()
+		owed = get_balance(agreement)
+
+		first = self.payout(200)
+		second = self.payout(owed - 200, WALLET)
+		self.assertEqual(self.gl(first.journal_entry), sorted([(PAYABLE, 200, 0), (CASH_BOX, 0, 200)]))
+		self.assertEqual(self.gl(second.journal_entry), sorted([(PAYABLE, owed - 200, 0), (WALLET, 0, owed - 200)]))
+		self.assertEqual(flt(frappe.db.get_value("Doctor Agreement", agreement, "balance")), 0)
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "last_settlement_amount"), owed - 200)
+
+	def test_no_payout_beyond_what_is_owed(self):
+		agreement = make_agreement("Books")
+		self.new_entry(today(), amount=100).insert().submit()
+		owed = get_balance(agreement)
+		self.assertRaisesRegex(frappe.ValidationError, "more than that", self.payout, owed + 1)
+		self.payout(owed)
+		self.assertRaisesRegex(frappe.ValidationError, "more than that", self.payout, 1)
+
+	def test_a_payout_needs_a_treasury(self):
+		self.new_entry(today(), amount=100).insert().submit()
+		self.assertRaisesRegex(frappe.ValidationError, "Choose the treasury", self.payout, 10, None)
+		self.assertRaisesRegex(frappe.ValidationError, "is not a treasury", self.payout, 10, PAYABLE)
+		# Other kinds of entry keep no treasury.
+		accrual = self.new_entry(today(), treasury=CASH_BOX).insert()
+		self.assertIsNone(accrual.treasury)
+
+	def test_a_cancelled_payout_takes_its_journal_entry_with_it(self):
+		agreement = make_agreement("Books")
+		self.new_entry(today(), amount=300).insert().submit()
+		before = get_balance(agreement)
+		payout = self.payout(100)
+		# The journal entry alone is not cancelled: the ledger would still show the money paid.
+		self.assertRaisesRegex(
+			frappe.ValidationError, "Cancel that entry instead", frappe.get_doc("Journal Entry", payout.journal_entry).cancel
+		)
+		payout.reload()
+		payout.cancel()
+		self.assertEqual(frappe.db.get_value("Journal Entry", payout.journal_entry, "docstatus"), 2)
+		self.assertEqual(self.gl(payout.journal_entry), [])
+		self.assertEqual(get_balance(agreement), before)
+
+	def test_the_payout_receipt(self):
+		# A simple receipt until the final design (week C): who was paid, from which treasury, how much in figures
+		# and in words, and room for both signatures. The ledger prints with it by default.
+		self.assertEqual(frappe.get_meta("Doctor Ledger Entry").default_print_format, "MMG Doctor Payout")
+		self.new_entry(today(), amount=500).insert().submit()
+		payout = self.payout(150)
+		doctor = frappe.db.get_value("Doctor Agreement", payout.agreement, "doctor")
+		lang = frappe.local.lang
+		try:
+			frappe.local.lang = "ar"
+			html = frappe.get_print("Doctor Ledger Entry", payout.name, print_format="MMG Doctor Payout")
+		finally:
+			frappe.local.lang = lang
+		for text in ("إيصال صرف للطبيب", doctor, "خزينة مكتبة المواساة", "فقط", "جنيه مصري", "توقيع المستلم (الطبيب)", payout.name):
+			with self.subTest(text):
+				self.assertIn(text, html)
+		self.assertIn("Doctor Payout Receipt", frappe.get_print("Doctor Ledger Entry", payout.name, print_format="MMG Doctor Payout"))
+
+	# ---------- Approving a deduction (DOC-22) ----------
+
+	def pending_charge(self, amount=50):
+		# As closing a term raises it (charge_unsold_copies).
+		entry = self.new_entry(today(), entry_type="Unsold Copies Charge", amount=amount)
+		entry.approval_status = "Pending Approval"
+		entry.flags.approval_action = True
+		return entry.insert()
+
+	def test_the_accountant_approves_a_charge(self):
+		charge = self.pending_charge()
+		frappe.set_user(ACCOUNTANT)
+		try:
+			frappe.get_doc(LEDGER, charge.name).approve()
+		finally:
+			frappe.set_user("Administrator")
+		self.assertEqual(
+			frappe.db.get_value(LEDGER, charge.name, ["docstatus", "approval_status", "approved_by"]), (1, "Approved", ACCOUNTANT)
+		)
+
+	def test_a_rejected_charge_is_closed(self):
+		charge = self.pending_charge()
+		frappe.set_user(ACCOUNTANT)
+		try:
+			frappe.get_doc(LEDGER, charge.name).reject("_Test the doctor took the copies")
+		finally:
+			frappe.set_user("Administrator")
+		rejected = frappe.get_doc(LEDGER, charge.name)
+		self.assertEqual((rejected.docstatus, rejected.approval_status, rejected.approved_by), (0, "Rejected", ACCOUNTANT))
+		rejected.amount = 10
+		self.assertRaisesRegex(frappe.ValidationError, "rejected and is closed", rejected.save)
+		self.assertRaisesRegex(frappe.ValidationError, "rejected and is closed", frappe.get_doc(LEDGER, charge.name).submit)
+		self.assertRaisesRegex(frappe.ValidationError, "not a deduction waiting", frappe.get_doc(LEDGER, charge.name).approve)
+
+	def test_only_an_approver_applies_a_deduction(self):
+		charge = self.pending_charge()
+		frappe.set_user(HR)
+		try:
+			self.assertRaises(frappe.PermissionError, frappe.get_doc(LEDGER, charge.name).approve)
+		finally:
+			frappe.set_user("Administrator")
+		# Someone with the right to submit but not to approve: refused, for a charge and a deduction by hand.
+		module = "imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry.is_approver"
+		by_hand = self.new_entry(today(), entry_type="Adjustment", amount=-30).insert()
+		with patch(module, return_value=False):
+			for entry in (frappe.get_doc(LEDGER, charge.name), by_hand):
+				with self.subTest(entry.entry_type):
+					self.assertRaisesRegex(frappe.ValidationError, "approves it", entry.submit)
+
+	def test_an_approver_s_own_deduction_is_approved_as_he_submits_it(self):
+		entry = self.new_entry(today(), entry_type="Adjustment", amount=-30).insert()
+		entry.submit()
+		self.assertEqual((entry.approval_status, entry.approved_by), ("Approved", "Administrator"))
+		# Money owed to the doctor or paid to him is not a deduction.
+		for entry_type, amount in (("Adjustment", 30), ("Accrual", 30)):
+			with self.subTest(entry_type):
+				other = self.new_entry(today(), entry_type=entry_type, amount=amount).insert()
+				other.submit()
+				self.assertIsNone(other.approval_status)
+
+	def test_the_approval_is_not_set_through_the_api(self):
+		entry = self.new_entry(today(), entry_type="Unsold Copies Charge", amount=50)
+		entry.approval_status, entry.approved_by = "Approved", HR
+		entry.insert()
+		self.assertEqual((entry.approval_status, entry.approved_by), (None, None))
+		entry.approval_status = "Approved"
+		self.assertRaisesRegex(frappe.ValidationError, "only with Approve or Reject", entry.save)
+

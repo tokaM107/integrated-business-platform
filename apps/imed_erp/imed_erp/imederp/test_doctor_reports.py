@@ -1,8 +1,8 @@
 # Copyright (c) 2026, toka mohamed and Contributors
 # See license.txt
 
-# Doctor Receivables (RPT-08) and Doctor Debts (RPT-10): figures read from the doctor's ledger and, for platform
-# fees, from the app subscriptions, worked out by hand below. Rolled back afterwards.
+# Doctor Receivables (RPT-08): figures read from the doctor's ledger, worked out by hand below. Doctor Debts
+# (RPT-10) has its own tests (test_doctor_debts.py). Rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
@@ -12,14 +12,13 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from imed_erp.imederp.doctor_balances import age_debt, ageing_buckets
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement, make_doctor
-from imed_erp.imederp.report.doctor_debts import doctor_debts
 from imed_erp.imederp.report.doctor_receivables import doctor_receivables
 
 # A test module outside a doctype folder builds no "_Test ..." records; keep it here, not under a doctype.
 MAWASAH = "مكتبة المواساة - MMG"
 APP = "تطبيق BA Plus - MMG"
+CASH_BOX = "خزينة مكتبة المواساة - MMG"
 AS_ON = "2026-10-15"
 
 
@@ -32,7 +31,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		cls.edition = cls.make_edition(cls.owed)
 		cls.entry(cls.owed, "2026-09-10", "Accrual", 1000, edition=cls.edition)
 		cls.entry(cls.owed, "2026-09-20", "Accrual", 500)
-		cls.entry(cls.owed, "2026-10-01", "Payout", 600)
+		# A payout comes out of a treasury and posts its journal entry (doctor_ledger_entry.post_payout).
+		cls.entry(cls.owed, "2026-10-01", "Payout", 600, treasury=CASH_BOX)
 		cls.entry(cls.owed, "2026-10-05", "Adjustment", -50)
 		# Books, below zero (DOC-20): 100 accrued on 1 Aug, 300 charged for unsold copies on 1 Sep. The 100 owed to
 		# him is set against the charge, so 200 of it is still owed, since 1 Sep.
@@ -96,9 +96,6 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	def receivables(self, **filters):
 		return doctor_receivables.execute(frappe._dict({"to_date": AS_ON, **filters}))[1]
 
-	def debts(self, **filters):
-		return {row["agreement"]: row for row in doctor_debts.execute(frappe._dict({"to_date": AS_ON, **filters}))[1]}
-
 	# ---------- RPT-08 ----------
 
 	def test_receivables_follow_the_ledger_and_the_agreement_balance(self):
@@ -115,9 +112,12 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	def test_receivables_by_branch_add_up_to_the_agreement(self):
 		rows = [row for row in self.receivables(agreement=self.owed) if row["indent"] == 1]
 		by_branch = {row["branch"]: row["outstanding"] for row in rows}
-		# The edition's accrual is Mawasah's; the rest (an accrual and a payout with no sale or edition) is not.
+		# The edition's accrual is Mawasah's; the rest (an accrual and a payout with no sale or edition) is not. The
+		# payout's journal entry has a cost center (the company's default) but it is not a library, so it is not read.
 		self.assertEqual(by_branch, {MAWASAH: 1000, None: -150})
 		self.assertEqual(sum(by_branch.values()), 850)
+		payout = frappe.db.get_value("Doctor Ledger Entry", {"agreement": self.owed, "entry_type": "Payout"}, "journal_entry")
+		self.assertTrue(payout)
 		only_mawasah = self.receivables(agreement=self.owed, branch=MAWASAH)
 		self.assertEqual([row["outstanding"] for row in only_mawasah], [1000])
 
@@ -152,57 +152,12 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 			[total] = [row for row in self.receivables(agreement=self.owed) if row["indent"] == 0]
 		self.assertEqual((total["adjustments"], total["outstanding"]), (-75, 825))
 
-	# ---------- RPT-10 ----------
-
-	def test_a_negative_books_balance_is_a_debt_aged_from_the_charge(self):
-		row = self.debts()[self.negative]
-		self.assertEqual((row["raised"], row["paid"], row["outstanding"]), (300, 100, 200))
-		self.assertEqual(str(row["oldest"]), "2026-09-01")
-		# 44 days on 15 Oct: in 31-60.
-		self.assertEqual([row[f"range{i}"] for i in range(1, 5)], [0, 200, 0, 0])
-		self.assertEqual(frappe.db.get_value("Doctor Agreement", self.negative, "balance"), -200)
-
-	def test_uncollected_platform_fees_oldest_paid_first(self):
-		row = self.debts()[self.app]
-		self.assertEqual((row["raised"], row["paid"], row["outstanding"]), (450, 300, 150))
-		self.assertEqual(str(row["oldest"]), "2026-09-20")
-		self.assertEqual([row[f"range{i}"] for i in range(1, 5)], [150, 0, 0, 0])
-
-	def test_a_fee_in_the_ledger_is_not_counted_twice(self):
-		self.assertEqual(self.debts()[self.app_in_ledger]["outstanding"], 170)
-
-	def test_debts_leave_out_what_is_owed_to_the_doctor(self):
-		self.assertNotIn(self.owed, self.debts())
-
-	def test_debts_on_an_earlier_date_and_by_type(self):
-		# On 15 Sep, the 20 Sep fee was not due yet, and the 1 Jul one was not collected.
-		self.assertEqual(self.debts(to_date="2026-09-15")[self.app]["outstanding"], 250)
-		self.assertEqual(set(self.debts(agreement_type="App")) & {self.negative, self.owed}, set())
-
-	def test_custom_ageing_ranges(self):
-		row = doctor_debts.execute(frappe._dict({"to_date": AS_ON, "agreement": self.negative, "range": "15, 45"}))
-		columns = [c["label"] for c in row[0] if c["fieldname"].startswith("range")]
-		self.assertEqual(columns, ["0-15", "16-45", "46+"])
-		self.assertEqual([row[1][0][f"range{i}"] for i in range(1, 4)], [0, 200, 0])
-
 	# ---------- Who ----------
 
 	def test_only_those_who_may_read_the_doctors_accounts(self):
 		for user in ("raghad@imed.local", "sara@imed.local", "hr@imed.local"):
 			frappe.set_user(user)
 			self.assertRaises(frappe.PermissionError, doctor_receivables.execute, {})
-			self.assertRaises(frappe.PermissionError, doctor_debts.execute, {})
 		frappe.set_user("accountant@imed.local")
 		self.assertTrue(doctor_receivables.execute({"agreement": self.owed})[1])
 
-
-class TestAgeDebt(IntegrationTestCase):
-	def test_payments_settle_the_oldest_part_and_overpayment_waits_for_the_next_debt(self):
-		self.assertEqual(age_debt([("2026-01-01", 100), ("2026-02-01", 50), ("2026-03-01", -120)]), [(frappe.utils.getdate("2026-02-01"), 30)])
-		# Paid 80 before anything was owed: set against the next debt.
-		self.assertEqual(age_debt([("2026-01-01", -80), ("2026-02-01", 100)]), [(frappe.utils.getdate("2026-02-01"), 20)])
-		self.assertEqual(age_debt([("2026-01-01", 100), ("2026-01-02", -100)]), [])
-
-	def test_buckets(self):
-		debts = [(frappe.utils.getdate("2026-10-14"), 10), (frappe.utils.getdate("2026-08-01"), 20), (frappe.utils.getdate("2026-01-01"), 30)]
-		self.assertEqual(ageing_buckets(debts, "2026-10-15", [30, 60, 90]), [10, 0, 20, 30])

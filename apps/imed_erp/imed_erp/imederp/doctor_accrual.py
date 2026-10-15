@@ -28,7 +28,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import flt, getdate
 
 from imed_erp.imederp.edition_sales import FIELD
 
@@ -57,7 +57,9 @@ def counted(row):
 
 
 def make_accrual(doc, row):
-	edition = frappe.db.get_value("Book Edition", row.get(FIELD), ["agreement", "period", "doctor_share"], as_dict=True)
+	edition = frappe.db.get_value(
+		"Book Edition", row.get(FIELD), ["agreement", "period", "carried_to_period", "doctor_share"], as_dict=True
+	)
 	qty = flt(row.stock_qty or row.qty)
 	amount = flt(qty * flt(edition.doctor_share), frappe.get_precision(LEDGER, "amount"))
 	if not amount:
@@ -66,7 +68,7 @@ def make_accrual(doc, row):
 		{
 			"doctype": LEDGER,
 			"agreement": edition.agreement,
-			"period": edition.period,
+			"period": sale_period(edition, doc.posting_date),
 			"entry_date": doc.posting_date,
 			# A credit note takes the copies back: an adjustment carries its own sign.
 			"entry_type": "Adjustment" if amount < 0 else "Accrual",
@@ -80,6 +82,16 @@ def make_accrual(doc, row):
 	)
 	entry.flags.cost_center = row.cost_center or doc.cost_center
 	return entry
+
+
+def sale_period(edition, posting_date):
+	"""The period a copy is sold in, for the doctor's statement of that period (DOC-08): the edition's own, or the
+	period it was carried forward to (DOC-15) once that period has started."""
+	if edition.carried_to_period:
+		start = frappe.db.get_value("Academic Period", edition.carried_to_period, "start_date")
+		if start and getdate(posting_date) >= getdate(start):
+			return edition.carried_to_period
+	return edition.period
 
 
 def account(company, account_name):
@@ -154,13 +166,21 @@ def cancel(doctype, name):
 
 def block_cancel_of_accrual(doc, method=None):
 	"""Doctor Ledger Entry and Journal Entry before_cancel hook: what a sale posted for the doctor goes only when
-	the sale is cancelled, otherwise his ledger and the accounts would no longer agree with the copies sold."""
+	the sale is cancelled, and a payout's journal entry only with the payout, otherwise his ledger and the accounts
+	would no longer agree."""
 	if doc.flags.from_doctor_accrual:
 		return
 	if doc.doctype == LEDGER:
 		invoice = doc.sales_invoice
 	else:
-		invoice = frappe.db.get_value(LEDGER, {"journal_entry": doc.name, "sales_invoice": ["is", "set"]}, "sales_invoice")
+		entry = frappe.db.get_value(LEDGER, {"journal_entry": doc.name, "docstatus": 1}, ["name", "sales_invoice"], as_dict=True)
+		if entry and not entry.sales_invoice:
+			# A payout's journal entry goes with the payout.
+			frappe.throw(
+				_("{0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.").format(doc.name, entry.name),
+				title=_("Posted by the Doctor's Ledger"),
+			)
+		invoice = entry.sales_invoice if entry else None
 	if invoice and frappe.db.get_value("Sales Invoice", invoice, "docstatus") == 1:
 		frappe.throw(
 			_("{0} was posted by Sales Invoice {1} for the doctor's amount. Cancel the invoice instead.").format(doc.name, invoice),
