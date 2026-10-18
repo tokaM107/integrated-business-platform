@@ -796,6 +796,13 @@ and the machine. Each row shows its machine's cost per sheet; the day's is their
 machine printed (Riso ink costs more than Epson's), and is fixed when the day is submitted, so a later sale is
 valued at the same cost. A library with no paper price yet is warned that the paper is left out.
 
+**Daily Printing** report (طباعة اليوم; under ImedERP > Daily Counters and on the owner's page; PRN-01, PRN-02,
+PRN-09): for a range of dates and a library, each machine's **Consumed Sheets**, its **Utilization** (its share of
+the library's printing that day), its share of the **Sold Sheets**, its **Variance** in sheets and its **Variance
+Value** at its own cost per sheet, then the library's day in bold under its machines. A sale does not say which
+machine printed it, so the day's sales are shared out by each machine's share of the printing (equally on a day
+nothing was printed); the machines add up to the day. A branch manager sees her own library.
+
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
 approval status, target warehouse, machine, item, requested by. The Material Request list shows the
@@ -1080,6 +1087,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_daily_printing
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is
