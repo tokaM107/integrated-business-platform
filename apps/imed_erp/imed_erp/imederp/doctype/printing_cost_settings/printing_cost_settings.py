@@ -9,7 +9,23 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
-RATES = ("waste_per_sheet", "ink_per_sheet", "overheads_per_sheet", "profit_per_sheet", "binding_per_copy")
+RATES = (
+	"waste_per_sheet",
+	"ink_per_sheet",
+	"overheads_per_sheet",
+	"profit_per_sheet",
+	"binding_per_copy",
+	"epson_ink_per_sheet",
+	"riso_ink_per_sheet",
+)
+
+# The ink a printed sheet takes on each kind of machine (PRN-08): Riso ink costs more.
+MACHINE_INK = {"Epson": "epson_ink_per_sheet", "Riso": "riso_ink_per_sheet"}
+
+
+def get_machine_ink(machine_type):
+	"""The ink per sheet of a machine type, from the settings (or the default on the screen)."""
+	return get_rates()[MACHINE_INK[machine_type]] if machine_type in MACHINE_INK else 0
 
 
 class PrintingCostSettings(Document):
