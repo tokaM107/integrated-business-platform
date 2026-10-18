@@ -56,6 +56,21 @@ def sheets_sold(library, date):
 	)
 
 
+def sales_value(library, date):
+	"""What the library's printing and copying sold for on `date` (PRN-08), net of discounts, from its submitted
+	invoices; a refund takes it back."""
+	units = ", ".join(["%s"] * len(SHEETS_PER_UNIT))
+	return flt(
+		frappe.db.sql(
+			f"""select sum(sii.base_net_amount) from `tabSales Invoice Item` sii
+			join `tabSales Invoice` si on si.name = sii.parent
+			where si.docstatus = 1 and si.posting_date = %s
+			and ifnull(nullif(sii.cost_center, ''), si.cost_center) = %s and sii.item_code in ({units})""",
+			(date, library, *SHEETS_PER_UNIT),
+		)[0][0]
+	)
+
+
 def refresh_counters(doc, method=None):
 	"""Sales Invoice on_submit and on_cancel hook: the day's counters of the library already submitted take the
 	sale into what was sold."""
