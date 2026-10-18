@@ -35,19 +35,22 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		frappe.db.rollback(save_point="daily_printing")
 
 	@patch(PAPER, return_value=0.30)
-	def day(self, consumed, _, date=None, start=1000):
-		"""The day's counters at Azarita: each machine, from `start`, up by its consumption."""
+	def day(self, consumed, _, date=None, start=1000, faults=None):
+		"""The day's counters at Azarita: each machine, from `start`, up by its consumption; `faults` is
+		{machine index: what happened}."""
 		doc = frappe.new_doc("Daily Counter Reading")
 		doc.update({"branch": AZARITA, "reading_date": date or today()})
-		for row, used in zip(get_machines(AZARITA), consumed):
+		for i, (row, used) in enumerate(zip(get_machines(AZARITA), consumed)):
 			opening = row["opening_reading"] if row["opening_reading"] is not None else start
 			row.update({"opening_reading": opening, "closing_reading": opening + used})
+			if faults and i in faults:
+				row.update({"fault": 1, "fault_note": faults[i]})
 			doc.append("machines", row)
 		doc.insert()
 		doc.submit()
 		return doc
 
-	def sell(self, sheets, date=None):
+	def sell(self, sheets, date=None, rate=1):
 		invoice = frappe.get_doc(
 			{
 				"doctype": "Sales Invoice",
@@ -56,7 +59,7 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 				"cost_center": AZARITA,
 				"set_posting_time": 1,
 				"posting_date": date or today(),
-				"items": [{"item_code": "PRINT-SVC", "qty": sheets, "rate": 1, "cost_center": AZARITA}],
+				"items": [{"item_code": "PRINT-SVC", "qty": sheets, "rate": rate, "cost_center": AZARITA}],
 			}
 		).insert()
 		invoice.submit()
@@ -91,7 +94,8 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		self.day([10, 10, 10], date=add_days(today(), -1))
 		self.day([20, 20, 20])
 		self.assertEqual({r["reading_date"] for r in self.report()}, {frappe.utils.getdate(today())})
-		self.assertEqual(len(self.report(from_date=add_days(today(), -1))), 8)
+		# Two days: each day's 3 machines and total, then the period (a heading, 3 machines, a total).
+		self.assertEqual(len(self.report(from_date=add_days(today(), -1))), 13)
 		self.assertEqual(self.report(branch="مكتبة المواساة - MMG"), [])
 
 	def test_a_branch_manager_sees_her_own_library(self):
@@ -100,3 +104,37 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		self.assertEqual(len(self.report()), 4)
 		frappe.set_user(RAGHAD)
 		self.assertEqual(self.report(), [])
+
+	def test_breakdowns(self):
+		# PRN-09: a machine that broke down is ticked on the day's screen with what happened.
+		self.day([100, 0, 50], faults={1: "Paper jam, technician called"})
+		machines = [r for r in self.report() if not r.get("is_total")]
+		self.assertEqual([r["fault"] for r in machines], [None, "Paper jam, technician called", None])
+
+	def test_the_margin_on_a_sheet(self):
+		# PRN-08: 400 sheets sold at 1 and 100 on offer at 0.70 is 470, 0.94 a sheet on average, against what a
+		# printed sheet cost.
+		self.sell(400)
+		self.sell(100, rate=0.70)
+		day = self.day([300, 150, 50])
+		[total] = [r for r in self.report() if r.get("is_total")]
+		self.assertEqual((day.sales_value, day.average_price), (470, 0.94))
+		self.assertAlmostEqual(day.margin_per_sheet, round(0.94 - day.cost_per_sheet, 4), places=4)
+		self.assertEqual((total["average_price"], total["margin_per_sheet"]), (day.average_price, day.margin_per_sheet))
+
+	def test_a_month_by_machine(self):
+		# PRN-03, PRN-09: over a period, each machine's printing, its share, its days broken down and the shortfall.
+		first_day, second_day = add_days(today(), -1), today()
+		self.sell(100, date=first_day)
+		self.day([100, 50, 50], date=first_day, faults={2: "Drum"})
+		self.day([200, 100, 0], faults={2: "Drum again"})
+		rows = self.report(from_date=first_day)
+		heading = next(i for i, r in enumerate(rows) if r.get("machine_type") == "The Period")
+		period, total = rows[heading + 1 : heading + 4], rows[heading + 4]
+		self.assertEqual([r["consumed"] for r in period], [300, 150, 50])
+		self.assertEqual([r["utilization"] for r in period], [60, 30, 10])
+		self.assertEqual([r["fault"] for r in period], [None, None, "2 days"])
+		self.assertEqual((total["consumed"], total["sold"], total["variance"]), (500, 100, 400))
+		days = [r for r in rows[:heading] if r.get("is_total")]
+		self.assertAlmostEqual(total["variance_value"], sum(d["variance_value"] for d in days), places=1)
+
