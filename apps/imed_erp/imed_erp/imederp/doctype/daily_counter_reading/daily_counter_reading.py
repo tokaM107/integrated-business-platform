@@ -14,7 +14,7 @@ from frappe.utils import cint, flt, getdate
 from imed_erp.imederp.doctype.book_edition.book_edition import get_paper_cost
 from imed_erp.imederp.doctype.printer_reading.printer_reading import last_reading
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
-from imed_erp.imederp.paper_use import sheets_sold
+from imed_erp.imederp.paper_use import sales_value, sheets_sold
 from imed_erp.imederp.doctype.printing_machine.printing_machine import check_library
 
 
@@ -41,6 +41,7 @@ class DailyCounterReading(Document):
 		# overheads (Printing Cost Settings). The machines' inks differ, so the day's cost per sheet weighs each
 		# machine by what it printed (equally on a day nothing was printed). Fixed once the day is submitted.
 		if self.docstatus == 1 and self.cost_per_sheet:
+			self.update(margin(self.branch, self.reading_date, self.sold_sheets, self.cost_per_sheet))
 			return
 		rates = get_rates()
 		paper = get_paper_cost(self.branch, rates.waste_per_sheet)
@@ -58,6 +59,7 @@ class DailyCounterReading(Document):
 		total_weight = sum(w for w, _cost in weights)
 		self.cost_per_sheet = flt(sum(w * cost for w, cost in weights) / total_weight, 4) if total_weight else 0
 		self.variance_value = flt(self.variance * flt(self.cost_per_sheet), 2)
+		self.update(margin(self.branch, self.reading_date, self.sold_sheets, self.cost_per_sheet))
 
 	def check_one_a_day(self):
 		other = frappe.db.exists(
@@ -97,6 +99,9 @@ class DailyCounterReading(Document):
 			frappe.throw(_("Row #{0}: {1} is not a machine of {2}.").format(row.idx, row.machine, self.branch))
 		if machine.disabled:
 			frappe.throw(_("Row #{0}: {1} is out of service and takes no counter readings.").format(row.idx, row.machine))
+		if row.fault and not (row.fault_note or "").strip():
+			# PRN-09: a breakdown is followed up, so it says what happened.
+			frappe.throw(_("Row #{0}: say what happened to {1}.").format(row.idx, row.machine), title=_("Breakdown"))
 		last = last_reading(row.machine)
 		if last:
 			if getdate(self.reading_date) < getdate(last.reading_date):
@@ -141,6 +146,17 @@ class DailyCounterReading(Document):
 				reading.cancel()
 
 
+def margin(library, date, sold, cost_per_sheet):
+	"""PRN-08: what a printed sheet sold for on average that day, against what it cost."""
+	value = sales_value(library, date)
+	average = flt(value / cint(sold), 4) if cint(sold) else 0
+	return {
+		"sales_value": flt(value, 2),
+		"average_price": average,
+		"margin_per_sheet": flt(average - flt(cost_per_sheet), 4) if cint(sold) else 0,
+	}
+
+
 def refresh_sold(library, date):
 	"""A sale (or its cancellation) after the day's counters were submitted: they take it in."""
 	for name, consumed, cost in frappe.get_all(
@@ -154,7 +170,12 @@ def refresh_sold(library, date):
 		frappe.db.set_value(
 			"Daily Counter Reading",
 			name,
-			{"sold_sheets": sold, "variance": variance, "variance_value": flt(variance * flt(cost), 2)},
+			{
+				"sold_sheets": sold,
+				"variance": variance,
+				"variance_value": flt(variance * flt(cost), 2),
+				**margin(library, date, sold, cost),
+			},
 		)
 
 
