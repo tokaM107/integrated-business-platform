@@ -183,3 +183,16 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		self.assertEqual(row["sold_qty"], 4)
 		self.assertAlmostEqual(row["planned"], planned_per_copy * 4, places=2)
 		self.assertAlmostEqual(row["difference"], 3 * 20 - 30, places=2)
+
+	def test_no_email_account_does_not_stop_the_payout(self):
+		# Found with the demo data: with no outgoing email account the payout failed; it goes through and the
+		# accountant is told the statement was not sent.
+		frappe.db.set_value("Customer", self.doctor, "email_id", "doctor@example.com")
+		self.entry("Accrual", 500, period=self.term2)
+		with patch("frappe.sendmail", side_effect=frappe.OutgoingEmailError("no account")):
+			payout = self.entry("Payout", 100, period=self.term2, treasury=TREASURY)
+		self.assertEqual(payout.docstatus, 1)
+		self.assertTrue(
+			frappe.db.exists("Notification Log", {"for_user": ACCOUNTANT, "subject": ["like", "%no outgoing email account%"]})
+		)
+

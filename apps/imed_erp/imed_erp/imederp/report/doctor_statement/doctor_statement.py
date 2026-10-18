@@ -169,25 +169,34 @@ def send_statement(agreement, period, reason):
 
 	doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
 	email = frappe.db.get_value("Customer", doctor, "email_id")
+
+	def tell_accountant(message):
+		notify(get_approvers(), message, "Doctor Agreement", agreement, event="expense_approval")
+
 	if not email:
-		notify(
-			get_approvers(),
+		tell_accountant(
 			_("{0} has no email on file, so the statement of {1} for {2} was not sent. Add his email and send it again.").format(
 				doctor, agreement, period
-			),
-			"Doctor Agreement",
-			agreement,
-			event="expense_approval",
+			)
 		)
 		return None
 	columns, data, _message, _chart, summary = execute({"agreement": agreement, "period": period})
-	frappe.sendmail(
-		recipients=[email],
-		subject=_("Your statement for {0}: {1}").format(period, agreement),
-		message=statement_html(doctor, agreement, period, columns, data, summary, reason),
-		reference_doctype="Doctor Agreement",
-		reference_name=agreement,
-	)
+	try:
+		frappe.sendmail(
+			recipients=[email],
+			subject=_("Your statement for {0}: {1}").format(period, agreement),
+			message=statement_html(doctor, agreement, period, columns, data, summary, reason),
+			reference_doctype="Doctor Agreement",
+			reference_name=agreement,
+		)
+	except frappe.OutgoingEmailError:
+		# No email account to send from yet: the settlement stands; the accountant is told instead.
+		tell_accountant(
+			_("The statement of {0} for {1} was not emailed: no outgoing email account is set up (Email Account).").format(
+				agreement, period
+			)
+		)
+		return None
 	return email
 
 
