@@ -924,6 +924,15 @@ accountant (who may open the ledger) see it. What doctors owe the group is **Doc
 |---|---|
 | Opening (balance before From Date), Accrued, Adjustments, Unsold Copies Charges, Paid, **Outstanding** (on To Date, the balance the agreement screen shows), Last Settlement, and the number of entries, which opens them. Under each agreement, a row per library: an entry's library is its invoice line's, else its edition's, else its journal entry's one cost center; a payout for the agreement as a whole is *Not by branch*. | From / To Date, Doctor, Agreement, Branch (that library's entries only), Show Settled Agreements |
 
+**The rest of the doctors' requirements** (all from the doctor's ledger; under Doctors and Editions in the sidebar):
+
+| | Requirement | What it shows |
+|---|---|---|
+| Unsold Editions report | DOC-21 | Editions still on sale whose period (or the one they were carried to) ended before a date, e.g. the next module's start, with the copies left split between the doctor's and the library's. Branch managers see their own library's. |
+| Owner Share Plan vs Actual report | DOC-27 | For each edition sold: the owner's share planned in its price (profit per sheet × sheets × copies sold) against what the sales brought after the rest of the planned price; a price set by hand, a discount or a carried copy sold at today's price shows as the difference. On the owner's page. |
+| The doctor's file | DOC-29 | A doctor's Customer form lists his agreements with their balance, which way each runs and when it is next settled, kept apart (no offsetting), for the accountant and the owner. |
+| His statement sent to him | DOC-23 | After a settlement by hand (a payout, an approved charge, an adjustment, a collection) the doctor is emailed his statement for that period, to the email on his file; with none on file, the accountant is notified. Sales send nothing. |
+
 The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
 the **settlement period** (from and to, entered by the accountant: each year has its own dates, owner's
 decision of 12 Oct 2026; the next settlement is due at its end, and after settling he enters the next period,
@@ -1038,6 +1047,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "D
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_requirements
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
