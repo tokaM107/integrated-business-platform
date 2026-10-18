@@ -681,6 +681,83 @@ As Of,حتى تاريخ
 Debt,المديونية
 Owed Since,مستحقة من
 Age (Days),العمر (أيام)
+Booking,حجز
+Bookings,الحجوزات
+New Booking,حجز جديد
+Booking Resource,مورد حجز
+Booking Resources,موارد الحجز
+Resource,المورد
+Resource Name,اسم المورد
+Resource Type,نوع المورد
+Hall,قاعة
+Studio Service,خدمة استوديو
+Business (Cost Center),النشاط (مركز التكلفة)
+Service Item,صنف الخدمة
+Capacity,السعة
+Equipment,التجهيزات
+Booking Date,تاريخ الحجز
+Hours,الساعات
+Hall Booking,حجز القاعة
+Activity,النشاط
+Responsible Person,اسم المسؤول
+Responsible Person's Phone,رقم تليفون المسؤول
+Amount Paid,المدفوع
+Remaining,المتبقي
+Tentative,مبدئي
+Confirmed with Deposit,مؤكد بعربون
+No Show,لم يحضر
+Source,المصدر
+Manual,يدوي
+Imported,مستورد
+Source System,النظام المصدر
+External ID,الرقم في النظام المصدر
+"The business that books it: the halls' or the studio's. Its bookings are that business's, and only its manager sees them.",النشاط اللي بيحجزه: القاعات أو الاستوديو. حجوزاته تبع النشاط ده، ومسؤوله بس اللي بيشوفها.
+"The service it is sold as (e.g. HALL-HOUR). Its price is that item's Item Price, which only the owner changes.",الخدمة اللي بيتباع بيها (زي HALL-HOUR). سعره هو سعر الصنف ده، واللي بيغيره المالك بس.
+A disabled resource takes no new bookings; its bookings stay as they are.,المورد الموقوف مبياخدش حجوزات جديدة؛ وحجوزاته بتفضل زي ما هي.
+How many people the hall seats (HAL-01).,القاعة بتشيل كام فرد (HAL-01).
+"What it is equipped with (HAL-01): screen, sound, smart board...",التجهيزات (HAL-01): شاشة، صوت، سمارت بورد...
+The customer's one record (CRM-01): find them by name or phone.,ملف العميل الموحد (CRM-01): دوّر عليه بالاسم أو التليفون.
+"The lecture, course or event the hall is booked for (HAL-02).",المحاضرة أو الكورس أو الفعالية اللي القاعة محجوزة لها (HAL-02).
+"Recorded on the booking only: the payment itself is recorded through the accounts, not here.",متسجل على الحجز بس: الدفع نفسه بيتسجل في الحسابات، مش هنا.
+"STU-08. Confirmed means confirmed with a deposit, so something must be paid.",STU-08. مؤكد يعني مؤكد بعربون، فلازم يكون فيه مبلغ مدفوع.
+"Manual: entered here (WhatsApp, walk-in). Imported: from the booking system, changed only there.",يدوي: متسجل هنا (واتساب، حضور مباشر). مستورد: من نظام الحجز، وبيتعدل هناك بس.
+The booking's id in the source system.,رقم الحجز في النظام المصدر.
+{0} is a stock item. A booking is sold as a service.,{0} صنف مخزني. الحجز بيتباع كخدمة.
+Enter how many people the hall seats.,اكتب القاعة بتشيل كام فرد.
+Capacity Required,السعة مطلوبة
+Capacity cannot be negative.,السعة مينفعش تكون بالسالب.
+Cost Center {0} is a group. Choose the business under it.,مركز التكلفة {0} مجموعة. اختار النشاط اللي تحتها.
+{0} is not your business. You can book for: {1}.,{0} مش نشاطك. تقدر تحجز لـ: {1}.
+Not Your Business,مش نشاطك
+An imported booking needs its source system and its id there.,الحجز المستورد لازم يكون عليه النظام المصدر ورقمه هناك.
+{0} was imported from {1}. Change it there; the next import brings the change.,{0} مستورد من {1}. عدّله هناك، والاستيراد الجاي هيجيب التعديل.
+Imported Booking,حجز مستورد
+Resource {0} not found.,المورد {0} مش موجود.
+{0} is disabled and takes no new bookings.,{0} موقوف ومبياخدش حجوزات جديدة.
+Resource Disabled,المورد موقوف
+"The booking ends at {0}, not after it starts at {1}.",الحجز بيخلص {0}، مش بعد ما يبدأ {1}.
+Wrong Times,مواعيد غلط
+A hall booking needs {0} (HAL-02).,حجز القاعة لازم يكون فيه {0} (HAL-02).
+Missing Value,قيمة ناقصة
+Amounts cannot be negative.,المبالغ مينفعش تكون بالسالب.
+Amount Paid {0} is more than the Total Amount {1}.,المدفوع {0} أكتر من إجمالي المبلغ {1}.
+Paid More Than the Total,مدفوع أكتر من الإجمالي
+Give the reason for cancelling the booking.,اكتب سبب إلغاء الحجز.
+A booking is confirmed with a deposit: enter the amount paid.,الحجز بيتأكد بعربون: اكتب المبلغ المدفوع.
+No Deposit,مفيش عربون
+The booking has not started yet; it cannot be {0}.,الحجز لسه مابدأش؛ مينفعش يبقى {0}.
+Another booking of {0} was saved at the same moment. Save again.,حجز تاني لـ {0} اتسجل في نفس اللحظة. احفظ تاني.
+Save Again,احفظ تاني
+"{0} is already booked from {1} to {2} on {3} ({4}, {5}).",{0} محجوز من {1} لـ {2} يوم {3} ({4}، {5}).
+Already Booked,محجوز بالفعل
+"Imported from {0}: change it there, and the next import brings the change.",مستورد من {0}: عدّله هناك، والاستيراد الجاي هيجيب التعديل.
+Name the system the bookings come from.,اكتب اسم النظام اللي الحجوزات جاية منه.
+The row has no id from the booking system.,السطر مفيهوش رقم من نظام الحجز.
+The row has no customer phone.,السطر مفيهوش تليفون العميل.
+No customer has the phone number {0}. Add the customer first.,مفيش عميل رقمه {0}. ضيف العميل الأول.
+"The import stopped at {0}: another booking was saved at the same moment, and nothing of this run was kept. Run it again.","الاستيراد وقف عند {0}: حجز تاني اتسجل في نفس اللحظة، ومفيش حاجة من المرة دي اتحفظت. شغّله تاني."
+a row without an id,سطر من غير رقم
+Import Interrupted,الاستيراد اتوقف
 Next Settlement,التسوية الجاية
 "{0} has no email on file, so the statement of {1} for {2} was not sent. Add his email and send it again.",{0} مالوش إيميل في ملفه، فكشف {1} عن {2} ماتبعتش. ضيف إيميله وابعته تاني.
 Your statement for {0}: {1},كشف حسابك عن {0}: {1}

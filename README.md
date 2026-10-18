@@ -592,6 +592,40 @@ it is refused, and a damage record partly sold cannot be cancelled before its sa
 - **Setup:** `setup_core.py` ticks Damaged Store on `التالف — المواساة`; `setup_library.py` makes the
   non-stock item `DAMAGED-BY-WEIGHT` (Kg, revenue `إيراد بيع التالف بالوزن`) and the buyer `مشتري التالف`.
 
+### Bookings: halls and the studio (HAL-01, HAL-02, STU-01, STU-08, STU-14)
+
+**Booking Resource** (ImedERP > Business Operations): what can be booked (HAL-01). A **Hall**, with its Capacity
+(required) and Equipment, or a **Studio Service** (smart board, reels, podcast, filming, location). Each belongs to
+its business (cost center: the halls' or the studio's), and names the **Service Item** it is sold as
+(`HALL-HOUR`, `STUDIO-HOUR`...): its price is that item's Item Price, which only the owner changes (SEC-02).
+Nothing is priced on the resource. A disabled resource takes no new bookings. The owner and the accountant keep
+the list; branch managers read it. No resource is made by the setup scripts: the halls' capacities, equipment and
+prices are still blank in the requirements.
+
+**Booking** (`imederp/doctype/booking`), by the hour (HAL-02, STU-01):
+
+| Field | Rule |
+|---|---|
+| Resource, Customer, Booking Date, From, To | Required. To after From, on the same day; Hours worked out. The customer is the one customer record (CRM-01). |
+| Activity, Responsible Person, their Phone | Required for a hall (HAL-02); the phone is checked like a customer's number. |
+| Total Amount, Amount Paid, Remaining | Not negative; paid not more than the total; Remaining = Total − Paid. **Recorded on the booking only**: nothing is posted to the accounts. |
+| Status (STU-08) | Tentative, **Confirmed with Deposit** (needs an amount paid), Completed and No Show (only once the booking has started), Cancelled (needs its reason). |
+| Source (STU-14) | **Manual** for every booking entered here (WhatsApp, walk-in), whatever is sent; **Imported** only through the import, with its source system and id. |
+
+- **No overlap** (HAL-04, STU-02, STU-14), checked on the server: a Tentative, Confirmed or Completed booking of a
+  resource never overlaps another one, manual or imported. One that ends when the next starts does not overlap. A
+  cancelled booking and a no-show free their time. Two people saving the same resource at the same moment are
+  checked one after the other: each booking writes its resource's row first, and MariaDB refuses the second one,
+  whose save asks to **save again** (it then sees the first). This relies on `innodb_snapshot_isolation`, MariaDB
+  11.8's default (`pwd.yml`), which a test checks. Bookings of different resources never wait for each other.
+- **Who**: branch managers book only their own business's resources (Nour the halls, Gilan the studio), also when
+  changing a booking's resource; the owner and the accountant book any. Only they delete a booking.
+- **Import** (`imederp/booking_import.py`, for the booking system once its access is decided, STU-11): a
+  booking's key is its source system and its id there, so the same file twice adds nothing. A booking already in
+  that changed in the source is listed, not overwritten. A row with an error (overlap, unknown customer phone, no
+  id, wrong times) fails alone with its reason. The customer is found by phone; none is made from an import. An
+  imported booking is changed only in its source: saving it here is refused (INT-01).
+
 ### Point of sale, customers and cancelling a sale (LIB-01, CRM-01/02/04, ACC-06, SEC-06)
 
 **The point of sale** is ERPNext's own (Point of Sale page, one POS Profile per library, `setup_library.py`).
@@ -1062,6 +1096,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

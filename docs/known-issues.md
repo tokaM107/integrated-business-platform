@@ -91,3 +91,18 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 | 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |
 | 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
 | 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |
+
+## Open questions: bookings (HAL-01, HAL-02, STU-01, STU-08)
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **Halls and the studio share rooms**: 4 of the 8 halls are also the studio part of the time (allocation rule notes). Does a studio booking in a room block a hall booking of the same room, and the other way round? | Each resource is checked on its own; no sharing between resources. | Owner / Nour / Gilan |
+| 2 | **Studio services and the studio's rooms**: can two services (e.g. smart board and podcast) be booked at the same time, or do they use the same room? | Each service is checked on its own. | Gilan |
+| 3 | **Halls have no deposit** (HAL question 2), but STU-08's "Confirmed" is "confirmed with a deposit". How is a hall booking confirmed? | The STU-08 statuses apply to halls too, so a hall booking without a deposit stays Tentative until Completed. | Owner / Nour |
+| 4 | **The halls' data**: names, capacities, equipment and prices are blank in the requirements (HAL-01). | No resource made; entered by the owner or the accountant. | Nour |
+| 5 | **The booking's total**: hours × the item's price, or the agreed amount (packages, per reel, STU-05; price by customer category, HAL-03; rental models, HAL-12)? | Typed on the booking; nothing priced in code. | Owner |
+| 6 | **The booking's payment in the accounts** (ACC-01, STU-10): through a Sales Invoice of the service item into the business's cash box, or a Payment Entry? | Total and paid are recorded on the booking only; nothing is posted. | Accountant |
+| 7 | **Status changes**: may a Completed, No Show or Cancelled booking be changed back? | Allowed, with the same checks as a new booking (a cancelled one taken back must not overlap); every change is in the history. | Owner |
+| 8 | **The booking system's import** (STU-11, STU-09, STU-10): its access, its status names, how changes and cancellations are taken over, and whether a customer not found is created. | Import ready for rows in this system's statuses; changes listed, never overwritten; an unknown customer fails the row. | Studio booking team |
+| 9 | **Bookings past midnight.** | Not possible: a booking ends on its own day. | Nour / Gilan |
+| 10 | **Same resource, same moment, no overlap**: the second save is asked to save again (the protection against overlaps, see README). | Accepted: it happens only when two people save the same resource within the same second. | — |

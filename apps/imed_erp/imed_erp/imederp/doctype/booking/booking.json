@@ -1,0 +1,266 @@
+{
+ "actions": [],
+ "autoname": "BOOK-.YYYY.-.#####",
+ "creation": "2026-10-18 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "resource",
+  "resource_type",
+  "cost_center",
+  "customer",
+  "column_break_main",
+  "booking_date",
+  "from_time",
+  "to_time",
+  "hours",
+  "hall_section",
+  "activity",
+  "column_break_hall",
+  "responsible_name",
+  "responsible_phone",
+  "amounts_section",
+  "total_amount",
+  "column_break_amounts",
+  "paid_amount",
+  "outstanding_amount",
+  "status_section",
+  "status",
+  "column_break_status",
+  "cancellation_reason",
+  "source_section",
+  "source",
+  "source_system",
+  "column_break_source",
+  "external_id",
+  "import_key",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "resource",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Resource",
+   "options": "Booking Resource",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "resource.resource_type",
+   "fieldname": "resource_type",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Resource Type",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "resource.cost_center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Business (Cost Center)",
+   "options": "Cost Center",
+   "read_only": 1
+  },
+  {
+   "description": "The customer's one record (CRM-01): find them by name or phone.",
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Today",
+   "fieldname": "booking_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Booking Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "from_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "From",
+   "reqd": 1
+  },
+  {
+   "fieldname": "to_time",
+   "fieldtype": "Time",
+   "in_list_view": 1,
+   "label": "To",
+   "reqd": 1
+  },
+  {
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "label": "Hours",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.resource_type == 'Hall'",
+   "fieldname": "hall_section",
+   "fieldtype": "Section Break",
+   "label": "Hall Booking"
+  },
+  {
+   "description": "The lecture, course or event the hall is booked for (HAL-02).",
+   "fieldname": "activity",
+   "fieldtype": "Data",
+   "label": "Activity",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+  },
+  {
+   "fieldname": "column_break_hall",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "responsible_name",
+   "fieldtype": "Data",
+   "label": "Responsible Person",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+  },
+  {
+   "fieldname": "responsible_phone",
+   "fieldtype": "Data",
+   "label": "Responsible Person's Phone",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
+   "options": "Phone"
+  },
+  {
+   "fieldname": "amounts_section",
+   "fieldtype": "Section Break",
+   "label": "Amounts",
+   "description": "Recorded on the booking only: the payment itself is recorded through the accounts, not here."
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Total Amount"
+  },
+  {
+   "fieldname": "column_break_amounts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paid_amount",
+   "fieldtype": "Currency",
+   "label": "Amount Paid"
+  },
+  {
+   "fieldname": "outstanding_amount",
+   "fieldtype": "Currency",
+   "label": "Remaining",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "default": "Tentative",
+   "description": "STU-08. Confirmed with Deposit needs an amount paid.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Tentative\nConfirmed with Deposit\nCompleted\nCancelled\nNo Show",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.status == 'Cancelled'",
+   "fieldname": "cancellation_reason",
+   "fieldtype": "Small Text",
+   "label": "Cancellation Reason",
+   "mandatory_depends_on": "eval:doc.status == 'Cancelled'"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "default": "Manual",
+   "description": "Manual: entered here (WhatsApp, walk-in). Imported: from the booking system, changed only there.",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Source",
+   "no_copy": 1,
+   "options": "Manual\nImported",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_system",
+   "fieldtype": "Data",
+   "label": "Source System",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_source",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The booking's id in the source system.",
+   "fieldname": "external_id",
+   "fieldtype": "Data",
+   "label": "External ID",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Source System and External ID together: an imported booking is recorded once.",
+   "fieldname": "import_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Import Key",
+   "no_copy": 1,
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-18 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Booking",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Super Admin", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Accounts Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Branch Manager", "write": 1}
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "booking_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "customer",
+ "track_changes": 1
+}
