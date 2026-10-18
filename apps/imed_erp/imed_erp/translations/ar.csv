@@ -288,7 +288,7 @@ Binding per Copy,التجليد للنسخة
 Paper per Sheet,الورق للورقة
 "Moving average price of A4 paper in the library's raw materials store, plus the waste in Printing Cost Settings.",متوسط سعر ورق A4 في مخزن خامات المكتبة، + الهدر من تكاليف الطباعة.
 From Printing Cost Settings when left empty.,لو فاضي، بيتملى من تكاليف الطباعة.
-"Rent, electricity, salaries and machine rental. From Printing Cost Settings when left empty.",الإيجار والكهربا والمرتبات وإيجار المكنة. لو فاضي، بيتملى من تكاليف الطباعة.
+"Rent, electricity, salaries, machine rental and maintenance. From Printing Cost Settings when left empty.",الإيجار والكهربا والمرتبات وإيجار الماكينات وصيانتها. لو فاضي، بيتملى من تكاليف الطباعة.
 The library's profit. From Printing Cost Settings when left empty.,مكسب المكتبة. لو فاضي، بيتملى من تكاليف الطباعة.
 Marketing per Copy,الماركتنج للنسخة
 "Optional: an extra amount per copy for selling the book. Goes to the library, not to the doctor.",اختياري: مبلغ زيادة للنسخة عشان بيع الكتاب. بيروح للمكتبة مش للطبيب.
