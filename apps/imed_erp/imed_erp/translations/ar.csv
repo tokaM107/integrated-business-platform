@@ -280,8 +280,7 @@ Per Sheet,للورقة
 Waste per Sheet,الهدر للورقة
 "Sheets spoilt in printing, per sheet printed.",الورق اللي بيبوظ في الطباعة، لكل ورقة مطبوعة.
 Ink per Sheet,الحبر للورقة
-Overheads per Sheet,المصاريف العامة للورقة
-"Rent, electricity, salaries and machine rental, per sheet.",الإيجار والكهربا والمرتبات وإيجار المكنة، للورقة.
+Overheads per Sheet,المشغولات للورقة
 Profit per Sheet,المكسب للورقة
 "Books, per Copy",الكتب، للنسخة
 Binding per Copy,التجليد للنسخة
@@ -759,3 +758,4 @@ The Period,الفترة
 {0} days,{0} يوم
 Advanced,متقدم
 Yes,أيوه
+"What running the library costs, per sheet printed: rent, electricity, salaries, machine rental and machine maintenance. Maintenance has no rate of its own; it is part of this (owner, 18 Oct 2026).",تكلفة تشغيل المكتبة للورقة المطبوعة: الإيجار، الكهربا، المرتبات، إيجار الماكينات وصيانتها. الصيانة مالهاش سعر لوحدها؛ هي جوه الرقم ده.
