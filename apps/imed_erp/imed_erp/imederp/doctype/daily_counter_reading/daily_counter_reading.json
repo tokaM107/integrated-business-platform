@@ -19,9 +19,14 @@
   "sold_sheets",
   "column_break_totals_2",
   "variance",
-  "column_break_totals_3",
+  "money_section",
   "cost_per_sheet",
   "variance_value",
+  "column_break_money",
+  "sales_value",
+  "column_break_money_2",
+  "average_price",
+  "margin_per_sheet",
   "amended_from"
  ],
  "fields": [
@@ -97,8 +102,10 @@
    "description": "Consumed - sold: sheets printed and not sold."
   },
   {
-   "fieldname": "column_break_totals_3",
-   "fieldtype": "Column Break"
+   "fieldname": "money_section",
+   "fieldtype": "Section Break",
+   "label": "The Day's Money",
+   "description": "For the accountant and the owner (PRN-08, PRN-09)."
   },
   {
    "fieldname": "cost_per_sheet",
@@ -113,8 +120,39 @@
    "fieldtype": "Currency",
    "label": "Variance Value",
    "read_only": 1,
-   "in_list_view": 1,
+   "in_list_view": 0,
    "description": "Variance x cost per printed sheet."
+  },
+  {
+   "fieldname": "column_break_money",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sales_value",
+   "fieldtype": "Currency",
+   "label": "Printing and Copying Sales",
+   "read_only": 1,
+   "description": "What the library's printing and copying sold for that day."
+  },
+  {
+   "fieldname": "column_break_money_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "average_price",
+   "fieldtype": "Currency",
+   "label": "Average Price per Sheet",
+   "precision": "4",
+   "read_only": 1
+  },
+  {
+   "fieldname": "margin_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Margin per Sheet",
+   "precision": "4",
+   "read_only": 1,
+   "in_list_view": 0,
+   "description": "Average price - cost per printed sheet: what the library makes on a sheet (PRN-08)."
   },
   {
    "fieldname": "amended_from",
@@ -131,7 +169,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 18:00:00.000000",
+ "modified": "2026-10-18 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Daily Counter Reading",
