@@ -1,0 +1,152 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:resource_name",
+ "creation": "2026-10-18 12:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "resource_name",
+  "resource_type",
+  "cost_center",
+  "item",
+  "column_break_main",
+  "disabled",
+  "capacity",
+  "equipment",
+  "notes",
+  "bookings_saved"
+ ],
+ "fields": [
+  {
+   "fieldname": "resource_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Resource Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "resource_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Resource Type",
+   "options": "Hall\nStudio Service",
+   "reqd": 1
+  },
+  {
+   "description": "The business that books it: the halls' or the studio's. Its bookings are that business's, and only its manager sees them.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Business (Cost Center)",
+   "options": "Cost Center",
+   "reqd": 1
+  },
+  {
+   "description": "The service it is sold as (e.g. HALL-HOUR). Its price is that item's Item Price, which only the owner changes.",
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Service Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "A disabled resource takes no new bookings; its bookings stay as they are.",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disabled"
+  },
+  {
+   "depends_on": "eval:doc.resource_type == 'Hall'",
+   "description": "How many people the hall seats (HAL-01).",
+   "fieldname": "capacity",
+   "fieldtype": "Int",
+   "label": "Capacity",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+  },
+  {
+   "description": "What it is equipped with (HAL-01): screen, sound, smart board...",
+   "fieldname": "equipment",
+   "fieldtype": "Small Text",
+   "label": "Equipment"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "bookings_saved",
+   "fieldtype": "Int",
+   "label": "Bookings Saved",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Written by every booking that holds time on this resource, so two saved at the same moment are checked one after the other (booking.py)."
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-18 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Booking Resource",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Super Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Branch Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "resource_name",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

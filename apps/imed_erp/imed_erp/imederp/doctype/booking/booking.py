@@ -1,0 +1,199 @@
+# Copyright (c) 2026, toka mohamed and contributors
+# For license information, please see license.txt
+
+# A booking of a hall or a studio service by the hour (HAL-02, STU-01), with its status (STU-08) and where it came
+# from (STU-14): entered here (WhatsApp, walk-in) or imported from the booking system, which stays the source of the
+# studio's appointments (requirements v1.2 §4.8).
+#
+#   HAL-02  a hall booking records the activity and the responsible person's name and phone.
+#   STU-08  Tentative, Confirmed with Deposit, Completed, Cancelled (with its reason), No Show.
+#   HAL-04, STU-02, STU-14  two bookings of the same resource never overlap, whatever their source.
+#
+# Total Amount and Amount Paid are recorded on the booking, with the remaining amount; nothing is posted to the
+# accounts. The payment is recorded through the accounts (a Sales Invoice of the resource's service item into the
+# business's cash box, ACC-01), which is not decided for bookings yet (docs/known-issues.md).
+
+import frappe
+from frappe import _
+from frappe.model.document import Document
+from frappe.utils import flt, get_datetime, get_time, getdate, now_datetime, time_diff_in_hours
+
+from imed_erp.imederp.customers import normalize_phone
+
+TENTATIVE, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW = "Tentative", "Confirmed with Deposit", "Completed", "Cancelled", "No Show"
+# The bookings that hold their time: a cancelled booking frees it, and so does a no-show, whose time has passed.
+HOLDING = (TENTATIVE, CONFIRMED, COMPLETED)
+MANUAL, IMPORTED = "Manual", "Imported"
+SOURCE_FIELDS = ("source", "source_system", "external_id", "import_key")
+
+
+def on_doctype_update():
+	"""The overlap check reads a resource's bookings of one day: an index on both, so it stays quick as they grow."""
+	frappe.db.add_index("Booking", ["resource", "booking_date"])
+
+
+def check_own_business(cost_center):
+	"""A booking belongs to its resource's business (cost center), set here from the resource. Frappe checks a
+	user's restrictions on the fields as they were sent, before this, when the cost center is still empty, so it is
+	checked again: a branch manager books only their own business's resources."""
+	from frappe.permissions import get_user_permissions
+
+	# The same restrictions Frappe applies to a booking: those for every screen, or for bookings.
+	allowed = [
+		p.get("doc")
+		for p in get_user_permissions(frappe.session.user).get("Cost Center", [])
+		if not p.get("applicable_for") or p.get("applicable_for") == "Booking"
+	]
+	if allowed and cost_center not in allowed:
+		frappe.throw(
+			_("{0} is not your business. You can book for: {1}.").format(cost_center, ", ".join(sorted(allowed))),
+			frappe.PermissionError,
+			title=_("Not Your Business"),
+		)
+
+
+class Booking(Document):
+	def validate(self):
+		self.check_source()
+		self.check_resource()
+		self.check_times()
+		self.check_hall_details()
+		self.check_amounts()
+		self.check_status()
+		self.check_overlap()
+
+	def check_source(self):
+		"""Only the import makes an imported booking, and only the import changes it (INT-01: what comes from the
+		booking system is changed there)."""
+		if self.flags.from_import:
+			self.source = IMPORTED
+			if not (self.source_system and self.external_id):
+				frappe.throw(_("An imported booking needs its source system and its id there."))
+			self.import_key = f"{self.source_system}:{self.external_id}"
+			return
+		if self.is_new():
+			self.source = MANUAL
+			for field in SOURCE_FIELDS[1:]:
+				self.set(field, None)
+			return
+		before = self.get_doc_before_save()
+		if before and before.source == IMPORTED:
+			frappe.throw(
+				_("{0} was imported from {1}. Change it there; the next import brings the change.").format(self.name, before.source_system),
+				title=_("Imported Booking"),
+			)
+		for field in SOURCE_FIELDS:
+			self.set(field, before.get(field) if before else None)
+
+	def check_resource(self):
+		resource = frappe.db.get_value("Booking Resource", self.resource, ["disabled", "resource_type", "cost_center"], as_dict=True)
+		if not resource:
+			frappe.throw(_("Resource {0} not found.").format(self.resource))
+		self.resource_type, self.cost_center = resource.resource_type, resource.cost_center
+		check_own_business(self.cost_center)
+		if resource.disabled and self.status in HOLDING and self.takes_new_time():
+			frappe.throw(_("{0} is disabled and takes no new bookings.").format(self.resource), title=_("Resource Disabled"))
+
+	def takes_new_time(self):
+		"""New, moved to another resource, day or time, or taken back from Cancelled or No Show: it holds time it did
+		not hold before. A booking that only changes its status to Cancelled, its amounts or its notes does not."""
+		before = self.get_doc_before_save()
+		if self.is_new() or not before:
+			return True
+		if before.status not in HOLDING:
+			return True
+		same_time = (
+			before.resource == self.resource
+			and getdate(before.booking_date) == getdate(self.booking_date)
+			and get_time(before.from_time) == get_time(self.from_time)
+			and get_time(before.to_time) == get_time(self.to_time)
+		)
+		return not same_time
+
+	def check_times(self):
+		if get_time(self.to_time) <= get_time(self.from_time):
+			frappe.throw(_("The booking ends at {0}, not after it starts at {1}.").format(self.to_time, self.from_time), title=_("Wrong Times"))
+		self.hours = flt(time_diff_in_hours(self.to_time, self.from_time), 2)
+
+	def check_hall_details(self):
+		if self.resource_type != "Hall":
+			return
+		for field in ("activity", "responsible_name", "responsible_phone"):
+			if not (self.get(field) or "").strip():
+				frappe.throw(_("A hall booking needs {0} (HAL-02).").format(_(self.meta.get_label(field))), title=_("Missing Value"))
+		# The same check as a customer's number: a number that cannot be called is refused.
+		normalize_phone(self.responsible_phone)
+
+	def check_amounts(self):
+		self.total_amount, self.paid_amount = flt(self.total_amount, 2), flt(self.paid_amount, 2)
+		if self.total_amount < 0 or self.paid_amount < 0:
+			frappe.throw(_("Amounts cannot be negative."))
+		if self.paid_amount > self.total_amount:
+			frappe.throw(
+				_("Amount Paid {0} is more than the Total Amount {1}.").format(self.paid_amount, self.total_amount),
+				title=_("Paid More Than the Total"),
+			)
+		self.outstanding_amount = flt(self.total_amount - self.paid_amount, 2)
+
+	def check_status(self):
+		self.cancellation_reason = (self.cancellation_reason or "").strip() or None
+		if self.status == CANCELLED and not self.cancellation_reason:
+			frappe.throw(_("Give the reason for cancelling the booking."), title=_("Cancellation Reason Required"))
+		if self.status != CANCELLED:
+			self.cancellation_reason = None
+		if self.status == CONFIRMED and not self.paid_amount:
+			# STU-08: "confirmed with a deposit".
+			frappe.throw(_("A booking is confirmed with a deposit: enter the amount paid."), title=_("No Deposit"))
+		if self.status in (COMPLETED, NO_SHOW) and self.starts_at() > now_datetime():
+			frappe.throw(_("The booking has not started yet; it cannot be {0}.").format(_(self.status)))
+
+	def starts_at(self):
+		return get_datetime(f"{self.booking_date} {self.from_time}")
+
+	def check_overlap(self):
+		"""No two bookings of the resource that hold their time overlap. One that ends when the next starts does
+		not.
+
+		Two people booking the same resource at the same moment: every booking that holds time first writes its
+		resource's row (bookings_saved). The second waits for the first, and MariaDB (11.8, innodb_snapshot_isolation,
+		its default) then refuses its write, since the row changed after its transaction began: it is asked to save
+		again, and its next try sees the first booking. A booking that gets the write saw every booking of the
+		resource, so the plain read below is complete. Bookings of other resources write other rows and never wait
+		for each other."""
+		if self.status not in HOLDING:
+			return
+		try:
+			frappe.db.sql(
+				"update `tabBooking Resource` set bookings_saved = ifnull(bookings_saved, 0) + 1 where name = %s",
+				self.resource,
+			)
+		except frappe.QueryDeadlockError:
+			frappe.throw(_("Another booking of {0} was saved at the same moment. Save again.").format(self.resource), title=_("Save Again"))
+		clash = frappe.db.sql(
+			"""select name, from_time, to_time, status from `tabBooking`
+			where resource = %(resource)s and booking_date = %(date)s and name != %(name)s
+			and status in %(holding)s and from_time < %(to_time)s and to_time > %(from_time)s
+			order by from_time limit 1""",
+			{
+				"resource": self.resource,
+				"date": self.booking_date,
+				"name": self.name or "",
+				"holding": HOLDING,
+				"from_time": self.from_time,
+				"to_time": self.to_time,
+			},
+			as_dict=True,
+		)
+		if clash:
+			other = clash[0]
+			frappe.throw(
+				_("{0} is already booked from {1} to {2} on {3} ({4}, {5}).").format(
+					self.resource,
+					str(other.from_time)[:5],
+					str(other.to_time)[:5],
+					frappe.format_value(self.booking_date, {"fieldtype": "Date"}),
+					other.name,
+					_(other.status),
+				),
+				title=_("Already Booked"),
+			)
