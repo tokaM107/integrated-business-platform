@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import today
+from frappe.utils import flt, today
 
 from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.doctype.book_edition.book_edition import carry_forward, get_copy_cost
@@ -159,12 +159,12 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		self.assertEqual([row["description"] for row in data[1:-1]], ["Adjustment — 15-06-2026 — _Test from the first term"])
 
 	def test_the_cost_of_a_copy_leaves_out_the_library_s_side(self):
-		# Paper 0.30 + ink + overheads per sheet x 100 sheets + binding; not the profit, the marketing, the doctor's
-		# amount or a price set by hand.
+		# DOC-11: paper 0.30 + ink per sheet x 100 sheets + binding (with the cover). Not the overheads per sheet
+		# ("no other operating expense"), the profit, the marketing, the doctor's amount or a price set by hand.
 		edition = self.edition(selling_price=999, marketing_cost=5)
-		cost = (0.30 + edition.ink_cost + edition.overhead_cost) * 100 + edition.binding_cost
+		cost = (0.30 + edition.ink_cost) * 100 + edition.binding_cost
 		self.assertAlmostEqual(get_copy_cost(edition), cost, places=2)
-		self.assertTrue(edition.owner_share and edition.rounding_diff)
+		self.assertTrue(edition.overhead_cost and edition.owner_share and edition.rounding_diff)
 		columns = {c["fieldname"] for c in self.statement()[0]}
 		self.assertFalse(columns & {"owner_share", "marketing_cost", "calculated_price", "rounding_diff"})
 
@@ -286,4 +286,90 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		frappe.get_doc(LEDGER, charge.name).submit()
 		self.entry("Payout", 100, period=self.term2)
 		self.assertRaisesRegex(frappe.ValidationError, "is closed", self.entry, "Adjustment", 10, period=self.term2)
+
+	# ---------- Checked against the requirements (v1.2) ----------
+
+	def make_module(self, name="_Test Statement Module"):
+		round_ = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": f"{name} Round", "period_type": "Round",
+				"parent_period": self.term2, "start_date": "2026-07-01", "end_date": "2026-12-31"}
+		).insert().name
+		return frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": name, "period_type": "Module",
+				"parent_period": round_, "start_date": "2026-07-01", "end_date": "2026-12-31"}
+		).insert().name
+
+	def test_cancelling_an_edition_charges_the_doctor_at_once_for_approval(self):
+		# DOC-18, DOC-22: when the curriculum changes, the cost of the doctor's unsold copies goes on his balance,
+		# once the owner or the accountant approves; the library's extra copies are not his. A branch manager may
+		# record the cancellation; the charge is raised for her, and only an approver applies it.
+		from imed_erp.imederp.doctype.book_edition.book_edition import cancel_for_curriculum_change
+
+		edition = self.edition(doctor_qty=40, extra_qty=15)
+		self.sell(self.items[0], 25)
+		before = self.statement()[1][-1]["balance"]
+		frappe.set_user(RAGHAD)
+		cancel_for_curriculum_change(edition.name, today())
+		frappe.set_user("Administrator")
+		[charge] = self.charges(edition)
+		self.assertEqual(
+			(charge.docstatus, charge.approval_status, charge.qty, charge.amount),
+			(0, "Pending Approval", 15, round(15 * get_copy_cost(edition), 2)),
+		)
+		self.assertEqual(self.statement()[1][-1]["balance"], before)
+		frappe.get_doc(LEDGER, charge.name).approve()
+		self.assertEqual(self.statement()[1][-1]["balance"], before - charge.amount)
+		# The term ending later charges nothing more for it.
+		self.close(self.term2)
+		self.assertEqual(len(self.charges(edition)), 1)
+
+	def test_a_term_s_statement_takes_in_its_modules(self):
+		# Books settle by module (DOC-05): an edition of a module sells under the module, and shows on both its
+		# module's statement and its term's.
+		module = self.make_module()
+		edition = self.edition(period=module)
+		self.sell(self.items[0], 2)
+		for period in (module, self.term2):
+			with self.subTest(period):
+				rows = [row for row in self.statement(period)[1] if row.get("edition") == edition.name]
+				self.assertEqual([(row["sold_qty"], row["owed"]) for row in rows], [(2, 160)])
+
+	def test_a_whole_term(self):
+		"""One doctor's term from start to end, as the accountant would check it by hand (DOC-07..09, 13, 18, 20, 22):
+		50 copies for the doctor and 10 for the library at 80 each; 30 sold, 2 returned, 300 paid out; the term
+		closes, the 22 unsold of his are charged at cost and approved."""
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+
+		before = self.statement()[1][-1]["balance"]
+		edition = self.edition(doctor_qty=50, extra_qty=10)
+		cost = get_copy_cost(edition)
+		self.sell(self.items[0], 20)
+		sale = self.sell(self.items[0], 10)
+		credit = make_sales_return(sale.name)
+		credit.items[0].qty = -2
+		credit.insert()
+		credit.submit()
+		self.entry("Payout", 300, period=self.term2)
+		self.close(self.term2)
+		[charge] = self.charges(edition)
+		frappe.get_doc(LEDGER, charge.name).approve()
+
+		_columns, data, summary = self.statement()
+		[sold] = [row for row in data if row.get("edition") == edition.name and row.get("selling_price")]
+		self.assertEqual(
+			(sold["sold_qty"], sold["copy_cost"], sold["doctor_share"], sold["owed"]),
+			(28, cost, 80, 28 * 80),
+		)
+		self.assertEqual(charge.qty, 50 - 28)
+		expected = before + 28 * 80 - 300 - round(22 * cost, 2)
+		self.assertAlmostEqual(data[-1]["balance"], expected, places=2)
+		self.assertAlmostEqual(flt(frappe.db.get_value("Doctor Agreement", self.agreement, "balance")), expected, places=2)
+		# Below zero, it is a debt on the Doctor Debts report; above, nothing is listed there.
+		from imed_erp.imederp.report.doctor_debts.doctor_debts import execute as debts
+
+		listed = {row["agreement"]: row["debt"] for row in debts({"as_of": today()})[1]}
+		if expected < 0:
+			self.assertAlmostEqual(listed[self.agreement], -expected, places=2)
+		else:
+			self.assertNotIn(self.agreement, listed)
 

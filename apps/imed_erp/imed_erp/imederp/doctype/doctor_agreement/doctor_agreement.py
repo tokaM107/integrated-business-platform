@@ -144,6 +144,38 @@ def get_balance(agreement):
 	return sum(BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount) for entry in entries)
 
 
+@frappe.whitelist()
+def get_doctor_summary(doctor):
+	"""DOC-29: the doctor's file (his Customer) shows every agreement of his with its balance, which way it runs and
+	when it is next settled. The balances stay apart: nothing is offset between them. Empty for whoever may not
+	read the agreements (a branch manager adding a customer)."""
+	if not frappe.has_permission("Doctor Agreement", "read"):
+		return []
+	summary = []
+	for agreement in frappe.get_all(
+		"Doctor Agreement",
+		filters={"doctor": doctor, "docstatus": 1},
+		fields=["name", "agreement_type", "status", "balance", "next_settlement_date"],
+		order_by="agreement_type, name",
+	):
+		direction = DIRECTION.get(agreement.agreement_type)
+		if flt(agreement.balance) < 0:
+			# DOC-20, DOC-30: below zero it runs the other way.
+			direction = OWED_BY_DOCTOR if direction == OWED_TO_DOCTOR else OWED_TO_DOCTOR
+		summary.append(
+			{
+				"agreement": agreement.name,
+				"agreement_type": _(agreement.agreement_type),
+				"status": _(agreement.status),
+				"balance": abs(flt(agreement.balance)),
+				"direction": _(direction),
+				"owed_by_doctor": direction == OWED_BY_DOCTOR,
+				"next_settlement_date": agreement.next_settlement_date,
+			}
+		)
+	return summary
+
+
 def update_balance(agreement, entry=None):
 	"""The account summary is read-only and kept up to date from the ledger (Doctor Ledger Entry submit and
 	cancel): the balance and the last settlement. Each agreement has its own; none is offset against another.

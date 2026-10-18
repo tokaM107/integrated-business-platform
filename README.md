@@ -895,9 +895,11 @@ owner's page). One agreement and one academic period on their own, from the doct
 | Balance at the End of the Period | where the account stands; the summary says which way it runs |
 
 It leaves out the library's side (owner's decision): its profit per sheet, its marketing and any difference
-between the calculated price and the price set by hand. The **cost of a copy** is what it costs to make, (paper +
-ink + overheads) per sheet × sheets + binding (`book_edition.get_copy_cost`). An entry belongs to the period it
-names; one entered with no period belongs to the period its date falls in. Accounts Manager and System Manager
+between the calculated price and the price set by hand. The **cost of a copy** is what it costs to make (DOC-11):
+(paper + ink) per sheet × sheets + binding, which takes in the cover (`book_edition.get_copy_cost`). The overheads
+per sheet (rent, power, salaries) go into the price only: "no other operating expense is deducted". An entry
+belongs to the period it names, or to the term above it (a term's statement takes in its rounds and modules, since
+books settle by module, DOC-05); one entered with no period belongs to the period its date falls in. Accounts Manager and System Manager
 open it (the accountant and the owner).
 
 **Paying the doctor** (DOC-09, ACC-11). A **Payout** in the doctor's ledger names the **Treasury** it is paid from
@@ -912,6 +914,10 @@ default print format of Doctor Ledger Entry: who was paid, the agreement, period
 figures and in words (`فقط ألف و مئتان و خمسون جنيه مصري وخمسون قرشًا لا غير`), and lines for the doctor's and the
 accountant's signatures. Arabic when printed in Arabic, like the invoice. A simple version; the final design comes
 in week C. Any other ledger entry prints the same way under the title حركة حساب طبيب.
+
+**The doctor's unsold copies** (DOC-18, DOC-22) are charged to him when the edition is cancelled because the
+curriculum changed (whoever records the cancellation, a branch manager too; the charge is raised by the system and
+only an approver applies it), or at the end of its term or module, whichever comes first.
 
 **The end of a term or module** (DOC-18, DOC-22). When the accountant or the owner closes an Academic Period, every
 approved edition whose period is that one or one under it (its rounds and modules) gets a **draft Unsold Copies
@@ -962,6 +968,15 @@ accountant (who may open the ledger) see it. What doctors owe the group is **Doc
 | Shows | Filters |
 |---|---|
 | Opening (balance before From Date), Accrued, Adjustments, Unsold Copies Charges, Paid, **Outstanding** (on To Date, the balance the agreement screen shows), Last Settlement, and the number of entries, which opens them. Under each agreement, a row per library: an entry's library is its invoice line's, else its edition's, else its journal entry's one cost center; a payout for the agreement as a whole is *Not by branch*. | From / To Date, Doctor, Agreement, Branch (that library's entries only), Show Settled Agreements |
+
+**The rest of the doctors' requirements** (all from the doctor's ledger; under Doctors and Editions in the sidebar):
+
+| | Requirement | What it shows |
+|---|---|---|
+| Unsold Editions report | DOC-21 | Editions still on sale whose period (or the one they were carried to) ended before a date, e.g. the next module's start, with the copies left split between the doctor's and the library's. Branch managers see their own library's. |
+| Owner Share Plan vs Actual report | DOC-27 | For each edition sold: the owner's share planned in its price (profit per sheet × sheets × copies sold) against what the sales brought after the rest of the planned price; a price set by hand, a discount or a carried copy sold at today's price shows as the difference. On the owner's page. |
+| The doctor's file | DOC-29 | A doctor's Customer form lists his agreements with their balance, which way each runs and when it is next settled, kept apart (no offsetting), for the accountant and the owner. |
+| His statement sent to him | DOC-23 | After a settlement by hand (a payout, an approved charge, an adjustment, a collection) the doctor is emailed his statement for that period, to the email on his file; with none on file, the accountant is notified. Sales send nothing. |
 
 The agreement's **Account Summary** (DOC-29) gives, for that agreement alone: the balance and its direction,
 the **settlement period** (from and to, entered by the accountant: each year has its own dates, owner's
@@ -1018,8 +1033,8 @@ change only by Cancel and Amend.
   edition is marked Cancelled with the **Notice Date** (not in the future, not before the edition) and the
   employee who received the notice and records it, taken from the login, never typed; the time it was
   recorded is kept too. The edition stays approved with its sales, stock and costs; no more copies are sold.
-  What the copies left cost the doctor or the library (DOC-18, approved under DOC-22) belongs to the doctors'
-  accounts and is not posted here.
+  The doctor's unsold copies are charged to him as a draft for approval (DOC-18, DOC-22; see the doctors'
+  accounts below). What the library's extra copies cost it is not posted yet.
 - Status and these fields change only through the two buttons (the server refuses them otherwise), and the
   edition's history shows each change. Branch managers act on their own library's editions; the owner and the
   accountant on any.
@@ -1077,6 +1092,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "D
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_requirements
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance

@@ -20,6 +20,8 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Receivables", "link_to": "Doctor Receivables", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Statement", "link_to": "Doctor Statement", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Debts", "link_to": "Doctor Debts", "link_type": "Report", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Unsold Editions", "link_to": "Unsold Editions", "link_type": "Report", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Owner Share Plan vs Actual", "link_to": "Owner Share Plan vs Actual", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Book Editions", "link_to": "Book Edition", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Cost Settings", "link_to": "Printing Cost Settings", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Academic Periods", "link_to": "Academic Period", "link_type": "DocType", "show_arrow": 0, "type": "Link"},

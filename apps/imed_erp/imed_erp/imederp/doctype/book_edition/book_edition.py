@@ -163,10 +163,11 @@ class BookEdition(Document):
 
 
 def get_copy_cost(edition):
-	"""What a copy costs to make (DOC-18): (paper + ink + overheads) per sheet x sheets, plus binding. Without the
-	library's profit, its marketing, the doctor's own amount or a price set by hand. `edition` is the edition's
-	document or a dict of its fields."""
-	per_sheet = flt(edition.get("paper_cost")) + flt(edition.get("ink_cost")) + flt(edition.get("overhead_cost"))
+	"""What a copy costs to make (DOC-11, DOC-18): (paper + ink) per sheet x sheets, plus binding, which takes in the
+	cover. "No other operating expense is deducted" (DOC-11), so not the overheads per sheet (rent, power,
+	salaries), which go into the price only; nor the library's profit, its marketing, the doctor's own amount or a
+	price set by hand. `edition` is the edition's document or a dict of its fields."""
+	per_sheet = flt(edition.get("paper_cost")) + flt(edition.get("ink_cost"))
 	return flt(per_sheet * cint(edition.get("pages")) + flt(edition.get("binding_cost")), 2)
 
 
@@ -267,8 +268,8 @@ def cancel_for_curriculum_change(edition, notice_date):
     """DOC-17: the doctor said, by word of mouth, that the curriculum changed. The edition is marked Cancelled with
     the day of the notice, the employee who received it (the one recording it, from the login, never a typed
     name) and when it was recorded. Nothing posted changes: its sales, stock and approved costs stay as they are;
-    no more copies are sold (imederp/edition_sales.py). What the remaining copies cost the doctor or the library
-    (DOC-18, approved under DOC-22) belongs to the doctors' accounts and is not posted here."""
+    no more copies are sold (imederp/edition_sales.py). The doctor's unsold copies are charged to him as a draft for
+    approval (DOC-18, DOC-22; doctor_ledger_entry.charge_edition)."""
     doc = edition_for_action(edition)
     if doc.status not in SELLABLE:
         frappe.throw(_("Edition {0} is already cancelled.").format(doc.name))
@@ -289,4 +290,8 @@ def cancel_for_curriculum_change(edition, notice_date):
     doc.notice_received_by = frappe.session.user
     doc.cancellation_recorded_on = now_datetime()
     save_action(doc)
+    # DOC-18/22: the doctor's unsold copies are charged to him now, as a draft the owner or the accountant approves.
+    from imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry import charge_edition
+
+    charge_edition(doc.name, _("cancelled on {0}: the curriculum changed").format(frappe.format_value(notice_date, {"fieldtype": "Date"})))
     return doc.name
