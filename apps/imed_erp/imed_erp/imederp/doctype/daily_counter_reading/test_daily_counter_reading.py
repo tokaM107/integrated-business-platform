@@ -8,11 +8,14 @@
 # Run:
 #   bench --site frontend run-tests --doctype "Daily Counter Reading"
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, today
 
 from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
+from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 from imed_erp.imederp.sales_cancellation import cancel_with_reason
 
 # Linked records already exist on the site (the libraries' machines come from setup_library.py); without this list
@@ -22,6 +25,9 @@ IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Prin
 AZARITA = "مكتبة الأزاريطة - MMG"
 MAWASAH = "مكتبة المواساة - MMG"
 COMPANY = "Mohamed Mamdouh group"
+# The store's paper price (0.26) plus waste (0.04), fixed for these tests; test_paper_stock.py reads it from a real
+# purchase.
+PAPER = "imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading.get_paper_cost"
 SARA = "sara@imed.local"
 
 
@@ -164,4 +170,53 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		refund.submit()
 		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
 		self.assertEqual((sheet.sold_sheets, sheet.variance), (50, 0))
+
+	# ---------- PRN-08/09: the variance in money ----------
+
+	def ink(self, machine):
+		return frappe.db.get_value("Printing Machine", machine, "ink_per_sheet")
+
+	@patch(PAPER, return_value=0.30)
+	def test_the_variance_in_money(self, _):
+		# 20 sheets short x what a printed sheet cost: paper and waste + the machine's ink + overheads, the Epson
+		# (cheaper ink) and the Risos weighted by what each printed (300, 150 and 50 sheets).
+		first, second, third = sorted(self.machines)  # Epson, Riso, Riso
+		self.sell([("PRINT-SVC", 480)])
+		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100})
+		overheads = get_rates().overheads_per_sheet
+		costs = {row.machine: row.cost_per_sheet for row in sheet.machines}
+		for machine in self.machines:
+			self.assertAlmostEqual(costs[machine], 0.30 + self.ink(machine) + overheads, places=4)
+		self.assertLess(costs[first], costs[second])
+		expected = round((300 * costs[first] + 150 * costs[second] + 50 * costs[third]) / 500, 4)
+		self.assertAlmostEqual(sheet.cost_per_sheet, expected, places=4)
+		self.assertEqual(sheet.variance, 20)
+		self.assertAlmostEqual(sheet.variance_value, round(20 * expected, 2), places=2)
+
+	@patch(PAPER, return_value=0.30)
+	def test_the_cost_stays_as_submitted(self, _):
+		# A later sale takes the same cost per sheet, even after the rates changed.
+		first, second, third = sorted(self.machines)
+		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100})
+		cost = sheet.cost_per_sheet
+		frappe.db.set_value("Printing Machine", second, "ink_per_sheet", 5)
+		self.sell([("COPY-SVC", 100)])
+		self.assertEqual(
+			frappe.db.get_value("Daily Counter Reading", sheet.name, ["cost_per_sheet", "variance", "variance_value"]),
+			(cost, 400, round(400 * cost, 2)),
+		)
+
+	@patch(PAPER, return_value=0.30)
+	def test_a_day_nothing_was_printed(self, _):
+		first, second, third = sorted(self.machines)
+		sheet = self.sheet({first: 1000, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
+		self.assertAlmostEqual(sheet.cost_per_sheet, round(sum(r.cost_per_sheet for r in sheet.machines) / 3, 4), places=4)
+		self.assertEqual((sheet.variance, sheet.variance_value), (0, 0))
+
+	@patch(PAPER, return_value=0)
+	def test_with_no_paper_price_it_says_so(self, _):
+		first, second, third = sorted(self.machines)
+		with patch("frappe.msgprint") as msgprint:
+			self.sheet({first: 1010, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
+		self.assertIn("no paper price", str(msgprint.call_args))
 
