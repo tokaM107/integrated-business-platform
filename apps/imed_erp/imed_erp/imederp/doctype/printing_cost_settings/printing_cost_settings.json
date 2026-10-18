@@ -48,7 +48,7 @@
   },
   {
    "default": "0.05",
-   "description": "Rent, electricity, salaries and machine rental, per sheet.",
+   "description": "What running the library costs, per sheet printed: rent, electricity, salaries, machine rental and machine maintenance. Maintenance has no rate of its own; it is part of this (owner, 18 Oct 2026).",
    "fieldname": "overheads_per_sheet",
    "fieldtype": "Currency",
    "label": "Overheads per Sheet",
@@ -102,7 +102,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-18 12:00:00.000000",
+ "modified": "2026-10-18 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printing Cost Settings",
