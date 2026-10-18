@@ -21,6 +21,8 @@ AZARITA = "مكتبة الأزاريطة - MMG"
 COMPANY = "Mohamed Mamdouh group"
 SARA, RAGHAD = "sara@imed.local", "raghad@imed.local"
 PAPER = "imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading.get_paper_cost"
+# A fixed day with nothing else on it, so whatever the site holds (other days' counters and sales) stays out.
+DAY = "2026-10-05"
 
 
 class IntegrationTestDailyPrinting(IntegrationTestCase):
@@ -29,6 +31,8 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		self.machines = sorted(frappe.get_all("Printing Machine", filters={"cost_center": AZARITA, "disabled": 0}, pluck="name"))
 		frappe.db.delete("Printer Reading", {"machine": ["in", self.machines]})
 		frappe.db.delete("Daily Counter Reading", {"branch": AZARITA})
+		# Sales of the test days made by anyone else (demo data) are left out.
+		frappe.db.delete("Sales Invoice", {"posting_date": ["in", [DAY, add_days(DAY, -1)]], "cost_center": AZARITA})
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
@@ -39,7 +43,7 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		"""The day's counters at Azarita: each machine, from `start`, up by its consumption; `faults` is
 		{machine index: what happened}."""
 		doc = frappe.new_doc("Daily Counter Reading")
-		doc.update({"branch": AZARITA, "reading_date": date or today()})
+		doc.update({"branch": AZARITA, "reading_date": date or DAY})
 		for i, (row, used) in enumerate(zip(get_machines(AZARITA), consumed)):
 			opening = row["opening_reading"] if row["opening_reading"] is not None else start
 			row.update({"opening_reading": opening, "closing_reading": opening + used})
@@ -58,14 +62,14 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 				"customer": frappe.get_all("Customer", filters={"customer_group": ["!=", "طبيب"]}, pluck="name", limit=1)[0],
 				"cost_center": AZARITA,
 				"set_posting_time": 1,
-				"posting_date": date or today(),
+				"posting_date": date or DAY,
 				"items": [{"item_code": "PRINT-SVC", "qty": sheets, "rate": rate, "cost_center": AZARITA}],
 			}
 		).insert()
 		invoice.submit()
 
 	def report(self, **filters):
-		return execute({"from_date": today(), "to_date": today(), **filters})[1]
+		return execute({"from_date": DAY, "to_date": DAY, "branch": AZARITA, **filters})[1]
 
 	def test_each_machine_and_the_library_s_day(self):
 		# 500 printed (300 + 150 + 50) and 480 sold: each machine takes its share of the sales by its share of
@@ -91,12 +95,14 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		self.assertEqual([r["variance"] for r in machines], [-10, -10, -10])
 
 	def test_dates_and_branches(self):
-		self.day([10, 10, 10], date=add_days(today(), -1))
+		self.day([10, 10, 10], date=add_days(DAY, -1))
 		self.day([20, 20, 20])
-		self.assertEqual({r["reading_date"] for r in self.report()}, {frappe.utils.getdate(today())})
+		self.assertEqual({r["reading_date"] for r in self.report()}, {frappe.utils.getdate(DAY)})
 		# Two days: each day's 3 machines and total, then the period (a heading, 3 machines, a total).
-		self.assertEqual(len(self.report(from_date=add_days(today(), -1))), 13)
+		self.assertEqual(len(self.report(from_date=add_days(DAY, -1))), 13)
 		self.assertEqual(self.report(branch="مكتبة المواساة - MMG"), [])
+		# Another library's day is not in Azarita's.
+		self.assertEqual({r.get("branch") for r in self.report() if r.get("branch")}, {AZARITA})
 
 	def test_a_branch_manager_sees_her_own_library(self):
 		self.day([10, 10, 10])
@@ -124,7 +130,7 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 
 	def test_a_month_by_machine(self):
 		# PRN-03, PRN-09: over a period, each machine's printing, its share, its days broken down and the shortfall.
-		first_day, second_day = add_days(today(), -1), today()
+		first_day = add_days(DAY, -1)
 		self.sell(100, date=first_day)
 		self.day([100, 50, 50], date=first_day, faults={2: "Drum"})
 		self.day([200, 100, 0], faults={2: "Drum again"})
