@@ -682,3 +682,19 @@ As Of,حتى تاريخ
 Debt,المديونية
 Owed Since,مستحقة من
 Age (Days),العمر (أيام)
+Ink by Machine Type,الحبر حسب نوع الماكينة
+What a printed sheet costs in ink on each kind of machine (PRN-08). A new machine takes the rate of its type. 0.05 and 0.10 are assumptions until the owner gives the real costs.,تكلفة الحبر للورقة المطبوعة على كل نوع ماكينة. الماكينة الجديدة بتاخد سعر نوعها. 0.05 و 0.10 افتراض لحد ما المالك يدّي التكلفة الحقيقية.
+Epson Ink per Sheet,حبر Epson للورقة
+Riso Ink per Sheet,حبر Riso للورقة
+Model,الموديل
+Ink Cost per Sheet,تكلفة الحبر للورقة
+From Printing Cost Settings for its type when left empty; change it for this machine only if it differs.,لو سبتها فاضية بتتاخد من تكاليف الطباعة حسب النوع؛ غيّرها للماكينة دي بس لو مختلفة.
+Last Maintenance,آخر صيانة
+Out of Service,متوقفة
+A machine out of service takes no paper and no counter readings.,الماكينة المتوقفة مش بياخد ورق ولا بتتسجل لها قراءات عداد.
+The library the machine works in.,المكتبة اللي الماكينة شغالة فيها.
+{0} is not a library. Printing machines work in a library.,{0} مش مكتبة. ماكينات الطباعة بتبقى في مكتبة.
+Not a Library,مش مكتبة
+The last maintenance cannot be in the future.,تاريخ آخر صيانة ما ينفعش يبقى في المستقبل.
+Ink Cost per Sheet cannot be negative.,تكلفة الحبر للورقة ما ينفعش تبقى بالسالب.
+Type,النوع
