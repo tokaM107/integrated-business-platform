@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days, today
+from frappe.utils import add_days
 
 from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
 from imed_erp.imederp.report.daily_printing.daily_printing import execute
