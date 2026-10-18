@@ -698,3 +698,13 @@ Not a Library,مش مكتبة
 The last maintenance cannot be in the future.,تاريخ آخر صيانة ما ينفعش يبقى في المستقبل.
 Ink Cost per Sheet cannot be negative.,تكلفة الحبر للورقة ما ينفعش تبقى بالسالب.
 Type,النوع
+The machine's last closing reading; typed only for its first reading.,آخر قراءة نهاية للماكينة؛ بتتكتب باليد في أول قراءة ليها بس.
+{0} is out of service and takes no counter readings.,{0} متوقفة ومش بيتسجلها قراءات عداد.
+The closing reading {0} is below the opening reading {1}. A counter only goes up.,قراءة النهاية {0} أقل من قراءة البداية {1}. العداد بيزيد بس.
+Reading Too Low,القراءة أقل من اللي قبلها
+{0} already has a reading on {1}. A new reading cannot be dated before it.,{0} ليها قراءة يوم {1}. القراءة الجديدة ما ينفعش تبقى بتاريخ قبلها.
+"{0} has a later reading, {1}. Cancel that one first.",{0} ليها قراءة بعدها، {1}. الغي دي الأول.
+Not the Latest Reading,مش آخر قراءة
+Machine,الماكينة
+Closing,النهاية
+Variance,الفرق
