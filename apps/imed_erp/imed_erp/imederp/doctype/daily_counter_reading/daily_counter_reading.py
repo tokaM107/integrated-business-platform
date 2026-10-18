@@ -9,9 +9,11 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, getdate
+from frappe.utils import cint, flt, getdate
 
+from imed_erp.imederp.doctype.book_edition.book_edition import get_paper_cost
 from imed_erp.imederp.doctype.printer_reading.printer_reading import last_reading
+from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 from imed_erp.imederp.paper_use import sheets_sold
 from imed_erp.imederp.doctype.printing_machine.printing_machine import check_library
 
@@ -32,6 +34,30 @@ class DailyCounterReading(Document):
 		self.total_consumed = sum(cint(row.consumed) for row in self.machines)
 		self.sold_sheets = cint(sheets_sold(self.branch, self.reading_date))
 		self.variance = self.total_consumed - self.sold_sheets
+		self.set_cost()
+
+	def set_cost(self):
+		# PRN-08/09: a printed sheet costs its paper (the store's moving average) + waste + the machine's ink +
+		# overheads (Printing Cost Settings). The machines' inks differ, so the day's cost per sheet weighs each
+		# machine by what it printed (equally on a day nothing was printed). Fixed once the day is submitted.
+		if self.docstatus == 1 and self.cost_per_sheet:
+			return
+		rates = get_rates()
+		paper = get_paper_cost(self.branch, rates.waste_per_sheet)
+		if not paper:
+			frappe.msgprint(
+				_("{0} has no paper price yet (no A4 paper received in its store), so the cost of a sheet leaves the paper out.").format(self.branch),
+				title=_("No Paper Price"),
+				indicator="orange",
+			)
+		for row in self.machines:
+			ink = flt(frappe.db.get_value("Printing Machine", row.machine, "ink_per_sheet"))
+			row.cost_per_sheet = flt(paper + ink + flt(rates.overheads_per_sheet), 4)
+		printed = sum(max(cint(row.consumed), 0) for row in self.machines)
+		weights = [(max(cint(row.consumed), 0) if printed else 1, row.cost_per_sheet) for row in self.machines]
+		total_weight = sum(w for w, _cost in weights)
+		self.cost_per_sheet = flt(sum(w * cost for w, cost in weights) / total_weight, 4) if total_weight else 0
+		self.variance_value = flt(self.variance * flt(self.cost_per_sheet), 2)
 
 	def check_one_a_day(self):
 		other = frappe.db.exists(
@@ -117,14 +143,19 @@ class DailyCounterReading(Document):
 
 def refresh_sold(library, date):
 	"""A sale (or its cancellation) after the day's counters were submitted: they take it in."""
-	for name, consumed in frappe.get_all(
+	for name, consumed, cost in frappe.get_all(
 		"Daily Counter Reading",
 		filters={"branch": library, "reading_date": date, "docstatus": 1},
-		fields=["name", "total_consumed"],
+		fields=["name", "total_consumed", "cost_per_sheet"],
 		as_list=True,
 	):
 		sold = cint(sheets_sold(library, date))
-		frappe.db.set_value("Daily Counter Reading", name, {"sold_sheets": sold, "variance": cint(consumed) - sold})
+		variance = cint(consumed) - sold
+		frappe.db.set_value(
+			"Daily Counter Reading",
+			name,
+			{"sold_sheets": sold, "variance": variance, "variance_value": flt(variance * flt(cost), 2)},
+		)
 
 
 @frappe.whitelist()
