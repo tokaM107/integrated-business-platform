@@ -739,3 +739,6 @@ Variance Value,قيمة الفرق
 Variance x cost per printed sheet.,الفرق × تكلفة الورقة المطبوعة.
 "{0} has no paper price yet (no A4 paper received in its store), so the cost of a sheet leaves the paper out.",{0} مالهاش سعر ورق لسه (ما استلمتش ورق A4 في مخزنها)، فتكلفة الورقة محسوبة من غير الورق.
 No Paper Price,مفيش سعر ورق
+Daily Printing,طباعة اليوم
+Utilization (%),نسبة التشغيل (%)
+Total,الإجمالي
