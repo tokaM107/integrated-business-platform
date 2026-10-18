@@ -12,6 +12,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, getdate
 
 from imed_erp.imederp.doctype.printer_reading.printer_reading import last_reading
+from imed_erp.imederp.paper_use import sheets_sold
 from imed_erp.imederp.doctype.printing_machine.printing_machine import check_library
 
 
@@ -24,6 +25,13 @@ class DailyCounterReading(Document):
 		self.check_machines()
 		for row in self.machines:
 			self.check_row(row)
+		self.set_totals()
+
+	def set_totals(self):
+		# PRN-02: what the counters went up by, against the printing and copying the library sold that day.
+		self.total_consumed = sum(cint(row.consumed) for row in self.machines)
+		self.sold_sheets = cint(sheets_sold(self.branch, self.reading_date))
+		self.variance = self.total_consumed - self.sold_sheets
 
 	def check_one_a_day(self):
 		other = frappe.db.exists(
@@ -105,6 +113,18 @@ class DailyCounterReading(Document):
 				reading = frappe.get_doc("Printer Reading", row.printer_reading)
 				reading.flags.from_daily_counter_reading = True
 				reading.cancel()
+
+
+def refresh_sold(library, date):
+	"""A sale (or its cancellation) after the day's counters were submitted: they take it in."""
+	for name, consumed in frappe.get_all(
+		"Daily Counter Reading",
+		filters={"branch": library, "reading_date": date, "docstatus": 1},
+		fields=["name", "total_consumed"],
+		as_list=True,
+	):
+		sold = cint(sheets_sold(library, date))
+		frappe.db.set_value("Daily Counter Reading", name, {"sold_sheets": sold, "variance": cint(consumed) - sold})
 
 
 @frappe.whitelist()
