@@ -777,6 +777,14 @@ the closing cannot be below the opening, a reading cannot be dated before the ma
 machine's latest reading can be cancelled, so the next one still starts where the last ended. Consumed = closing -
 opening; Variance = consumed - sold sheets.
 
+**Daily Counter Reading** (عدادات اليوم, PRN-01; the home page's printer shortcut and ImedERP > Daily Counters):
+each library records all its counters of the day on one screen and saves once. Pick the **Branch** (a branch
+manager's own library is filled in) and the **Date**; the table lists every machine of the library in service with
+its type and opening (its last closing reading, typed only for a first reading); type each **Closing**. Every
+machine in service must be there (one not working is marked Out of Service), and there is one screen per library a
+day. Submitting it makes one Printer Reading per machine with the same checks (the counter only goes up, no date
+before the machine's last reading); cancelling it cancels them, and they are cancelled only from it.
+
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
 approval status, target warehouse, machine, item, requested by. The Material Request list shows the
@@ -1060,6 +1068,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is
