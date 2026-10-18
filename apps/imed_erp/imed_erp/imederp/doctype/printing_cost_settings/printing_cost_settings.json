@@ -12,7 +12,11 @@
   "overheads_per_sheet",
   "profit_per_sheet",
   "per_copy_section",
-  "binding_per_copy"
+  "binding_per_copy",
+  "machine_ink_section",
+  "epson_ink_per_sheet",
+  "column_break_machine_ink",
+  "riso_ink_per_sheet"
  ],
  "fields": [
   {
@@ -70,11 +74,35 @@
    "fieldtype": "Currency",
    "label": "Binding per Copy",
    "reqd": 1
+  },
+  {
+   "fieldname": "machine_ink_section",
+   "fieldtype": "Section Break",
+   "label": "Ink by Machine Type",
+   "description": "What a printed sheet costs in ink on each kind of machine (PRN-08). A new machine takes the rate of its type. 0.05 and 0.10 are assumptions until the owner gives the real costs."
+  },
+  {
+   "fieldname": "epson_ink_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Epson Ink per Sheet",
+   "default": "0.05",
+   "precision": "4"
+  },
+  {
+   "fieldname": "column_break_machine_ink",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "riso_ink_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Riso Ink per Sheet",
+   "default": "0.10",
+   "precision": "4"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-08 12:00:00.000000",
+ "modified": "2026-10-18 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printing Cost Settings",
