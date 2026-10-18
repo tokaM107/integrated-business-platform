@@ -775,7 +775,8 @@ submitted closing reading, filled in on the form and set again by the server (on
 reading of the machine was submitted meanwhile); only a machine's first reading is typed. A counter only goes up:
 the closing cannot be below the opening, a reading cannot be dated before the machine's last one, and only a
 machine's latest reading can be cancelled, so the next one still starts where the last ended. Consumed = closing -
-opening; Variance = consumed - sold sheets.
+opening. Sales do not say which machine printed them, so what was sold is set against the whole library's counters
+for the day, on the Daily Counter Reading below, not on a single reading.
 
 **Daily Counter Reading** (عدادات اليوم, PRN-01; the home page's printer shortcut and ImedERP > Daily Counters):
 each library records all its counters of the day on one screen and saves once. Pick the **Branch** (a branch
@@ -784,6 +785,12 @@ its type and opening (its last closing reading, typed only for a first reading);
 machine in service must be there (one not working is marked Out of Service), and there is one screen per library a
 day. Submitting it makes one Printer Reading per machine with the same checks (the counter only goes up, no date
 before the machine's last reading); cancelling it cancels them, and they are cancelled only from it.
+
+**The day's paper** (PRN-02), on the same screen: **Consumed Sheets** (what the counters went up by, all machines),
+**Sold Sheets** (the printing and copying the library sold that day, from its submitted invoices, one sheet per
+unit as in `imederp/paper_use.py`; worked out by the system, never typed) and **Variance** (consumed - sold). A
+refund takes no sheets back: the paper was printed and counted. A sale of that day submitted or cancelled after the
+screen was submitted updates it.
 
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
