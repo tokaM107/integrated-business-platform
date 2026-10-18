@@ -726,3 +726,8 @@ Row #{0}: {1} already has a reading on {2}. A new reading cannot be dated before
 The day's screen this reading was recorded on; it is cancelled from there.,شاشة اليوم اللي القراءة دي اتسجلت عليها؛ بتتلغي من هناك.
 {0} was recorded on {1}. Cancel that instead.,{0} اتسجلت على {1}. الغي دي بدلها.
 Recorded on the Day's Screen,متسجلة على شاشة اليوم
+The Day's Paper,ورق اليوم
+What the machines' counters went up by.,العدادات زادت قد إيه.
+"Printing and copying sold by the library that day (submitted invoices), worked out by the system.",الطباعة والتصوير اللي المكتبة باعتها في اليوم ده (الفواتير المسجلة)، السيستم بيحسبها.
+Variance (Sheets),الفرق (ورق)
+Consumed - sold: sheets printed and not sold.,المستهلك - المباع: ورق اتطبع وماتباعش.
