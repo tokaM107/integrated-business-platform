@@ -44,10 +44,11 @@ class IntegrationTestPrinterReading(IntegrationTestCase):
 			doc.submit()
 		return doc
 
-	def test_consumed_and_variance(self):
-		# Card PRN definition of done: a machine used 500 sheets and 480 were sold, 20 sheets short.
+	def test_consumed(self):
+		# What was sold is set against the whole library's counters for the day (Daily Counter Reading): sales do
+		# not say which machine printed them, so a single reading keeps none, even if typed.
 		reading = self.reading(1500, opening=1000, sold=480)
-		self.assertEqual((reading.consumed, reading.variance), (500, 20))
+		self.assertEqual((reading.consumed, reading.sold_sheets, reading.variance), (500, None, None))
 
 	def test_each_reading_starts_where_the_last_ended(self):
 		first = self.reading(1500, opening=1000)
