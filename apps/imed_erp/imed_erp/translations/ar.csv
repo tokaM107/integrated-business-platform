@@ -702,3 +702,4 @@ Difference,الفرق
 cancelled on {0}: the curriculum changed,اتلغى يوم {0}: المنهج اتغير
 when {0} ended,لما {0} خلصت
 "{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، {4}.
+The statement of {0} for {1} was not emailed: no outgoing email account is set up (Email Account).,كشف {0} عن {1} ماتبعتش بالإيميل: مفيش حساب إيميل صادر متظبط (Email Account).
