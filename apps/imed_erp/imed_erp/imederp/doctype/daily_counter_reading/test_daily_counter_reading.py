@@ -220,3 +220,16 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 			self.sheet({first: 1010, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
 		self.assertIn("no paper price", str(msgprint.call_args))
 
+	def test_a_breakdown_says_what_happened(self):
+		first, second, third = sorted(self.machines)
+		doc = frappe.new_doc("Daily Counter Reading")
+		doc.update({"branch": AZARITA, "reading_date": "2026-10-07"})
+		for row in get_machines(AZARITA):
+			row.update({"opening_reading": 1, "closing_reading": 1})
+			if row["machine"] == third:
+				row["fault"] = 1
+			doc.append("machines", row)
+		self.assertRaisesRegex(frappe.ValidationError, "say what happened", doc.insert)
+		doc.machines[-1].fault_note = "Paper jam"
+		doc.insert()
+
