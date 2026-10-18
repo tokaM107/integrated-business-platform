@@ -15,6 +15,7 @@
   "ink_per_sheet",
   "last_maintenance",
   "disabled",
+  "advanced_section",
   "warehouse",
   "notes"
  ],
@@ -76,6 +77,12 @@
    "label": "Out of Service"
   },
   {
+   "fieldname": "advanced_section",
+   "fieldtype": "Section Break",
+   "label": "Advanced",
+   "collapsible": 1
+  },
+  {
    "description": "The branch or store the machine works in. Paper is issued to it only into this warehouse (or a warehouse under it).",
    "fieldname": "warehouse",
    "fieldtype": "Link",
@@ -93,7 +100,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-18 12:00:00.000000",
+ "modified": "2026-10-18 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printing Machine",
