@@ -766,8 +766,10 @@ only: Azarita has 1 Epson and 2 Riso, Mawasah 1 Epson and 3 Riso), **Type** (Eps
 per Sheet**, **Last Maintenance** (not in the future), **Out of Service** (takes no paper and no readings), and
 the location warehouse paper is issued into (e.g. `مخزن الأزاريطة`, under Advanced). The ink cost is filled from **Printing Cost
 Settings > Ink by Machine Type** for the machine's type when left empty, and follows a change of type unless it was
-set for that machine; Riso ink costs more. Until the owner gives the real costs, the settings assume 0.05 (Epson)
-and 0.10 (Riso) per sheet, said so on the screen. The owner and stock managers add machines; Raghad too.
+set for that machine; Riso ink costs more. The owner's ink prices (18 Oct 2026) are on the settings: a Riso ink of
+one colour 3,000 and an Epson set of 4 colours 1,500. Enter the sheets one ink prints and the ink per sheet is worked
+out (price ÷ sheets) and locked; until then it is assumed (0.05 Epson, 0.10 Riso), said so on the screen and by
+`setup_library.py`. A machine still on its type's rate follows a change on the settings; one set by hand stays. The owner and stock managers add machines; Raghad too.
 
 **Printer Reading** (PRN-01, PRN-02): a counter reading of one **Machine** (a link to Printing Machine, in
 service); its **Branch** is the machine's library, filled in and never typed. The **Opening** is the machine's last

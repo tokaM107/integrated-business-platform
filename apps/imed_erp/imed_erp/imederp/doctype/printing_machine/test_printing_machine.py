@@ -79,3 +79,43 @@ class IntegrationTestPrintingMachine(IntegrationTestCase):
 		self.assertEqual(frappe.get_meta("Printing Machine").get_field("disabled").label, "Out of Service")
 		machine.disabled = 1
 		machine.save()
+
+	# ---------- The owner's ink prices (18 Oct 2026) ----------
+
+	def settings(self, **values):
+		doc = frappe.get_single("Printing Cost Settings")
+		doc.update(values)
+		doc.save()
+		return doc
+
+	def test_the_ink_per_sheet_is_the_price_over_the_sheets_it_prints(self):
+		# A Riso ink (one colour) at 3,000 printing 30,000 sheets is 0.10 a sheet; an Epson set of 4 colours at
+		# 1,500 printing 20,000 sheets is 0.075.
+		frappe.db.savepoint("ink_prices")
+		try:
+			doc = self.settings(riso_ink_price=3000, riso_sheets_per_ink=30000, epson_ink_set_price=1500, epson_sheets_per_set=20000)
+			self.assertEqual((flt(doc.riso_ink_per_sheet), flt(doc.epson_ink_per_sheet)), (0.1, 0.075))
+			self.assertEqual(get_machine_ink("Epson"), 0.075)
+		finally:
+			frappe.db.rollback(save_point="ink_prices")
+
+	def test_until_the_sheets_are_known_the_rate_is_assumed(self):
+		frappe.db.savepoint("ink_prices")
+		try:
+			doc = self.settings(riso_sheets_per_ink=0, riso_ink_per_sheet=0.12)
+			self.assertEqual(flt(doc.riso_ink_per_sheet), 0.12)
+			self.assertRaisesRegex(frappe.ValidationError, "negative", self.settings, riso_sheets_per_ink=-1)
+		finally:
+			frappe.db.rollback(save_point="ink_prices")
+
+	def test_machines_on_their_type_s_rate_follow_the_settings(self):
+		frappe.db.savepoint("ink_prices")
+		try:
+			follows = self.machine("Riso").insert()
+			own = self.machine("Riso", ink_per_sheet=0.2).insert()
+			self.settings(riso_ink_price=3000, riso_sheets_per_ink=20000)
+			self.assertEqual(flt(frappe.db.get_value("Printing Machine", follows.name, "ink_per_sheet")), 0.15)
+			self.assertEqual(flt(frappe.db.get_value("Printing Machine", own.name, "ink_per_sheet")), 0.2)
+		finally:
+			frappe.db.rollback(save_point="ink_prices")
+

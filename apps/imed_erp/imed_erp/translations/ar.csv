@@ -681,7 +681,6 @@ Debt,المديونية
 Owed Since,مستحقة من
 Age (Days),العمر (أيام)
 Ink by Machine Type,الحبر حسب نوع الماكينة
-What a printed sheet costs in ink on each kind of machine (PRN-08). A new machine takes the rate of its type. 0.05 and 0.10 are assumptions until the owner gives the real costs.,تكلفة الحبر للورقة المطبوعة على كل نوع ماكينة. الماكينة الجديدة بتاخد سعر نوعها. 0.05 و 0.10 افتراض لحد ما المالك يدّي التكلفة الحقيقية.
 Epson Ink per Sheet,حبر Epson للورقة
 Riso Ink per Sheet,حبر Riso للورقة
 Model,الموديل
@@ -780,3 +779,9 @@ cancelled on {0}: the curriculum changed,اتلغى يوم {0}: المنهج ا�
 when {0} ended,لما {0} خلصت
 "{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، {4}.
 The statement of {0} for {1} was not emailed: no outgoing email account is set up (Email Account).,كشف {0} عن {1} ماتبعتش بالإيميل: مفيش حساب إيميل صادر متظبط (Email Account).
+"Ink per sheet = what an ink costs ÷ the sheets it prints (PRN-08). The prices are the owner's (18 Oct 2026): a Riso ink of one colour 3,000, an Epson set of 4 colours 1,500. Until the sheets an ink prints are entered, the ink per sheet is an assumption (Riso 0.10, Epson 0.05). Machines on their type's rate follow a change here; a rate set on a machine stays.","الحبر للورقة = سعر الحبر ÷ عدد الورق اللي بيطبعه. الأسعار من المالك (18 أكتوبر 2026): حبر Riso للون الواحد 3,000، وطقم Epson بـ 4 ألوان 1,500. لحد ما يتكتب عدد الورق اللي الحبر بيطبعه، الحبر للورقة افتراض (Riso ‏0.10، Epson ‏0.05). الماكينات اللي على سعر نوعها بتتغير معاه؛ والسعر المكتوب على ماكينة بيفضل."
+"Riso Ink, One Colour",حبر Riso للون الواحد
+Sheets One Riso Ink Prints,عدد الورق اللي حبر Riso بيطبعه
+Enter it to work out the ink per sheet.,اكتبه عشان الحبر للورقة يتحسب لوحده.
+Epson Ink Set (4 Colours),طقم حبر Epson (4 ألوان)
+Sheets One Epson Set Prints,عدد الورق اللي طقم Epson بيطبعه

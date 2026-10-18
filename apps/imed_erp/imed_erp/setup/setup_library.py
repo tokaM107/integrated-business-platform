@@ -148,13 +148,13 @@ def make_printing_machine(name, library, machine_type, warehouse):
 
 
 def check_machine_ink_rates():
-	# Until the owner gives the ink costs, the defaults on the screen are used; say so every run. Read from the
-	# table itself: a settings document never saved shows its defaults as if they were set.
-	for field, label in (("epson_ink_per_sheet", "Epson"), ("riso_ink_per_sheet", "Riso")):
+	# The ink prices are the owner's; the ink per sheet stays an assumption until the sheets one ink prints are
+	# entered. Say so every run. Read from the table itself: a settings document never saved shows its defaults
+	# as if they were set.
+	for field, label in (("epson_sheets_per_set", "Epson set"), ("riso_sheets_per_ink", "Riso ink")):
 		saved = frappe.db.sql("select value from tabSingles where doctype='Printing Cost Settings' and field=%s", field)
-		if not saved or saved[0][0] in (None, ""):
-			default = frappe.get_meta("Printing Cost Settings").get_field(field).default
-			print(f"ASSUME Printing Cost Settings: {label} ink per sheet not given yet; {default} is used until the owner gives it")
+		if not saved or saved[0][0] in (None, "", "0"):
+			print(f"ASSUME Printing Cost Settings: the sheets one {label} prints are not entered yet; its ink per sheet is assumed")
 
 
 def wait(what, needs):
