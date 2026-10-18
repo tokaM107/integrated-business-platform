@@ -708,3 +708,21 @@ Not the Latest Reading,مش آخر قراءة
 Machine,الماكينة
 Closing,النهاية
 Variance,الفرق
+Daily Counter Reading,عدادات اليوم
+Daily Counter Reading Item,عداد ماكينة
+Daily Counters,عدادات اليوم
+Machines,الماكينات
+The library; its machines in service are listed below.,المكتبة؛ ماكيناتها الشغالة بتظهر تحت.
+{0} already has its counters for {1}: {2}.,{0} اتسجلت عداداتها يوم {1} خلاص: {2}.
+Already Recorded,متسجلة خلاص
+{0} is listed twice.,{0} متكررة مرتين.
+Read the counter of every machine of {0}: {1} missing. A machine that is not working is marked Out of Service.,سجّل عداد كل ماكينات {0}: ناقص {1}. الماكينة اللي مش شغالة تتعلّم «متوقفة».
+Machines Missing,ماكينات ناقصة
+Row #{0}: {1} is not a machine of {2}.,سطر {0}: {1} مش ماكينة في {2}.
+Row #{0}: {1} is out of service and takes no counter readings.,سطر {0}: {1} متوقفة ومش بيتسجلها قراءات.
+Row #{0}: {1} already has a reading on {2}. A new reading cannot be dated before it.,سطر {0}: {1} ليها قراءة يوم {2}. القراءة الجديدة ما ينفعش تبقى بتاريخ قبلها.
+"Row #{0}: type the opening reading of {1}, its first reading.",سطر {0}: اكتب قراءة البداية لـ {1}، دي أول قراءة ليها.
+"Row #{0}: the closing reading of {1}, {2}, is below its opening reading {3}. A counter only goes up.",سطر {0}: قراءة النهاية لـ {1} ({2}) أقل من البداية {3}. العداد بيزيد بس.
+The day's screen this reading was recorded on; it is cancelled from there.,شاشة اليوم اللي القراءة دي اتسجلت عليها؛ بتتلغي من هناك.
+{0} was recorded on {1}. Cancel that instead.,{0} اتسجلت على {1}. الغي دي بدلها.
+Recorded on the Day's Screen,متسجلة على شاشة اليوم
