@@ -19,6 +19,9 @@
   "sold_sheets",
   "column_break_totals_2",
   "variance",
+  "column_break_totals_3",
+  "cost_per_sheet",
+  "variance_value",
   "amended_from"
  ],
  "fields": [
@@ -94,6 +97,26 @@
    "description": "Consumed - sold: sheets printed and not sold."
   },
   {
+   "fieldname": "column_break_totals_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cost_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Cost per Printed Sheet",
+   "precision": "4",
+   "read_only": 1,
+   "description": "Paper + waste + ink + overheads, the machines' costs weighted by what each printed; set when the day is submitted."
+  },
+  {
+   "fieldname": "variance_value",
+   "fieldtype": "Currency",
+   "label": "Variance Value",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Variance x cost per printed sheet."
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -108,7 +131,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 17:00:00.000000",
+ "modified": "2026-10-18 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Daily Counter Reading",
