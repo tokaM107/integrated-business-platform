@@ -168,6 +168,7 @@ reports = [
     {"type": "Report", "link_to": "Accounts Receivable", "label": "Who Owes Us", "color": "Orange", "doc_view": ""},
 ]
 for report, lbl, col in [
+    ("Daily Printing", "Daily Printing", "Cyan"),
     ("Expense Report", "Expense Report", "Orange"),
     ("Stock Count Variance", "Stock Count Variance", "Red"),
     ("Doctor Statement", "Doctor Statement", "Purple"),
