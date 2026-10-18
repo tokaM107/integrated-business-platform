@@ -1,0 +1,80 @@
+{
+ "actions": [],
+ "creation": "2026-10-18 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "machine",
+  "machine_type",
+  "opening_reading",
+  "closing_reading",
+  "consumed",
+  "printer_reading"
+ ],
+ "fields": [
+  {
+   "fieldname": "machine",
+   "fieldtype": "Link",
+   "label": "Machine",
+   "options": "Printing Machine",
+   "reqd": 1,
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "machine_type",
+   "fieldtype": "Data",
+   "label": "Type",
+   "fetch_from": "machine.machine_type",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "opening_reading",
+   "fieldtype": "Int",
+   "label": "Opening",
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "The machine's last closing reading; typed only for its first reading."
+  },
+  {
+   "fieldname": "closing_reading",
+   "fieldtype": "Int",
+   "label": "Closing",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "consumed",
+   "fieldtype": "Int",
+   "label": "Consumed Sheets",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "printer_reading",
+   "fieldtype": "Link",
+   "label": "Printer Reading",
+   "options": "Printer Reading",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-18 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Daily Counter Reading Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
