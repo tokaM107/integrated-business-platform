@@ -665,7 +665,6 @@ More Than Owed,أكتر من المستحق
 Payout to {0} under {1} ({2}).,صرف لـ {0} على {1} ({2}).
 {0} was posted by Doctor Ledger Entry {1}. Cancel that entry instead.,{0} اتعمل من حركة حساب الطبيب {1}. الغي الحركة دي بدل كده.
 Posted by the Doctor's Ledger,متسجل من حساب الطبيب
-"{0}: {1} of the doctor's {2} copies unsold x {3} a copy, when {4} ended.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، لما {4} خلصت.
 {0} charges for unsold copies are waiting for approval in the doctors' ledger: {1},{0} خصم على نسخ متبقية مستني الاعتماد في حسابات الأطباء: {1}
 Unsold Copies,النسخ المتبقية
 Doctor Charges to Approve,خصومات أطباء مستنية الاعتماد
@@ -759,3 +758,24 @@ No customer has the phone number {0}. Add the customer first.,مفيش عميل 
 "The import stopped at {0}: another booking was saved at the same moment, and nothing of this run was kept. Run it again.","الاستيراد وقف عند {0}: حجز تاني اتسجل في نفس اللحظة، ومفيش حاجة من المرة دي اتحفظت. شغّله تاني."
 a row without an id,سطر من غير رقم
 Import Interrupted,الاستيراد اتوقف
+Next Settlement,التسوية الجاية
+"{0} has no email on file, so the statement of {1} for {2} was not sent. Add his email and send it again.",{0} مالوش إيميل في ملفه، فكشف {1} عن {2} ماتبعتش. ضيف إيميله وابعته تاني.
+Your statement for {0}: {1},كشف حسابك عن {0}: {1}
+"Dear Dr. {0},",الدكتور {0}،
+"Your statement for {0} under {1}, sent after: {2}.",ده كشف حسابك عن {0} على {1}، اتبعت بعد: {2}.
+{0} {1} of {2},{0} {1} بمبلغ {2}
+Unsold Editions,الإصدارات اللي ماتباعتش
+Period Ended Before,الفترة خلصت قبل
+Library,المكتبة
+Period Ended,الفترة خلصت
+Doctor's Copies Left,الباقي من نسخ الطبيب
+Library's Copies Left,الباقي من نسخ المكتبة
+Owner Share Plan vs Actual,نصيب المالك: المخطط والفعلي
+Planned per Copy,المخطط للنسخة
+Planned Owner Share,نصيب المالك المخطط
+Sales,المبيعات
+Actual Owner Share,نصيب المالك الفعلي
+Difference,الفرق
+cancelled on {0}: the curriculum changed,اتلغى يوم {0}: المنهج اتغير
+when {0} ended,لما {0} خلصت
+"{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، {4}.

@@ -176,6 +176,18 @@ class DoctorLedgerEntry(Document):
 	# The agreement's Balance is worked out from these entries (doctor_agreement.py).
 	def on_submit(self):
 		update_balance(self.agreement, self)
+		self.send_statement()
+
+	def send_statement(self):
+		# DOC-23: a settlement by hand (a payout, an approved charge, an adjustment, a collection) sends the doctor
+		# his statement. Sales do not: there would be one a copy.
+		if self.sales_invoice or self.entry_type == "Accrual":
+			return
+		from imed_erp.imederp.report.doctor_statement.doctor_statement import send_statement, statement_period
+
+		period = statement_period(self)
+		if period:
+			send_statement(self.agreement, period, _("{0} {1} of {2}").format(_(self.entry_type), self.name, abs(flt(self.amount))))
 
 	def on_cancel(self):
 		# A payout's journal entry goes with it; a sale's goes with the sale (doctor_accrual.cancel_accruals).
@@ -188,60 +200,76 @@ class DoctorLedgerEntry(Document):
 UNSOLD = "Unsold Copies Charge"
 
 
+EDITION_COST_FIELDS = ["paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"]
+
+
 def charge_unsold_copies(period):
 	"""When a term or a module ends (its Academic Period is closed), the copies the doctor asked for and did not
-	sell are charged to him at what they cost to make (owner, 10 Oct 2026; DOC-18). Copies the library added are
-	its own, so sales count against the doctor's copies first. Each charge is a draft: it is applied only when the
-	accountant or the owner submits it (DOC-22). An edition already charged for the period is skipped, so closing
-	again adds nothing. Returns the drafts made."""
+	sell are charged to him at what they cost to make (owner, 10 Oct 2026; DOC-18). An edition carried forward
+	ends with the period it was carried to. Returns the drafts made."""
 	periods = [period, *descendants(period)]
 	drafts = []
 	for edition in frappe.get_all(
 		"Book Edition",
 		filters={"docstatus": 1},
-		fields=["name", "agreement", "period", "carried_to_period", "status", "doctor_qty", "edition_name",
-			"paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"],
+		fields=["name", "agreement", "period", "carried_to_period", "doctor_qty", "edition_name", *EDITION_COST_FIELDS],
 	):
-		# An edition carried forward ends with the period it was carried to.
-		current = edition.carried_to_period or edition.period
-		if current not in periods:
-			continue
-		unsold = cint(edition.doctor_qty) - cint(get_sold_qty(edition.name))
-		amount = flt(max(unsold, 0) * get_copy_cost(edition), 2)
-		if amount <= 0 or frappe.db.exists(
-			"Doctor Ledger Entry", {"edition": edition.name, "period": current, "entry_type": UNSOLD, "docstatus": ["<", 2]}
-		):
-			continue
-		entry = frappe.get_doc(
-			{
-				"doctype": "Doctor Ledger Entry",
-				"agreement": edition.agreement,
-				"period": current,
-				"entry_date": today(),
-				"entry_type": UNSOLD,
-				"edition": edition.name,
-				"qty": unsold,
-				"amount": amount,
-				"remarks": _("{0}: {1} of the doctor's {2} copies unsold x {3} a copy, when {4} ended.").format(
-					edition.edition_name, unsold, cint(edition.doctor_qty), get_copy_cost(edition), period
-				),
-			}
+		if (edition.carried_to_period or edition.period) in periods:
+			drafts.append(charge_edition(edition, _("when {0} ended").format(period)))
+	return [d for d in drafts if d]
+
+
+def charge_edition(edition, reason):
+	"""The draft charge for the doctor's unsold copies of one edition, in its current period, or None when there is
+	nothing to charge or it is charged already (closing again, or a period closing after the edition was cancelled,
+	adds nothing). Copies the library added are its own, so sales count against the doctor's copies first. The
+	charge is applied only when the accountant or the owner approves it (DOC-22), and the accountant is told."""
+	if isinstance(edition, str):
+		edition = frappe.db.get_value(
+			"Book Edition",
+			edition,
+			["name", "agreement", "period", "carried_to_period", "doctor_qty", "edition_name", *EDITION_COST_FIELDS],
+			as_dict=True,
 		)
-		# Closing a period is the accountant's or the owner's (Academic Period); the charge waits for an approver.
-		entry.approval_status = PENDING
-		entry.flags.approval_action = True
-		entry.insert()
-		drafts.append(entry.name)
-		notify(
-			get_approvers(),
-			_("Charge {0} of {1} on {2} for unsold copies of {3} is waiting for your approval.").format(
-				entry.name, frappe.format_value(amount, {"fieldtype": "Currency"}), edition.agreement, edition.edition_name
+	current = edition.carried_to_period or edition.period
+	unsold = cint(edition.doctor_qty) - cint(get_sold_qty(edition.name))
+	cost = get_copy_cost(edition)
+	amount = flt(max(unsold, 0) * cost, 2)
+	if amount <= 0 or frappe.db.exists(
+		"Doctor Ledger Entry", {"edition": edition.name, "period": current, "entry_type": UNSOLD, "docstatus": ["<", 2]}
+	):
+		return None
+	entry = frappe.get_doc(
+		{
+			"doctype": "Doctor Ledger Entry",
+			"agreement": edition.agreement,
+			"period": current,
+			"entry_date": today(),
+			"entry_type": UNSOLD,
+			"edition": edition.name,
+			"qty": unsold,
+			"amount": amount,
+			"remarks": _("{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.").format(
+				edition.edition_name, unsold, cint(edition.doctor_qty), cost, reason
 			),
-			"Doctor Ledger Entry",
-			entry.name,
-			event="expense_approval",
-		)
-	return drafts
+		}
+	)
+	entry.approval_status = PENDING
+	entry.flags.approval_action = True
+	# Raised by the system for whoever closed the period or recorded the cancellation (a branch manager may);
+	# only an approver applies it.
+	entry.flags.ignore_permissions = True
+	entry.insert()
+	notify(
+		get_approvers(),
+		_("Charge {0} of {1} on {2} for unsold copies of {3} is waiting for your approval.").format(
+			entry.name, frappe.format_value(amount, {"fieldtype": "Currency"}), edition.agreement, edition.edition_name
+		),
+		"Doctor Ledger Entry",
+		entry.name,
+		event="expense_approval",
+	)
+	return entry.name
 
 
 def descendants(period):
