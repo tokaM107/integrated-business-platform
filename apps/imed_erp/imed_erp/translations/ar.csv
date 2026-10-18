@@ -742,3 +742,20 @@ No Paper Price,مفيش سعر ورق
 Daily Printing,طباعة اليوم
 Utilization (%),نسبة التشغيل (%)
 Total,الإجمالي
+Broke Down,عطلت
+The machine broke down or stopped for a fault today (PRN-09).,الماكينة عطلت أو وقفت بسبب عطل النهارده.
+What Happened,إيه اللي حصل
+The Day's Money,فلوس اليوم
+"For the accountant and the owner (PRN-08, PRN-09).",للمحاسب والمالك.
+Printing and Copying Sales,مبيعات الطباعة والتصوير
+What the library's printing and copying sold for that day.,الطباعة والتصوير اتباعوا بكام في اليوم ده.
+Average Price per Sheet,متوسط سعر الورقة
+Margin per Sheet,هامش الورقة
+Average price - cost per printed sheet: what the library makes on a sheet (PRN-08).,متوسط السعر - تكلفة الورقة المطبوعة: المكتبة بتكسب كام في الورقة.
+Type each machine's closing reading; tick Broke Down for a machine that stopped today.,اكتب قراءة النهاية لكل ماكينة؛ وعلّم «عطلت» للماكينة اللي وقفت النهارده.
+Row #{0}: say what happened to {1}.,سطر {0}: اكتب إيه اللي حصل لـ {1}.
+Breakdown,عطل
+The Period,الفترة
+{0} days,{0} يوم
+Advanced,متقدم
+Yes,أيوه
