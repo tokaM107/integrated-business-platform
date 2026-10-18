@@ -333,6 +333,11 @@ doc_events = {
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
 		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
+	"Daily Counter Reading": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
 	"Allocation Rule": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -372,6 +377,7 @@ period_closing_doctypes = [
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Printer Reading",
+	"Daily Counter Reading",
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",
