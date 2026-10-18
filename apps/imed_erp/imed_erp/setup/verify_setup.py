@@ -241,6 +241,14 @@ def run():
 		else:
 			report("Stock link", acc(warehouse), [])
 
+	# ---------- Printing machines (PRN-01): Azarita 1 Epson + 2 Riso, Mawasah 1 Epson + 3 Riso ----------
+	expected_machines = {("مكتبة الأزاريطة", "Epson"): 1, ("مكتبة الأزاريطة", "Riso"): 2, ("مكتبة المواساة", "Epson"): 1, ("مكتبة المواساة", "Riso"): 3}
+	for (library, machine_type), count in expected_machines.items():
+		found = frappe.db.count(
+			"Printing Machine", {"cost_center": acc(library), "machine_type": machine_type, "disabled": 0}
+		)
+		report("Machine", f"{library}: {count} {machine_type}", [] if found >= count else [f"{found} found, {count} expected"])
+
 	# ---------- Branch requests: who supplies, what goes to a printing machine ----------
 	for name in SUPPLYING_WAREHOUSES:
 		flag = frappe.db.get_value("Warehouse", acc(name), "custom_supplies_branches")
