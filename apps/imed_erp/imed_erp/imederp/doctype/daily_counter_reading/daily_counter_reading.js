@@ -22,6 +22,17 @@ frappe.ui.form.on("Daily Counter Reading", {
 		}
 	},
 
+	refresh(frm) {
+		// A branch manager types the closing readings and sees the sheets; the money is the accountant's and the
+		// owner's (docs/SCREEN_DESIGN_STANDARD.md §2).
+		imed.screen.apply(frm, {
+			restrict: [{ unless: imed.screen.ROLE_GROUPS.accounting_manager, hide: ["money_section"] }],
+		});
+		if (frm.is_new() && !frm.doc.machines.length) {
+			frm.set_intro(__("Type each machine's closing reading; tick Broke Down for a machine that stopped today."), "blue");
+		}
+	},
+
 	branch(frm) {
 		frm.clear_table("machines");
 		if (!frm.doc.branch) return frm.refresh_field("machines");
