@@ -764,7 +764,7 @@ Rules, checked on the server (so they also hold through the API):
 **Printing Machine** (ImedERP > Branch Requests > Printing Machines; PRN-01, PRN-08): name, **Branch** (a library
 only: Azarita has 1 Epson and 2 Riso, Mawasah 1 Epson and 3 Riso), **Type** (Epson / Riso), **Model**, **Ink Cost
 per Sheet**, **Last Maintenance** (not in the future), **Out of Service** (takes no paper and no readings), and
-the location warehouse paper is issued into (e.g. `مخزن الأزاريطة`). The ink cost is filled from **Printing Cost
+the location warehouse paper is issued into (e.g. `مخزن الأزاريطة`, under Advanced). The ink cost is filled from **Printing Cost
 Settings > Ink by Machine Type** for the machine's type when left empty, and follows a change of type unless it was
 set for that machine; Riso ink costs more. Until the owner gives the real costs, the settings assume 0.05 (Epson)
 and 0.10 (Riso) per sheet, said so on the screen. The owner and stock managers add machines; Raghad too.
@@ -794,14 +794,20 @@ screen was submitted updates it. The **Variance Value** (PRN-08, PRN-09) is the 
 moving average price in the library's store) + waste + the machine's ink + overheads, from Printing Cost Settings
 and the machine. Each row shows its machine's cost per sheet; the day's is their average weighted by what each
 machine printed (Riso ink costs more than Epson's), and is fixed when the day is submitted, so a later sale is
-valued at the same cost. A library with no paper price yet is warned that the paper is left out.
+valued at the same cost. A library with no paper price yet is warned that the paper is left out. The money (cost,
+variance value, the day's printing and copying sales, the **Average Price per Sheet** and the **Margin per Sheet**,
+average price - cost, PRN-08) is in its own section, shown to the accountant and the owner only; a branch manager
+sees the sheets. A machine that stopped for a fault is ticked **Broke Down** with what happened (PRN-09).
 
 **Daily Printing** report (طباعة اليوم; under ImedERP > Daily Counters and on the owner's page; PRN-01, PRN-02,
 PRN-09): for a range of dates and a library, each machine's **Consumed Sheets**, its **Utilization** (its share of
 the library's printing that day), its share of the **Sold Sheets**, its **Variance** in sheets and its **Variance
 Value** at its own cost per sheet, then the library's day in bold under its machines. A sale does not say which
 machine printed it, so the day's sales are shared out by each machine's share of the printing (equally on a day
-nothing was printed); the machines add up to the day. A branch manager sees her own library.
+nothing was printed); the machines add up to the day, whose row also has the average price and margin per sheet.
+Breakdowns show with what happened. Over more than one day (a month, PRN-03) the **Period** follows: each machine's
+printing, utilization, days broken down and variance value, and the period's total. A branch manager sees her own
+library.
 
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
