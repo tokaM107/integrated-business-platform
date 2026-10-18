@@ -4,7 +4,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, flt, getdate, now_datetime, today
 
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_active, get_amount_per_copy
-from imed_erp.imederp.doctype.printer_reading.printer_reading import LIBRARIES
+from imed_erp.imederp.doctype.printing_machine.printing_machine import LIBRARIES
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
 
 # The paper in a copy is costed at the moving average price paid for it, read from the library's raw

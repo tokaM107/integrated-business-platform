@@ -27,6 +27,7 @@ FINANCIAL_DOCTYPES = [
 	"App Subscription",
 	"Book Edition",
 	"Printer Reading",
+	"Daily Counter Reading",
 	"Allocation Rule",
 	"Stock Count",
 	"Damaged Stock Entry",

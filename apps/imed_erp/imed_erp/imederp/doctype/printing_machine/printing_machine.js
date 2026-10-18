@@ -3,6 +3,7 @@
 
 frappe.ui.form.on("Printing Machine", {
 	setup(frm) {
-		frm.set_query("cost_center", () => ({ filters: { is_group: 0 } }));
+		// A machine works in a library (PRN-01).
+		frm.set_query("cost_center", () => ({ filters: { is_group: 0, parent_cost_center: ["like", "مكتبات 2Be Doctor%"] } }));
 	},
 });

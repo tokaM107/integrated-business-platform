@@ -17,6 +17,7 @@ LOCKED_DOCTYPES = [
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Printer Reading",
+	"Daily Counter Reading",
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",

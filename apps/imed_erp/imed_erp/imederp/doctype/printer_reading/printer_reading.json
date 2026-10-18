@@ -8,31 +8,38 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "branch",
   "machine",
+  "branch",
   "reading_date",
   "opening_reading",
   "closing_reading",
   "consumed",
   "sold_sheets",
   "variance",
+  "daily_counter_reading",
   "amended_from"
  ],
  "fields": [
   {
+   "fieldname": "machine",
+   "fieldtype": "Link",
+   "label": "Machine",
+   "options": "Printing Machine",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
    "fieldname": "branch",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Cost Center",
+   "label": "Branch",
    "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
    "options": "Cost Center",
-   "reqd": 1
-  },
-  {
-   "fieldname": "machine",
-   "fieldtype": "Data",
-   "label": "Machine",
-   "reqd": 1
+   "reqd": 1,
+   "fetch_from": "machine.cost_center",
+   "read_only": 1,
+   "in_standard_filter": 1
   },
   {
    "fieldname": "reading_date",
@@ -45,7 +52,8 @@
    "fieldname": "opening_reading",
    "fieldtype": "Int",
    "label": "Opening",
-   "reqd": 1
+   "reqd": 1,
+   "description": "The machine's last closing reading; typed only for its first reading."
   },
   {
    "fieldname": "closing_reading",
@@ -64,14 +72,24 @@
    "fieldname": "sold_sheets",
    "fieldtype": "Int",
    "label": "Sold Sheets",
-   "in_list_view": 1
+   "hidden": 1,
+   "read_only": 1
   },
   {
    "fieldname": "variance",
    "fieldtype": "Int",
    "label": "Variance",
    "read_only": 1,
-   "in_list_view": 1
+   "hidden": 1
+  },
+  {
+   "fieldname": "daily_counter_reading",
+   "fieldtype": "Link",
+   "label": "Daily Counter Reading",
+   "options": "Daily Counter Reading",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The day's screen this reading was recorded on; it is cancelled from there."
   },
   {
    "fieldname": "amended_from",
@@ -88,7 +106,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-18 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printer Reading",

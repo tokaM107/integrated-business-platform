@@ -41,6 +41,45 @@ def sheets_by_store(invoice):
 	return used
 
 
+def sheets_sold(library, date):
+	"""Sheets of printing and copying the library sold on `date` (PRN-02), from its submitted invoices. A refund
+	does not take any back: the paper was printed, and the counters counted it."""
+	units = ", ".join(["%s"] * len(SHEETS_PER_UNIT))
+	return flt(
+		frappe.db.sql(
+			f"""select sum(sii.stock_qty * case sii.item_code {" ".join("when %s then %s" for _ in SHEETS_PER_UNIT)} end)
+			from `tabSales Invoice Item` sii join `tabSales Invoice` si on si.name = sii.parent
+			where si.docstatus = 1 and si.is_return = 0 and si.posting_date = %s
+			and ifnull(nullif(sii.cost_center, ''), si.cost_center) = %s and sii.item_code in ({units})""",
+			(*[v for item, per_unit in SHEETS_PER_UNIT.items() for v in (item, per_unit)], date, library, *SHEETS_PER_UNIT),
+		)[0][0]
+	)
+
+
+def sales_value(library, date):
+	"""What the library's printing and copying sold for on `date` (PRN-08), net of discounts, from its submitted
+	invoices; a refund takes it back."""
+	units = ", ".join(["%s"] * len(SHEETS_PER_UNIT))
+	return flt(
+		frappe.db.sql(
+			f"""select sum(sii.base_net_amount) from `tabSales Invoice Item` sii
+			join `tabSales Invoice` si on si.name = sii.parent
+			where si.docstatus = 1 and si.posting_date = %s
+			and ifnull(nullif(sii.cost_center, ''), si.cost_center) = %s and sii.item_code in ({units})""",
+			(date, library, *SHEETS_PER_UNIT),
+		)[0][0]
+	)
+
+
+def refresh_counters(doc, method=None):
+	"""Sales Invoice on_submit and on_cancel hook: the day's counters of the library already submitted take the
+	sale into what was sold."""
+	from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import refresh_sold
+
+	for _store, library in sheets_by_store(doc):
+		refresh_sold(library, doc.posting_date)
+
+
 def issue_paper_used(doc, method=None):
 	if doc.is_return:
 		# A refund does not bring the printed paper back.

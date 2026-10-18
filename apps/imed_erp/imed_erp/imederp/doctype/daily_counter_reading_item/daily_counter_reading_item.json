@@ -1,0 +1,108 @@
+{
+ "actions": [],
+ "creation": "2026-10-18 16:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "machine",
+  "opening_reading",
+  "closing_reading",
+  "consumed",
+  "fault",
+  "fault_note",
+  "machine_type",
+  "cost_per_sheet",
+  "printer_reading"
+ ],
+ "fields": [
+  {
+   "fieldname": "machine",
+   "fieldtype": "Link",
+   "label": "Machine",
+   "options": "Printing Machine",
+   "reqd": 1,
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 3
+  },
+  {
+   "fieldname": "opening_reading",
+   "fieldtype": "Int",
+   "label": "Opening",
+   "in_list_view": 1,
+   "columns": 2,
+   "description": "The machine's last closing reading; typed only for its first reading."
+  },
+  {
+   "fieldname": "closing_reading",
+   "fieldtype": "Int",
+   "label": "Closing",
+   "reqd": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "consumed",
+   "fieldtype": "Int",
+   "label": "Consumed Sheets",
+   "read_only": 1,
+   "in_list_view": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "fault",
+   "fieldtype": "Check",
+   "label": "Broke Down",
+   "in_list_view": 1,
+   "columns": 1,
+   "description": "The machine broke down or stopped for a fault today (PRN-09)."
+  },
+  {
+   "fieldname": "fault_note",
+   "fieldtype": "Data",
+   "label": "What Happened",
+   "depends_on": "fault",
+   "mandatory_depends_on": "fault"
+  },
+  {
+   "fieldname": "machine_type",
+   "fieldtype": "Data",
+   "label": "Type",
+   "fetch_from": "machine.machine_type",
+   "read_only": 1,
+   "in_list_view": 0,
+   "columns": 1
+  },
+  {
+   "fieldname": "cost_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Cost per Sheet",
+   "precision": "4",
+   "read_only": 1,
+   "in_list_view": 0,
+   "columns": 2,
+   "description": "Paper + waste + this machine's ink + overheads."
+  },
+  {
+   "fieldname": "printer_reading",
+   "fieldtype": "Link",
+   "label": "Printer Reading",
+   "options": "Printer Reading",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-10-18 20:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Daily Counter Reading Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
