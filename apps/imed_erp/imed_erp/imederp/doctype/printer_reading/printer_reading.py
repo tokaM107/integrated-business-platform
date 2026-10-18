@@ -25,7 +25,9 @@ class PrinterReading(Document):
                 ),
                 title=_("Reading Too Low"),
             )
-        self.variance = self.consumed - cint(self.sold_sheets)
+        # Sales do not say which machine printed them, so what was sold is set against the counters of the whole
+        # library for the day, on the Daily Counter Reading.
+        self.sold_sheets = self.variance = None
 
     def set_opening(self):
         # The machine's last submitted reading gives the opening: read again on submit, in case another reading
