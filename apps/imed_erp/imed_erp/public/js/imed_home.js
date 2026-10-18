@@ -30,10 +30,11 @@
 			go: () => frappe.new_doc("Book Edition"),
 		},
 		{
-			label: () => t("Printer Reading", "قراءة عداد"),
+			// The day's counters of every machine of the library on one screen (PRN-01).
+			label: () => t("Daily Counter Reading", "عدادات اليوم"),
 			icon: "printer",
-			allowed: () => frappe.model.can_create("Printer Reading"),
-			go: () => frappe.new_doc("Printer Reading"),
+			allowed: () => frappe.model.can_create("Daily Counter Reading"),
+			go: () => frappe.new_doc("Daily Counter Reading"),
 		},
 		{
 			label: () => t("Customers", "العملاء"),
