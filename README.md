@@ -761,8 +761,13 @@ Rules, checked on the server (so they also hold through the API):
   and at the target branch. To supply several machines, add one row per machine with its own quantity.
   Other items need no machine.
 
-**Printing Machine** (ImedERP > Branch Requests > Printing Machines): name, location warehouse (the branch,
-e.g. `مخزن الأزاريطة`), optional cost center, disabled. The owner and stock managers add them; Raghad too.
+**Printing Machine** (ImedERP > Branch Requests > Printing Machines; PRN-01, PRN-08): name, **Branch** (a library
+only: Azarita has 1 Epson and 2 Riso, Mawasah 1 Epson and 3 Riso), **Type** (Epson / Riso), **Model**, **Ink Cost
+per Sheet**, **Last Maintenance** (not in the future), **Out of Service** (takes no paper and no readings), and
+the location warehouse paper is issued into (e.g. `مخزن الأزاريطة`). The ink cost is filled from **Printing Cost
+Settings > Ink by Machine Type** for the machine's type when left empty, and follows a change of type unless it was
+set for that machine; Riso ink costs more. Until the owner gives the real costs, the settings assume 0.05 (Epson)
+and 0.10 (Riso) per sheet, said so on the screen. The owner and stock managers add machines; Raghad too.
 
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
@@ -1046,6 +1051,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is
