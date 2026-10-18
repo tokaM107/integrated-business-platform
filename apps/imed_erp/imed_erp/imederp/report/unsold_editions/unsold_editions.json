@@ -4,7 +4,7 @@
  "docstatus": 0,
  "doctype": "Report",
  "is_standard": "Yes",
- "modified": "2026-10-15 22:00:00.000000",
+ "modified": "2026-10-18 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Unsold Editions",
@@ -20,7 +20,7 @@
    "role": "Accounts Manager"
   },
   {
-   "role": "Branch Manager"
+   "role": "Stock User"
   }
  ]
 }
