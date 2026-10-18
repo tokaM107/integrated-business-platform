@@ -769,6 +769,14 @@ Settings > Ink by Machine Type** for the machine's type when left empty, and fol
 set for that machine; Riso ink costs more. Until the owner gives the real costs, the settings assume 0.05 (Epson)
 and 0.10 (Riso) per sheet, said so on the screen. The owner and stock managers add machines; Raghad too.
 
+**Printer Reading** (PRN-01, PRN-02): a counter reading of one **Machine** (a link to Printing Machine, in
+service); its **Branch** is the machine's library, filled in and never typed. The **Opening** is the machine's last
+submitted closing reading, filled in on the form and set again by the server (on submit too, in case another
+reading of the machine was submitted meanwhile); only a machine's first reading is typed. A counter only goes up:
+the closing cannot be below the opening, a reading cannot be dated before the machine's last one, and only a
+machine's latest reading can be cancelled, so the next one still starts where the last ended. Consumed = closing -
+opening; Variance = consumed - sold sheets.
+
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
 approval status, target warehouse, machine, item, requested by. The Material Request list shows the
