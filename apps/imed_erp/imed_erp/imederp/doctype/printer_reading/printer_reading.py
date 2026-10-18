@@ -42,6 +42,13 @@ class PrinterReading(Document):
         self.opening_reading = last.closing_reading
 
     def before_cancel(self):
+        # Recorded on the day's screen: cancelled with it, so the screen and its readings agree.
+        if self.daily_counter_reading and not self.flags.from_daily_counter_reading:
+            if frappe.db.get_value("Daily Counter Reading", self.daily_counter_reading, "docstatus") == 1:
+                frappe.throw(
+                    _("{0} was recorded on {1}. Cancel that instead.").format(self.name, self.daily_counter_reading),
+                    title=_("Recorded on the Day's Screen"),
+                )
         # Only the machine's latest reading is taken back, so the next one still starts where the last one ended.
         last = last_reading(self.machine, exclude=self.name)
         if last and (getdate(last.reading_date), get_datetime(last.creation)) > (
