@@ -2,21 +2,26 @@
 # See license.txt
 
 # A library's counters for the day on one screen (PRN-01): every machine of the branch in service, each opening
-# from the machine's last reading, saved once into one Printer Reading per machine. Rolled back afterwards.
+# from the machine's last reading, saved once into one Printer Reading per machine; what they printed is set
+# against the printing and copying the library sold that day (PRN-02). Rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --doctype "Daily Counter Reading"
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import add_days, today
 
 from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
+from imed_erp.imederp.sales_cancellation import cancel_with_reason
 
 # Linked records already exist on the site (the libraries' machines come from setup_library.py); without this list
 # Frappe builds ERPNext's "_Test ..." records and commits them to the site.
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Printer Reading", "Printing Machine"]
 
 AZARITA = "مكتبة الأزاريطة - MMG"
+MAWASAH = "مكتبة المواساة - MMG"
+COMPANY = "Mohamed Mamdouh group"
 SARA = "sara@imed.local"
 
 
@@ -106,3 +111,57 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 
 	def test_a_library_only(self):
 		self.assertRaises(frappe.ValidationError, self.sheet, {}, branch="قاعات Imed - MMG")
+
+	# ---------- PRN-02: what was sold, from the day's sales ----------
+
+	def sell(self, rows, library=AZARITA, date=None, is_return=False):
+		"""A submitted sale of (service, sheets) rows at the library."""
+		invoice = frappe.get_doc(
+			{
+				"doctype": "Sales Invoice",
+				"company": COMPANY,
+				"customer": frappe.get_all("Customer", filters={"customer_group": ["!=", "طبيب"]}, pluck="name", limit=1)[0],
+				"cost_center": library,
+				"set_posting_time": 1,
+				"posting_date": date or today(),
+				"items": [{"item_code": item, "qty": qty, "rate": 1, "cost_center": library} for item, qty in rows],
+			}
+		)
+		invoice.insert()
+		invoice.submit()
+		return invoice
+
+	def test_sold_sheets_come_from_the_day_s_sales(self):
+		# Card PRN definition of done: the machines printed 500 sheets and 480 were sold, 20 short.
+		first, second, third = sorted(self.machines)
+		self.sell([("PRINT-SVC", 300), ("COPY-SVC", 100)])
+		self.sell([("COPY-SVC", 80)])
+		# Not counted: another library's sale, another day's, and nothing typed is kept.
+		self.sell([("PRINT-SVC", 1000)], library=MAWASAH)
+		self.sell([("PRINT-SVC", 1000)], date=add_days(today(), -1))
+		sheet = self.sheet(
+			{first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100}, sold_sheets=1
+		)
+		self.assertEqual((sheet.total_consumed, sheet.sold_sheets, sheet.variance), (500, 480, 20))
+
+	def test_a_later_sale_of_the_day_is_taken_in(self):
+		first, second, third = sorted(self.machines)
+		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100})
+		self.assertEqual((sheet.sold_sheets, sheet.variance), (0, 500))
+		late = self.sell([("COPY-SVC", 30)])
+		self.assertEqual(frappe.db.get_value("Daily Counter Reading", sheet.name, ["sold_sheets", "variance"]), (30, 470))
+		cancel_with_reason("Sales Invoice", late.name, "Test: wrong service")
+		self.assertEqual(frappe.db.get_value("Daily Counter Reading", sheet.name, ["sold_sheets", "variance"]), (0, 500))
+
+	def test_a_refund_takes_no_sheets_back(self):
+		# The paper was printed and the counters counted it.
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+
+		first, second, third = sorted(self.machines)
+		sale = self.sell([("COPY-SVC", 50)])
+		refund = make_sales_return(sale.name)
+		refund.insert()
+		refund.submit()
+		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
+		self.assertEqual((sheet.sold_sheets, sheet.variance), (50, 0))
+
