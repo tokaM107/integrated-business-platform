@@ -15,7 +15,7 @@ from imed_erp.imederp.doctype.printer_reading.printer_reading import get_opening
 
 # The cost centers and machines already exist on the site or are made here. Without this Frappe builds ERPNext's
 # "_Test ..." records for them and commits them to the site.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Printer Reading", "Printing Machine"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Printer Reading", "Printing Machine"]
 
 MAWASAH = "مكتبة المواساة - MMG"
 
