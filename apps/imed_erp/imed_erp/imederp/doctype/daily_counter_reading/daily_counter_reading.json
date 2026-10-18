@@ -13,6 +13,12 @@
   "reading_date",
   "machines_section",
   "machines",
+  "totals_section",
+  "total_consumed",
+  "column_break_totals",
+  "sold_sheets",
+  "column_break_totals_2",
+  "variance",
   "amended_from"
  ],
  "fields": [
@@ -51,6 +57,43 @@
    "reqd": 1
   },
   {
+   "fieldname": "totals_section",
+   "fieldtype": "Section Break",
+   "label": "The Day's Paper"
+  },
+  {
+   "fieldname": "total_consumed",
+   "fieldtype": "Int",
+   "label": "Consumed Sheets",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "What the machines' counters went up by."
+  },
+  {
+   "fieldname": "column_break_totals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "sold_sheets",
+   "fieldtype": "Int",
+   "label": "Sold Sheets",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Printing and copying sold by the library that day (submitted invoices), worked out by the system."
+  },
+  {
+   "fieldname": "column_break_totals_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "variance",
+   "fieldtype": "Int",
+   "label": "Variance (Sheets)",
+   "read_only": 1,
+   "in_list_view": 1,
+   "description": "Consumed - sold: sheets printed and not sold."
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -65,7 +108,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 16:00:00.000000",
+ "modified": "2026-10-18 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Daily Counter Reading",
