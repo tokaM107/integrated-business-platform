@@ -731,3 +731,11 @@ What the machines' counters went up by.,العدادات زادت قد إيه.
 "Printing and copying sold by the library that day (submitted invoices), worked out by the system.",الطباعة والتصوير اللي المكتبة باعتها في اليوم ده (الفواتير المسجلة)، السيستم بيحسبها.
 Variance (Sheets),الفرق (ورق)
 Consumed - sold: sheets printed and not sold.,المستهلك - المباع: ورق اتطبع وماتباعش.
+Cost per Sheet,تكلفة الورقة
+Paper + waste + this machine's ink + overheads.,ورق + هدر + حبر الماكينة دي + مشغولات.
+Cost per Printed Sheet,تكلفة الورقة المطبوعة
+"Paper + waste + ink + overheads, the machines' costs weighted by what each printed; set when the day is submitted.",ورق + هدر + حبر + مشغولات، متوسط الماكينات حسب اللي طبعته كل واحدة؛ بتتثبت لما اليوم يتسجل.
+Variance Value,قيمة الفرق
+Variance x cost per printed sheet.,الفرق × تكلفة الورقة المطبوعة.
+"{0} has no paper price yet (no A4 paper received in its store), so the cost of a sheet leaves the paper out.",{0} مالهاش سعر ورق لسه (ما استلمتش ورق A4 في مخزنها)، فتكلفة الورقة محسوبة من غير الورق.
+No Paper Price,مفيش سعر ورق
