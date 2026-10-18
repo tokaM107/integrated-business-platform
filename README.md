@@ -790,7 +790,11 @@ before the machine's last reading); cancelling it cancels them, and they are can
 **Sold Sheets** (the printing and copying the library sold that day, from its submitted invoices, one sheet per
 unit as in `imederp/paper_use.py`; worked out by the system, never typed) and **Variance** (consumed - sold). A
 refund takes no sheets back: the paper was printed and counted. A sale of that day submitted or cancelled after the
-screen was submitted updates it.
+screen was submitted updates it. The **Variance Value** (PRN-08, PRN-09) is the variance × the **Cost per Printed Sheet**: paper (the
+moving average price in the library's store) + waste + the machine's ink + overheads, from Printing Cost Settings
+and the machine. Each row shows its machine's cost per sheet; the day's is their average weighted by what each
+machine printed (Riso ink costs more than Epson's), and is fixed when the day is submitted, so a later sale is
+valued at the same cost. A library with no paper price yet is warned that the paper is left out.
 
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
