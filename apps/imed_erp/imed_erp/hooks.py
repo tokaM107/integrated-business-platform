@@ -69,6 +69,8 @@ doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Material Request": "public/js/material_request.js",
 	"Stock Entry": "public/js/stock_entry.js",
+	# DOC-29: a doctor's agreements and their balances on his file.
+	"Customer": "public/js/customer.js",
 }
 # The point of sale (LIB-01): one-click buttons for the library services, added to ERPNext's own page.
 page_js = {"point-of-sale": "public/js/point_of_sale.js"}
