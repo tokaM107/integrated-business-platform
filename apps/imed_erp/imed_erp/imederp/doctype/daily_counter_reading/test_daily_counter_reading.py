@@ -25,6 +25,8 @@ IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Prin
 AZARITA = "مكتبة الأزاريطة - MMG"
 MAWASAH = "مكتبة المواساة - MMG"
 COMPANY = "Mohamed Mamdouh group"
+# A fixed day with nothing else on it, so whatever the site holds (other days' counters and sales) stays out.
+DAY = "2026-10-09"
 # The store's paper price (0.26) plus waste (0.04), fixed for these tests; test_paper_stock.py reads it from a real
 # purchase.
 PAPER = "imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading.get_paper_cost"
@@ -37,6 +39,8 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		# Azarita's three machines (1 Epson, 2 Riso), from setup_library.py; no reading yet in this test.
 		self.machines = frappe.get_all("Printing Machine", filters={"cost_center": AZARITA, "disabled": 0}, pluck="name")
 		frappe.db.delete("Printer Reading", {"machine": ["in", self.machines]})
+		frappe.db.delete("Daily Counter Reading", {"branch": AZARITA})
+		frappe.db.delete("Sales Invoice", {"posting_date": ["in", [DAY, add_days(DAY, -1)]], "cost_center": AZARITA})
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
@@ -129,7 +133,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 				"customer": frappe.get_all("Customer", filters={"customer_group": ["!=", "طبيب"]}, pluck="name", limit=1)[0],
 				"cost_center": library,
 				"set_posting_time": 1,
-				"posting_date": date or today(),
+				"posting_date": date or DAY,
 				"items": [{"item_code": item, "qty": qty, "rate": 1, "cost_center": library} for item, qty in rows],
 			}
 		)
@@ -144,15 +148,15 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		self.sell([("COPY-SVC", 80)])
 		# Not counted: another library's sale, another day's, and nothing typed is kept.
 		self.sell([("PRINT-SVC", 1000)], library=MAWASAH)
-		self.sell([("PRINT-SVC", 1000)], date=add_days(today(), -1))
+		self.sell([("PRINT-SVC", 1000)], date=add_days(DAY, -1))
 		sheet = self.sheet(
-			{first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100}, sold_sheets=1
+			{first: 1300, second: 650, third: 150}, date=DAY, openings={first: 1000, second: 500, third: 100}, sold_sheets=1
 		)
 		self.assertEqual((sheet.total_consumed, sheet.sold_sheets, sheet.variance), (500, 480, 20))
 
 	def test_a_later_sale_of_the_day_is_taken_in(self):
 		first, second, third = sorted(self.machines)
-		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100})
+		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		self.assertEqual((sheet.sold_sheets, sheet.variance), (0, 500))
 		late = self.sell([("COPY-SVC", 30)])
 		self.assertEqual(frappe.db.get_value("Daily Counter Reading", sheet.name, ["sold_sheets", "variance"]), (30, 470))
@@ -168,7 +172,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		refund = make_sales_return(sale.name)
 		refund.insert()
 		refund.submit()
-		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
+		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		self.assertEqual((sheet.sold_sheets, sheet.variance), (50, 0))
 
 	# ---------- PRN-08/09: the variance in money ----------
@@ -182,7 +186,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		# (cheaper ink) and the Risos weighted by what each printed (300, 150 and 50 sheets).
 		first, second, third = sorted(self.machines)  # Epson, Riso, Riso
 		self.sell([("PRINT-SVC", 480)])
-		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100})
+		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		overheads = get_rates().overheads_per_sheet
 		costs = {row.machine: row.cost_per_sheet for row in sheet.machines}
 		for machine in self.machines:
@@ -197,7 +201,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 	def test_the_cost_stays_as_submitted(self, _):
 		# A later sale takes the same cost per sheet, even after the rates changed.
 		first, second, third = sorted(self.machines)
-		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=today(), openings={first: 1000, second: 500, third: 100})
+		sheet = self.sheet({first: 1300, second: 650, third: 150}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		cost = sheet.cost_per_sheet
 		frappe.db.set_value("Printing Machine", second, "ink_per_sheet", 5)
 		self.sell([("COPY-SVC", 100)])
@@ -209,7 +213,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 	@patch(PAPER, return_value=0.30)
 	def test_a_day_nothing_was_printed(self, _):
 		first, second, third = sorted(self.machines)
-		sheet = self.sheet({first: 1000, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
+		sheet = self.sheet({first: 1000, second: 500, third: 100}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		self.assertAlmostEqual(sheet.cost_per_sheet, round(sum(r.cost_per_sheet for r in sheet.machines) / 3, 4), places=4)
 		self.assertEqual((sheet.variance, sheet.variance_value), (0, 0))
 
@@ -217,7 +221,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 	def test_with_no_paper_price_it_says_so(self, _):
 		first, second, third = sorted(self.machines)
 		with patch("frappe.msgprint") as msgprint:
-			self.sheet({first: 1010, second: 500, third: 100}, date=today(), openings={first: 1000, second: 500, third: 100})
+			self.sheet({first: 1010, second: 500, third: 100}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		self.assertIn("no paper price", str(msgprint.call_args))
 
 	def test_a_breakdown_says_what_happened(self):
