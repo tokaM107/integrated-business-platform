@@ -16,6 +16,7 @@
   "consumed",
   "sold_sheets",
   "variance",
+  "daily_counter_reading",
   "amended_from"
  ],
  "fields": [
@@ -81,6 +82,15 @@
    "in_list_view": 1
   },
   {
+   "fieldname": "daily_counter_reading",
+   "fieldtype": "Link",
+   "label": "Daily Counter Reading",
+   "options": "Daily Counter Reading",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The day's screen this reading was recorded on; it is cancelled from there."
+  },
+  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -95,7 +105,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 15:00:00.000000",
+ "modified": "2026-10-18 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printer Reading",
