@@ -253,3 +253,19 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		# Prices from after the term starts do not touch it.
 		make_schedule("2036-02-01", [(1, None, 500)])
 		self.assertEqual(self.fee(course), (10, 100, 1000))
+
+	def test_the_platform_fees_report(self):
+		# APP-07: students per course and per doctor, the tier applied and the fee due.
+		from imed_erp.imederp.report.platform_fees import platform_fees
+
+		agreement = make_agreement("App", 87)
+		course = make_course("_Test Report Course", agreement)
+		subscribe(course, 300)
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		rows = platform_fees.execute({"agreement": agreement, "doctor": doctor})[1]
+		self.assertEqual(
+			[(r["course_name"], r["subscriptions"], r["tier"], r["fee_per_student"], r["platform_fee_total"]) for r in rows],
+			[("_Test Report Course", 300, "101–500", 200, 60000)],
+		)
+		roles = {r.role for r in frappe.get_doc("Report", "Platform Fees").roles}
+		self.assertEqual(roles, {"System Manager", "Accounts Manager"})
