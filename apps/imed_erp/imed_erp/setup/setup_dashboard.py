@@ -41,6 +41,23 @@ cards = [
     dict(label="Doctor Agreements", doc="Doctor Agreement",
          func="Count", field="", color=SLATE,
          filters=[["Doctor Agreement", "docstatus", "=", 1]]),
+    # The owner's own figures (5.1): the studio's bookings and hours and the halls' bookings. A booking is not
+    # submitted; a cancelled one or a no-show is left out.
+    dict(label="Studio Bookings", doc="Booking",
+         func="Count", field="", color=TEAL,
+         filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
+                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
+    dict(label="Studio Hours", doc="Booking",
+         func="Sum", field="hours", color=TEAL,
+         filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
+                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
+    dict(label="Hall Bookings", doc="Booking",
+         func="Count", field="", color=SLATE,
+         filters=[["Booking", "cost_center", "=", "قاعات Imed - MMG"],
+                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
+    dict(label="Unpaid on Bookings", doc="Booking",
+         func="Sum", field="outstanding_amount", color=AMBER, full=1,
+         filters=[["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
 ]
 
 created_cards = []
@@ -157,6 +174,7 @@ for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
                      ("Doctor Agreement", "Doctor Agreements", "Purple"),
                      ("Book Edition", "Book Editions", "Purple"),
                      ("Printer Reading", "Paper Counters", "Cyan"),
+                     ("Booking", "Bookings", "Blue"),
                      ("App Subscription", "App Subscriptions", "Pink"),
                      ("Version", "All Changes", "Grey")]:
     if frappe.db.exists("DocType", dt):
@@ -175,6 +193,7 @@ for report, lbl, col in [
     ("Doctor Debts", "Doctor Debts", "Red"),
     ("Doctor Receivables", "Doctor Receivables", "Orange"),
     ("Owner Share Plan vs Actual", "Owner Share Plan vs Actual", "Green"),
+    ("Inter Business Transfers", "Inter Business Transfers", "Grey"),
     ("Platform Fees", "Platform Fees", "Pink"),
 ]:
     if frappe.db.exists("Report", report):
