@@ -34,7 +34,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 
 | Feature | Requirements | Status |
 |---|---|---|
-| Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Not started |
+| Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Started: *Booking Resource*, *Booking* (no overlap), the day/week calendar, the import (not connected) |
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Started: *Printer Reading* doctype |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
 | BA+ app subscriptions and platform fees | APP | Started: *App Subscription* |
@@ -92,7 +92,7 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 | 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
 | 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |
 
-## Open questions: bookings (HAL-01, HAL-02, STU-01, STU-08)
+## Open questions: bookings (HAL-01, HAL-02, HAL-04, HAL-10, STU-01, STU-02, STU-08)
 
 | # | Question | Until decided | Ask |
 |---|---|---|---|
@@ -106,3 +106,5 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 | 8 | **The booking system's import** (STU-11, STU-09, STU-10): its access, its status names, how changes and cancellations are taken over, and whether a customer not found is created. | Import ready for rows in this system's statuses; changes listed, never overwritten; an unknown customer fails the row. | Studio booking team |
 | 9 | **Bookings past midnight.** | Not possible: a booking ends on its own day. | Nour / Gilan |
 | 10 | **Same resource, same moment, no overlap**: the second save is asked to save again (the protection against overlaps, see README). | Accepted: it happens only when two people save the same resource within the same second. | — |
+| 11 | **HAL-10's text**: the requirements document is not in this repository, and nothing here quotes HAL-10. It was given as "booking conflict prevention", with HAL-04. | Read as HAL-04: no overlap of a resource's bookings (README). If HAL-10 asks for more (a buffer between bookings, opening hours, a hold on a tentative booking), it is not built. | Owner / Nour |
+| 12 | **STU-02 and students**: here STU is the studio (STU-01 its services by the hour, STU-08 statuses, STU-14 source), and STU-02 is the no-overlap rule of its services. A booking has a customer, not a student; the customer's College and Academic Year (CRM-01) are not used by bookings. Is there a rule on students booking (a student price, who may book, a limit per student)? | None: no student rule, since none is written down here. | Owner / Gilan |

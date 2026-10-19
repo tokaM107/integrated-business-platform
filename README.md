@@ -618,6 +618,16 @@ prices are still blank in the requirements.
   checked one after the other: each booking writes its resource's row first, and MariaDB refuses the second one,
   whose save asks to **save again** (it then sees the first). This relies on `innodb_snapshot_isolation`, MariaDB
   11.8's default (`pwd.yml`), which a test checks. Bookings of different resources never wait for each other.
+  The same check runs whatever saves the booking: the form, the REST API (`frappe.client`) or the import.
+- **Calendar** (Bookings > the view menu > **Calendar**, `booking_calendar.js`): Frappe's own calendar, opened on
+  the week, with **Day** and **Week** (and Month) and arrows to move. Each booking shows its resource, customer,
+  times and status (its colour, with a legend; hovering gives the date too). Bookings at the same time sit side by
+  side; a cancelled one or a no-show is faded and struck through (its time is free); two of the same resource that
+  overlap (only possible by writing to the database around the check) are red. The list's filters apply (a
+  resource, a status). It reads the bookings as the list does (`booking.get_events`), so a branch manager sees only
+  their own business's. Selecting free time opens a new booking on that day and those hours; a booking is moved
+  on its form, where the overlap check runs, not by dragging. It says when a day or week has no bookings, while
+  loading, and when the bookings could not be loaded.
 - **Who**: branch managers book only their own business's resources (Nour the halls, Gilan the studio), also when
   changing a booking's resource; the owner and the accountant book any. Only they delete a booking.
 - **Import** (`imederp/booking_import.py`, for the booking system once its access is decided, STU-11): a
