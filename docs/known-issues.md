@@ -67,7 +67,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 7 | SEC-05 (Must) | No daily automatic backup kept off the server. | A failed server loses the data. | Set up with the production server (week C): scheduled `bench backup --with-files` and a copy off the server. |
 | 8 | HR-01, HR-02, HR-04, HR-06 (Must); HR-03, HR-05 (Should) | HR is not built and HRMS (Frappe's HR app) is not installed: no payroll, attendance or salary split between businesses. Salaries are recorded as expenses. | The owner may expect payroll from the Must list. | Confirm HR is after go-live, and when HRMS is installed (an install and migrate on a live site). Owner. |
 | 9 | LIB-07 (Must) | Supplier purchases (`setup_buying.py`, on branch `feature/buying`) are not merged, though the owner's dashboard refers to it. | Purchases use ERPNext's defaults (no Update Stock default). | Merge and test `feature/buying`. |
-| 10 | Owner's dashboard (5.1) | No bookings on the dashboard (studio bookings and hours, hall bookings), which the owner named as his figures. | | Cards once bookings are in use. |
+| 10 | Owner's dashboard (5.1) | Done on 19 Oct: studio bookings and hours, hall bookings and what is unpaid on bookings are cards on the owner's dashboard, with the bookings list and the transfers report (RPT-03). | | |
 
 ### Halls and studio
 
