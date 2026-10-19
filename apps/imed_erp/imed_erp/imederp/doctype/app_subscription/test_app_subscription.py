@@ -38,11 +38,13 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 		self.assertFalse(meta.has_field("course_amount"))
 		self.assertTrue(self.make_subscription(make_course()).name)
 
-	def test_agreement_and_term_come_from_the_course(self):
+	def test_agreement_doctor_and_term_come_from_the_course(self):
 		course = frappe.get_doc("App Course", make_course())
 		subscription = self.make_subscription(course.name)
 		self.assertEqual(subscription.agreement, course.agreement)
 		self.assertEqual(subscription.period, course.period)
+		# APP-04: the student, the course, the doctor, the date and the term.
+		self.assertEqual(subscription.doctor, course.doctor)
 
 	def test_closed_course_takes_no_new_subscriptions(self):
 		course = frappe.get_doc("App Course", make_course("_Test Closed Course"))
