@@ -1081,6 +1081,11 @@ An App Subscription records the student and the platform fee due from the doctor
 by the student to the doctor directly and is not recorded (APP-05, v1.2). Editions belong to books
 agreements and subscriptions to app agreements.
 
+A subscription is made on an *App Course* (APP-01): the course's name, its doctor's app agreement and its
+term. The doctor comes from the agreement, and the subscription takes its agreement and term from the
+course, so the user only picks the student and the course. A course is made once per agreement and term; a
+closed course takes no new subscriptions.
+
 Invoice PDFs need the site's `host_name` to point at the web server inside Docker, otherwise
 wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
 
@@ -1125,6 +1130,8 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "A
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "App Course"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "App Subscription"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
