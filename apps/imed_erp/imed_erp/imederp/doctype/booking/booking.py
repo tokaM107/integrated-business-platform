@@ -7,11 +7,16 @@
 #
 #   HAL-02  a hall booking records the activity and the responsible person's name and phone.
 #   STU-08  Tentative, Confirmed with Deposit, Completed, Cancelled (with its reason), No Show.
-#   HAL-04, STU-02, STU-14  two bookings of the same resource never overlap, whatever their source.
+#   HAL-04, STU-14  two bookings of the same resource never overlap, whatever their source.
+#
+# HAL-10, STU-02: the Booking calendar (Bookings > Calendar, booking_calendar.js) shows a day or a week of them:
+# get_events below.
 #
 # Total Amount and Amount Paid are recorded on the booking, with the remaining amount; nothing is posted to the
 # accounts. The payment is recorded through the accounts (a Sales Invoice of the resource's service item into the
 # business's cash box, ACC-01), which is not decided for bookings yet (docs/known-issues.md).
+
+from datetime import datetime
 
 import frappe
 from frappe import _
@@ -111,6 +116,11 @@ class Booking(Document):
 		return not same_time
 
 	def check_times(self):
+		# This runs before Frappe's own check of required values: a booking sent without its day or times (through
+		# the API) is told so here, not failed on reading them.
+		missing = [_(self.meta.get_label(f)) for f in ("booking_date", "from_time", "to_time") if not self.get(f)]
+		if missing:
+			frappe.throw(_("Enter the booking's {0}.").format(", ".join(missing)), frappe.MandatoryError, title=_("Missing Value"))
 		if get_time(self.to_time) <= get_time(self.from_time):
 			frappe.throw(_("The booking ends at {0}, not after it starts at {1}.").format(self.to_time, self.from_time), title=_("Wrong Times"))
 		self.hours = flt(time_diff_in_hours(self.to_time, self.from_time), 2)
@@ -197,3 +207,56 @@ class Booking(Document):
 				),
 				title=_("Already Booked"),
 			)
+
+
+@frappe.whitelist()
+def get_events(start, end, filters=None, **kwargs):
+	"""The bookings for the Booking calendar (booking_calendar.js), a day or a week of them, between `start` and `end`
+	(the calendar's own range: `end` is the first moment after it).
+
+	Read through frappe.get_list, as the Bookings list is: only what the user may read, so a branch manager sees
+	their own business's bookings, and someone with no access to bookings is refused. `filters` are the list's
+	filters (a resource, a status...).
+
+	Each booking that holds its time and overlaps another of its resource is marked `conflict`. The overlap check
+	refuses such a pair, so none is expected; one made around it (a direct database change) is shown in red."""
+	start, end = get_datetime(start), get_datetime(end)
+	filters = frappe.parse_json(filters) or []
+	if isinstance(filters, dict):
+		filters = [[field, *value] if isinstance(value, list) else [field, "=", value] for field, value in filters.items()]
+	rows = frappe.get_list(
+		"Booking",
+		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status"],
+		filters=[*filters, ["booking_date", ">=", getdate(start)], ["booking_date", "<=", getdate(end)]],
+		order_by="booking_date asc, from_time asc",
+		limit_page_length=0,
+	)
+	events = []
+	for row in rows:
+		starts = datetime.combine(getdate(row.booking_date), get_time(row.from_time))
+		ends = datetime.combine(getdate(row.booking_date), get_time(row.to_time))
+		if starts >= end or ends <= start:
+			continue
+		events.append(
+			frappe._dict(
+				name=row.name,
+				resource=row.resource,
+				resource_type=row.resource_type,
+				customer=row.customer,
+				status=row.status,
+				holding=int(row.status in HOLDING),
+				start=starts.strftime("%Y-%m-%d %H:%M:%S"),
+				end=ends.strftime("%Y-%m-%d %H:%M:%S"),
+				title=f"{row.resource} · {row.customer} ({_(row.status)})",
+				all_day=0,
+				# A booking's times are the hall's or the studio's clock, whatever the user's time zone.
+				convert_to_user_tz=0,
+				conflict=0,
+			)
+		)
+	holding = [e for e in events if e.holding]
+	for i, event in enumerate(holding):
+		for other in holding[i + 1 :]:
+			if event.resource == other.resource and event.start < other.end and other.start < event.end:
+				event.conflict = other.conflict = 1
+	return events

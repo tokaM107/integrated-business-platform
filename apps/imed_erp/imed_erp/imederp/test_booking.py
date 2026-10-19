@@ -154,6 +154,32 @@ class IntegrationTestBooking(IntegrationTestCase):
 		self.book(start="15:00", end="16:00")
 		self.assertEqual(frappe.db.get_value("Booking Resource", self.hall, "bookings_saved"), before + 1)
 
+	def test_a_booking_without_its_times_is_told_so(self):
+		"""Sent through the API, without the screen's required fields: a clear message, not a failure reading them."""
+		self.assertRaisesRegex(frappe.MandatoryError, "Enter the booking's", self.book, start=None)
+		self.assertRaisesRegex(frappe.MandatoryError, "Enter the booking's", self.book, end="")
+
+	def test_the_api_is_checked_like_the_screen(self):
+		"""frappe.client.insert / save, what the REST API runs: the same overlap check, for a branch manager too."""
+		from frappe.client import insert, save
+
+		self.book(start="10:00", end="12:00")
+		values = {
+			"doctype": "Booking",
+			"resource": self.hall,
+			"customer": self.customer,
+			"booking_date": DAY,
+			"from_time": "11:00",
+			"to_time": "13:00",
+			"activity": "Anatomy lecture",
+			"responsible_name": "د. أحمد",
+			"responsible_phone": "01112223333",
+		}
+		frappe.set_user(NOUR)
+		self.assertRaisesRegex(frappe.ValidationError, "already booked", insert, values)
+		later = insert({**values, "from_time": "12:00", "to_time": "13:00"})  # back to back
+		self.assertRaisesRegex(frappe.ValidationError, "already booked", save, {**later, "from_time": "11:30"})
+
 	def test_cancelled_and_no_show_bookings_free_their_time(self):
 		cancelled = self.book(start="10:00", end="12:00")
 		cancelled.status, cancelled.cancellation_reason = "Cancelled", "Lecture moved"
@@ -309,3 +335,66 @@ class IntegrationTestBooking(IntegrationTestCase):
 		hall_booking = self.book(start="18:00", end="19:00")
 		frappe.set_user(GILAN)
 		self.assertFalse(frappe.has_permission("Booking", "read", hall_booking.name))
+
+	# ---------- The calendar: a day or a week of bookings ----------
+
+	def events(self, start, days, user="Administrator", **filters):
+		from imed_erp.imederp.doctype.booking.booking import get_events
+
+		frappe.set_user(user)
+		try:
+			return get_events(f"{start} 00:00:00", f"{add_days(start, days)} 00:00:00", frappe.as_json(filters) if filters else None)
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_the_calendar_shows_a_day(self):
+		booking = self.book(start="10:00", end="12:00", total_amount=500)
+		self.book(self.podcast, start="10:00", end="11:00")  # same time, another resource
+		self.book(date=add_days(DAY, 1), start="10:00", end="12:00")  # the next day
+		events = {e.name: e for e in self.events(DAY, 1)}
+		self.assertEqual(len(events), 2)
+		event = events[booking.name]
+		self.assertEqual(
+			(event.resource, event.status, event.start, event.end, event.holding, event.conflict),
+			(self.hall, "Tentative", f"{DAY} 10:00:00", f"{DAY} 12:00:00", 1, 0),
+		)
+		self.assertIn(self.hall, event.title)
+		self.assertIn("Tentative", event.title)
+		self.assertEqual(self.events(add_days(DAY, 30), 1), [])  # an empty day
+
+	def test_the_calendar_shows_a_week(self):
+		first = self.book(date=DAY, start="09:00", end="10:00")
+		last = self.book(date=add_days(DAY, 6), start="09:00", end="10:00")
+		self.book(date=add_days(DAY, 7), start="09:00", end="10:00")  # the next week (the range's end is not in it)
+		self.book(date=add_days(DAY, -1), start="09:00", end="10:00")  # the week before
+		cancelled = self.book(date=add_days(DAY, 2), start="09:00", end="10:00")
+		cancelled.status, cancelled.cancellation_reason = "Cancelled", "Moved"
+		cancelled.save()
+		events = {e.name: e for e in self.events(DAY, 7)}
+		self.assertEqual(set(events), {first.name, last.name, cancelled.name})
+		# A cancelled booking is shown, as not holding its time.
+		self.assertEqual((events[cancelled.name].status, events[cancelled.name].holding), ("Cancelled", 0))
+		# The list's filters apply.
+		self.assertEqual({e.name for e in self.events(DAY, 7, status="Cancelled")}, {cancelled.name})
+		self.assertEqual(self.events(DAY, 7, resource=self.hall2), [])
+
+	def test_the_calendar_marks_an_overlap_made_around_the_check(self):
+		booking = self.book(start="10:00", end="12:00")
+		# Written straight to the database, as nothing in the app can: the calendar still shows it, in red.
+		clash = frappe.copy_doc(booking)
+		clash.update({"from_time": "11:00:00", "to_time": "13:00:00"})
+		clash.name = None
+		clash.set_new_name()
+		clash.db_insert()
+		self.book(self.hall2, start="10:00", end="12:00")  # same time, another hall: no overlap
+		events = {e.name: e for e in self.events(DAY, 1)}
+		self.assertEqual({name for name, e in events.items() if e.conflict}, {booking.name, clash.name})
+
+	def test_the_calendar_shows_only_what_the_user_may_read(self):
+		hall_booking = self.book(start="10:00", end="12:00")
+		studio_booking = self.book(self.podcast, start="10:00", end="12:00")
+		self.assertEqual({e.name for e in self.events(DAY, 1, user=NOUR)}, {hall_booking.name})
+		self.assertEqual({e.name for e in self.events(DAY, 1, user=GILAN)}, {studio_booking.name})
+		self.assertEqual({e.name for e in self.events(DAY, 1)}, {hall_booking.name, studio_booking.name})
+		# No access to bookings at all: refused, not an empty calendar.
+		self.assertRaises(frappe.PermissionError, self.events, DAY, 1, user=HR)

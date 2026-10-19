@@ -34,7 +34,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 
 | Feature | Requirements | Status |
 |---|---|---|
-| Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Built: *Booking*, *Booking Resource* (STU-01/03/08/14, HAL-01/02/04/07). The import is written (`booking_import.py`) but nothing runs it yet. Calendar, pricing, add-ons, rental models and reports: see the requirements review below |
+| Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Built: *Booking*, *Booking Resource* (STU-01/02/03/08/14, HAL-01/02/04/07/10), the day and week calendar. The import is written (`booking_import.py`) but nothing runs it yet. Pricing, add-ons, rental models and reports: see the requirements review below |
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Built: *Printing Machine*, *Daily Counter Reading*, *Printer Reading* (machine linked), the *Daily Printing* report |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
 | BA+ app subscriptions and platform fees | APP | Courses, tiers, the fee per course, posted to the doctor's account, collected into a treasury, and the report (APP-01 to 07) |
@@ -76,7 +76,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 11 | HAL-12 (Must), open question 1 | No rental model on a hall booking (fixed rent or a share of the entry fees) and no share. | The share % (open question 3). Owner. |
 | 12 | HAL-08 (Must) | No attendees or entry price on a hall booking. | Nour. |
 | 13 | HAL-06 (Must), STU-15 (Should) | No hall report (by day and hall: bookings, attendees, rent, collected, cancelled, unpaid) and no studio occupancy report. | After 11 and 12. |
-| 14 | HAL-10, STU-02 (Must) | No calendar (day / week). The booking's date and times are separate fields, which Frappe's calendar view cannot use. | A start and end Datetime, or a custom calendar page. |
+| 14 | HAL-10, STU-02 (Must) | Done on 19 Oct: the bookings calendar, by day and by week (Bookings > Calendar, `booking_calendar.js`). Frappe's calendar view, with each booking's start and end made from its date and times on the server (`booking.get_events`). | |
 | 15 | STU-04 (Must), HAL-11 (Should) | Extras (a microphone, lights at 50 a piece an hour) cannot be listed on a booking; they are in its typed total. | Booking rows for extras with prices. |
 | 16 | Permissions matrix, bookings | The accountant may create and edit bookings (matrix: none), and a branch manager edits and cancels without approval (matrix: with approval). | Who approves a branch manager's change or cancellation. Owner. |
 

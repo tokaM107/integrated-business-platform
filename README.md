@@ -614,12 +614,22 @@ prices are still blank in the requirements.
 | Status (STU-08) | Tentative, **Confirmed with Deposit** (needs an amount paid), Completed and No Show (only once the booking has started), Cancelled (needs its reason). |
 | Source (STU-14) | **Manual** for every booking entered here (WhatsApp, walk-in), whatever is sent; **Imported** only through the import, with its source system and id. |
 
-- **No overlap** (HAL-04, STU-02, STU-14), checked on the server: a Tentative, Confirmed or Completed booking of a
+- **No overlap** (HAL-04, STU-14), checked on the server: a Tentative, Confirmed or Completed booking of a
   resource never overlaps another one, manual or imported. One that ends when the next starts does not overlap. A
   cancelled booking and a no-show free their time. Two people saving the same resource at the same moment are
   checked one after the other: each booking writes its resource's row first, and MariaDB refuses the second one,
   whose save asks to **save again** (it then sees the first). This relies on `innodb_snapshot_isolation`, MariaDB
   11.8's default (`pwd.yml`), which a test checks. Bookings of different resources never wait for each other.
+  The same check runs whatever saves the booking: the form, the REST API (`frappe.client`) or the import.
+- **Calendar** (HAL-10, STU-02; Bookings > the view menu > **Calendar**, `booking_calendar.js`): Frappe's own calendar, opened on
+  the week, with **Day** and **Week** (and Month) and arrows to move. Each booking shows its resource, customer,
+  times and status (its colour, with a legend; hovering gives the date too). Bookings at the same time sit side by
+  side; a cancelled one or a no-show is faded and struck through (its time is free); two of the same resource that
+  overlap (only possible by writing to the database around the check) are red. The list's filters apply (a
+  resource, a status). It reads the bookings as the list does (`booking.get_events`), so a branch manager sees only
+  their own business's. Selecting free time opens a new booking on that day and those hours; a booking is moved
+  on its form, where the overlap check runs, not by dragging. It says when a day or week has no bookings, while
+  loading, and when the bookings could not be loaded.
 - **Who**: branch managers book only their own business's resources (Nour the halls, Gilan the studio), also when
   changing a booking's resource; the owner and the accountant book any. Only they delete a booking.
 - **Import** (`imederp/booking_import.py`, for the booking system once its access is decided, STU-11): a
