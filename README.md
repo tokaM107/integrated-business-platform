@@ -1099,6 +1099,11 @@ The two counting rules the owner decides are constants at the top of `app_course
 `COUNT_WITHDRAWN` (a student whose submitted subscription is ticked *Withdrew* still counts; assumed until
 the owner answers).
 
+The *Platform Fees* report (APP-07; owner and accountant, on the owner's dashboard) lists each course of
+each doctor in a term with its students, the tier applied, the fee per student and the fee due, filtered by
+term, doctor or agreement. A student is subscribed once to a course: a second submitted subscription is
+refused until the first is cancelled.
+
 The tests (`test_app_course.py`, `test_platform_fee_schedule.py`) check the owner's tiers on whole
 courses: 100 students → 25,000, 300 → 60,000, 501 → 85,170; the 101st student moves every subscription
 to the second tier and cancelling it moves them back; tiers from a later date leave a term that started
