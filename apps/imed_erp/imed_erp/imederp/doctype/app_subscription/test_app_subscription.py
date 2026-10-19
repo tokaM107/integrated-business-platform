@@ -46,6 +46,16 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 		# APP-04: the student, the course, the doctor, the date and the term.
 		self.assertEqual(subscription.doctor, course.doctor)
 
+	def test_a_student_is_subscribed_once_to_a_course(self):
+		course = make_course("_Test Twice Course")
+		first = self.make_subscription(course)
+		first.submit()
+		self.assertRaises(frappe.ValidationError, self.make_subscription, course)
+		# Cancelled, he can be subscribed again; another course is another subscription.
+		first.cancel()
+		self.make_subscription(course).submit()
+		self.make_subscription(make_course("_Test Other Course")).submit()
+
 	def test_closed_course_takes_no_new_subscriptions(self):
 		course = frappe.get_doc("App Course", make_course("_Test Closed Course"))
 		course.db_set("status", "Closed")
