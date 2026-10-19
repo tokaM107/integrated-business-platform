@@ -1,0 +1,19 @@
+{
+ "add_total_row": 1,
+ "creation": "2026-10-19 18:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "modified": "2026-10-19 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Platform Fees",
+ "owner": "Administrator",
+ "ref_doctype": "App Course",
+ "report_name": "Platform Fees",
+ "report_type": "Script Report",
+ "roles": [
+  { "role": "System Manager" },
+  { "role": "Accounts Manager" }
+ ]
+}

@@ -862,3 +862,45 @@ Enter it to work out the ink per sheet.,اكتبه عشان الحبر للور�
 Epson Ink Set (4 Colours),طقم حبر Epson (4 ألوان)
 Sheets One Epson Set Prints,عدد الورق اللي طقم Epson بيطبعه
 The statement of {0} for {1} was not emailed: no outgoing email account is set up (Email Account).,كشف {0} عن {1} ماتبعتش بالإيميل: مفيش حساب إيميل صادر متظبط (Email Account).
+App Course,كورس
+App Courses,الكورسات
+New App Course,كورس جديد
+Course Name,اسم الكورس
+App Agreement,اتفاقية التطبيق
+The term the course runs in. The platform fee tier is counted per term.,الترم اللي الكورس شغال فيه. شريحة رسوم المنصة بتتحسب على الترم.
+{0} is not a term. A course runs in a term.,{0} مش ترم. الكورس بيبقى في ترم.
+Course {0} already exists for this agreement in {1}: {2}.,الكورس {0} موجود قبل كده للاتفاقية دي في {1}: {2}.
+Choose the student's course.,اختار كورس الطالب.
+Course {0} is closed. It takes no new subscriptions.,الكورس {0} مقفول. مابيقبلش اشتراكات جديدة.
+Platform Fee Schedule,شرايح رسوم المنصة
+Platform Fee Schedules,شرايح رسوم المنصة
+New Platform Fee Schedule,شرايح رسوم منصة جديدة
+Platform Fee Tiers,شرايح رسوم المنصة
+Platform Fee Tier,شريحة رسوم المنصة
+Tiers,الشرايح
+From (Students),من (طالب)
+To (Students),لحد (طالب)
+Fee per Student,الرسم للطالب
+Empty on the last tier: no upper limit.,فاضي في آخر شريحة: مالهاش حد.
+For one student in the term.,لطالب واحد في الترم.
+A course is charged by the tiers in force on its term's start date. New prices are a new record from a later date: this one stays as it was.,الكورس بيتحسب بالشرايح السارية يوم بداية الترم بتاعه. الأسعار الجديدة بتبقى سجل جديد من تاريخ بعده، والسجل ده بيفضل زي ما هو.
+Tiers from {0} already exist: {1}. Amend that one instead.,فيه شرايح سارية من {0} قبل كده: {1}. عدّل عليها بدل ما تعمل جديدة.
+"Row #{0}: the tier should start from {1} students, right after the one before.",صف #{0}: الشريحة لازم تبدأ من {1} طالب، بعد اللي قبلها على طول.
+Row #{0}: the fee per student must be more than zero.,صف #{0}: الرسم للطالب لازم يبقى أكبر من صفر.
+Row #{0}: only the last tier can have no upper limit.,صف #{0}: آخر شريحة بس اللي ممكن تبقى من غير حد.
+Row #{0}: To is less than From.,صف #{0}: «لحد» أقل من «من».
+"Leave To empty on the last tier, so a course with more students still has a fee.",سيب «لحد» فاضي في آخر شريحة، علشان الكورس اللي طلبته أكتر يبقى ليه رسم برضه.
+Platform Fee,رسوم المنصة
+Students,الطلبة
+Submitted subscriptions. Counted again with every subscription submitted or cancelled until the term is closed.,الاشتراكات المعتمدة. بتتعد تاني مع كل اشتراك يتعتمد أو يتلغي لحد ما الترم يتقفل.
+"The tier for the course's number of students, by the tiers in force when its term starts.",شريحة عدد طلبة الكورس، بالشرايح السارية يوم بداية الترم.
+Fee per student × students: due from the doctor for this course.,الرسم للطالب × عدد الطلبة: المستحق على الطبيب عن الكورس ده.
+Course {0} has subscriptions. Its agreement and term cannot change.,الكورس {0} عليه اشتراكات. اتفاقيته وترمه مايتغيروش.
+"No platform fee tiers are in force on {0}, so course {1} is charged nothing yet.",مفيش شرايح رسوم منصة سارية يوم {0}، فالكورس {1} لسه مش عليه رسوم.
+Platform Fee per Student (Due from Doctor),رسوم المنصة للطالب (مستحقة على الطبيب)
+Worked out from the course's number of students and the tiers in force when its term starts (APP-03). The course itself is paid to the doctor directly and is not recorded.,محسوبة من عدد طلبة الكورس والشرايح السارية يوم بداية الترم (APP-03). تمن الكورس نفسه بيتدفع للطبيب مباشرة ومش بيتسجل.
+Withdrew,انسحب
+Ticked when the student leaves the course after the term starts. Whether he is still charged is the owner's decision (COUNT_WITHDRAWN in app_course.py).,بتتعلّم لما الطالب يسيب الكورس بعد بداية الترم. هل الرسم بيتحسب عليه ولا لأ ده قرار المالك (COUNT_WITHDRAWN في app_course.py).
+Platform Fees,رسوم المنصة
+Tier,الشريحة
+{0}+,{0} فأكثر

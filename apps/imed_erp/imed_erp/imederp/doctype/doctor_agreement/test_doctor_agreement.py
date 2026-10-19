@@ -14,6 +14,7 @@ from frappe.tests import IntegrationTestCase
 
 from frappe.utils import flt, today
 
+from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
 
@@ -29,7 +30,7 @@ ACCOUNTANT = "accountant@imed.local"
 # A payout comes out of a treasury (Doctor Ledger Entry).
 TREASURY = "الخزينة الرئيسية - MMG"
 
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "App Course", "Book Edition", "Cost Center", "Customer", "Doctor Agreement"]
 
 
 
@@ -159,13 +160,15 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		app.agreement_type = "App"
 		app.insert()
 		app.submit()
+		# Its course was opened before it was suspended.
+		course = make_course("_Test Suspended Course", app.name)
 		app.status = "Suspended"
 		app.save()
 		subscription = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
 				"student": make_doctor("_Test Suspended Student"),
-				"agreement": app.name,
+				"course": course,
 				"cost_center": frappe.get_all("Cost Center", filters={"is_group": 0}, pluck="name", limit=1)[0],
 				"subscription_date": today(),
 				"platform_fee": 50,

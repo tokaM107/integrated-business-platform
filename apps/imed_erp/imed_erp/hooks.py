@@ -324,6 +324,10 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
 		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+		# APP-03: the course's student count, tier and fee are counted again (also when a student withdraws).
+		"on_submit": "imed_erp.imederp.doctype.app_course.app_course.on_subscription_change",
+		"on_cancel": "imed_erp.imederp.doctype.app_course.app_course.on_subscription_change",
+		"on_update_after_submit": "imed_erp.imederp.doctype.app_course.app_course.on_subscription_change",
 	},
 	"Book Edition": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
