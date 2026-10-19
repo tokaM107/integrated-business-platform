@@ -1096,6 +1096,18 @@ The two counting rules the owner decides are constants at the top of `app_course
 `COUNT_WITHDRAWN` (a student whose submitted subscription is ticked *Withdrew* still counts; assumed until
 the owner answers).
 
+**In the doctor's account (APP-05, decided 19 Oct 2026).** The fee is posted automatically with every student
+(`imederp/platform_fee_posting.py`): whenever a course is counted again, the difference between its fee and what
+its doctor's ledger already holds for it is one *Doctor Ledger Entry* naming the course, an Accrual when it grows
+and an Adjustment when it shrinks (a cancelled student, or the 101st moving the course to 200 a student: 25,000
+becomes 20,200). Each has its journal entry: Dr مستحقات على الأطباء — رسوم المنصة (the doctor as the party) /
+Cr إيراد رسوم المنصة, on the app's cost center. They need no approval, send no statement, and are cancelled only
+by changing the course's subscriptions. The doctor's balance, Doctor Debts and Accounts Receivable show the fees.
+
+**Collecting them (APP-06).** A *Collection* in the doctor's ledger names the treasury the money goes into and
+is never more than he owes; it posts Dr the treasury / Cr the same receivable, and cancelling it takes the money
+back out.
+
 The *Platform Fees* report (APP-07; owner and accountant, on the owner's dashboard) lists each course of
 each doctor in a term with its students, the tier applied, the fee per student and the fee due, filtered by
 term, doctor or agreement. A student is subscribed once to a course: a second submitted subscription is
