@@ -1094,6 +1094,10 @@ shows students × fee per student (300 students → 200 a student → 60,000). E
 for one student. It is counted again whenever a subscription is submitted or cancelled, and for every open
 term's courses when a schedule is submitted or cancelled; once the term is closed it stays. The tiers are
 data the owner keeps (Super Admin), not code: new prices are a new schedule from a later date.
+The two counting rules the owner decides are constants at the top of `app_course.py`: `TIER_COUNTED_PER`
+(`"course"`, the owner's answer; `"doctor"` counts all the doctor's courses in the term together) and
+`COUNT_WITHDRAWN` (a student whose submitted subscription is ticked *Withdrew* still counts; assumed until
+the owner answers).
 
 Invoice PDFs need the site's `host_name` to point at the web server inside Docker, otherwise
 wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
