@@ -82,11 +82,11 @@ One row per student subscription. Becomes a submitted **App Subscription**.
 |---|---|---|---|
 | `source_system`, `source_id` | text | yes | `ba_plus` and the subscription's id in the app. |
 | `subscription_date` | date | yes | |
-| `doctor_agreement` | text | yes | The doctor's App agreement in the ERP (mapped once from the app's course or doctor id). |
+| `doctor_agreement` | text | yes | The doctor's App agreement in the ERP (mapped once from the app's course or doctor id). Used to find or make the *App Course*; the subscription takes its agreement, doctor and term from the course. |
 | `course` | text | yes | The course name in the app. Matched to an *App Course* of the agreement in the subscription's term, made first if missing. |
 | `student_phone` | text | yes | Matched to the student (a Customer) by phone, as in sales. |
 | `student_name` | text | yes | Used only when the student is new. |
-| `platform_fee` | number ≥ 0 | yes | The fee due from the doctor for this subscription (APP-02 tiers are applied in the app or here: to decide, APP-03). |
+| ~~`platform_fee`~~ | | no | Not imported: the ERP works it out from the course's number of students and the tiers in force when its term starts (APP-02/03). A value in the file is ignored. |
 
 ## 4. Studio bookings (INT-04): not ready
 
