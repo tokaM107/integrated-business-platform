@@ -35,6 +35,7 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Courses", "link_to": "App Course", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Platform Fee Tiers", "link_to": "Platform Fee Schedule", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Reorder Alerts", "link_to": "Reorder Alerts", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Stock Counts", "link_to": "Stock Count", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Stock Count Variance", "link_to": "Stock Count Variance", "link_type": "Report", "show_arrow": 0, "type": "Link"},
