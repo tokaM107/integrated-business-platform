@@ -856,9 +856,6 @@ Approval Status column and filter.
 made an approver by adding that role to their user (User > Roles), with User Permissions on the source
 warehouse.
 
-Not built yet: counter-based paper consumption per machine (the *Printer Reading* screen still names its
-machine as text, to be linked to Printing Machine when the counters are done).
-
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
 document types to allow (or tick **Disabled** to reopen everything). Only Owner and Accountant can. A
 document linked to a closed academic period cannot be saved either.
