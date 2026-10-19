@@ -102,11 +102,12 @@ class IntegrationTestAppCourse(IntegrationTestCase):
 
 
 def subscribe(course, count):
-	student = make_doctor("_Test Fee Student")
+	# Each subscription is another student: a student counts once in a course.
+	start = frappe.db.count("App Subscription", {"course": course})
 	subscriptions = []
-	for _ in range(count):
+	for i in range(start, start + count):
 		doc = frappe.get_doc(
-			{"doctype": "App Subscription", "student": student, "course": course, "subscription_date": "2031-09-15", "cost_center": APP}
+			{"doctype": "App Subscription", "student": make_student(i), "course": course, "subscription_date": "2031-09-15", "cost_center": APP}
 		).insert()
 		doc.submit()
 		subscriptions.append(doc)
@@ -115,6 +116,10 @@ def subscribe(course, count):
 
 COUNTED_PER = "imed_erp.imederp.doctype.app_course.app_course.TIER_COUNTED_PER"
 COUNT_WITHDRAWN = "imed_erp.imederp.doctype.app_course.app_course.COUNT_WITHDRAWN"
+
+
+def make_student(i):
+	return make_doctor(f"_Test Fee Student {i}")
 
 
 class IntegrationTestPlatformFee(IntegrationTestCase):
@@ -217,7 +222,7 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		course = make_course("_Test Draft Course")
 		subscribe(course, 2)
 		frappe.get_doc(
-			{"doctype": "App Subscription", "student": make_doctor("_Test Fee Student"), "course": course, "subscription_date": "2031-09-15", "cost_center": APP}
+			{"doctype": "App Subscription", "student": make_student(999), "course": course, "subscription_date": "2031-09-15", "cost_center": APP}
 		).insert()
 		self.assertEqual(self.fee(course), (2, 250, 500))
 
