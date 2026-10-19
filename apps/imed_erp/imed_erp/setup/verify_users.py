@@ -5,7 +5,8 @@
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_users.py").read(), {"frappe": frappe})
 #
 # Users are read from the site (every user @imed.local), so there is no user list to keep in sync here.
-# Matrix rows for modules that are not built yet (bookings, integrations, price approval) are listed as such.
+# Matrix rows that are not built yet (approval of a branch manager's booking changes, integrations, price
+# approval) are listed as such.
 
 import frappe
 
@@ -56,7 +57,7 @@ CHECKS = [
 	("Add a customer", "Customer", "create", (1, 1, 1, 0)),
 ]
 NOT_BUILT = [
-	"Create / edit / cancel a booking (Studio / Halls modules)",
+	"Edit / cancel a booking with approval (branch managers; today they edit and cancel their own without it)",
 	"Integrations screen and re-sync",
 	"Edit prices (Accountant: with approval) - approval flow",
 ]
