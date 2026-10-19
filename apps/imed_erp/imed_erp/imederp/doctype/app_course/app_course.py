@@ -8,6 +8,25 @@ from frappe.utils import flt
 
 from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_fee_per_student
 
+# ---------------------------------------------------------------------------------------------------------
+# The owner's answers on counting students for the platform fee tier (requirements v1.2 §4.10). Change them
+# here, and only here, when the owner answers or changes his mind; open terms are counted again with the next
+# subscription (or run recalculate_open_courses() from platform_fee_schedule.py at once).
+#
+# Question 31: which students choose the tier?
+#   "course": each course's own students (80 + 80 in two courses: 250 each, 40,000).
+#   "doctor": all the doctor's courses in the term together, i.e. the same agreement and term (160: 200
+#             each, 32,000). Every course of the doctor then takes the same fee per student.
+# Answered by the owner on 18 Oct 2026: per course.
+TIER_COUNTED_PER = "course"
+#
+# A student who withdraws after the term starts (the "Withdrew" box on the submitted subscription):
+#   True:  still counted and still charged.
+#   False: left out of the count, and the doctor is charged nothing for him.
+# Not answered yet (docs/known-issues.md): assumed True.
+COUNT_WITHDRAWN = True
+# ---------------------------------------------------------------------------------------------------------
+
 
 class AppCourse(Document):
 	# APP-01 (requirements v1.2): a course on the BA+ app, of one doctor's app agreement, in one term. Its
@@ -35,27 +54,41 @@ class AppCourse(Document):
 
 
 def recalculate_course(course):
-	"""APP-03: count the course's submitted subscriptions, take the tier for that count and charge every
-	subscription the tier's fee. The tier is counted per course, not across the doctor's courses (owner's
-	answer to question 31). Nothing changes once the term is closed."""
-	period = frappe.db.get_value("App Course", course, "period")
+	"""APP-03: count the students, take the tier for that count and charge every counted subscription the
+	tier's fee, by TIER_COUNTED_PER and COUNT_WITHDRAWN above. Nothing changes once the term is closed."""
+	agreement, period = frappe.db.get_value("App Course", course, ["agreement", "period"])
 	term = frappe.db.get_value("Academic Period", period, ["start_date", "is_closed"], as_dict=True)
 	if term.is_closed:
 		return
-	# A student who withdraws still counts: assumed until the owner decides (docs/known-issues.md).
-	students = frappe.db.count("App Subscription", {"course": course, "docstatus": 1})
-	fee = flt(get_fee_per_student(students, term.start_date))
+	courses = (
+		frappe.get_all("App Course", filters={"agreement": agreement, "period": period}, pluck="name")
+		if TIER_COUNTED_PER == "doctor"
+		else [course]
+	)
+	counted = {"course": ("in", courses), "docstatus": 1}
+	if not COUNT_WITHDRAWN:
+		counted["withdrawn"] = 0
+	fee = flt(get_fee_per_student(frappe.db.count("App Subscription", counted), term.start_date))
+
 	# Not a change by the user: a course or a subscription open on someone's screen can still be saved.
-	frappe.db.set_value(
-		"App Course",
-		course,
-		{"subscriptions": students, "fee_per_student": fee, "platform_fee_total": fee * students},
-		update_modified=False,
-	)
-	frappe.db.set_value(
-		"App Subscription", {"course": course, "docstatus": 1}, "platform_fee", fee, update_modified=False
-	)
-	if students and not fee:
+	for name in courses:
+		students = frappe.db.count("App Subscription", {**counted, "course": name})
+		frappe.db.set_value(
+			"App Course",
+			name,
+			{"subscriptions": students, "fee_per_student": fee, "platform_fee_total": fee * students},
+			update_modified=False,
+		)
+	frappe.db.set_value("App Subscription", counted, "platform_fee", fee, update_modified=False)
+	if not COUNT_WITHDRAWN:
+		frappe.db.set_value(
+			"App Subscription",
+			{"course": ("in", courses), "docstatus": 1, "withdrawn": 1},
+			"platform_fee",
+			0,
+			update_modified=False,
+		)
+	if not fee and frappe.db.count("App Subscription", counted):
 		frappe.msgprint(
 			_("No platform fee tiers are in force on {0}, so course {1} is charged nothing yet.").format(
 				frappe.format_value(term.start_date, {"fieldtype": "Date"}), course
@@ -66,5 +99,5 @@ def recalculate_course(course):
 
 
 def on_subscription_change(doc, method=None):
-	# hooks.py: App Subscription on_submit and on_cancel.
+	# hooks.py: App Subscription on_submit, on_cancel and on_update_after_submit (the Withdrew box).
 	recalculate_course(doc.course)
