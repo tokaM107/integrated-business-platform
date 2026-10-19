@@ -10,6 +10,7 @@
  "field_order": [
   "student",
   "course",
+  "doctor",
   "agreement",
   "period",
   "cost_center",
@@ -35,6 +36,15 @@
    "reqd": 1,
    "in_standard_filter": 1,
    "link_filters": "[[\"App Course\", \"status\", \"=\", \"Active\"]]"
+  },
+  {
+   "fetch_from": "course.doctor",
+   "fieldname": "doctor",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Doctor",
+   "options": "Customer",
+   "read_only": 1
   },
   {
    "fieldname": "agreement",
