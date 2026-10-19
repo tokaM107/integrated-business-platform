@@ -12,6 +12,7 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement, make_doctor
 from imed_erp.imederp.report.doctor_receivables import doctor_receivables
 
@@ -80,9 +81,9 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		doc = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
-				"student": make_doctor("_Test Report Student"),
-				"agreement": agreement,
-				"course": "_Test Course",
+				# A student counts once in a course.
+				"student": make_doctor(f"_Test Report Student {date}"),
+				"course": make_course(agreement=agreement),
 				"subscription_date": date,
 				"platform_fee": fee,
 				"cost_center": APP,

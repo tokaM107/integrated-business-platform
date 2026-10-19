@@ -82,15 +82,19 @@ One row per student subscription. Becomes a submitted **App Subscription**.
 |---|---|---|---|
 | `source_system`, `source_id` | text | yes | `ba_plus` and the subscription's id in the app. |
 | `subscription_date` | date | yes | |
-| `doctor_agreement` | text | yes | The doctor's App agreement in the ERP (mapped once from the app's course or doctor id). |
-| `course` | text | yes | The course name or id in the app. |
+| `doctor_agreement` | text | yes | The doctor's App agreement in the ERP (mapped once from the app's course or doctor id). Used to find or make the *App Course*; the subscription takes its agreement, doctor and term from the course. |
+| `course` | text | yes | The course name in the app. Matched to an *App Course* of the agreement in the subscription's term, made first if missing. |
 | `student_phone` | text | yes | Matched to the student (a Customer) by phone, as in sales. |
 | `student_name` | text | yes | Used only when the student is new. |
-| `platform_fee` | number ≥ 0 | yes | The fee due from the doctor for this subscription (APP-02 tiers are applied in the app or here: to decide, APP-03). |
+| ~~`platform_fee`~~ | | no | Not imported: the ERP works it out from the course's number of students and the tiers in force when its term starts (APP-02/03). A value in the file is ignored. |
 
-## 4. Studio bookings (INT-04): not ready
+## 4. Studio bookings (INT-04): the import is written, the file is not
 
-The ERP has no booking document yet (STU), and the booking system's access is still an open question (STU-11).
+Bookings are *Booking* documents, and `imederp/booking_import.py` (`import_bookings`) takes rows into them: a
+booking's key is its source system and its id there, the customer is found by phone, a changed booking is listed
+and not overwritten, and a row with an error fails alone with its reason (README, Bookings). What is still open:
+the booking system's access (STU-11), the file's columns, and what runs the import every day (a scheduled job or
+an upload screen) and keeps the failed rows for someone to see (INT-07).
 
 ## Master data: items and customers
 

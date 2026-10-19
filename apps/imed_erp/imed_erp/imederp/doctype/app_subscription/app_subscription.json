@@ -9,12 +9,14 @@
  "engine": "InnoDB",
  "field_order": [
   "student",
-  "agreement",
-  "cost_center",
   "course",
+  "doctor",
+  "agreement",
   "period",
+  "cost_center",
   "subscription_date",
   "platform_fee",
+  "withdrawn",
   "amended_from"
  ],
  "fields": [
@@ -26,23 +28,50 @@
    "reqd": 1
   },
   {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "App Course",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "link_filters": "[[\"App Course\", \"status\", \"=\", \"Active\"]]"
+  },
+  {
+   "fetch_from": "course.doctor",
+   "fieldname": "doctor",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Doctor",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
    "fieldname": "agreement",
    "fieldtype": "Link",
    "label": "Doctor Agreement",
    "options": "Doctor Agreement",
-   "reqd": 1
-  },
-  {
-   "fieldname": "course",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Course"
+   "reqd": 1,
+   "fetch_from": "course.agreement",
+   "read_only": 1
   },
   {
    "fieldname": "period",
    "fieldtype": "Link",
-   "label": "Period",
-   "options": "Academic Period"
+   "label": "Term",
+   "options": "Academic Period",
+   "fetch_from": "course.period",
+   "read_only": 1
+  },
+  {
+   "description": "The business this record belongs to. Branch managers only see their own.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Cost Center",
+   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
+   "options": "Cost Center",
+   "reqd": 1
   },
   {
    "fieldname": "subscription_date",
@@ -55,8 +84,20 @@
    "fieldname": "platform_fee",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Platform Fee (Due from Doctor)",
-   "description": "Due from the doctor for this student, by the term's tier. The course itself is paid to the doctor directly and is not recorded."
+   "label": "Platform Fee per Student (Due from Doctor)",
+   "description": "Worked out from the course's number of students and the tiers in force when its term starts (APP-03). The course itself is paid to the doctor directly and is not recorded.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "eval:doc.docstatus==1",
+   "description": "Ticked when the student leaves the course after the term starts. Whether he is still charged is the owner's decision (COUNT_WITHDRAWN in app_course.py).",
+   "fieldname": "withdrawn",
+   "fieldtype": "Check",
+   "label": "Withdrew",
+   "no_copy": 1
   },
   {
    "fieldname": "amended_from",
@@ -67,23 +108,13 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "description": "The business this record belongs to. Branch managers only see their own.",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Cost Center",
-   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
-   "options": "Cost Center",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-19 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Subscription",

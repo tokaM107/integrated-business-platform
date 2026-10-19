@@ -7,9 +7,10 @@
 #
 #   HAL-02  a hall booking records the activity and the responsible person's name and phone.
 #   STU-08  Tentative, Confirmed with Deposit, Completed, Cancelled (with its reason), No Show.
-#   HAL-04, STU-02, STU-14  two bookings of the same resource never overlap, whatever their source.
+#   HAL-04, STU-14  two bookings of the same resource never overlap, whatever their source.
 #
-# The Booking calendar (Bookings > Calendar, booking_calendar.js) shows a day or a week of them: get_events below.
+# HAL-10, STU-02: the Booking calendar (Bookings > Calendar, booking_calendar.js) shows a day or a week of them:
+# get_events below.
 #
 # Total Amount and Amount Paid are recorded on the booking, with the remaining amount; nothing is posted to the
 # accounts. The payment is recorded through the accounts (a Sales Invoice of the resource's service item into the

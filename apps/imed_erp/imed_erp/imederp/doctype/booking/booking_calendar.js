@@ -1,9 +1,10 @@
 // Copyright (c) 2026, toka mohamed and contributors
 // For license information, please see license.txt
 
-// The Booking calendar (Bookings > Calendar): Frappe's own calendar view, opened on a week, with Day and Week (and
-// Month) to switch and arrows to move. Bookings come from booking.get_events, which reads them as the Bookings list
-// does, so each user sees only the bookings they may read; the list's filters (a resource, a status) apply here too.
+// The Booking calendar (HAL-10, STU-02; Bookings > Calendar): Frappe's own calendar view, opened on a week, with Day
+// and Week (and Month) to switch and arrows to move. Bookings come from booking.get_events, which reads them as the
+// Bookings list does, so each user sees only the bookings they may read; the list's filters (a resource, a status)
+// apply here too.
 //
 // Each booking shows its resource, customer and status, by colour: a booking that holds its time is solid, a
 // cancelled one or a no-show (which free their time) faded and struck through. Bookings at the same time sit side by

@@ -305,6 +305,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_recurring_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_allocation_rules.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_platform_fees.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_setup.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/verify_users.py").read(), {"frappe": frappe})
@@ -334,9 +335,10 @@ without changing anything if they do not (so a user is never created without the
 | `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق`, `الهالك والتالف` and `الاشتراكات والسيرفرات` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). The monthly bills sit in two groups: `المرافق` (electricity, water, internet, gas, and rent, which keeps its own account) and `الاشتراكات والسيرفرات` (the app's server and AI subscriptions). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
+| `setup_platform_fees.py` | Submits the platform fee tiers approved by the owner (APP-02) from 1 Sep 2026: 1–100 students 250, 101–500 200, more than 500 170 a student of a course in a term. Later prices are new schedules from the Platform Fee Schedule screen. A schedule already in force from that date is left as is. Idempotent. |
 | `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, Stock Count, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
-`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
+`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `setup_platform_fees.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 
@@ -612,14 +614,14 @@ prices are still blank in the requirements.
 | Status (STU-08) | Tentative, **Confirmed with Deposit** (needs an amount paid), Completed and No Show (only once the booking has started), Cancelled (needs its reason). |
 | Source (STU-14) | **Manual** for every booking entered here (WhatsApp, walk-in), whatever is sent; **Imported** only through the import, with its source system and id. |
 
-- **No overlap** (HAL-04, STU-02, STU-14), checked on the server: a Tentative, Confirmed or Completed booking of a
+- **No overlap** (HAL-04, STU-14), checked on the server: a Tentative, Confirmed or Completed booking of a
   resource never overlaps another one, manual or imported. One that ends when the next starts does not overlap. A
   cancelled booking and a no-show free their time. Two people saving the same resource at the same moment are
   checked one after the other: each booking writes its resource's row first, and MariaDB refuses the second one,
   whose save asks to **save again** (it then sees the first). This relies on `innodb_snapshot_isolation`, MariaDB
   11.8's default (`pwd.yml`), which a test checks. Bookings of different resources never wait for each other.
   The same check runs whatever saves the booking: the form, the REST API (`frappe.client`) or the import.
-- **Calendar** (Bookings > the view menu > **Calendar**, `booking_calendar.js`): Frappe's own calendar, opened on
+- **Calendar** (HAL-10, STU-02; Bookings > the view menu > **Calendar**, `booking_calendar.js`): Frappe's own calendar, opened on
   the week, with **Day** and **Week** (and Month) and arrows to move. Each booking shows its resource, customer,
   times and status (its colour, with a legend; hovering gives the date too). Bookings at the same time sit side by
   side; a cancelled one or a no-show is faded and struck through (its time is free); two of the same resource that
@@ -864,9 +866,6 @@ Approval Status column and filter.
 made an approver by adding that role to their user (User > Roles), with User Permissions on the source
 warehouse.
 
-Not built yet: counter-based paper consumption per machine (the *Printer Reading* screen still names its
-machine as text, to be linked to Printing Machine when the counters are done).
-
 To reopen a closed month: Accounting > Accounting Period > open the month > untick **Closed** on the
 document types to allow (or tick **Disabled** to reopen everything). Only Owner and Accountant can. A
 document linked to a closed academic period cannot be saved either.
@@ -1091,6 +1090,32 @@ An App Subscription records the student and the platform fee due from the doctor
 by the student to the doctor directly and is not recorded (APP-05, v1.2). Editions belong to books
 agreements and subscriptions to app agreements.
 
+A subscription is made on an *App Course* (APP-01): the course's name, its doctor's app agreement and its
+term. The doctor comes from the agreement, and the subscription takes its agreement and term from the
+course, so the user only picks the student and the course. A course is made once per agreement and term; a
+closed course takes no new subscriptions.
+
+The platform fee (APP-02/03) is counted per course: its submitted subscriptions are its students, the tier
+for that number is taken from the *Platform Fee Schedule* in force when its term starts, and the course
+shows students × fee per student (300 students → 200 a student → 60,000). Every subscription carries the fee
+for one student. It is counted again whenever a subscription is submitted or cancelled, and for every open
+term's courses when a schedule is submitted or cancelled; once the term is closed it stays. The tiers are
+data the owner keeps (Super Admin), not code: new prices are a new schedule from a later date.
+The two counting rules the owner decides are constants at the top of `app_course.py`: `TIER_COUNTED_PER`
+(`"course"`, the owner's answer; `"doctor"` counts all the doctor's courses in the term together) and
+`COUNT_WITHDRAWN` (a student whose submitted subscription is ticked *Withdrew* still counts; assumed until
+the owner answers).
+
+The *Platform Fees* report (APP-07; owner and accountant, on the owner's dashboard) lists each course of
+each doctor in a term with its students, the tier applied, the fee per student and the fee due, filtered by
+term, doctor or agreement. A student is subscribed once to a course: a second submitted subscription is
+refused until the first is cancelled.
+
+The tests (`test_app_course.py`, `test_platform_fee_schedule.py`) check the owner's tiers on whole
+courses: 100 students → 25,000, 300 → 60,000, 501 → 85,170; the 101st student moves every subscription
+to the second tier and cancelling it moves them back; tiers from a later date leave a term that started
+before them alone; and both answers to each counting rule.
+
 Invoice PDFs need the site's `host_name` to point at the web server inside Docker, otherwise
 wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
 
@@ -1135,6 +1160,9 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "A
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Agreement"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Book Edition"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Doctor Ledger Entry"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "App Course"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "App Subscription"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Platform Fee Schedule"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
