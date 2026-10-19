@@ -24,6 +24,7 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_balan
 IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"Academic Period",
 	"Account",
+	"App Course",
 	"Book Edition",
 	"Customer",
 	"Doctor Agreement",
