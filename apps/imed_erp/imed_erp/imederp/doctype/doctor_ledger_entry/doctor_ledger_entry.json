@@ -21,6 +21,7 @@
   "source_section",
   "sales_invoice",
   "invoice_item",
+  "app_course",
   "column_break_source",
   "journal_entry",
   "approval_section",
@@ -81,9 +82,9 @@
    "fieldtype": "Link",
    "label": "Treasury",
    "options": "Account",
-   "depends_on": "eval:doc.entry_type=='Payout'",
-   "mandatory_depends_on": "eval:doc.entry_type=='Payout'",
-   "description": "The cash box or wallet the money is paid from."
+   "depends_on": "eval:['Payout','Collection'].includes(doc.entry_type)",
+   "mandatory_depends_on": "eval:['Payout','Collection'].includes(doc.entry_type)",
+   "description": "The cash box or wallet the money is paid from (a payout) or goes into (a collection)."
   },
   {
    "fieldname": "remarks",
@@ -112,6 +113,15 @@
    "no_copy": 1,
    "search_index": 1,
    "depends_on": "sales_invoice"
+  },
+  {
+   "description": "The app course whose platform fee this entry posted (APP-05). Posted by the system, with the course's subscriptions.",
+   "fieldname": "app_course",
+   "fieldtype": "Link",
+   "label": "App Course",
+   "options": "App Course",
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "fieldname": "column_break_source",
@@ -171,7 +181,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-15 18:00:00.000000",
+ "modified": "2026-10-19 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Ledger Entry",

@@ -37,7 +37,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 | Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Built: *Booking*, *Booking Resource* (STU-01/03/08/14, HAL-01/02/04/07). The import is written (`booking_import.py`) but nothing runs it yet. Calendar, pricing, add-ons, rental models and reports: see the requirements review below |
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Built: *Printing Machine*, *Daily Counter Reading*, *Printer Reading* (machine linked), the *Daily Printing* report |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
-| BA+ app subscriptions and platform fees | APP | Courses, tiers and the fee per course (APP-01/02/03); not posted to the doctor's ledger yet (APP-05) |
+| BA+ app subscriptions and platform fees | APP | Courses, tiers, the fee per course, posted to the doctor's account, collected into a treasury, and the report (APP-01 to 07) |
 | Integrations with the library system, studio booking system and BA+ app | INT | Not started (open questions ★ 10, 27, 28) |
 | Mobile application | — | Not started |
 | AI assistant (owner only, read only) | AI | Chat window, voice and permissions done; model not connected yet (`imed_erp/assistant/providers.py`) |
@@ -53,7 +53,7 @@ sections of this file. Each row says what it needs before it can be built.
 
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
-| 1 | APP-05, APP-06, ACC-13 (Must) | Platform fees are not posted to the doctor's account, and a *Collection* in the doctor's ledger posts no journal entry: the money collected from a doctor enters no cash box. | Collected fees are missing from the books and the app's treasury. | When the fee is posted (each subscription, or the course's total when the term closes), the revenue account, and the treasury a collection goes into. Owner / accountant. |
+| 1 | APP-05, APP-06, ACC-13 (Must) | Done on 19 Oct: the fee is posted to the doctor's account with every student (decided that day), and a Collection goes into the treasury it names. Open: what a withdrawal does (`COUNT_WITHDRAWN`). | | |
 | 2 | ACC-03 (Must) | No daily close: nothing compares the cash counted in a box with its balance. | A shortage at a branch is found only at the weekly hand-over, if at all. | How the close is made (ERPNext POS Closing Entry per library, or a daily count per treasury) and who approves it. Accountant. |
 | 3 | ACC-05 (Must) | Revenue is recorded when the invoice is submitted (ERPNext's accrual basis), not when it is collected; the rest shows as receivables. | The P&L can show revenue not collected yet. | Keep accrual (usual accounting, receivables report shows what is owed) or follow the text. Accountant. |
 | 4 | ACC-04 (Must) | A deposit (عربون) is not posted: the *Booking*'s amount paid stays on the booking, and the account العرابين المقبوضة is not used. | Cash taken as deposits is in no treasury. | With the bookings' posting question below. |
@@ -91,7 +91,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
-| 24 | APP-11 (Must) | The doctor's statement for an app agreement has no courses, students, tier or fees. | With 1. |
+| 24 | APP-11 (Must) | The doctor's statement for an app agreement lists each course's fee entries (course, students × fee) and the collections, but not a table of courses with their tier. | A course table on the statement. |
 | 25 | RPT-01, RPT-02 (Must) | Revenue per business and period, and profit before and after the shared costs, are ERPNext's P&L by cost center; the README does not say how to read them. | A README section, or a report. |
 | 26 | PRN-03 (Should) | Waste and losses are in three places (Daily Printing, damaged stock, Stock Count Variance), not one monthly report. | A report. |
 | 27 | PRN-04 (Must) | The paper balance is in sheets only, not in boxes and reams. | A column in boxes and reams. |
@@ -147,7 +147,7 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 
 | # | Question | Until decided | Ask |
 |---|---|---|---|
-| 1 | **Platform fees in the doctor's ledger.** App Subscriptions post nothing to the ledger, so an app agreement's balance holds only its collections, and Doctor Debts (RPT-10, read from the ledger) shows a fee as owed only once it is in the ledger. Should each subscription's fee be posted to the ledger as an Accrual? | Fees on subscriptions alone do not show as debts. | Owner / Taqa |
+| 1 | **Platform fees in the doctor's ledger.** Decided 19 Oct 2026: posted automatically with every student (platform_fee_posting.py), so Doctor Debts shows them. | Done. | |
 | 2 | **Payouts by library.** RPT-08 asks for receivables by library. A payout made for the agreement as a whole has no library, so the libraries' rows do not each show what is still owed to them. Should a payout name its library? | Shown as *Not by branch*; the agreement's row is the balance. | Accountant / Taqa |
 | 3 | **Who sees the reports.** RPT-08 and RPT-10 are Super Admin reports. | The owner and the accountant (Accounts Manager, who may open the doctor's ledger). | Owner |
 | 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |

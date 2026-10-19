@@ -14,12 +14,14 @@ from frappe.tests import IntegrationTestCase
 
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement, make_doctor
+from imed_erp.imederp.doctype.platform_fee_schedule.test_platform_fee_schedule import make_schedule
 from imed_erp.imederp.report.doctor_receivables import doctor_receivables
 
 # A test module outside a doctype folder builds no "_Test ..." records; keep it here, not under a doctype.
 MAWASAH = "مكتبة المواساة - MMG"
 APP = "تطبيق BA Plus - MMG"
 CASH_BOX = "خزينة مكتبة المواساة - MMG"
+APP_TREASURY = "خزينة تطبيق BA Plus - MMG"
 AS_ON = "2026-10-15"
 
 
@@ -40,16 +42,13 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		cls.negative = make_agreement("Books", 82)
 		cls.entry(cls.negative, "2026-08-01", "Accrual", 100)
 		cls.entry(cls.negative, "2026-09-01", "Unsold Copies Charge", 300)
-		# App: fees 250 (1 Jul) and 200 (20 Sep), 300 collected on 1 Oct. The oldest fee is paid first, so 150 of
-		# the 20 Sep fee is still owed.
+		# App: two students post 250 each to the doctor's account (APP-05), 300 collected on 1 Oct into the app's
+		# treasury (APP-06). An app agreement is in Doctor Debts, never in these receivables.
+		make_schedule()
 		cls.app = make_agreement("App", 83)
-		cls.subscription(cls.app, "2026-07-01", 250)
-		cls.subscription(cls.app, "2026-09-20", 200)
-		cls.entry(cls.app, "2026-10-01", "Collection", 300)
-		# App whose fee is also posted to the ledger as an Accrual: counted once, from the ledger.
-		cls.app_in_ledger = make_agreement("App", 84)
-		cls.subscription(cls.app_in_ledger, "2026-10-01", 170)
-		cls.entry(cls.app_in_ledger, "2026-10-01", "Accrual", 170)
+		cls.subscription(cls.app, "2026-07-01")
+		cls.subscription(cls.app, "2026-09-20")
+		cls.entry(cls.app, "2026-10-01", "Collection", 300, treasury=APP_TREASURY)
 
 	@classmethod
 	@patch(PAPER_COST, return_value=0.30)
@@ -77,7 +76,7 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		doc.submit()
 
 	@staticmethod
-	def subscription(agreement, date, fee):
+	def subscription(agreement, date):
 		doc = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
@@ -85,7 +84,6 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 				"student": make_doctor(f"_Test Report Student {date}"),
 				"course": make_course(agreement=agreement),
 				"subscription_date": date,
-				"platform_fee": fee,
 				"cost_center": APP,
 			}
 		).insert()

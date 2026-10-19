@@ -171,6 +171,12 @@ def block_cancel_of_accrual(doc, method=None):
 	if doc.flags.from_doctor_accrual:
 		return
 	if doc.doctype == LEDGER:
+		if doc.app_course:
+			# APP-05: the course's fee follows its subscriptions (platform_fee_posting.py).
+			frappe.throw(
+				_("{0} is the platform fee of course {1}. It changes with the course's subscriptions.").format(doc.name, doc.app_course),
+				title=_("Posted by a Course"),
+			)
 		invoice = doc.sales_invoice
 	else:
 		entry = frappe.db.get_value(LEDGER, {"journal_entry": doc.name, "docstatus": 1}, ["name", "sales_invoice"], as_dict=True)

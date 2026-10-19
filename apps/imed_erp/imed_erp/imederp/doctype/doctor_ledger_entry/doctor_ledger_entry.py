@@ -7,6 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, flt, today
 
 from imed_erp.imederp.doctor_accrual import PAYABLE_ACCOUNT, account, cancel
+from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT
 from imed_erp.imederp.doctype.book_edition.book_edition import get_copy_cost, get_sold_qty
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_submitted, get_balance, update_balance
 from imed_erp.imederp.doctype.expense.expense import APPROVER_ROLE, get_approvers, is_approver
@@ -41,6 +42,8 @@ class DoctorLedgerEntry(Document):
 			frappe.throw(_("{0} is for a {1} agreement only.").format(_(self.entry_type), _(ONLY_ON[self.entry_type])))
 		if self.edition and frappe.db.get_value("Book Edition", self.edition, "agreement") != self.agreement:
 			frappe.throw(_("Edition {0} belongs to another agreement.").format(self.edition))
+		if self.app_course and frappe.db.get_value("App Course", self.app_course, "agreement") != self.agreement:
+			frappe.throw(_("Course {0} belongs to another agreement.").format(self.app_course))
 		self.validate_source()
 		self.validate_payout()
 
@@ -48,7 +51,7 @@ class DoctorLedgerEntry(Document):
 		"""A charge for unsold copies, or an adjustment taking money off the doctor by hand. A credit note's
 		adjustment is not one: the returned copies are simply no longer sold."""
 		return self.entry_type == "Unsold Copies Charge" or (
-			self.entry_type == "Adjustment" and flt(self.amount) < 0 and not self.sales_invoice
+			self.entry_type == "Adjustment" and flt(self.amount) < 0 and not self.sales_invoice and not self.app_course
 		)
 
 	def protect_approval(self):
@@ -105,15 +108,30 @@ class DoctorLedgerEntry(Document):
 	def validate_payout(self):
 		# DOC-09, ACC-11: money paid to the doctor comes out of a treasury, in part and as often as needed, but
 		# never more than he is owed (that would leave him a debt by mistake; DOC-20 debts come from charges).
-		if self.entry_type != "Payout":
+		# APP-06: money collected from him goes into a treasury, never more than he owes.
+		if self.entry_type not in ("Payout", "Collection"):
 			self.treasury = None
 			return
 		if not self.treasury:
-			frappe.throw(_("Choose the treasury the money is paid from."), title=_("Treasury Required"))
+			frappe.throw(
+				_("Choose the treasury the money is paid from.")
+				if self.entry_type == "Payout"
+				else _("Choose the treasury the money goes into."),
+				title=_("Treasury Required"),
+			)
 		treasury = frappe.db.get_value("Account", self.treasury, ["account_type", "is_group"], as_dict=True)
 		if not treasury or treasury.is_group or treasury.account_type not in ("Cash", "Bank"):
 			frappe.throw(_("{0} is not a treasury. Choose a cash box or a wallet.").format(self.treasury), title=_("Wrong Treasury"))
 		owed = flt(get_balance(self.agreement), 2)
+		if self.entry_type == "Collection":
+			if flt(self.amount) > owed:
+				frappe.throw(
+					_("The doctor owes {0} under {1}; a collection of {2} is more than that. Collect {0} or less.").format(
+						owed, self.agreement, flt(self.amount)
+					),
+					title=_("More Than Owed"),
+				)
+			return
 		if flt(self.amount) > owed:
 			frappe.throw(
 				_("The doctor is owed {0} under {1}; a payout of {2} is more than that. Pay {0} or less.").format(
@@ -150,6 +168,8 @@ class DoctorLedgerEntry(Document):
 		self.validate_approved()
 		if self.entry_type == "Payout":
 			self.journal_entry = self.post_payout()
+		elif self.entry_type == "Collection":
+			self.journal_entry = self.post_collection()
 
 	def post_payout(self):
 		"""Dr مستحقات للأطباء — الكتب / Cr the treasury. The journal entry runs its own checks, among them the
@@ -173,6 +193,33 @@ class DoctorLedgerEntry(Document):
 		journal_entry.submit()
 		return journal_entry.name
 
+	def post_collection(self):
+		"""APP-06: Dr the treasury / Cr مستحقات على الأطباء — رسوم المنصة, the doctor as the party: the fees the
+		courses posted (platform_fee_posting.py) are paid off."""
+		company = frappe.db.get_value("Account", self.treasury, "company")
+		doctor = frappe.db.get_value("Doctor Agreement", self.agreement, "doctor")
+		journal_entry = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"voucher_type": "Journal Entry",
+				"company": company,
+				"posting_date": self.entry_date,
+				"accounts": [
+					{"account": self.treasury, "debit_in_account_currency": flt(self.amount)},
+					{
+						"account": account(company, RECEIVABLE_ACCOUNT),
+						"party_type": "Customer",
+						"party": doctor,
+						"credit_in_account_currency": flt(self.amount),
+					},
+				],
+				"user_remark": _("Platform fees collected from {0} under {1} ({2}).").format(doctor, self.agreement, self.name),
+			}
+		)
+		journal_entry.insert()
+		journal_entry.submit()
+		return journal_entry.name
+
 	# The agreement's Balance is worked out from these entries (doctor_agreement.py).
 	def on_submit(self):
 		update_balance(self.agreement, self)
@@ -181,7 +228,7 @@ class DoctorLedgerEntry(Document):
 	def send_statement(self):
 		# DOC-23: a settlement by hand (a payout, an approved charge, an adjustment, a collection) sends the doctor
 		# his statement. Sales do not: there would be one a copy.
-		if self.sales_invoice or self.entry_type == "Accrual":
+		if self.sales_invoice or self.app_course or self.entry_type == "Accrual":
 			return
 		from imed_erp.imederp.report.doctor_statement.doctor_statement import send_statement, statement_period
 
@@ -190,8 +237,9 @@ class DoctorLedgerEntry(Document):
 			send_statement(self.agreement, period, _("{0} {1} of {2}").format(_(self.entry_type), self.name, abs(flt(self.amount))))
 
 	def on_cancel(self):
-		# A payout's journal entry goes with it; a sale's goes with the sale (doctor_accrual.cancel_accruals).
-		if self.entry_type == "Payout" and self.journal_entry:
+		# A payout's or a collection's journal entry goes with it; a sale's goes with the sale
+		# (doctor_accrual.cancel_accruals). A course's entries are never cancelled (platform_fee_posting.py).
+		if self.entry_type in ("Payout", "Collection") and self.journal_entry:
 			if frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
 				cancel("Journal Entry", self.journal_entry)
 		update_balance(self.agreement, self)
