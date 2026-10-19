@@ -132,6 +132,36 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		subscribe(course, 300)
 		self.assertEqual(self.fee(course), (300, 200, 60000))
 
+	def test_100_students_are_charged_25000(self):
+		# The top of the first tier.
+		course = make_course("_Test 100 Course")
+		subscribe(course, 100)
+		self.assertEqual(self.fee(course), (100, 250, 25000))
+
+	def test_501_students_are_charged_85170(self):
+		# The first student over 500 moves the course to the third tier: 501 x 170.
+		course = make_course("_Test 501 Course")
+		subscribe(course, 501)
+		self.assertEqual(self.fee(course), (501, 170, 85170))
+
+	def test_new_tiers_from_a_later_date_leave_an_earlier_term_alone(self):
+		# Prices from 1 Oct 2031 are for the terms that start from then; the term from 1 Sep 2031 keeps the
+		# owner's tiers, and a term from 1 Oct takes the new ones.
+		old = make_course("_Test Earlier Term Course")
+		subscribe(old, 300)
+		make_schedule("2031-10-01", [(1, None, 400)])
+		self.assertEqual(self.fee(old), (300, 200, 60000))
+
+		term = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": "_Test Later Term", "period_type": "Term", "start_date": "2031-10-01", "end_date": "2031-12-31"}
+		).insert()
+		new = make_course("_Test Later Term Course", period=term.name)
+		subscribe(new, 300)
+		self.assertEqual(self.fee(new), (300, 400, 120000))
+		# A new subscription on the earlier term still counts by its own tiers.
+		subscribe(old, 1)
+		self.assertEqual(self.fee(old), (301, 200, 60200))
+
 	def test_the_101st_student_moves_every_subscription_to_the_next_tier(self):
 		course = make_course("_Test 101 Course")
 		subscribe(course, 100)
