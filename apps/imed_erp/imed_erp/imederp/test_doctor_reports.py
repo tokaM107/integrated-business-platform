@@ -81,7 +81,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		doc = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
-				"student": make_doctor("_Test Report Student"),
+				# A student counts once in a course.
+				"student": make_doctor(f"_Test Report Student {date}"),
 				"course": make_course(agreement=agreement),
 				"subscription_date": date,
 				"platform_fee": fee,
