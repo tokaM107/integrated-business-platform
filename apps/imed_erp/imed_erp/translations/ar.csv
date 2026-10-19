@@ -779,3 +779,11 @@ Difference,الفرق
 cancelled on {0}: the curriculum changed,اتلغى يوم {0}: المنهج اتغير
 when {0} ended,لما {0} خلصت
 "{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.",{0}: {1} من نسخ الطبيب الـ {2} ماتباعتش × {3} للنسخة، {4}.
+Enter the booking's {0}.,اكتب {0} بتوع الحجز.
+Overlap,تداخل
+Overlaps another booking of {0},متداخل مع حجز تاني لـ {0}
+Select free time to book it.,حدّد وقت فاضي عشان تحجزه.
+Loading bookings…,بيحمّل الحجوزات…
+No bookings on this day.,مفيش حجوزات في اليوم ده.
+No bookings in this period.,مفيش حجوزات في الفترة دي.
+"The bookings could not be loaded. Move to another day and back, or reload the page.","الحجوزات ماتحمّلتش. روح ليوم تاني وارجع، أو حمّل الصفحة من جديد.
