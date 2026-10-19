@@ -17,6 +17,14 @@ class AppSubscription(Document):
         self.agreement, self.doctor, self.period = course.agreement, course.doctor, course.period
         if self.docstatus == 0 and course.status != "Active":
             frappe.throw(_("Course {0} is closed. It takes no new subscriptions.").format(self.course))
+        # A student counts once in a course: twice would raise the count, maybe to another tier, and charge
+        # the doctor for him twice (APP-03). A draft may wait beside it; only one is submitted. Cancel the old
+        # subscription to subscribe him again.
+        twin = frappe.db.exists(
+            "App Subscription", {"student": self.student, "course": self.course, "docstatus": 1, "name": ("!=", self.name)}
+        )
+        if twin:
+            frappe.throw(_("{0} is already subscribed to course {1}: {2}.").format(self.student, self.course, twin))
         # Records are posted to one business; group cost centers cannot hold transactions.
         if frappe.db.get_value("Cost Center", self.cost_center, "is_group"):
             frappe.throw(_("Cost Center {0} is a group. Choose a branch under it.").format(self.cost_center))
