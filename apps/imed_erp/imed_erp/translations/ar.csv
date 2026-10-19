@@ -904,3 +904,7 @@ Ticked when the student leaves the course after the term starts. Whether he is s
 Platform Fees,رسوم المنصة
 Tier,الشريحة
 {0}+,{0} فأكثر
+Studio Bookings,حجوزات الاستوديو
+Studio Hours,ساعات الاستوديو
+Hall Bookings,حجوزات القاعات
+Unpaid on Bookings,المتبقي على الحجوزات

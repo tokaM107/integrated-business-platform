@@ -88,9 +88,13 @@ One row per student subscription. Becomes a submitted **App Subscription**.
 | `student_name` | text | yes | Used only when the student is new. |
 | ~~`platform_fee`~~ | | no | Not imported: the ERP works it out from the course's number of students and the tiers in force when its term starts (APP-02/03). A value in the file is ignored. |
 
-## 4. Studio bookings (INT-04): not ready
+## 4. Studio bookings (INT-04): the import is written, the file is not
 
-The ERP has no booking document yet (STU), and the booking system's access is still an open question (STU-11).
+Bookings are *Booking* documents, and `imederp/booking_import.py` (`import_bookings`) takes rows into them: a
+booking's key is its source system and its id there, the customer is found by phone, a changed booking is listed
+and not overwritten, and a row with an error fails alone with its reason (README, Bookings). What is still open:
+the booking system's access (STU-11), the file's columns, and what runs the import every day (a scheduled job or
+an upload screen) and keeps the failed rows for someone to see (INT-07).
 
 ## Master data: items and customers
 
