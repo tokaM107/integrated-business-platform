@@ -8,6 +8,8 @@
 # Run:
 #   bench --site frontend run-tests --doctype "App Course"
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 
@@ -111,6 +113,10 @@ def subscribe(course, count):
 	return subscriptions
 
 
+COUNTED_PER = "imed_erp.imederp.doctype.app_course.app_course.TIER_COUNTED_PER"
+COUNT_WITHDRAWN = "imed_erp.imederp.doctype.app_course.app_course.COUNT_WITHDRAWN"
+
+
 class IntegrationTestPlatformFee(IntegrationTestCase):
 	# APP-03: students -> tier -> fee per student x students, per course.
 	@classmethod
@@ -147,6 +153,35 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		subscribe(second, 80)
 		self.assertEqual(self.fee(first), (80, 250, 20000))
 		self.assertEqual(self.fee(second), (80, 250, 20000))
+
+	@patch(COUNTED_PER, "doctor")
+	def test_counted_on_all_the_doctors_courses_if_the_owner_says_so(self):
+		# The same two courses counted together: 160 students, the second tier for both.
+		agreement = make_agreement("App", 86)
+		first, second = make_course("_Test First", agreement), make_course("_Test Second", agreement)
+		subscribe(first, 80)
+		subscribe(second, 80)
+		self.assertEqual(self.fee(first), (80, 200, 16000))
+		self.assertEqual(self.fee(second), (80, 200, 16000))
+
+	def test_a_student_who_withdraws_is_still_counted(self):
+		course = make_course("_Test Withdrawn Counted")
+		withdrawn = subscribe(course, 101)[0]
+		withdrawn.withdrawn = 1
+		withdrawn.save()
+		self.assertEqual(self.fee(course), (101, 200, 20200))
+		self.assertEqual(frappe.db.get_value("App Subscription", withdrawn.name, "platform_fee"), 200)
+
+	@patch(COUNT_WITHDRAWN, False)
+	def test_a_student_who_withdraws_is_left_out_if_the_owner_says_so(self):
+		course = make_course("_Test Withdrawn Left Out")
+		withdrawn = subscribe(course, 101)[0]
+		self.assertEqual(self.fee(course), (101, 200, 20200))
+		withdrawn.withdrawn = 1
+		withdrawn.save()
+		# 100 left: back to the first tier, and nothing charged for him.
+		self.assertEqual(self.fee(course), (100, 250, 25000))
+		self.assertEqual(frappe.db.get_value("App Subscription", withdrawn.name, "platform_fee"), 0)
 
 	def test_a_draft_is_not_counted(self):
 		course = make_course("_Test Draft Course")
