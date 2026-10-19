@@ -908,3 +908,12 @@ Studio Bookings,حجوزات الاستوديو
 Studio Hours,ساعات الاستوديو
 Hall Bookings,حجوزات القاعات
 Unpaid on Bookings,المتبقي على الحجوزات
+"The app course whose platform fee this entry posted (APP-05). Posted by the system, with the course's subscriptions.",كورس التطبيق اللي الحركة دي سجلت رسوم المنصة بتاعته (APP-05). السيستم هو اللي بيسجلها مع اشتراكات الكورس.
+The cash box or wallet the money is paid from (a payout) or goes into (a collection).,الخزنة أو المحفظة اللي الفلوس بتطلع منها (صرف) أو بتدخلها (تحصيل).
+Choose the treasury the money goes into.,اختار الخزنة اللي الفلوس هتدخلها.
+The doctor owes {0} under {1}; a collection of {2} is more than that. Collect {0} or less.,الطبيب عليه {0} في {1}، وتحصيل {2} أكتر من كده. حصّل {0} أو أقل.
+Platform fees collected from {0} under {1} ({2}).,رسوم منصة اتحصلت من {0} في {1} ({2}).
+Course {0} belongs to another agreement.,الكورس {0} تبع اتفاقية تانية.
+{0} is the platform fee of course {1}. It changes with the course's subscriptions.,{0} هي رسوم المنصة بتاعة الكورس {1}. بتتغير مع اشتراكات الكورس.
+Posted by a Course,متسجلة من كورس
+Platform fee of {0}: {1} students x {2} = {3},رسوم منصة {0}: {1} طالب × {2} = {3}
