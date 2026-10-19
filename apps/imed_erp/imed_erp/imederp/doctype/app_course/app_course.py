@@ -53,9 +53,10 @@ class AppCourse(Document):
 			frappe.throw(_("Course {0} has subscriptions. Its agreement and term cannot change.").format(self.course_name))
 
 
-def recalculate_course(course):
+def recalculate_course(course, date=None):
 	"""APP-03: count the students, take the tier for that count and charge every counted subscription the
-	tier's fee, by TIER_COUNTED_PER and COUNT_WITHDRAWN above. Nothing changes once the term is closed."""
+	tier's fee, by TIER_COUNTED_PER and COUNT_WITHDRAWN above, and post the change to the doctor's account
+	(APP-05). Nothing changes once the term is closed."""
 	agreement, period = frappe.db.get_value("App Course", course, ["agreement", "period"])
 	term = frappe.db.get_value("Academic Period", period, ["start_date", "is_closed"], as_dict=True)
 	if term.is_closed:
@@ -88,6 +89,11 @@ def recalculate_course(course):
 			0,
 			update_modified=False,
 		)
+	# APP-05: the doctor's account follows, on the date of the subscription that changed the count.
+	from imed_erp.imederp.platform_fee_posting import post_fee_change
+
+	for name in courses:
+		post_fee_change(name, date)
 	if not fee and frappe.db.count("App Subscription", counted):
 		frappe.msgprint(
 			_("No platform fee tiers are in force on {0}, so course {1} is charged nothing yet.").format(
@@ -100,4 +106,4 @@ def recalculate_course(course):
 
 def on_subscription_change(doc, method=None):
 	# hooks.py: App Subscription on_submit, on_cancel and on_update_after_submit (the Withdrew box).
-	recalculate_course(doc.course)
+	recalculate_course(doc.course, doc.subscription_date)
