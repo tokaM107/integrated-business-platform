@@ -899,3 +899,5 @@ Course {0} has subscriptions. Its agreement and term cannot change.,الكورس
 "No platform fee tiers are in force on {0}, so course {1} is charged nothing yet.",مفيش شرايح رسوم منصة سارية يوم {0}، فالكورس {1} لسه مش عليه رسوم.
 Platform Fee per Student (Due from Doctor),رسوم المنصة للطالب (مستحقة على الطبيب)
 Worked out from the course's number of students and the tiers in force when its term starts (APP-03). The course itself is paid to the doctor directly and is not recorded.,محسوبة من عدد طلبة الكورس والشرايح السارية يوم بداية الترم (APP-03). تمن الكورس نفسه بيتدفع للطبيب مباشرة ومش بيتسجل.
+Withdrew,انسحب
+Ticked when the student leaves the course after the term starts. Whether he is still charged is the owner's decision (COUNT_WITHDRAWN in app_course.py).,بتتعلّم لما الطالب يسيب الكورس بعد بداية الترم. هل الرسم بيتحسب عليه ولا لأ ده قرار المالك (COUNT_WITHDRAWN في app_course.py).
