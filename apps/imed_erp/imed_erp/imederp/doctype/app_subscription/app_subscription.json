@@ -9,10 +9,10 @@
  "engine": "InnoDB",
  "field_order": [
   "student",
-  "agreement",
-  "cost_center",
   "course",
+  "agreement",
   "period",
+  "cost_center",
   "subscription_date",
   "platform_fee",
   "amended_from"
@@ -26,23 +26,41 @@
    "reqd": 1
   },
   {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Course",
+   "options": "App Course",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "link_filters": "[[\"App Course\", \"status\", \"=\", \"Active\"]]"
+  },
+  {
    "fieldname": "agreement",
    "fieldtype": "Link",
    "label": "Doctor Agreement",
    "options": "Doctor Agreement",
-   "reqd": 1
-  },
-  {
-   "fieldname": "course",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Course"
+   "reqd": 1,
+   "fetch_from": "course.agreement",
+   "read_only": 1
   },
   {
    "fieldname": "period",
    "fieldtype": "Link",
-   "label": "Period",
-   "options": "Academic Period"
+   "label": "Term",
+   "options": "Academic Period",
+   "fetch_from": "course.period",
+   "read_only": 1
+  },
+  {
+   "description": "The business this record belongs to. Branch managers only see their own.",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Cost Center",
+   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
+   "options": "Cost Center",
+   "reqd": 1
   },
   {
    "fieldname": "subscription_date",
@@ -67,23 +85,13 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
-  },
-  {
-   "description": "The business this record belongs to. Branch managers only see their own.",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "in_standard_filter": 1,
-   "label": "Cost Center",
-   "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
-   "options": "Cost Center",
-   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-07 20:00:00.000000",
+ "modified": "2026-10-19 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Subscription",
