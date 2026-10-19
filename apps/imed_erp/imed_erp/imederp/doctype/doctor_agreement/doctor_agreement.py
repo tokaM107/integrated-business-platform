@@ -182,14 +182,14 @@ def update_balance(agreement, entry=None):
 
 	SEC-07: a change made by hand (`entry` not posted by a sale) goes into the agreement's history too, with the
 	balance before and after, who and when, as if the field had been edited. Sales post too many to list there;
-	each one is on its invoice."""
+	each one is on its invoice, and the courses' platform fees (APP-05) on the course."""
 	date, amount = last_settlement(agreement)
 	before = frappe.db.get_value(
 		"Doctor Agreement", agreement, ["balance", "last_settlement_date", "last_settlement_amount"], as_dict=True
 	)
 	after = {"balance": get_balance(agreement), "last_settlement_date": date, "last_settlement_amount": amount}
 	frappe.db.set_value("Doctor Agreement", agreement, after, update_modified=False)
-	if entry is not None and not entry.get("sales_invoice"):
+	if entry is not None and not entry.get("sales_invoice") and not entry.get("app_course"):
 		changed = [
 			[field, before.get(field), value]
 			for field, value in after.items()
