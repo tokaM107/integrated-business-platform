@@ -10,11 +10,11 @@ class AppSubscription(Document):
     # earns from the doctor. The course itself is paid by the student to the doctor directly, so no course
     # money is recorded here.
     def validate(self):
-        # APP-01/04: the agreement and the term are the course's, whatever an import or an old draft says.
+        # APP-01/04: the agreement, the doctor and the term are the course's, whatever an import or an old draft says.
         if not self.course:
             frappe.throw(_("Choose the student's course."))
-        course = frappe.db.get_value("App Course", self.course, ["agreement", "period", "status"], as_dict=True)
-        self.agreement, self.period = course.agreement, course.period
+        course = frappe.db.get_value("App Course", self.course, ["agreement", "doctor", "period", "status"], as_dict=True)
+        self.agreement, self.doctor, self.period = course.agreement, course.doctor, course.period
         if self.docstatus == 0 and course.status != "Active":
             frappe.throw(_("Course {0} is closed. It takes no new subscriptions.").format(self.course))
         # Records are posted to one business; group cost centers cannot hold transactions.
