@@ -25,3 +25,8 @@ class AppSubscription(Document):
             frappe.throw(_("Agreement {0} is not an app agreement.").format(self.agreement))
         if self.docstatus == 0:
             check_active(self.agreement)
+
+    def before_update_after_submit(self):
+        # The fee is worked out for the course (APP-03), not typed: a form opened before the course was
+        # counted again still carries the old one, and saving it (ticking Withdrew) must not undo the count.
+        self.platform_fee = frappe.db.get_value("App Subscription", self.name, "platform_fee")
