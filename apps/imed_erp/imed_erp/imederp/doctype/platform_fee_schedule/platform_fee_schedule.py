@@ -70,6 +70,13 @@ def open_terms():
 def get_fee_per_student(students, date):
 	"""The fee for one student of a course with `students` students, by the tiers in force on `date`: the
 	latest submitted schedule from on or before it. None when no schedule is in force yet."""
+	tier = get_tier(students, date)
+	return flt(tier.fee_per_student) if tier else None
+
+
+def get_tier(students, date):
+	"""The tier a course with `students` students falls in, by the schedule in force on `date`, with the
+	schedule's name; None when no schedule is in force or there are no students."""
 	schedule = frappe.get_all(
 		"Platform Fee Schedule",
 		filters={"docstatus": 1, "valid_from": ("<=", date)},
@@ -86,5 +93,6 @@ def get_fee_per_student(students, date):
 		order_by="from_students",
 	):
 		if cint(students) >= tier.from_students and (not tier.to_students or cint(students) <= tier.to_students):
-			return flt(tier.fee_per_student)
+			tier.schedule = schedule[0]
+			return tier
 	return None
