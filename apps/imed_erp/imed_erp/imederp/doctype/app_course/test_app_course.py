@@ -123,11 +123,19 @@ def make_student(i):
 
 
 class IntegrationTestPlatformFee(IntegrationTestCase):
-	# APP-03: students -> tier -> fee per student x students, per course.
+	# APP-03: students -> tier -> fee per student x students, per course. Counting only: posting each change to
+	# the doctor's account (a journal entry a subscription) has its own tests below and would make these slow.
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		make_schedule()
+		cls.no_posting = patch("imed_erp.imederp.platform_fee_posting.post_fee_change")
+		cls.no_posting.start()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.no_posting.stop()
+		super().tearDownClass()
 
 	def fee(self, course):
 		return frappe.db.get_value("App Course", course, ["subscriptions", "fee_per_student", "platform_fee_total"])
@@ -269,3 +277,94 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		)
 		roles = {r.role for r in frappe.get_doc("Report", "Platform Fees").roles}
 		self.assertEqual(roles, {"System Manager", "Accounts Manager"})
+
+
+APP_TREASURY = "خزينة تطبيق BA Plus - MMG"
+
+
+class IntegrationTestPlatformFeePosting(IntegrationTestCase):
+	# APP-05: the doctor's account follows each course's fee, with every student; APP-06: collected into a treasury.
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		make_schedule()
+
+	def ledger(self, course):
+		return frappe.get_all(
+			"Doctor Ledger Entry",
+			filters={"app_course": course, "docstatus": 1},
+			fields=["entry_type", "amount", "journal_entry"],
+			order_by="creation",
+		)
+
+	def gl(self, journal_entry):
+		return {
+			(row.account.rsplit(" - ", 1)[0], row.party or ""): (row.debit, row.credit)
+			for row in frappe.get_all(
+				"GL Entry", filters={"voucher_no": journal_entry, "is_cancelled": 0}, fields=["account", "party", "debit", "credit"]
+			)
+		}
+
+	def test_each_student_adds_his_fee_to_the_doctors_account(self):
+		agreement = make_agreement("App", 88)
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		course = make_course("_Test Posted Course", agreement)
+		subscribe(course, 3)
+		entries = self.ledger(course)
+		self.assertEqual([(e.entry_type, e.amount) for e in entries], [("Accrual", 250)] * 3)
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 750)
+		self.assertEqual(
+			self.gl(entries[0].journal_entry),
+			{("مستحقات على الأطباء — رسوم المنصة", doctor): (250, 0), ("إيراد رسوم المنصة", ""): (0, 250)},
+		)
+
+	def test_the_101st_student_lowers_the_account_to_the_new_tier(self):
+		agreement = make_agreement("App", 89)
+		course = make_course("_Test Posted 101", agreement)
+		subscriptions = subscribe(course, 101)
+		# 100 x 250 = 25,000, then 101 x 200 = 20,200: 4,800 less, in one adjustment.
+		last = self.ledger(course)[-1]
+		self.assertEqual((last.entry_type, last.amount), ("Adjustment", -4800))
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 20200)
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		self.assertEqual(
+			self.gl(last.journal_entry),
+			{("مستحقات على الأطباء — رسوم المنصة", doctor): (0, 4800), ("إيراد رسوم المنصة", ""): (4800, 0)},
+		)
+		# Cancelled, the student goes and the course is back at 25,000.
+		subscriptions[-1].cancel()
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 25000)
+
+	def test_the_courses_entries_are_the_systems(self):
+		agreement = make_agreement("App", 90)
+		course = make_course("_Test Kept Entries", agreement)
+		subscribe(course, 1)
+		entry = frappe.get_doc("Doctor Ledger Entry", {"app_course": course, "docstatus": 1})
+		# No approval, no statement email, and nobody cancels them by hand.
+		self.assertFalse(entry.approval_status)
+		self.assertRaisesRegex(frappe.ValidationError, "changes with the course", entry.cancel)
+
+	def test_a_collection_goes_into_a_treasury(self):
+		agreement = make_agreement("App", 91)
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		course = make_course("_Test Collected Course", agreement)
+		subscribe(course, 2)
+
+		def collection(amount, **values):
+			return frappe.get_doc(
+				{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_type": "Collection", "amount": amount, "entry_date": "2031-12-31", **values}
+			).insert()
+
+		self.assertRaisesRegex(frappe.ValidationError, "goes into", collection, 300)
+		self.assertRaisesRegex(frappe.ValidationError, "more than that", collection, 501, treasury=APP_TREASURY)
+		paid = collection(300, treasury=APP_TREASURY)
+		paid.submit()
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 200)
+		self.assertEqual(
+			self.gl(paid.journal_entry),
+			{("خزينة تطبيق BA Plus", ""): (300, 0), ("مستحقات على الأطباء — رسوم المنصة", doctor): (0, 300)},
+		)
+		# Cancelled, the money goes back out of the treasury.
+		paid.cancel()
+		self.assertEqual(frappe.db.get_value("Journal Entry", paid.journal_entry, "docstatus"), 2)
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 500)
