@@ -94,10 +94,12 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 
 ## Open questions: platform fees (APP-02, APP-03)
 
+The two counting rules are constants at the top of `imederp/doctype/app_course/app_course.py`, each with what it means: `TIER_COUNTED_PER` (`"course"`, answered by the owner on 18 Oct 2026; `"doctor"` counts all the doctor's courses in the term together) and `COUNT_WITHDRAWN`. Open terms are counted again with their next subscription.
+
 | # | Question | Until decided | Ask |
 |---|---|---|---|
 | 1 | **A course of exactly 100 students.** The requirements say 1–100 and "100 to 500". | 100 is in the first tier (250); the second starts at 101. One row of the schedule to change. | Owner |
-| 2 | **A student who withdraws** after the term starts. | Still counted: a submitted subscription counts until it is cancelled. | Owner |
+| 2 | **A student who withdraws** after the term starts (the *Withdrew* box on the submitted subscription). | Still counted and charged: `COUNT_WITHDRAWN = True` in `app_course.py`, one line to change. | Owner |
 | 3 | **From when the tiers are in force.** | 1 Sep 2026, the start of the first term (setup_platform_fees.py). | Owner |
 
 ## Open questions: bookings (HAL-01, HAL-02, STU-01, STU-08)
