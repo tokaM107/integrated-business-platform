@@ -73,8 +73,10 @@
    "fieldname": "platform_fee",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Platform Fee (Due from Doctor)",
-   "description": "Due from the doctor for this student, by the term's tier. The course itself is paid to the doctor directly and is not recorded."
+   "label": "Platform Fee per Student (Due from Doctor)",
+   "description": "Worked out from the course's number of students and the tiers in force when its term starts (APP-03). The course itself is paid to the doctor directly and is not recorded.",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "amended_from",
@@ -91,7 +93,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-19 12:00:00.000000",
+ "modified": "2026-10-19 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Subscription",
