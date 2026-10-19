@@ -37,7 +37,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 | Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Not started |
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Started: *Printer Reading* doctype |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
-| BA+ app subscriptions and platform fees | APP | Started: *App Subscription* |
+| BA+ app subscriptions and platform fees | APP | Courses, tiers and the fee per course (APP-01/02/03); not posted to the doctor's ledger yet (APP-05) |
 | Integrations with the library system, studio booking system and BA+ app | INT | Not started (open questions ★ 10, 27, 28) |
 | Mobile application | — | Not started |
 | AI assistant (owner only, read only) | AI | Chat window, voice and permissions done; model not connected yet (`imed_erp/assistant/providers.py`) |
@@ -91,6 +91,14 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 | 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |
 | 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
 | 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |
+
+## Open questions: platform fees (APP-02, APP-03)
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **A course of exactly 100 students.** The requirements say 1–100 and "100 to 500". | 100 is in the first tier (250); the second starts at 101. One row of the schedule to change. | Owner |
+| 2 | **A student who withdraws** after the term starts. | Still counted: a submitted subscription counts until it is cancelled. | Owner |
+| 3 | **From when the tiers are in force.** | 1 Sep 2026, the start of the first term (setup_platform_fees.py). | Owner |
 
 ## Open questions: bookings (HAL-01, HAL-02, STU-01, STU-08)
 
