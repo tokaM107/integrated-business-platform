@@ -17,6 +17,8 @@ from imed_erp.imederp.report.doctor_debts.doctor_debts import execute
 LEDGER = "Doctor Ledger Entry"
 AS_OF = "2026-10-15"
 TREASURY = "الخزينة الرئيسية - MMG"
+# Platform fees collected from a doctor go into the app's treasury (APP-06).
+APP_TREASURY = "خزينة تطبيق BA Plus - MMG"
 
 
 class IntegrationTestDoctorDebts(IntegrationTestCase):
@@ -88,7 +90,7 @@ class IntegrationTestDoctorDebts(IntegrationTestCase):
 		app = self.agreement("App")
 		self.entry(app, "Accrual", 150, "2026-09-05")
 		self.entry(app, "Accrual", 100, "2026-10-10")
-		self.entry(app, "Collection", 120, "2026-10-12")
+		self.entry(app, "Collection", 120, "2026-10-12", treasury=APP_TREASURY)
 		row = self.debts()[app]
 		self.assertEqual(
 			(row["debt"], str(row["since"]), row["age_31-60"], row["age_0-30"]),
