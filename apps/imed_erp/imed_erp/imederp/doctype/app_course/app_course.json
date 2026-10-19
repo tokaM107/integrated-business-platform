@@ -11,7 +11,12 @@
   "agreement",
   "doctor",
   "period",
-  "status"
+  "status",
+  "fee_section",
+  "subscriptions",
+  "column_break_fee",
+  "fee_per_student",
+  "platform_fee_total"
  ],
  "fields": [
   {
@@ -58,11 +63,47 @@
    "in_list_view": 1,
    "label": "Status",
    "options": "Active\nClosed"
+  },
+  {
+   "fieldname": "fee_section",
+   "fieldtype": "Section Break",
+   "label": "Platform Fee"
+  },
+  {
+   "default": "0",
+   "description": "Submitted subscriptions. Counted again with every subscription submitted or cancelled until the term is closed.",
+   "fieldname": "subscriptions",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Students",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_fee",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The tier for the course's number of students, by the tiers in force when its term starts.",
+   "fieldname": "fee_per_student",
+   "fieldtype": "Currency",
+   "label": "Fee per Student",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Fee per student × students: due from the doctor for this course.",
+   "fieldname": "platform_fee_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Platform Fee",
+   "no_copy": 1,
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-10-19 12:00:00.000000",
+ "modified": "2026-10-19 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Course",
