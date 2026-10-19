@@ -33,6 +33,7 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Daily Counters", "link_to": "Daily Counter Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Daily Printing", "link_to": "Daily Printing", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Courses", "link_to": "App Course", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Reorder Alerts", "link_to": "Reorder Alerts", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Stock Counts", "link_to": "Stock Count", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
