@@ -1,6 +1,6 @@
 # Library / POS / inventory setup (LIB) for Mohamed Mamdouh group: item groups, the product fields of
-# LIB-06, the library services, item defaults, one POS Profile per library branch and the stock count
-# fields (LIB-03).
+# LIB-06, the library services, item defaults, one POS Profile per library branch, the stock count
+# fields (LIB-03) and the libraries' printing machines (PRN-01).
 #
 # Run from bench console (after setup_core.py and setup_users.py):
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
@@ -105,8 +105,56 @@ OTHER_CASH_MODES = [
 waiting = []
 
 
+# The libraries' printing machines (PRN-01, requirements v1.2): Azarita 1 Epson and 2 Riso, Mawasah 1 Epson and
+# 3 Riso. (machine name, library, type, the warehouse paper is issued under). Their ink cost per sheet comes from
+# Printing Cost Settings for their type (assumed 0.05 / 0.10 until the owner gives the real costs).
+PRINTING_MACHINES = [
+	("Epson الأزاريطة", "مكتبة الأزاريطة", "Epson", "مخزن الأزاريطة"),
+	("Riso الأزاريطة 1", "مكتبة الأزاريطة", "Riso", "مخزن الأزاريطة"),
+	("Riso الأزاريطة 2", "مكتبة الأزاريطة", "Riso", "مخزن الأزاريطة"),
+	("Epson المواساة", "مكتبة المواساة", "Epson", "المخزن المركزي بالمواساة"),
+	("Riso المواساة 1", "مكتبة المواساة", "Riso", "المخزن المركزي بالمواساة"),
+	("Riso المواساة 2", "مكتبة المواساة", "Riso", "المخزن المركزي بالمواساة"),
+	("Riso المواساة 3", "مكتبة المواساة", "Riso", "المخزن المركزي بالمواساة"),
+]
+
+
 def acc(name):
 	return f"{name} - {ABBR}"
+
+
+def make_printing_machine(name, library, machine_type, warehouse):
+	"""Creates the machine, or fills in what an older one lacks (its library and type); never changes what was
+	set on a machine already, such as its ink cost or its location."""
+	library, warehouse = acc(library), acc(warehouse)
+	for doctype, target in (("Cost Center", library), ("Warehouse", warehouse)):
+		if not frappe.db.exists(doctype, target):
+			wait(f"Printing Machine {name}", f"{doctype} {target} not found (setup_core.py makes it)")
+			return
+	if frappe.db.exists("Printing Machine", name):
+		machine = frappe.get_doc("Printing Machine", name)
+		missing = {field: value for field, value in (("cost_center", library), ("machine_type", machine_type)) if not machine.get(field)}
+		if not missing:
+			print(f"exists Printing Machine {name}")
+			return
+		machine.update(missing)
+		machine.save()
+		print(f"update Printing Machine {name}: {', '.join(missing)}")
+		return
+	machine = frappe.get_doc(
+		{"doctype": "Printing Machine", "machine_name": name, "cost_center": library, "machine_type": machine_type, "warehouse": warehouse}
+	).insert()
+	print(f"create Printing Machine {name}: {machine_type} in {library}, ink {machine.ink_per_sheet} per sheet")
+
+
+def check_machine_ink_rates():
+	# The ink prices are the owner's; the ink per sheet stays an assumption until the sheets one ink prints are
+	# entered. Say so every run. Read from the table itself: a settings document never saved shows its defaults
+	# as if they were set.
+	for field, label in (("epson_sheets_per_set", "Epson set"), ("riso_sheets_per_ink", "Riso ink")):
+		saved = frappe.db.sql("select value from tabSingles where doctype='Printing Cost Settings' and field=%s", field)
+		if not saved or saved[0][0] in (None, "", "0"):
+			print(f"ASSUME Printing Cost Settings: the sheets one {label} prints are not entered yet; its ink per sheet is assumed")
 
 
 def wait(what, needs):
@@ -485,6 +533,14 @@ def run():
 		# ---------- 8) Damaged stock sold by weight (LIB-09, PRN-07): the item invoiced and a buyer ----------
 		make_scrap_sale_item()
 		make_scrap_buyer()
+
+		# ---------- 9) Printing machines (PRN-01): each library's, with its type ----------
+		if not frappe.get_meta("Printing Machine").has_field("machine_type"):
+			wait("Printing Machines", "the Type field is missing; run bench migrate, then this script again")
+		else:
+			for spec in PRINTING_MACHINES:
+				make_printing_machine(*spec)
+			check_machine_ink_rates()
 
 		frappe.db.commit()
 	except Exception:

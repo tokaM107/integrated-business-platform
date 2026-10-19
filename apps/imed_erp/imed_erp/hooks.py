@@ -231,12 +231,15 @@ doc_events = {
 			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 			# Printing and copying sold take their paper out of the library's store (imederp/paper_use.py).
 			"imed_erp.imederp.paper_use.issue_paper_used",
+			# The day's counters of the library take in what was sold (PRN-02).
+			"imed_erp.imederp.paper_use.refresh_counters",
 			"imed_erp.imederp.edition_sales.update_sold",
 			# The doctor's amount on each copy sold goes to his ledger (DOC-07; imederp/doctor_accrual.py).
 			"imed_erp.imederp.doctor_accrual.accrue",
 		],
 		"on_cancel": [
 			"imed_erp.imederp.paper_use.cancel_paper_used",
+			"imed_erp.imederp.paper_use.refresh_counters",
 			"imed_erp.imederp.edition_sales.update_sold",
 			"imed_erp.imederp.doctor_accrual.cancel_accruals",
 		],
@@ -335,6 +338,11 @@ doc_events = {
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
 		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
 	},
+	"Daily Counter Reading": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
 	"Allocation Rule": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -374,6 +382,7 @@ period_closing_doctypes = [
 	"Doctor Ledger Entry",
 	"App Subscription",
 	"Printer Reading",
+	"Daily Counter Reading",
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",

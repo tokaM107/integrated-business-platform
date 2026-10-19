@@ -323,7 +323,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_users.py` | The requirement roles (Super Admin, Accountant, Branch Manager, HR, CRM Staff) and the Expense Approver role, 8 users (`name@imed.local`), User Permissions that restrict each branch manager to their own cost center and warehouse, and the permissions matrix (requirements §3.2) on financial documents. Declarative: re-running also corrects drift (name, enabled flag, extra roles, stale User Permissions). Prints a summary table. |
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
-| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
+| `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). The libraries' seven printing machines (PRN-01): `Epson الأزاريطة`, `Riso الأزاريطة 1-2`, `Epson المواساة`, `Riso المواساة 1-3`, each with its library, type and location warehouse; a machine already there is kept (an older one only gets its missing library and type). Each run says `ASSUME` while the Epson and Riso ink costs on Printing Cost Settings are still the assumed 0.05 and 0.10. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
 | `check_opening_stock.py` | Opening stock (INT-08). Checks the libraries' count sheet (`setup/data/opening_stock.csv`, from `opening_stock_template.csv`) row by row and prints the total per store; with `MAKE_DRAFTS = True` and no errors, makes one **draft** Stock Reconciliation (Opening Stock) per branch, for the owner or the accountant to submit. Never submits, never posts twice to a store. See [docs/OPENING_STOCK.md](docs/OPENING_STOCK.md). |
 | `setup_customer_phones.py` | One customer per phone number (CRM-04). Run once after `bench migrate` added the Phone Key field: gives each customer saved before it the key of its number, so a new customer with the same number is refused. Changes no phone number and merges nothing: invalid numbers and numbers already on several customers are listed (the oldest customer of a number gets its key). `FILL = False` only prints the report. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. The owner follows everything himself and mostly confirms (owner, 12 Oct 2026), so the dashboard is his home page (`default_workspace`), with Arabic section headers: what waits for him first, with counts (expenses waiting for approval, editions to approve, transfers to confirm), then the key numbers and charts, one click to every list of the staff's work (sales, expenses, purchases, counts, stock movements, branch requests, agreements, editions, counters, subscriptions, and All Changes, Frappe's change history), then the reports. |
@@ -805,8 +805,55 @@ Rules, checked on the server (so they also hold through the API):
   and at the target branch. To supply several machines, add one row per machine with its own quantity.
   Other items need no machine.
 
-**Printing Machine** (ImedERP > Branch Requests > Printing Machines): name, location warehouse (the branch,
-e.g. `مخزن الأزاريطة`), optional cost center, disabled. The owner and stock managers add them; Raghad too.
+**Printing Machine** (ImedERP > Branch Requests > Printing Machines; PRN-01, PRN-08): name, **Branch** (a library
+only: Azarita has 1 Epson and 2 Riso, Mawasah 1 Epson and 3 Riso), **Type** (Epson / Riso), **Model**, **Ink Cost
+per Sheet**, **Last Maintenance** (not in the future), **Out of Service** (takes no paper and no readings), and
+the location warehouse paper is issued into (e.g. `مخزن الأزاريطة`, under Advanced). The ink cost is filled from **Printing Cost
+Settings > Ink by Machine Type** for the machine's type when left empty, and follows a change of type unless it was
+set for that machine; Riso ink costs more. The owner's ink prices (18 Oct 2026) are on the settings: a Riso ink of
+one colour 3,000 and an Epson set of 4 colours 1,500. Enter the sheets one ink prints and the ink per sheet is worked
+out (price ÷ sheets) and locked; until then it is assumed (0.05 Epson, 0.10 Riso), said so on the screen and by
+`setup_library.py`. A machine still on its type's rate follows a change on the settings; one set by hand stays. The owner and stock managers add machines; Raghad too.
+
+**Printer Reading** (PRN-01, PRN-02): a counter reading of one **Machine** (a link to Printing Machine, in
+service); its **Branch** is the machine's library, filled in and never typed. The **Opening** is the machine's last
+submitted closing reading, filled in on the form and set again by the server (on submit too, in case another
+reading of the machine was submitted meanwhile); only a machine's first reading is typed. A counter only goes up:
+the closing cannot be below the opening, a reading cannot be dated before the machine's last one, and only a
+machine's latest reading can be cancelled, so the next one still starts where the last ended. Consumed = closing -
+opening. Sales do not say which machine printed them, so what was sold is set against the whole library's counters
+for the day, on the Daily Counter Reading below, not on a single reading.
+
+**Daily Counter Reading** (عدادات اليوم, PRN-01; the home page's printer shortcut and ImedERP > Daily Counters):
+each library records all its counters of the day on one screen and saves once. Pick the **Branch** (a branch
+manager's own library is filled in) and the **Date**; the table lists every machine of the library in service with
+its type and opening (its last closing reading, typed only for a first reading); type each **Closing**. Every
+machine in service must be there (one not working is marked Out of Service), and there is one screen per library a
+day. Submitting it makes one Printer Reading per machine with the same checks (the counter only goes up, no date
+before the machine's last reading); cancelling it cancels them, and they are cancelled only from it.
+
+**The day's paper** (PRN-02), on the same screen: **Consumed Sheets** (what the counters went up by, all machines),
+**Sold Sheets** (the printing and copying the library sold that day, from its submitted invoices, one sheet per
+unit as in `imederp/paper_use.py`; worked out by the system, never typed) and **Variance** (consumed - sold). A
+refund takes no sheets back: the paper was printed and counted. A sale of that day submitted or cancelled after the
+screen was submitted updates it. The **Variance Value** (PRN-08, PRN-09) is the variance × the **Cost per Printed Sheet**: paper (the
+moving average price in the library's store) + waste + the machine's ink + overheads, from Printing Cost Settings
+and the machine. Each row shows its machine's cost per sheet; the day's is their average weighted by what each
+machine printed (Riso ink costs more than Epson's), and is fixed when the day is submitted, so a later sale is
+valued at the same cost. A library with no paper price yet is warned that the paper is left out. The money (cost,
+variance value, the day's printing and copying sales, the **Average Price per Sheet** and the **Margin per Sheet**,
+average price - cost, PRN-08) is in its own section, shown to the accountant and the owner only; a branch manager
+sees the sheets. A machine that stopped for a fault is ticked **Broke Down** with what happened (PRN-09).
+
+**Daily Printing** report (طباعة اليوم; under ImedERP > Daily Counters and on the owner's page; PRN-01, PRN-02,
+PRN-09): for a range of dates and a library, each machine's **Consumed Sheets**, its **Utilization** (its share of
+the library's printing that day), its share of the **Sold Sheets**, its **Variance** in sheets and its **Variance
+Value** at its own cost per sheet, then the library's day in bold under its machines. A sale does not say which
+machine printed it, so the day's sales are shared out by each machine's share of the printing (equally on a day
+nothing was printed); the machines add up to the day, whose row also has the average price and margin per sheet.
+Breakdowns show with what happened. Over more than one day (a month, PRN-03) the **Period** follows: each machine's
+printing, utilization, days broken down and variance value, and the period's total. A branch manager sees her own
+library.
 
 **Material Issues** report: every request row with its approval, each issue against it (stock entry,
 date, time, quantity, recipient, issuer, machine) and what is still to issue. Filters: dates, request,
@@ -1107,6 +1154,9 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_daily_printing
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

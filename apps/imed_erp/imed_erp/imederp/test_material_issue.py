@@ -374,7 +374,11 @@ class IntegrationTestMaterialIssue(IntegrationTestCase):
 def make_machine(name, warehouse):
 	if frappe.db.exists("Printing Machine", name):
 		return name
-	return frappe.get_doc({"doctype": "Printing Machine", "machine_name": name, "warehouse": warehouse}).insert().name
+	# A machine works in a library: the one whose store it is in.
+	library = "مكتبة الأزاريطة - MMG" if "الأزاريطة" in warehouse else "مكتبة المواساة - MMG"
+	return frappe.get_doc(
+		{"doctype": "Printing Machine", "machine_name": name, "warehouse": warehouse, "cost_center": library, "machine_type": "Riso"}
+	).insert().name
 
 
 def receive(item_code, quantity, warehouse):

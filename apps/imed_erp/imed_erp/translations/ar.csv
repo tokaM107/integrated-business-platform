@@ -280,8 +280,7 @@ Per Sheet,للورقة
 Waste per Sheet,الهدر للورقة
 "Sheets spoilt in printing, per sheet printed.",الورق اللي بيبوظ في الطباعة، لكل ورقة مطبوعة.
 Ink per Sheet,الحبر للورقة
-Overheads per Sheet,المصاريف العامة للورقة
-"Rent, electricity, salaries and machine rental, per sheet.",الإيجار والكهربا والمرتبات وإيجار المكنة، للورقة.
+Overheads per Sheet,المشغولات للورقة
 Profit per Sheet,المكسب للورقة
 "Books, per Copy",الكتب، للنسخة
 Binding per Copy,التجليد للنسخة
@@ -289,7 +288,7 @@ Binding per Copy,التجليد للنسخة
 Paper per Sheet,الورق للورقة
 "Moving average price of A4 paper in the library's raw materials store, plus the waste in Printing Cost Settings.",متوسط سعر ورق A4 في مخزن خامات المكتبة، + الهدر من تكاليف الطباعة.
 From Printing Cost Settings when left empty.,لو فاضي، بيتملى من تكاليف الطباعة.
-"Rent, electricity, salaries and machine rental. From Printing Cost Settings when left empty.",الإيجار والكهربا والمرتبات وإيجار المكنة. لو فاضي، بيتملى من تكاليف الطباعة.
+"Rent, electricity, salaries, machine rental and maintenance. From Printing Cost Settings when left empty.",الإيجار والكهربا والمرتبات وإيجار الماكينات وصيانتها. لو فاضي، بيتملى من تكاليف الطباعة.
 The library's profit. From Printing Cost Settings when left empty.,مكسب المكتبة. لو فاضي، بيتملى من تكاليف الطباعة.
 Marketing per Copy,الماركتنج للنسخة
 "Optional: an extra amount per copy for selling the book. Goes to the library, not to the doctor.",اختياري: مبلغ زيادة للنسخة عشان بيع الكتاب. بيروح للمكتبة مش للطبيب.
@@ -786,4 +785,88 @@ Select free time to book it.,حدّد وقت فاضي عشان تحجزه.
 Loading bookings…,بيحمّل الحجوزات…
 No bookings on this day.,مفيش حجوزات في اليوم ده.
 No bookings in this period.,مفيش حجوزات في الفترة دي.
-"The bookings could not be loaded. Move to another day and back, or reload the page.","الحجوزات ماتحمّلتش. روح ليوم تاني وارجع، أو حمّل الصفحة من جديد.
+"The bookings could not be loaded. Move to another day and back, or reload the page.","الحجوزات ماتحمّلتش. روح ليوم تاني وارجع، أو حمّل الصفحة من جديد."
+Ink by Machine Type,الحبر حسب نوع الماكينة
+Epson Ink per Sheet,حبر Epson للورقة
+Riso Ink per Sheet,حبر Riso للورقة
+Model,الموديل
+Ink Cost per Sheet,تكلفة الحبر للورقة
+From Printing Cost Settings for its type when left empty; change it for this machine only if it differs.,لو سبتها فاضية بتتاخد من تكاليف الطباعة حسب النوع؛ غيّرها للماكينة دي بس لو مختلفة.
+Last Maintenance,آخر صيانة
+Out of Service,متوقفة
+A machine out of service takes no paper and no counter readings.,الماكينة المتوقفة مش بياخد ورق ولا بتتسجل لها قراءات عداد.
+The library the machine works in.,المكتبة اللي الماكينة شغالة فيها.
+{0} is not a library. Printing machines work in a library.,{0} مش مكتبة. ماكينات الطباعة بتبقى في مكتبة.
+Not a Library,مش مكتبة
+The last maintenance cannot be in the future.,تاريخ آخر صيانة ما ينفعش يبقى في المستقبل.
+Ink Cost per Sheet cannot be negative.,تكلفة الحبر للورقة ما ينفعش تبقى بالسالب.
+Type,النوع
+The machine's last closing reading; typed only for its first reading.,آخر قراءة نهاية للماكينة؛ بتتكتب باليد في أول قراءة ليها بس.
+{0} is out of service and takes no counter readings.,{0} متوقفة ومش بيتسجلها قراءات عداد.
+The closing reading {0} is below the opening reading {1}. A counter only goes up.,قراءة النهاية {0} أقل من قراءة البداية {1}. العداد بيزيد بس.
+Reading Too Low,القراءة أقل من اللي قبلها
+{0} already has a reading on {1}. A new reading cannot be dated before it.,{0} ليها قراءة يوم {1}. القراءة الجديدة ما ينفعش تبقى بتاريخ قبلها.
+"{0} has a later reading, {1}. Cancel that one first.",{0} ليها قراءة بعدها، {1}. الغي دي الأول.
+Not the Latest Reading,مش آخر قراءة
+Machine,الماكينة
+Closing,النهاية
+Variance,الفرق
+Daily Counter Reading,عدادات اليوم
+Daily Counter Reading Item,عداد ماكينة
+Daily Counters,عدادات اليوم
+Machines,الماكينات
+The library; its machines in service are listed below.,المكتبة؛ ماكيناتها الشغالة بتظهر تحت.
+{0} already has its counters for {1}: {2}.,{0} اتسجلت عداداتها يوم {1} خلاص: {2}.
+Already Recorded,متسجلة خلاص
+{0} is listed twice.,{0} متكررة مرتين.
+Read the counter of every machine of {0}: {1} missing. A machine that is not working is marked Out of Service.,سجّل عداد كل ماكينات {0}: ناقص {1}. الماكينة اللي مش شغالة تتعلّم «متوقفة».
+Machines Missing,ماكينات ناقصة
+Row #{0}: {1} is not a machine of {2}.,سطر {0}: {1} مش ماكينة في {2}.
+Row #{0}: {1} is out of service and takes no counter readings.,سطر {0}: {1} متوقفة ومش بيتسجلها قراءات.
+Row #{0}: {1} already has a reading on {2}. A new reading cannot be dated before it.,سطر {0}: {1} ليها قراءة يوم {2}. القراءة الجديدة ما ينفعش تبقى بتاريخ قبلها.
+"Row #{0}: type the opening reading of {1}, its first reading.",سطر {0}: اكتب قراءة البداية لـ {1}، دي أول قراءة ليها.
+"Row #{0}: the closing reading of {1}, {2}, is below its opening reading {3}. A counter only goes up.",سطر {0}: قراءة النهاية لـ {1} ({2}) أقل من البداية {3}. العداد بيزيد بس.
+The day's screen this reading was recorded on; it is cancelled from there.,شاشة اليوم اللي القراءة دي اتسجلت عليها؛ بتتلغي من هناك.
+{0} was recorded on {1}. Cancel that instead.,{0} اتسجلت على {1}. الغي دي بدلها.
+Recorded on the Day's Screen,متسجلة على شاشة اليوم
+The Day's Paper,ورق اليوم
+What the machines' counters went up by.,العدادات زادت قد إيه.
+"Printing and copying sold by the library that day (submitted invoices), worked out by the system.",الطباعة والتصوير اللي المكتبة باعتها في اليوم ده (الفواتير المسجلة)، السيستم بيحسبها.
+Variance (Sheets),الفرق (ورق)
+Consumed - sold: sheets printed and not sold.,المستهلك - المباع: ورق اتطبع وماتباعش.
+Cost per Sheet,تكلفة الورقة
+Paper + waste + this machine's ink + overheads.,ورق + هدر + حبر الماكينة دي + مشغولات.
+Cost per Printed Sheet,تكلفة الورقة المطبوعة
+"Paper + waste + ink + overheads, the machines' costs weighted by what each printed; set when the day is submitted.",ورق + هدر + حبر + مشغولات، متوسط الماكينات حسب اللي طبعته كل واحدة؛ بتتثبت لما اليوم يتسجل.
+Variance Value,قيمة الفرق
+Variance x cost per printed sheet.,الفرق × تكلفة الورقة المطبوعة.
+"{0} has no paper price yet (no A4 paper received in its store), so the cost of a sheet leaves the paper out.",{0} مالهاش سعر ورق لسه (ما استلمتش ورق A4 في مخزنها)، فتكلفة الورقة محسوبة من غير الورق.
+No Paper Price,مفيش سعر ورق
+Daily Printing,طباعة اليوم
+Utilization (%),نسبة التشغيل (%)
+Total,الإجمالي
+Broke Down,عطلت
+The machine broke down or stopped for a fault today (PRN-09).,الماكينة عطلت أو وقفت بسبب عطل النهارده.
+What Happened,إيه اللي حصل
+The Day's Money,فلوس اليوم
+"For the accountant and the owner (PRN-08, PRN-09).",للمحاسب والمالك.
+Printing and Copying Sales,مبيعات الطباعة والتصوير
+What the library's printing and copying sold for that day.,الطباعة والتصوير اتباعوا بكام في اليوم ده.
+Average Price per Sheet,متوسط سعر الورقة
+Margin per Sheet,هامش الورقة
+Average price - cost per printed sheet: what the library makes on a sheet (PRN-08).,متوسط السعر - تكلفة الورقة المطبوعة: المكتبة بتكسب كام في الورقة.
+Type each machine's closing reading; tick Broke Down for a machine that stopped today.,اكتب قراءة النهاية لكل ماكينة؛ وعلّم «عطلت» للماكينة اللي وقفت النهارده.
+Row #{0}: say what happened to {1}.,سطر {0}: اكتب إيه اللي حصل لـ {1}.
+Breakdown,عطل
+The Period,الفترة
+{0} days,{0} يوم
+Advanced,متقدم
+Yes,أيوه
+"What running the library costs, per sheet printed: rent, electricity, salaries, machine rental and machine maintenance. Maintenance has no rate of its own; it is part of this (owner, 18 Oct 2026).",تكلفة تشغيل المكتبة للورقة المطبوعة: الإيجار، الكهربا، المرتبات، إيجار الماكينات وصيانتها. الصيانة مالهاش سعر لوحدها؛ هي جوه الرقم ده.
+"Ink per sheet = what an ink costs ÷ the sheets it prints (PRN-08). The prices are the owner's (18 Oct 2026): a Riso ink of one colour 3,000, an Epson set of 4 colours 1,500. Until the sheets an ink prints are entered, the ink per sheet is an assumption (Riso 0.10, Epson 0.05). Machines on their type's rate follow a change here; a rate set on a machine stays.","الحبر للورقة = سعر الحبر ÷ عدد الورق اللي بيطبعه. الأسعار من المالك (18 أكتوبر 2026): حبر Riso للون الواحد 3,000، وطقم Epson بـ 4 ألوان 1,500. لحد ما يتكتب عدد الورق اللي الحبر بيطبعه، الحبر للورقة افتراض (Riso ‏0.10، Epson ‏0.05). الماكينات اللي على سعر نوعها بتتغير معاه؛ والسعر المكتوب على ماكينة بيفضل."
+"Riso Ink, One Colour",حبر Riso للون الواحد
+Sheets One Riso Ink Prints,عدد الورق اللي حبر Riso بيطبعه
+Enter it to work out the ink per sheet.,اكتبه عشان الحبر للورقة يتحسب لوحده.
+Epson Ink Set (4 Colours),طقم حبر Epson (4 ألوان)
+Sheets One Epson Set Prints,عدد الورق اللي طقم Epson بيطبعه
+The statement of {0} for {1} was not emailed: no outgoing email account is set up (Email Account).,كشف {0} عن {1} ماتبعتش بالإيميل: مفيش حساب إيميل صادر متظبط (Email Account).

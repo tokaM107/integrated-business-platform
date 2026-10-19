@@ -12,7 +12,15 @@
   "overheads_per_sheet",
   "profit_per_sheet",
   "per_copy_section",
-  "binding_per_copy"
+  "binding_per_copy",
+  "machine_ink_section",
+  "riso_ink_price",
+  "riso_sheets_per_ink",
+  "riso_ink_per_sheet",
+  "column_break_machine_ink",
+  "epson_ink_set_price",
+  "epson_sheets_per_set",
+  "epson_ink_per_sheet"
  ],
  "fields": [
   {
@@ -44,7 +52,7 @@
   },
   {
    "default": "0.05",
-   "description": "Rent, electricity, salaries and machine rental, per sheet.",
+   "description": "What running the library costs, per sheet printed: rent, electricity, salaries, machine rental and machine maintenance. Maintenance has no rate of its own; it is part of this (owner, 18 Oct 2026).",
    "fieldname": "overheads_per_sheet",
    "fieldtype": "Currency",
    "label": "Overheads per Sheet",
@@ -70,11 +78,61 @@
    "fieldtype": "Currency",
    "label": "Binding per Copy",
    "reqd": 1
+  },
+  {
+   "fieldname": "machine_ink_section",
+   "fieldtype": "Section Break",
+   "label": "Ink by Machine Type",
+   "description": "Ink per sheet = what an ink costs ÷ the sheets it prints (PRN-08). The prices are the owner's (18 Oct 2026): a Riso ink of one colour 3,000, an Epson set of 4 colours 1,500. Until the sheets an ink prints are entered, the ink per sheet is an assumption (Riso 0.10, Epson 0.05). Machines on their type's rate follow a change here; a rate set on a machine stays."
+  },
+  {
+   "fieldname": "riso_ink_price",
+   "fieldtype": "Currency",
+   "label": "Riso Ink, One Colour",
+   "default": "3000"
+  },
+  {
+   "fieldname": "riso_sheets_per_ink",
+   "fieldtype": "Int",
+   "label": "Sheets One Riso Ink Prints",
+   "description": "Enter it to work out the ink per sheet."
+  },
+  {
+   "fieldname": "riso_ink_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Riso Ink per Sheet",
+   "default": "0.10",
+   "precision": "4",
+   "read_only_depends_on": "eval:doc.riso_sheets_per_ink > 0"
+  },
+  {
+   "fieldname": "column_break_machine_ink",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "epson_ink_set_price",
+   "fieldtype": "Currency",
+   "label": "Epson Ink Set (4 Colours)",
+   "default": "1500"
+  },
+  {
+   "fieldname": "epson_sheets_per_set",
+   "fieldtype": "Int",
+   "label": "Sheets One Epson Set Prints",
+   "description": "Enter it to work out the ink per sheet."
+  },
+  {
+   "fieldname": "epson_ink_per_sheet",
+   "fieldtype": "Currency",
+   "label": "Epson Ink per Sheet",
+   "default": "0.05",
+   "precision": "4",
+   "read_only_depends_on": "eval:doc.epson_sheets_per_set > 0"
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-08 12:00:00.000000",
+ "modified": "2026-10-18 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printing Cost Settings",
