@@ -11,6 +11,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, nowdate
 
+from imed_erp.imederp import damaged_stock
 from imed_erp.imederp.damaged_stock import SCRAP_BUYER
 
 COMPANY = "Mohamed Mamdouh group"
@@ -128,6 +129,20 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 			fn(*args, **kwargs)
 		frappe.db.rollback(save_point="refused")
 		frappe.set_user("Administrator")
+
+	def test_sec02_posting_in_the_system_s_name_keeps_the_browser_session(self):
+		# SEC-02: inside a web request, set_user alone replaced Raghad's session with Administrator's, and she
+		# was logged out when the request ended.
+		frappe.set_user(RAGHAD)
+		session = frappe.local.session
+		session.sid, session.data = "browser-session-id", frappe._dict(csrf_token="token", user=RAGHAD)
+		data = session.data
+		try:
+			self.assertEqual(damaged_stock.as_system(lambda: frappe.session.user), "Administrator")
+			self.assertEqual((frappe.session.user, session.sid), (RAGHAD, "browser-session-id"))
+			self.assertIs(session.data, data)
+		finally:
+			frappe.set_user("Administrator")
 
 	# ---------- 1, 3, 12: damage recorded, moved, loss on the library ----------
 	def test_damage_is_a_loss_and_waits_in_the_damaged_store(self):
