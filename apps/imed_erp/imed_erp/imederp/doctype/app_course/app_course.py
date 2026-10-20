@@ -72,7 +72,13 @@ def recalculate_course(course, date=None):
 	counted = {"course": ("in", courses), "docstatus": 1}
 	if not COUNT_WITHDRAWN:
 		counted["withdrawn"] = 0
-	fee = flt(get_fee_per_student(frappe.db.count("App Subscription", counted), term.start_date))
+	students_counted = frappe.db.count("App Subscription", counted)
+	fee = flt(get_fee_per_student(students_counted, term.start_date))
+	# QA-34: the tier is kept with the fee, as counted now; a schedule entered later does not relabel it.
+	from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_tier
+	from imed_erp.imederp.report.platform_fees.platform_fees import tier_label
+
+	tier = tier_label(get_tier(students_counted, term.start_date))
 
 	# Not a change by the user: a course or a subscription open on someone's screen can still be saved.
 	for name in courses:
@@ -80,7 +86,7 @@ def recalculate_course(course, date=None):
 		frappe.db.set_value(
 			"App Course",
 			name,
-			{"subscriptions": students, "fee_per_student": fee, "platform_fee_total": fee * students},
+			{"subscriptions": students, "fee_per_student": fee, "platform_fee_total": fee * students, "tier": tier},
 			update_modified=False,
 		)
 	frappe.db.set_value("App Subscription", counted, "platform_fee", fee, update_modified=False)
