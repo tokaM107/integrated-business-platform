@@ -4,8 +4,10 @@
 # The doctor's statement (DOC-08, DOC-13): one agreement and one academic period on their own, from the doctor's
 # ledger. It starts from the balance brought forward (a negative one stays a debt and is taken from what comes
 # next, DOC-20), then one row per edition sold in the period (copies sold, selling price, cost of a copy, the
-# doctor's amount per copy and what he earned on them), then the period's other entries (payouts, charges for
-# unsold copies, adjustments) by date, and the balance at the end.
+# doctor's amount per copy and what he earned on them), or for an app agreement one row per course (APP-11: its
+# students, tier, fee per student and the platform fee), then the period's other entries (payouts, charges for
+# unsold copies, adjustments, collections) by date, and the balance at the end. A fee not collected stays a debt
+# and is the next term's balance brought forward (APP-12).
 #
 # What the doctor is shown leaves out the library's side (owner, DOC-13): its profit per sheet, its marketing and
 # any difference between the calculated price and the price set by hand. The cost of a copy is what it costs to
@@ -28,10 +30,22 @@ def execute(filters=None):
 	if not (filters.agreement and filters.period):
 		return get_columns(), []
 	data, totals = get_data(filters)
-	return get_columns(), data, None, None, get_summary(filters.agreement, totals)
+	return get_columns(filters.agreement), data, None, None, get_summary(filters.agreement, totals)
 
 
-def get_columns():
+def get_columns(agreement=None):
+	if agreement and frappe.db.get_value("Doctor Agreement", agreement, "agreement_type") == "App":
+		# APP-11: the app statement, one row per course: its students, tier and fee.
+		return [
+			{"label": _("Description"), "fieldname": "description", "fieldtype": "Data", "width": 220},
+			{"label": _("Course Name"), "fieldname": "course_name", "fieldtype": "Data", "width": 180},
+			{"label": _("Students"), "fieldname": "students", "fieldtype": "Int", "width": 90},
+			{"label": _("Tier"), "fieldname": "tier", "fieldtype": "Data", "width": 100},
+			{"label": _("Fee per Student"), "fieldname": "fee_per_student", "fieldtype": "Currency", "width": 120},
+			{"label": _("Owed"), "fieldname": "owed", "fieldtype": "Currency", "width": 120},
+			{"label": _("Collected"), "fieldname": "paid", "fieldtype": "Currency", "width": 120},
+			{"label": _("Balance"), "fieldname": "balance", "fieldtype": "Currency", "width": 120},
+		]
 	return [
 		{"label": _("Description"), "fieldname": "description", "fieldtype": "Data", "width": 220},
 		{"label": _("Edition"), "fieldname": "edition", "fieldtype": "Link", "options": "Book Edition", "width": 180},
@@ -49,7 +63,7 @@ def get_entries(agreement):
 	return frappe.get_all(
 		"Doctor Ledger Entry",
 		filters={"agreement": agreement, "docstatus": 1},
-		fields=["name", "period", "entry_date", "entry_type", "edition", "qty", "amount", "sales_invoice", "remarks"],
+		fields=["name", "period", "entry_date", "entry_type", "edition", "qty", "amount", "sales_invoice", "app_course", "remarks"],
 		order_by="entry_date, creation",
 	)
 
@@ -105,9 +119,37 @@ def get_data(filters):
 			}
 		)
 
+	# APP-11: the platform fees, one row per course: what its entries add up to in the period (every student,
+	# and the tier changes, platform_fee_posting.py), with the course as it was last counted.
+	from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_tier
+	from imed_erp.imederp.report.platform_fees.platform_fees import tier_label
+
+	fees = {}
+	for entry in movements:
+		if entry.app_course:
+			fees[entry.app_course] = fees.get(entry.app_course, 0) + signed(entry)
+	for name, amount in fees.items():
+		course = frappe.db.get_value(
+			"App Course", name, ["course_name", "period", "subscriptions", "fee_per_student"], as_dict=True
+		)
+		start = frappe.db.get_value("Academic Period", course.period, "start_date")
+		balance += amount
+		owed_total += amount
+		rows.append(
+			{
+				"description": _("Platform Fee"),
+				"course_name": course.course_name,
+				"students": course.subscriptions,
+				"tier": tier_label(get_tier(course.subscriptions, start)),
+				"fee_per_student": course.fee_per_student,
+				"owed": amount,
+				"balance": balance,
+			}
+		)
+
 	# Everything else in the period, by date: payouts, charges for unsold copies, adjustments, collections.
 	for entry in movements:
-		if entry.sales_invoice and entry.edition:
+		if (entry.sales_invoice and entry.edition) or entry.app_course:
 			continue
 		amount = signed(entry)
 		balance += amount
