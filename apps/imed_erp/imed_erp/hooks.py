@@ -211,6 +211,7 @@ doc_events = {
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
 			"imed_erp.imederp.treasuries.block_spending_without_approval",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.booking_accounts.guard_booking_link",
 		],
 		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
