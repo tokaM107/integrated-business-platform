@@ -113,6 +113,10 @@ class StockCount(Document):
 		changed = [row for row in self.items if row.difference_qty]
 		if not changed:
 			return
+		from imed_erp.imederp.damaged_stock import is_damaged_store
+
+		# QA-29: damaged goods are kept at no value (damaged_stock.py), so a surplus found there is too.
+		at_no_value = {"valuation_rate": 0, "allow_zero_valuation_rate": 1} if is_damaged_store(self.store) else {}
 		reconciliation = frappe.get_doc(
 			{
 				"doctype": "Stock Reconciliation",
@@ -127,6 +131,7 @@ class StockCount(Document):
 				# so the store ends at what was counted and nothing is taken twice (QA-05).
 				"items": [
 					{
+						**at_no_value,
 						"item_code": row.item_code,
 						"warehouse": self.store,
 						"qty": flt(row.counted_qty)
