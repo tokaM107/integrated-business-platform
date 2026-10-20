@@ -428,3 +428,15 @@ class IntegrationTestPlatformFeePosting(IntegrationTestCase):
 		).insert()
 		rows = statement({"agreement": agreement, "period": later.name})[1]
 		self.assertEqual((rows[0]["balance"], rows[-1]["balance"]), (20000, 20000))
+
+	def test_qa34_the_tier_is_kept_as_counted(self):
+		from imed_erp.imederp.report.platform_fees.platform_fees import execute as platform_fees
+
+		course = make_course("_Test Kept Tier")
+		subscribe(course, 1)
+		self.assertEqual(frappe.db.get_value("App Course", course, "tier"), "1–100")
+		# A schedule entered later for the same term would put 1 student in another tier: the label stays.
+		other = frappe._dict(from_students=1, to_students=None)
+		with patch("imed_erp.imederp.report.platform_fees.platform_fees.get_tier", return_value=other):
+			rows = {r["name"]: r for r in platform_fees({"period": frappe.db.get_value("App Course", course, "period")})[1]}
+		self.assertEqual(rows[course]["tier"], "1–100")
