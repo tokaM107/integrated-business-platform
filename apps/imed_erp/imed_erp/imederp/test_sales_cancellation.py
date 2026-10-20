@@ -239,6 +239,14 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 		for row in invoice.items:
 			self.assertIn(row.item_name, html)
 
+	def test_sec10_names_on_the_receipt_are_printed_as_text(self):
+		# A value written without Frappe's cleaning (db_set, an import) must not run in the printed receipt.
+		invoice = self.sell()
+		frappe.db.set_value("Sales Invoice", invoice.name, "customer_name", '<img src=x onerror="alert(1)">Ali')
+		html = frappe.get_print("Sales Invoice", invoice.name, print_format="MMG Sales Invoice")
+		self.assertNotIn('<img src=x onerror="alert(1)">', html)
+		self.assertIn("&lt;img src=x", html)
+
 	def test_the_reason_is_kept_as_plain_text(self):
 		invoice = self.sell()
 		self.assertRaises(frappe.ValidationError, cancel_with_reason, "Sales Invoice", invoice.name, "<b> </b>")
