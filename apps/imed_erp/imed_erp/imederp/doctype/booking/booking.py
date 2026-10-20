@@ -12,17 +12,21 @@
 # HAL-10, STU-02: the Booking calendar (Bookings > Calendar, booking_calendar.js) shows a day or a week of them:
 # get_events below.
 #
-# Total Amount and Amount Paid are recorded on the booking, with the remaining amount; nothing is posted to the
-# accounts. The payment is recorded through the accounts (a Sales Invoice of the resource's service item into the
-# business's cash box, ACC-01), which is not decided for bookings yet (docs/known-issues.md).
+# A booking entered here is priced when it is saved (HAL-03, STU-04, STU-05, HAL-11, HAL-12: booking_pricing.py);
+# a hall booking names its rental model, and a revenue-share one its attendees, admission price, what was collected
+# and the lecturer's share (HAL-08, HAL-12). Its deposits and payments are Payment Entries into its business's cash
+# box, and Completed makes its invoice (STU-03, ACC-04: booking_accounts.py). An imported booking keeps the
+# booking system's amounts and posts nothing.
 
 from datetime import datetime
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, get_datetime, get_time, getdate, now_datetime, time_diff_in_hours
+from frappe.utils import cint, flt, get_datetime, get_time, getdate, now_datetime
 
+from imed_erp.imederp.booking_accounts import complete, payments_total, posted, treasury_of
+from imed_erp.imederp.booking_pricing import REVENUE_SHARE, pricing_key, price_booking, revenue_share
 from imed_erp.imederp.customers import normalize_phone
 
 TENTATIVE, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW = "Tentative", "Confirmed with Deposit", "Completed", "Cancelled", "No Show"
@@ -63,9 +67,19 @@ class Booking(Document):
 		self.check_resource()
 		self.check_times()
 		self.check_hall_details()
-		self.check_amounts()
+		if self.source == MANUAL:
+			self.check_rental_model()
+			self.check_posted()
+			price_booking(self)
+			self.set_paid()
+		else:
+			self.check_amounts()
 		self.check_status()
 		self.check_overlap()
+
+	def on_update(self):
+		# Completed: the invoice (or the revenue-share entry), once (booking_accounts.py).
+		complete(self)
 
 	def check_source(self):
 		"""Only the import makes an imported booking, and only the import changes it (INT-01: what comes from the
@@ -96,6 +110,9 @@ class Booking(Document):
 			frappe.throw(_("Resource {0} not found.").format(self.resource))
 		self.resource_type, self.cost_center = resource.resource_type, resource.cost_center
 		check_own_business(self.cost_center)
+		if self.source == MANUAL:
+			# ACC-04: the business's cash box takes its payments; a business without one is told now, not at payment.
+			self.treasury = treasury_of(self.cost_center)
 		if resource.disabled and self.status in HOLDING and self.takes_new_time():
 			frappe.throw(_("{0} is disabled and takes no new bookings.").format(self.resource), title=_("Resource Disabled"))
 
@@ -123,7 +140,10 @@ class Booking(Document):
 			frappe.throw(_("Enter the booking's {0}.").format(", ".join(missing)), frappe.MandatoryError, title=_("Missing Value"))
 		if get_time(self.to_time) <= get_time(self.from_time):
 			frappe.throw(_("The booking ends at {0}, not after it starts at {1}.").format(self.to_time, self.from_time), title=_("Wrong Times"))
-		self.hours = flt(time_diff_in_hours(self.to_time, self.from_time), 2)
+		# Both as times: a booking read back has its times as durations, and one changed through the API as text.
+		day = datetime.min
+		ends, starts = datetime.combine(day, get_time(self.to_time)), datetime.combine(day, get_time(self.from_time))
+		self.hours = flt((ends - starts).total_seconds() / 3600, 2)
 
 	def check_hall_details(self):
 		if self.resource_type != "Hall":
@@ -134,7 +154,74 @@ class Booking(Document):
 		# The same check as a customer's number: a number that cannot be called is refused.
 		normalize_phone(self.responsible_phone)
 
+	def check_rental_model(self):
+		"""HAL-12: each hall booking names its model; a revenue-share one records its attendees and admission price
+		(HAL-08), what was collected, and the lecturer's share, which the owner has not fixed (question 33): it is
+		agreed per booking and is required, never assumed, before the booking is completed."""
+		if self.resource_type != "Hall":
+			self.rental_model = None
+		elif not self.rental_model:
+			frappe.throw(_("Choose the hall booking's rental model: Fixed Rent or Revenue Share (HAL-12)."), title=_("Missing Value"))
+		share = self.rental_model == REVENUE_SHARE
+		if not share:
+			for field in ("attendees", "admission_price", "expected_revenue", "collected_amount", "lecturer_share_percent", "lecturer_share", "center_share"):
+				self.set(field, 0)
+			self.lecturer = None
+			return
+		for field in ("attendees", "admission_price", "collected_amount", "lecturer_share_percent"):
+			if flt(self.get(field)) < 0:
+				frappe.throw(_("{0} cannot be negative.").format(_(self.meta.get_label(field))))
+		if flt(self.lecturer_share_percent) > 100:
+			frappe.throw(_("The lecturer's share cannot be more than 100%."))
+		self.expected_revenue = flt(cint(self.attendees) * flt(self.admission_price), 2)
+		self.lecturer_share, self.center_share = revenue_share(self.collected_amount, self.lecturer_share_percent)
+		if self.status == COMPLETED:
+			missing = [
+				_(self.meta.get_label(f))
+				for f in ("attendees", "admission_price", "lecturer_share_percent", "lecturer")
+				if not self.get(f)
+			]
+			if missing:
+				frappe.throw(
+					_("A revenue-share booking is completed with its {0}. The lecturer's share is agreed per booking: the owner has not set one rate.").format(
+						", ".join(missing)
+					),
+					title=_("Missing Value"),
+				)
+
+	def check_posted(self):
+		"""Once the invoice or the revenue-share entry is posted, what it was made from stays as it is: the posted
+		document is cancelled first (ACC-07), then the booking can change and be completed again."""
+		before = self.get_doc_before_save()
+		if self.is_new() or not before:
+			return
+		documents = [d for d in (posted("Sales Invoice", self.name), posted("Journal Entry", self.name)) if d]
+		if not documents:
+			return
+		shared = ("collected_amount", "lecturer_share_percent", "lecturer", "attendees", "admission_price")
+		changed = self.status != before.status or pricing_key(self) != before.pricing_key or any(
+			flt(self.get(f)) != flt(before.get(f)) if f != "lecturer" else self.get(f) != before.get(f) for f in shared
+		)
+		if changed:
+			frappe.throw(
+				_("{0} is posted ({1}). Cancel it first to change the booking.").format(self.name, ", ".join(documents)),
+				title=_("Already Posted"),
+			)
+
+	def set_paid(self):
+		"""Amount Paid is what the booking's Payment Entries brought in, never typed."""
+		self.paid_amount = 0 if self.is_new() else payments_total(self.name)
+		self.outstanding_amount = flt(flt(self.total_amount) - flt(self.paid_amount), 2)
+		if self.outstanding_amount < 0:
+			frappe.throw(
+				_("{0} has been paid {1}, more than its new total {2}. The difference is paid back first (by the accountant).").format(
+					self.name, self.paid_amount, self.total_amount
+				),
+				title=_("Paid More Than the Total"),
+			)
+
 	def check_amounts(self):
+		"""An imported booking: the booking system's amounts, checked."""
 		self.total_amount, self.paid_amount = flt(self.total_amount, 2), flt(self.paid_amount, 2)
 		if self.total_amount < 0 or self.paid_amount < 0:
 			frappe.throw(_("Amounts cannot be negative."))
@@ -153,7 +240,10 @@ class Booking(Document):
 			self.cancellation_reason = None
 		if self.status == CONFIRMED and not self.paid_amount:
 			# STU-08: "confirmed with a deposit".
-			frappe.throw(_("A booking is confirmed with a deposit: enter the amount paid."), title=_("No Deposit"))
+			frappe.throw(
+				_("A booking is confirmed with a deposit: record the deposit (Record Payment) first.") if self.source == MANUAL else _("A booking is confirmed with a deposit: enter the amount paid."),
+				title=_("No Deposit"),
+			)
 		if self.status in (COMPLETED, NO_SHOW) and self.starts_at() > now_datetime():
 			frappe.throw(_("The booking has not started yet; it cannot be {0}.").format(_(self.status)))
 

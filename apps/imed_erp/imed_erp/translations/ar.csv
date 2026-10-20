@@ -925,3 +925,126 @@ Course {0} belongs to another agreement.,الكورس {0} تبع اتفاقية 
 {0} is the platform fee of course {1}. It changes with the course's subscriptions.,{0} هي رسوم المنصة بتاعة الكورس {1}. بتتغير مع اشتراكات الكورس.
 Posted by a Course,متسجلة من كورس
 Platform fee of {0}: {1} students x {2} = {3},رسوم منصة {0}: {1} طالب × {2} = {3}
+{0} has no price for {1} in {2}. The owner sets it in Item Price.,{0} مالوش سعر لـ {1} في {2}. المالك بيحدده في سعر الصنف (Item Price).
+No Price,مفيش سعر
+"A revenue-share booking pays no rent, so it takes no package.",حجز اقتسام الإيراد مافيهوش إيجار، فمينفعش يبقى عليه باقة.
+Revenue share: no rent; the center keeps its share of what it collects.,اقتسام إيراد: مفيش إيجار؛ السنتر بياخد نصيبه من اللي اتحصّل.
+"Package {0} is for {1}, not {2}.",الباقة {0} لـ {1} مش لـ {2}.
+Package {0} is disabled.,الباقة {0} متوقفة.
+"Package {0} covers up to {1} hours; this booking is {2}. Book the rest separately, or choose another package.",الباقة {0} بتغطي لحد {1} ساعة؛ الحجز ده {2}. احجز الباقي في حجز تاني، أو اختار باقة تانية.
+Longer Than the Package,أطول من الباقة
+Package {0}: {1} ({2}).,باقة {0}: {1} ({2}).
+Package {0}: {1} hours x {2} ({3}).,باقة {0}: {1} ساعة × {2} ({3}).
+{0} has no price by the hour. Choose one of its packages.,{0} مالوش سعر بالساعة. اختار باقة من باقاته.
+{0} hours x {1} ({2}).,{0} ساعة × {1} ({2}).
+{0} is listed twice. Put all its pieces on one row.,{0} متكرر. حط كل القطع بتاعته في سطر واحد.
+Extra Listed Twice,خدمة إضافية متكررة
+"Enter the pieces of {0}: a whole number, more than zero.",اكتب عدد قطع {0}: رقم صحيح أكبر من صفر.
+{0} is not offered on a {1} booking.,{0} مش متاحة في حجز {1}.
+Extra {0} is disabled.,الخدمة الإضافية {0} متوقفة.
+{0} has no {1} set (imederp/{2}). Ask the accountant.,{0} مالوش {1} متحدد (imederp/{2}). كلّم المحاسب.
+cash box,خزينة
+income account,حساب إيراد
+No payment method puts money into {0}. Ask the accountant to set one (Mode of Payment > Accounts).,مفيش طريقة دفع بتدخّل فلوس في {0}. خلي المحاسب يحدد واحدة (طريقة الدفع > الحسابات).
+Missing Payment Method,طريقة الدفع ناقصة
+{0} has no account for the company. Ask the accountant.,{0} مالهاش حساب للشركة. كلّم المحاسب.
+"{0} puts money into {1}, which is not {2}'s cash box. Use: {3}.",{0} بتدخّل الفلوس في {1}، ودي مش خزينة {2}. استخدم: {3}.
+Wrong Cash Box,خزينة غلط
+{0} was imported: its payments are recorded in the booking system.,{0} مستورد: مدفوعاته بتتسجل في نظام الحجز.
+{0} is {1}: it takes no payment.,{0} حالته {1}: مينفعش يتسجل عليه دفع.
+"Enter the amount paid, more than zero.",اكتب المبلغ المدفوع، أكبر من صفر.
+Missing Amount,المبلغ ناقص
+"A hall booking takes no deposit. It is paid after it is completed, against its invoice.",حجز القاعة مافيهوش عربون. بيتدفع بعد ما يتم، على الفاتورة بتاعته.
+No Deposit for Halls,مفيش عربون للقاعات
+{0} is more than what is left to pay on {1}: {2}.,{0} أكتر من الباقي على {1}: {2}.
+Enter the transaction number of the {0} payment.,اكتب رقم عملية الدفع بـ {0}.
+Booking {0}: {1},الحجز {0}: {1}
+payment,دفعة
+deposit,عربون
+Deposit of booking {0},عربون الحجز {0}
+Booking {0},الحجز {0}
+The invoice total {0} differs from the booking's {1}.,إجمالي الفاتورة {0} مختلف عن إجمالي الحجز {1}.
+"Booking {0}: {1} collected from {2} attendees; the lecturer's share {3}% ({4}), the center's {5}.",الحجز {0}: اتحصّل {1} من {2} حاضر؛ نصيب المحاضر {3}% ({4})، ونصيب السنتر {5}.
+{0} is not completed yet.,{0} لسه ما تمّش.
+Choose the hall booking's rental model: Fixed Rent or Revenue Share (HAL-12).,اختار نموذج تأجير القاعة: إيجار ثابت أو اقتسام إيراد (HAL-12).
+The lecturer's share cannot be more than 100%.,نصيب المحاضر مينفعش يزيد عن 100%.
+A revenue-share booking is completed with its {0}. The lecturer's share is agreed per booking: the owner has not set one rate.,حجز اقتسام الإيراد بيتم بـ {0}. نصيب المحاضر بيتتفق عليه في كل حجز: المالك ما حددش نسبة واحدة.
+{0} is posted ({1}). Cancel it first to change the booking.,{0} اترحّل ({1}). الغيه الأول عشان تعدّل الحجز.
+Already Posted,مترحّل بالفعل
+"{0} has been paid {1}, more than its new total {2}. The difference is paid back first (by the accountant).",{0} اتدفع عليه {1}، أكتر من إجماليه الجديد {2}. الفرق بيترجع الأول (المحاسب بيرجّعه).
+A booking is confirmed with a deposit: record the deposit (Record Payment) first.,الحجز بيتأكد بعربون: سجّل العربون الأول (تسجيل عربون).
+Hours Included cannot be negative.,الساعات المشمولة مينفعش تبقى بالسالب.
+{0} is a stock item. A package is sold as a service.,{0} صنف مخزني. الباقة بتتباع كخدمة.
+{0} is a stock item. An extra is sold as a service.,{0} صنف مخزني. الخدمة الإضافية بتتباع كخدمة.
+Total {0},الإجمالي {0}
+Paid {0},المدفوع {0}
+Remaining {0},الباقي {0}
+Record Payment,تسجيل دفعة
+Record Deposit,تسجيل عربون
+Make Invoice,عمل الفاتورة
+At most {0}.,بحد أقصى {0}.
+"Empty: cash into {0}. A wallet (InstaPay, Vodafone Cash) needs its transaction number.",لو فاضية: كاش في {0}. المحفظة (InstaPay، Vodafone Cash) محتاجة رقم العملية.
+Transaction Number,رقم العملية
+Record,تسجيل
+Recorded: {0},اتسجل: {0}
+Customer Category,فئة العميل
+"HAL-03: the category's price list (Customer Group > Default Price List) prices the booking, when it has a price.",HAL-03: قائمة أسعار الفئة (مجموعة العملاء > قائمة الأسعار الافتراضية) هي اللي بتسعّر الحجز، لو فيها سعر.
+Rental Model,نموذج التأجير
+HAL-12. Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the students and shares what it collected with the lecturer.,HAL-12. إيجار ثابت: المحاضر بيدفع سعر القاعة. اقتسام إيراد: السنتر بيحصّل من الطلبة وبيقسم اللي اتحصّل مع المحاضر.
+Fixed Rent,إيجار ثابت
+Revenue Share,اقتسام إيراد
+Attendees,عدد الحاضرين
+HAL-08: how many attended.,HAL-08: عدد اللي حضروا.
+Admission Price,سعر الدخول
+HAL-08: what each attendee pays.,HAL-08: اللي بيدفعه كل حاضر.
+Expected Revenue,الإيراد المتوقع
+Attendees x admission price.,عدد الحاضرين × سعر الدخول.
+Collected from Attendees,المحصَّل من الحاضرين
+"What the center actually collected. It is what is shared, not the expected revenue; it goes into the halls' cash box when the booking is completed.",اللي السنتر حصّله فعلاً. هو اللي بيتقسم، مش الإيراد المتوقع؛ وبيدخل خزينة القاعات لما الحجز يتم.
+Lecturer's Share %,نسبة المحاضر %
+Agreed for this booking: the owner has not set one rate (open question 33). Required to complete the booking.,متفق عليها في الحجز ده: المالك ما حددش نسبة واحدة (السؤال المفتوح 33). لازمة عشان الحجز يتم.
+Lecturer (Supplier),المحاضر (مورد)
+"Who is owed the share, under مستحقات للمحاضرين. ERPNext keeps what is owed to someone on a supplier, not on a customer.",صاحب النصيب، على حساب مستحقات للمحاضرين. ERPNext بيسجل المستحق لحد على مورد، مش على عميل.
+Lecturer's Share,نصيب المحاضر
+Center's Share,نصيب السنتر
+"Worked out when the booking is saved, from the price list; the prices are kept on the booking.",بيتحسب لما الحجز يتحفظ، من قائمة الأسعار؛ والأسعار بتفضل محفوظة على الحجز.
+STU-05. Leave empty to price by the hour.,STU-05. سيبها فاضية عشان يتسعّر بالساعة.
+How It Was Priced,اتسعّر إزاي
+"Per hour, or the package's price.",للساعة، أو سعر الباقة.
+Booking Price,سعر الحجز
+Pricing Key,مفتاح التسعير
+Extras,خدمات إضافية
+"STU-04, HAL-11: microphones, lights...",STU-04، HAL-11: ميكروفونات، إضاءة...
+Extras Total,إجمالي الخدمات الإضافية
+Manual bookings: the total is worked out above; Amount Paid is the deposits and payments recorded (Record Payment). Imported bookings keep the booking system's amounts.,الحجوزات اليدوية: الإجمالي بيتحسب فوق؛ والمدفوع هو العرابين والدفعات المسجلة (تسجيل دفعة). الحجوزات المستوردة بتفضل بمبالغ نظام الحجز.
+The business's own cash box (ACC-04): its payments go into it.,خزينة النشاط نفسه (ACC-04): مدفوعاته بتدخل فيها.
+Revenue Share Entry,قيد اقتسام الإيراد
+STU-08. Confirmed with Deposit needs a deposit recorded. Completed makes the invoice.,STU-08. مؤكد بعربون محتاج عربون متسجل. تم بتعمل الفاتورة.
+Booking Package,باقة حجز
+Package Name,اسم الباقة
+"What the package is sold as. Its price is that item's Item Price (the customer category's price list first), which only the owner changes.",الصنف اللي الباقة بتتباع بيه. سعرها هو سعر الصنف ده (قائمة فئة العميل الأول)، واللي بيغيّره المالك بس.
+Charged,طريقة الحساب
+"Once: the package's price is the booking's price, for a booking up to its hours (STU-05: hours of smart board at a special price). Per Hour: its price times the booking's hours (a podcast with two cameras).",مرة واحدة: سعر الباقة هو سعر الحجز، لحجز لحد ساعاتها (STU-05: ساعات سمارت بورد بسعر خاص). بالساعة: سعرها × ساعات الحجز (بودكاست بكاميرتين).
+Once,مرة واحدة
+Per Hour,بالساعة
+Hours Included,الساعات المشمولة
+The longest booking the package covers. 0 when it is not counted in hours (reels).,أطول حجز الباقة بتغطيه. 0 لو مش بتتحسب بالساعات (الريلز).
+A disabled package is not offered on new bookings; the bookings already on it keep their price.,الباقة المتوقفة مش بتظهر في الحجوزات الجديدة؛ والحجوزات اللي عليها بتفضل بسعرها.
+What It Includes,بتشمل إيه
+"What the price includes (filming, editing...), as the price list says.",السعر بيشمل إيه (تصوير، مونتاج...)، زي ما قائمة الأسعار بتقول.
+Booking Extra,خدمة إضافية للحجز
+Extra Name,اسم الخدمة الإضافية
+"What the extra is sold as. Its price is that item's Item Price (the customer category's price list first), which only the owner changes.",الصنف اللي الخدمة الإضافية بتتباع بيه. سعرها هو سعر الصنف ده (قائمة فئة العميل الأول)، واللي بيغيّره المالك بس.
+"Per Piece per Hour: its price times the pieces times the booking's hours (requirements 4.8: a microphone or lights, 50 a piece an hour). Per Piece: its price times the pieces.",للقطعة في الساعة: سعرها × عدد القطع × ساعات الحجز (المتطلبات 4.8: مايك أو إضاءة، 50 للقطعة في الساعة). للقطعة: سعرها × عدد القطع.
+Per Piece per Hour,للقطعة في الساعة
+Per Piece,للقطعة
+Applies To,متاحة لـ
+"Which bookings may add it: STU-04 for the studio, HAL-11 for the halls.",الحجوزات اللي ممكن تضيفها: STU-04 للاستوديو، HAL-11 للقاعات.
+Hall and Studio,القاعات والاستوديو
+A disabled extra is not offered on new bookings; the bookings already with it keep their price.,الخدمة الإضافية المتوقفة مش بتظهر في الحجوزات الجديدة؛ والحجوزات اللي فيها بتفضل بسعرها.
+Booking Extra Item,خدمة إضافية في حجز
+Extra,الخدمة الإضافية
+Pieces,عدد القطع
+The price when the booking was priced: a later change of the price list does not change it.,السعر وقت ما الحجز اتسعّر: تغيير قائمة الأسعار بعد كده مش بيغيّره.
+Booking Packages,باقات الحجز
+Booking Extras,الخدمات الإضافية للحجز

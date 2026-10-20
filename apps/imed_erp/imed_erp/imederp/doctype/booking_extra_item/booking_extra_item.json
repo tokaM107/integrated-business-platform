@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-20 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Booking Extra Item",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "states": [],
+ "fields": [
+  {
+   "fieldname": "extra",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Extra",
+   "options": "Booking Extra",
+   "reqd": 1,
+   "columns": 3
+  },
+  {
+   "default": "1",
+   "fieldname": "quantity",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Pieces",
+   "reqd": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "charged",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Charged",
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Price",
+   "read_only": 1,
+   "columns": 1,
+   "description": "The price when the booking was priced: a later change of the price list does not change it."
+  },
+  {
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "label": "Hours",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Service Item",
+   "options": "Item",
+   "read_only": 1
+  }
+ ],
+ "permissions": [],
+ "field_order": [
+  "extra",
+  "quantity",
+  "charged",
+  "rate",
+  "hours",
+  "amount",
+  "item"
+ ]
+}

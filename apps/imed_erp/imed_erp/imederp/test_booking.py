@@ -20,6 +20,7 @@ NOUR, GILAN, HR = "nour@imed.local", "gilan@imed.local", "hr@imed.local"
 DAY = add_days(today(), 7)
 PAST = add_days(today(), -3)
 PHONE = "01055554444"
+HALL_ITEM, STUDIO_ITEM = "_TEST-BK-HALL-HOUR", "_TEST-BK-STUDIO-HOUR"
 
 
 def patch_user_permissions(permissions):
@@ -32,9 +33,14 @@ class IntegrationTestBooking(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		cls.hall = cls.resource("_Test Hall 1", "Hall", HALLS, capacity=40, item="HALL-HOUR")
-		cls.hall2 = cls.resource("_Test Hall 2", "Hall", HALLS, capacity=20)
-		cls.podcast = cls.resource("_Test Podcast", "Studio Service", STUDIO, item="STUDIO-HOUR")
+		# Bookings entered here are priced (booking_pricing.py): test service items with their prices.
+		for item, price in ((HALL_ITEM, 250), (STUDIO_ITEM, 625)):
+			if not frappe.db.exists("Item", item):
+				frappe.get_doc({"doctype": "Item", "item_code": item, "item_name": item, "item_group": "الخدمات", "stock_uom": "Nos", "is_stock_item": 0}).insert()
+			frappe.get_doc({"doctype": "Item Price", "item_code": item, "price_list": "Standard Selling", "price_list_rate": price}).insert()
+		cls.hall = cls.resource("_Test Hall 1", "Hall", HALLS, capacity=40, item=HALL_ITEM)
+		cls.hall2 = cls.resource("_Test Hall 2", "Hall", HALLS, capacity=20, item=HALL_ITEM)
+		cls.podcast = cls.resource("_Test Podcast", "Studio Service", STUDIO, item=STUDIO_ITEM)
 		cls.customer = frappe.get_doc(
 			{
 				"doctype": "Customer",
@@ -72,7 +78,7 @@ class IntegrationTestBooking(IntegrationTestCase):
 					"booking_date": date,
 					"from_time": start,
 					"to_time": end,
-					**({"activity": "Anatomy lecture", "responsible_name": "د. أحمد", "responsible_phone": "01112223333"} if hall else {}),
+					**({"activity": "Anatomy lecture", "responsible_name": "د. أحمد", "responsible_phone": "01112223333", "rental_model": "Fixed Rent"} if hall else {}),
 					**values,
 				}
 			).insert()
@@ -83,7 +89,7 @@ class IntegrationTestBooking(IntegrationTestCase):
 
 	def test_a_resource_is_made_and_edited(self):
 		hall = frappe.get_doc("Booking Resource", self.hall)
-		self.assertEqual((hall.resource_type, hall.capacity, hall.cost_center, hall.item), ("Hall", 40, HALLS, "HALL-HOUR"))
+		self.assertEqual((hall.resource_type, hall.capacity, hall.cost_center, hall.item), ("Hall", 40, HALLS, HALL_ITEM))
 		hall.capacity = 45
 		hall.equipment = "شاشة، صوت"
 		hall.save()
@@ -98,11 +104,11 @@ class IntegrationTestBooking(IntegrationTestCase):
 	# ---------- HAL-02: bookings ----------
 
 	def test_a_booking_is_made_and_read_back(self):
-		name = self.book(total_amount=500, paid_amount=200).name
+		name = self.book().name
 		booking = frappe.get_doc("Booking", name)
 		self.assertEqual(
-			(booking.hours, booking.outstanding_amount, booking.status, booking.source, booking.cost_center, booking.resource_type),
-			(2, 300, "Tentative", "Manual", HALLS, "Hall"),
+			(booking.hours, booking.total_amount, booking.outstanding_amount, booking.status, booking.source, booking.cost_center, booking.resource_type),
+			(2, 500, 500, "Tentative", "Manual", HALLS, "Hall"),
 		)
 		self.assertEqual(booking.responsible_name, "د. أحمد")
 
@@ -117,14 +123,13 @@ class IntegrationTestBooking(IntegrationTestCase):
 		self.assertEqual(self.book(self.podcast).hours, 2)
 
 	def test_amounts(self):
-		self.assertRaises(frappe.ValidationError, self.book, total_amount=-1)
-		self.assertRaises(frappe.ValidationError, self.book, total_amount=100, paid_amount=-1)
-		self.assertRaisesRegex(frappe.ValidationError, "more than the Total", self.book, total_amount=100, paid_amount=150)
-		booking = self.book(total_amount=100, paid_amount=100)
-		self.assertEqual(booking.outstanding_amount, 0)
+		"""A manual booking's amounts are worked out (test_booking_pricing.py); typed ones are not taken, and nothing
+		is posted until a payment or the booking is completed."""
+		booking = self.book(total_amount=100, paid_amount=150)
+		self.assertEqual((booking.total_amount, booking.paid_amount, booking.outstanding_amount), (500, 0, 500))
 		booking.paid_amount = 40
 		booking.save()
-		self.assertEqual(booking.outstanding_amount, 60)
+		self.assertEqual((booking.paid_amount, booking.outstanding_amount), (0, 500))
 		self.assertFalse(frappe.db.exists("GL Entry", {"against_voucher": booking.name}))
 
 	# ---------- Overlaps ----------
@@ -174,6 +179,7 @@ class IntegrationTestBooking(IntegrationTestCase):
 			"activity": "Anatomy lecture",
 			"responsible_name": "د. أحمد",
 			"responsible_phone": "01112223333",
+			"rental_model": "Fixed Rent",
 		}
 		frappe.set_user(NOUR)
 		self.assertRaisesRegex(frappe.ValidationError, "already booked", insert, values)
@@ -217,12 +223,16 @@ class IntegrationTestBooking(IntegrationTestCase):
 	# ---------- STU-08: statuses ----------
 
 	def test_statuses(self):
-		booking = self.book(self.podcast, total_amount=1250)
+		from imed_erp.imederp.booking_accounts import record_payment
+
+		booking = self.book(self.podcast)
+		self.assertEqual(booking.total_amount, 1250)
 		booking.status = "Confirmed with Deposit"
 		self.assertRaisesRegex(frappe.ValidationError, "deposit", booking.save)
+		# The deposit confirms it (STU-08).
+		record_payment(booking.name, 300)
 		booking.reload()
-		booking.status, booking.paid_amount = "Confirmed with Deposit", 300
-		booking.save()
+		self.assertEqual((booking.status, booking.paid_amount), ("Confirmed with Deposit", 300))
 		booking.status = "Completed"
 		self.assertRaisesRegex(frappe.ValidationError, "not started", booking.save)
 		booking.reload()
