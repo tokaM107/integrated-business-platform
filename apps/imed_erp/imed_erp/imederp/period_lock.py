@@ -9,6 +9,7 @@
 
 import frappe
 from frappe import _
+from frappe.utils import flt
 
 # The doctypes this check runs on (hooks.py: period_closing_doctypes, and doc_events validate and before_cancel).
 LOCKED_DOCTYPES = [
@@ -71,8 +72,18 @@ def validate_closed_period(doc, method=None):
 SETTLEMENT_ENTRIES = ("Unsold Copies Charge", "Payout")
 
 
+def is_settlement(doc):
+	"""A settlement entry, or the credit for copies charged when a period closed and sold since (QA-03,
+	doctor_ledger_entry.charge_edition), which corrects that charge in the same period."""
+	if doc.get("entry_type") in SETTLEMENT_ENTRIES:
+		return True
+	return bool(
+		doc.get("entry_type") == "Adjustment" and doc.get("edition") and not doc.get("sales_invoice") and flt(doc.get("amount")) > 0
+	)
+
+
 def validate_academic_period(doc):
-	if doc.doctype == "Doctor Ledger Entry" and doc.get("entry_type") in SETTLEMENT_ENTRIES:
+	if doc.doctype == "Doctor Ledger Entry" and is_settlement(doc):
 		return
 	period = doc.get("period")
 	if period and frappe.db.get_value("Academic Period", period, "is_closed"):
