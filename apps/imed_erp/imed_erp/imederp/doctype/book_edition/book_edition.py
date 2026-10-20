@@ -171,10 +171,11 @@ def get_copy_cost(edition):
 	return flt(per_sheet * cint(edition.get("pages")) + flt(edition.get("binding_cost")), 2)
 
 
-def get_paper_cost(cost_center, waste_per_sheet=None):
+def get_paper_cost(cost_center, waste_per_sheet=None, as_of=None):
     """Moving average price of a sheet of A4 paper in the library's store, plus waste.
 
-    0 when the library has no paper price yet (nothing received).
+    0 when the library has no paper price yet (nothing received). as_of: the price at the end of that day, not now
+    (QA-28: a day's counters entered late are valued at that day's cost).
     """
     if waste_per_sheet is None:
         waste_per_sheet = get_rates().waste_per_sheet
@@ -182,7 +183,14 @@ def get_paper_cost(cost_center, waste_per_sheet=None):
     abbr = frappe.get_cached_value("Company", company, "abbr")
     library = cost_center[: -len(f" - {abbr}")] if cost_center.endswith(f" - {abbr}") else cost_center
     store = LIBRARY_PAPER_STORE.get(library)
-    rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": f"{store} - {abbr}"}, "valuation_rate")) if store else 0
+    if not store:
+        rate = 0
+    elif as_of:
+        from erpnext.stock.utils import get_stock_balance
+
+        rate = flt(get_stock_balance(PAPER, f"{store} - {abbr}", as_of, "23:59:59", with_valuation_rate=True)[1])
+    else:
+        rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": f"{store} - {abbr}"}, "valuation_rate"))
     return flt(rate + flt(waste_per_sheet), 4) if rate else 0
 
 
