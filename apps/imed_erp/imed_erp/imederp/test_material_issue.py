@@ -215,6 +215,18 @@ class IntegrationTestMaterialIssue(IntegrationTestCase):
 		self.assert_refused(frappe.ValidationError, as_user, SARA, frappe.get_doc("Material Request", mr.name).submit)
 		self.assertEqual(qty(PAPER, MAWASAH_STORE), before)
 
+	def test_3b_the_rejection_reason_is_plain_text_and_required(self):
+		# SEC-01: the reason is shown on the request's form; markup in it must not run there. QA-25: required.
+		mr = self.request()
+		as_user(SARA, material_issue.request_approval, mr.name)
+		for blank in (None, "", "   ", "<b></b>"):
+			with self.subTest(blank):
+				self.assert_refused(frappe.ValidationError, as_user, RAGHAD, material_issue.reject, mr.name, blank)
+		as_user(RAGHAD, material_issue.reject, mr.name, '<img src=x onerror="alert(1)">Not needed<script>alert(2)</script>')
+		reason = frappe.db.get_value("Material Request", mr.name, "custom_rejection_reason")
+		self.assertNotIn("<", reason)
+		self.assertIn("Not needed", reason)
+
 	# ---------- Scenario 4: not enough stock ----------
 	def test_4_not_enough_stock(self):
 		mr = self.approved([{"item_code": PAPER, "qty": 2, "uom": CARTON, "custom_printing_machine": self.machine}])
