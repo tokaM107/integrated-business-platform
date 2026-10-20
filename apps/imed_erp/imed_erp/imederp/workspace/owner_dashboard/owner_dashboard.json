@@ -14,8 +14,8 @@
    "label": "Stock Value by Warehouse"
   }
  ],
- "content": "[\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0645\\u062d\\u062a\\u0627\\u062c \\u0645\\u0648\\u0627\\u0641\\u0642\\u062a\\u0643</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Expenses Waiting for Approval\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Editions to Approve\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Transfers to Confirm\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Doctor Charges to Approve\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u0623\\u0631\\u0642\\u0627\\u0645</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Sales\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Invoices Count\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Outstanding from Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Purchases\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Studio Bookings\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Studio Hours\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Hall Bookings\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Unpaid on Bookings\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u0631\\u0633\\u0648\\u0645</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Sales Trend\",\n   \"col\": 12\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Revenue by Business\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Stock Value by Warehouse\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0645\\u062a\\u0627\\u0628\\u0639\\u0629 \\u0634\\u063a\\u0644 \\u0627\\u0644\\u0645\\u0648\\u0638\\u0641\\u064a\\u0646</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Sales\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Expenses\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Purchases\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Counts\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Branch Requests\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Book Editions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Paper Counters\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Bookings\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"App Subscriptions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"All Changes\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u062a\\u0642\\u0627\\u0631\\u064a\\u0631</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Profit per Business\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock & Paper\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Cash Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Who Owes Us\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Daily Printing\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Expense Report\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Count Variance\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Statement\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Debts\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Receivables\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Owner Share Plan vs Actual\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Inter Business Transfers\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Platform Fees\"\n  },\n  \"type\": \"shortcut\"\n }\n]",
- "creation": "2026-10-12 17:39:55.272078",
+ "content": "[\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0645\\u062d\\u062a\\u0627\\u062c \\u0645\\u0648\\u0627\\u0641\\u0642\\u062a\\u0643</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Expenses Waiting for Approval\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Editions to Approve\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Transfers to Confirm\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"shortcut_name\": \"Doctor Charges to Approve\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u0623\\u0631\\u0642\\u0627\\u0645</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Revenue Yesterday\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Expenses Yesterday\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Revenue This Month\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Platform Fees This Month\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Collected from Doctors This Month\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Sheets Printed Yesterday\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Studio Bookings This Month\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Studio Hours This Month\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Hall Bookings This Month\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Unpaid on Bookings\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Outstanding from Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Invoices Count\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Total Purchases\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Customers\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 4,\n   \"number_card_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"number_card\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u0631\\u0633\\u0648\\u0645</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Sales Trend\",\n   \"col\": 12\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Revenue by Business\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"chart_name\": \"Stock Value by Warehouse\",\n   \"col\": 6\n  },\n  \"type\": \"chart\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0645\\u062a\\u0627\\u0628\\u0639\\u0629 \\u0634\\u063a\\u0644 \\u0627\\u0644\\u0645\\u0648\\u0638\\u0641\\u064a\\u0646</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Sales\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Expenses\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Purchases\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Counts\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Branch Requests\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Agreements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Book Editions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Paper Counters\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Bookings\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"App Subscriptions\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"All Changes\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 12\n  },\n  \"type\": \"spacer\"\n },\n {\n  \"data\": {\n   \"col\": 12,\n   \"text\": \"<span class=\\\"h4\\\"><b>\\u0627\\u0644\\u062a\\u0642\\u0627\\u0631\\u064a\\u0631</b></span>\"\n  },\n  \"type\": \"header\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Profit per Business\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock & Paper\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Cash Movements\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Who Owes Us\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Daily Printing\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Expense Report\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Stock Count Variance\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Statement\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Debts\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Doctor Receivables\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Owner Share Plan vs Actual\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Inter Business Transfers\"\n  },\n  \"type\": \"shortcut\"\n },\n {\n  \"data\": {\n   \"col\": 3,\n   \"shortcut_name\": \"Platform Fees\"\n  },\n  \"type\": \"shortcut\"\n }\n]",
+ "creation": "2026-10-20 17:39:47.069546",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
@@ -27,22 +27,58 @@
  "label": "Owner Dashboard",
  "link_type": "DocType",
  "links": [],
- "modified": "2026-10-19 16:42:08.102926",
+ "modified": "2026-10-20 17:39:47.069546",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Owner Dashboard",
  "number_cards": [
   {
-   "label": "Total Sales",
-   "number_card_name": "Total Sales"
+   "label": "Revenue Yesterday",
+   "number_card_name": "Revenue Yesterday"
   },
   {
-   "label": "Invoices Count",
-   "number_card_name": "Invoices Count"
+   "label": "Expenses Yesterday",
+   "number_card_name": "Expenses Yesterday"
+  },
+  {
+   "label": "Revenue This Month",
+   "number_card_name": "Revenue This Month"
+  },
+  {
+   "label": "Platform Fees This Month",
+   "number_card_name": "Platform Fees This Month"
+  },
+  {
+   "label": "Collected from Doctors This Month",
+   "number_card_name": "Collected from Doctors This Month"
+  },
+  {
+   "label": "Sheets Printed Yesterday",
+   "number_card_name": "Sheets Printed Yesterday"
+  },
+  {
+   "label": "Studio Bookings This Month",
+   "number_card_name": "Studio Bookings This Month"
+  },
+  {
+   "label": "Studio Hours This Month",
+   "number_card_name": "Studio Hours This Month"
+  },
+  {
+   "label": "Hall Bookings This Month",
+   "number_card_name": "Hall Bookings This Month"
+  },
+  {
+   "label": "Unpaid on Bookings",
+   "number_card_name": "Unpaid on Bookings"
   },
   {
    "label": "Outstanding from Customers",
    "number_card_name": "Outstanding from Customers"
+  },
+  {
+   "label": "Invoices Count",
+   "number_card_name": "Invoices Count"
   },
   {
    "label": "Total Purchases",
@@ -55,22 +91,6 @@
   {
    "label": "Doctor Agreements",
    "number_card_name": "Doctor Agreements"
-  },
-  {
-   "label": "Studio Bookings",
-   "number_card_name": "Studio Bookings"
-  },
-  {
-   "label": "Studio Hours",
-   "number_card_name": "Studio Hours"
-  },
-  {
-   "label": "Hall Bookings",
-   "number_card_name": "Hall Bookings"
-  },
-  {
-   "label": "Unpaid on Bookings",
-   "number_card_name": "Unpaid on Bookings"
   }
  ],
  "owner": "Administrator",
