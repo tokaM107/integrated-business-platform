@@ -136,8 +136,7 @@ def get_data(filters):
 
 	# APP-11: the platform fees, one row per course: what its entries add up to in the period (every student,
 	# and the tier changes, platform_fee_posting.py), with the course as it was last counted.
-	from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_tier
-	from imed_erp.imederp.report.platform_fees.platform_fees import tier_label
+	from imed_erp.imederp.report.platform_fees.platform_fees import course_tier
 
 	fees = {}
 	for entry in movements:
@@ -145,9 +144,8 @@ def get_data(filters):
 			fees[entry.app_course] = fees.get(entry.app_course, 0) + signed(entry)
 	for name, amount in fees.items():
 		course = frappe.db.get_value(
-			"App Course", name, ["course_name", "period", "subscriptions", "fee_per_student"], as_dict=True
+			"App Course", name, ["course_name", "period", "subscriptions", "fee_per_student", "tier"], as_dict=True
 		)
-		course_start = frappe.db.get_value("Academic Period", course.period, "start_date")
 		balance += amount
 		owed_total += amount
 		rows.append(
@@ -155,7 +153,7 @@ def get_data(filters):
 				"description": _("Platform Fee"),
 				"course_name": course.course_name,
 				"students": course.subscriptions,
-				"tier": tier_label(get_tier(course.subscriptions, course_start)),
+				"tier": course_tier(course),
 				"fee_per_student": course.fee_per_student,
 				"owed": amount,
 				"balance": balance,
