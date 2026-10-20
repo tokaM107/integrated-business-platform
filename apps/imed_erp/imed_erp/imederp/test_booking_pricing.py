@@ -387,3 +387,16 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 				moved = frappe.get_doc("Booking", booking.name)
 				moved.update(change)
 				self.assertRaisesRegex(frappe.ValidationError, "Cancel it first", moved.save)
+
+	def test_sec12_a_booking_with_money_or_imported_is_not_deleted(self):
+		paid = self.book(self.sb75, start="10:00", end="11:00")
+		record_payment(paid.name, 50, mode_of_payment=STUDIO_CASH)
+		# Frappe's own link check already keeps one with a payment; the app's guard says why.
+		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "Booking", paid.name)
+		imported = import_bookings(
+			"studio_booking",
+			[{"external_id": "D1", "resource": self.sb75, "customer_phone": PHONE, "booking_date": DAY, "from_time": "14:00", "to_time": "15:00", "total_amount": 200}],
+		)["inserted"][0]
+		self.assertRaisesRegex(frappe.ValidationError, "imported", frappe.delete_doc, "Booking", imported)
+		# A booking with nothing on it is still deleted as a mistake.
+		frappe.delete_doc("Booking", self.book(self.sb75, start="16:00", end="17:00").name)

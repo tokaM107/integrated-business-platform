@@ -98,3 +98,15 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 						"subscription_date": date, "cost_center": APP}
 				)
 				self.assertRaisesRegex(frappe.ValidationError, "in the course's term", doc.insert)
+
+	def test_sec12_a_course_with_students_is_not_deleted(self):
+		course = make_course("_Test Kept Course")
+		self.make_subscription(course).submit()
+		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "App Course", course)
+
+	def test_sec12_a_cancelled_fee_schedule_is_not_deleted(self):
+		from imed_erp.imederp.doctype.platform_fee_schedule.test_platform_fee_schedule import make_schedule
+
+		schedule = frappe.get_doc("Platform Fee Schedule", make_schedule("2040-01-01"))
+		schedule.cancel()
+		self.assertRaisesRegex(frappe.ValidationError, "cannot be deleted", frappe.delete_doc, "Platform Fee Schedule", schedule.name)
