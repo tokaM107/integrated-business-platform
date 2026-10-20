@@ -20,15 +20,28 @@ TEAL, TEAL_LIGHT, AMBER, SLATE = "#0f766e", "#1d9386", "#b7791f", "#48565f"
 # ---------------- Number Cards ----------------
 # full=1 shows the exact amount (EGP 92,437.50) instead of "92.44 K"; it also avoids Frappe showing
 # "EGP NaN" for a sum of zero (shorten_number(0) returns an empty string).
+M = "imed_erp.imederp.owner_dashboard."
+
+# QA-06: what the owner reads first is for a stated stretch of time (yesterday, this month to today) and comes from
+# the ledger, so it never adds up all time, counts future or tentative bookings, or leaves out the revenue posted by
+# journal entry (platform fees, the halls' revenue share). These are Custom cards: imederp/owner_dashboard.py works
+# them out. The document cards after them are counts and balances that are right as they stand.
 cards = [
-    dict(label="Total Sales", doc="Sales Invoice",
-         func="Sum", field="grand_total", color=TEAL, full=1,
+    dict(label="Revenue Yesterday", method=M + "revenue_yesterday", color=TEAL, full=1),
+    dict(label="Expenses Yesterday", method=M + "expenses_yesterday", color=AMBER, full=1),
+    dict(label="Revenue This Month", method=M + "revenue_this_month", color=TEAL, full=1),
+    dict(label="Platform Fees This Month", method=M + "platform_fees_this_month", color=TEAL, full=1),
+    dict(label="Collected from Doctors This Month", method=M + "app_collections_this_month", color=TEAL, full=1),
+    dict(label="Sheets Printed Yesterday", method=M + "sheets_printed_yesterday", color=SLATE),
+    dict(label="Studio Bookings This Month", method=M + "studio_bookings_this_month", color=TEAL),
+    dict(label="Studio Hours This Month", method=M + "studio_hours_this_month", color=TEAL),
+    dict(label="Hall Bookings This Month", method=M + "hall_bookings_this_month", color=SLATE),
+    dict(label="Unpaid on Bookings", method=M + "unpaid_on_bookings_card", color=AMBER, full=1),
+    dict(label="Outstanding from Customers", doc="Sales Invoice",
+         func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
     dict(label="Invoices Count", doc="Sales Invoice",
          func="Count", field="", color=SLATE,
-         filters=[["Sales Invoice", "docstatus", "=", 1]]),
-    dict(label="Outstanding from Customers", doc="Sales Invoice",
-         func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
     # The library buys with one Purchase Invoice that updates stock (setup_buying.py), without a receipt.
     dict(label="Total Purchases", doc="Purchase Invoice",
@@ -41,44 +54,37 @@ cards = [
     dict(label="Doctor Agreements", doc="Doctor Agreement",
          func="Count", field="", color=SLATE,
          filters=[["Doctor Agreement", "docstatus", "=", 1]]),
-    # The owner's own figures (5.1): the studio's bookings and hours and the halls' bookings. A booking is not
-    # submitted; a cancelled one or a no-show is left out.
-    dict(label="Studio Bookings", doc="Booking",
-         func="Count", field="", color=TEAL,
-         filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
-                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
-    dict(label="Studio Hours", doc="Booking",
-         func="Sum", field="hours", color=TEAL,
-         filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
-                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
-    dict(label="Hall Bookings", doc="Booking",
-         func="Count", field="", color=SLATE,
-         filters=[["Booking", "cost_center", "=", "قاعات Imed - MMG"],
-                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
-    dict(label="Unpaid on Bookings", doc="Booking",
-         func="Sum", field="outstanding_amount", color=AMBER, full=1,
-         filters=[["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
 ]
+# Cards of earlier runs that added up all time; removed so the owner does not read them.
+for old in ("Total Sales", "Studio Bookings", "Studio Hours", "Hall Bookings"):
+    if frappe.db.exists("Number Card", old):
+        frappe.delete_doc("Number Card", old, force=1)
 
 created_cards = []
 for c in cards:
     try:
         if frappe.db.exists("Number Card", c["label"]):
             frappe.delete_doc("Number Card", c["label"], force=1)
-        doc = frappe.get_doc({
+        values = {
             "doctype": "Number Card",
             "label": c["label"],
-            "type": "Document Type",
-            "document_type": c["doc"],
-            "function": c["func"],
-            "aggregate_function_based_on": c["field"],
-            "filters_json": frappe.as_json(c["filters"]),
             "is_public": 1,
-            "show_percentage_stats": 1,
-            "stats_time_interval": "Monthly",
             "color": c["color"],
             "show_full_number": c.get("full", 0),
-        }).insert()
+        }
+        if c.get("method"):
+            values.update({"type": "Custom", "method": c["method"], "module": "ImedERP"})
+        else:
+            values.update({
+                "type": "Document Type",
+                "document_type": c["doc"],
+                "function": c["func"],
+                "aggregate_function_based_on": c["field"],
+                "filters_json": frappe.as_json(c["filters"]),
+                "show_percentage_stats": 1,
+                "stats_time_interval": "Monthly",
+            })
+        doc = frappe.get_doc(values).insert()
         c["real"] = doc.name
         created_cards.append(c)
         print("card:", doc.name)
@@ -94,10 +100,9 @@ charts = [
          based_on="posting_date", value_field="grand_total",
          ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
          parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
-    dict(label="Revenue by Business", doc="Sales Invoice Item",
-         based_on="cost_center", value_field="base_net_amount",
-         ctype="Bar", color=TEAL_LIGHT, timespan=None, time_interval=None,
-         parent_doc="Sales Invoice", filters=[["Sales Invoice Item", "docstatus", "=", 1]]),
+    # QA-06: from the ledger's income accounts, this month to today, so revenue posted by journal entry is in.
+    dict(label="Revenue by Business", source="Revenue by Business (Ledger)",
+         ctype="Bar", color=TEAL_LIGHT),
     dict(label="Stock Value by Warehouse", doc="Bin",
          based_on="warehouse", value_field="stock_value",
          ctype="Donut", color=TEAL, timespan=None, time_interval=None,
@@ -112,13 +117,21 @@ for ch in charts:
         d = {
             "doctype": "Dashboard Chart",
             "chart_name": ch["label"],
-            "document_type": ch["doc"],
+            "document_type": ch.get("doc"),
             "type": ch["ctype"],
             "color": ch["color"],
             "is_public": 1,
             "filters_json": frappe.as_json(ch.get("filters", [])),
         }
-        if ch["ctype"] in ("Bar", "Donut"):
+        if ch.get("source"):
+            if not frappe.db.exists("Dashboard Chart Source", ch["source"]):
+                from frappe.modules.import_file import import_file_by_path
+
+                import_file_by_path(frappe.get_app_path(
+                    "imed_erp", "imederp", "dashboard_chart_source", "revenue_by_business_ledger", "revenue_by_business_ledger.json"
+                ))
+            d.update({"chart_type": "Custom", "source": ch["source"], "module": "ImedERP"})
+        elif ch["ctype"] in ("Bar", "Donut"):
             d.update({
                 "chart_type": "Group By",
                 "group_by_type": "Sum",
