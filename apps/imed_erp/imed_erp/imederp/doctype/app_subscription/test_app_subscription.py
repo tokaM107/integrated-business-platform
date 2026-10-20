@@ -21,13 +21,20 @@ APP = "تطبيق BA Plus - MMG"
 
 
 class IntegrationTestAppSubscription(IntegrationTestCase):
+	def setUp(self):
+		frappe.db.savepoint("app_subscription_test")
+
+	def tearDown(self):
+		# The tests share one agreement and course; a suspended or closed one must not reach the next test.
+		frappe.db.rollback(save_point="app_subscription_test")
+
 	def make_subscription(self, course):
 		return frappe.get_doc(
 			{
 				"doctype": "App Subscription",
 				"student": make_doctor("_Test Student"),
 				"course": course,
-				"subscription_date": "2026-10-07",
+				"subscription_date": "2031-09-15",
 				"cost_center": APP,
 			}
 		).insert()
@@ -67,3 +74,27 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 		course = make_course("_Test Moved Course")
 		frappe.db.set_value("App Course", course, "agreement", make_agreement("Books"))
 		self.assertRaises(frappe.ValidationError, self.make_subscription, course)
+
+	def test_qa07_a_draft_is_not_submitted_once_its_course_is_closed(self):
+		course = frappe.get_doc("App Course", make_course("_Test Closed Later Course"))
+		draft = self.make_subscription(course.name)
+		course.db_set("status", "Closed")
+		self.assertRaisesRegex(frappe.ValidationError, "is closed", draft.submit)
+		self.assertEqual(frappe.db.get_value("App Subscription", draft.name, "docstatus"), 0)
+
+	def test_qa07_a_draft_is_not_submitted_once_its_agreement_is_suspended(self):
+		course = make_course("_Test Suspended Later Course")
+		draft = self.make_subscription(course)
+		agreement = frappe.db.get_value("App Course", course, "agreement")
+		frappe.db.set_value("Doctor Agreement", agreement, "status", "Suspended")
+		self.assertRaisesRegex(frappe.ValidationError, "suspended", draft.submit)
+
+	def test_qa17_the_date_is_in_the_course_s_term(self):
+		course = make_course()
+		for date in ("2026-10-07", "2032-01-01"):
+			with self.subTest(date):
+				doc = frappe.get_doc(
+					{"doctype": "App Subscription", "student": make_doctor("_Test Student"), "course": course,
+						"subscription_date": date, "cost_center": APP}
+				)
+				self.assertRaisesRegex(frappe.ValidationError, "in the course's term", doc.insert)
