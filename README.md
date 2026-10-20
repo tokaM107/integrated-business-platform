@@ -693,6 +693,10 @@ own checks; nothing is written to the ledger by hand:
 - **Correcting**: while the invoice or entry stands, what it was made from cannot change. The accountant cancels it
   (with its reason, ACC-06); the booking then changes, and **Make Invoice** makes it again. A cancelled payment is
   taken off Amount Paid. A booking's total cannot drop below what was paid.
+  Cancelling an invoice that took a deposit gives the deposit back to the booking (ERPNext's Accounts Settings >
+  Unlink Payment on Cancellation of Invoice, on as ERPNext ships it; with it off, ERPNext refuses the cancellation).
+  A part of an hour on an item counted in whole units (Nos) is invoiced as one unit at the amount, the hours and
+  price in its description; `ساعة` takes parts of hours as they are.
 - An **imported** booking posts nothing: where its money is taken is open (question 11).
 
 | Requirement | Where |

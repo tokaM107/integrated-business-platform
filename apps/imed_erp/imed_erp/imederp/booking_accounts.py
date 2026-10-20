@@ -26,7 +26,7 @@ from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.utils import flt, getdate, today
 
-from imed_erp.imederp.booking_pricing import PIECE_PER_HOUR, REVENUE_SHARE, ONCE, revenue_share
+from imed_erp.imederp.booking_pricing import ONCE, PIECE_PER_HOUR, REVENUE_SHARE, revenue_share
 from imed_erp.imederp.system_user import as_administrator
 from imed_erp.imederp.treasuries import BUSINESS_TREASURY, WALLETS, plain
 
@@ -124,21 +124,29 @@ def income_account_of(cost_center):
 
 def allowed_accounts(cost_center):
 	company = company_of(cost_center)
-	return [treasury_of(cost_center)] + [full_name(w, company) for w in WALLETS if frappe.db.exists("Account", full_name(w, company))]
+	return [treasury_of(cost_center)] + [
+		full_name(w, company) for w in WALLETS if frappe.db.exists("Account", full_name(w, company))
+	]
 
 
 def mode_account(mode_of_payment, company):
-	return frappe.db.get_value("Mode of Payment Account", {"parent": mode_of_payment, "company": company}, "default_account")
+	return frappe.db.get_value(
+		"Mode of Payment Account", {"parent": mode_of_payment, "company": company}, "default_account"
+	)
 
 
 def default_mode_of_payment(cost_center):
 	"""The payment method whose account is the business's cash box (نقدي — استوديو X...)."""
 	company, treasury = company_of(cost_center), treasury_of(cost_center)
-	modes = frappe.get_all("Mode of Payment Account", filters={"company": company, "default_account": treasury}, pluck="parent")
+	modes = frappe.get_all(
+		"Mode of Payment Account", filters={"company": company, "default_account": treasury}, pluck="parent"
+	)
 	modes = [m for m in modes if frappe.db.get_value("Mode of Payment", m, "enabled")]
 	if not modes:
 		frappe.throw(
-			_("No payment method puts money into {0}. Ask the accountant to set one (Mode of Payment > Accounts).").format(treasury),
+			_(
+				"No payment method puts money into {0}. Ask the accountant to set one (Mode of Payment > Accounts)."
+			).format(treasury),
 			title=_("Missing Payment Method"),
 		)
 	return sorted(modes)[0]
@@ -149,7 +157,10 @@ def check_payment_account(cost_center, mode_of_payment):
 	business's cash box (a studio deposit into the halls' cash box)."""
 	account = mode_account(mode_of_payment, company_of(cost_center))
 	if not account:
-		frappe.throw(_("{0} has no account for the company. Ask the accountant.").format(mode_of_payment), title=_("Missing Account"))
+		frappe.throw(
+			_("{0} has no account for the company. Ask the accountant.").format(mode_of_payment),
+			title=_("Missing Account"),
+		)
 	allowed = allowed_accounts(cost_center)
 	if account not in allowed:
 		frappe.throw(
@@ -253,7 +264,10 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 	company = company_of(doc.cost_center)
 	bank = frappe.db.get_value("Mode of Payment", mode_of_payment, "type") == "Bank"
 	if bank and not (reference_no or "").strip():
-		frappe.throw(_("Enter the transaction number of the {0} payment.").format(mode_of_payment), title=_("Missing Value"))
+		frappe.throw(
+			_("Enter the transaction number of the {0} payment.").format(mode_of_payment),
+			title=_("Missing Value"),
+		)
 
 	with as_administrator():
 		if invoice:
@@ -303,25 +317,41 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 
 def invoice_lines(doc):
 	income, cost_center = income_account_of(doc.cost_center), doc.cost_center
-	line = lambda item, qty, rate: {
-		"item_code": item,
-		"qty": qty,
-		"rate": rate,
-		"uom": frappe.get_cached_value("Item", item, "stock_uom"),
-		"conversion_factor": 1,
-		"income_account": income,
-		"cost_center": cost_center,
-	}
+
+	def line(item, qty, rate, amount):
+		"""A line of the booking's amount. A part of an hour (1.5 hours) on an item counted in whole units (Nos)
+		is one unit at the amount, the hours and price in its description: ERPNext refuses 1.5 Nos."""
+		uom = frappe.get_cached_value("Item", item, "stock_uom")
+		row = {
+			"item_code": item,
+			"qty": qty,
+			"rate": rate,
+			"uom": uom,
+			"conversion_factor": 1,
+			"income_account": income,
+			"cost_center": cost_center,
+		}
+		if flt(qty) != int(flt(qty)) and frappe.get_cached_value("UOM", uom, "must_be_whole_number"):
+			name = frappe.get_cached_value("Item", item, "item_name")
+			row.update(
+				{"qty": 1, "rate": flt(amount, 2), "description": f"{name}: {flt(qty, 2)} x {flt(rate, 2)}"}
+			)
+		return row
+
 	lines = []
 	if flt(doc.base_amount):
 		if doc.package:
 			package = frappe.get_doc("Booking Package", doc.package)
-			lines.append(line(package.item, 1, flt(doc.base_amount)) if package.charged == ONCE else line(package.item, flt(doc.hours, 2), flt(doc.rate)))
+			if package.charged == ONCE:
+				lines.append(line(package.item, 1, flt(doc.base_amount), doc.base_amount))
+			else:
+				lines.append(line(package.item, flt(doc.hours, 2), flt(doc.rate), doc.base_amount))
 		else:
-			lines.append(line(frappe.db.get_value("Booking Resource", doc.resource, "item"), flt(doc.hours, 2), flt(doc.rate)))
+			item = frappe.db.get_value("Booking Resource", doc.resource, "item")
+			lines.append(line(item, flt(doc.hours, 2), flt(doc.rate), doc.base_amount))
 	for row in doc.extras:
 		qty = row.quantity * (flt(doc.hours, 2) if row.charged == PIECE_PER_HOUR else 1)
-		lines.append(line(row.item, qty, flt(row.rate)))
+		lines.append(line(row.item, qty, flt(row.rate), row.amount))
 	return lines
 
 
@@ -330,7 +360,12 @@ def advances(doc, total):
 	rows, left = [], flt(total, 2)
 	payments = frappe.get_all(
 		"Payment Entry",
-		filters={"custom_booking": doc.name, "docstatus": 1, "payment_type": "Receive", "unallocated_amount": [">", 0]},
+		filters={
+			"custom_booking": doc.name,
+			"docstatus": 1,
+			"payment_type": "Receive",
+			"unallocated_amount": [">", 0],
+		},
 		fields=["name", "unallocated_amount", "posting_date"],
 		order_by="posting_date asc, creation asc",
 	)
@@ -384,7 +419,9 @@ def make_invoice(doc):
 		invoice.insert()
 		if flt(invoice.grand_total, 2) != flt(doc.total_amount, 2):
 			frappe.throw(
-				_("The invoice total {0} differs from the booking's {1}.").format(invoice.grand_total, doc.total_amount)
+				_("The invoice total {0} differs from the booking's {1}.").format(
+					invoice.grand_total, doc.total_amount
+				)
 			)
 		invoice.submit()
 	return invoice.name
@@ -415,10 +452,21 @@ def make_revenue_share_entry(doc):
 			"company": company,
 			"posting_date": posting_date_of(doc),
 			"custom_booking": doc.name,
-			"user_remark": _("Booking {0}: {1} collected from {2} attendees; the lecturer's share {3}% ({4}), the center's {5}.").format(
-				doc.name, flt(doc.collected_amount, 2), doc.attendees or 0, flt(doc.lecturer_share_percent), lecturer_share, center_share
+			"user_remark": _(
+				"Booking {0}: {1} collected from {2} attendees; the lecturer's share {3}% ({4}), the center's {5}."
+			).format(
+				doc.name,
+				flt(doc.collected_amount, 2),
+				doc.attendees or 0,
+				flt(doc.lecturer_share_percent),
+				lecturer_share,
+				center_share,
 			),
-			"accounts": [{**row, "cost_center": doc.cost_center} for row in rows if flt(row.get("debit_in_account_currency") or row.get("credit_in_account_currency"))],
+			"accounts": [
+				{**row, "cost_center": doc.cost_center}
+				for row in rows
+				if flt(row.get("debit_in_account_currency") or row.get("credit_in_account_currency"))
+			],
 		}
 	)
 	entry.flags.from_booking = True
@@ -434,7 +482,11 @@ def complete(doc):
 	if doc.source == "Imported" or doc.status != "Completed":
 		return
 	frappe.db.get_value("Booking", doc.name, "name", for_update=True)
-	if doc.resource_type == "Hall" and doc.rental_model == REVENUE_SHARE and not posted("Journal Entry", doc.name):
+	if (
+		doc.resource_type == "Hall"
+		and doc.rental_model == REVENUE_SHARE
+		and not posted("Journal Entry", doc.name)
+	):
 		make_revenue_share_entry(doc)
 	if not posted("Sales Invoice", doc.name):
 		make_invoice(doc)

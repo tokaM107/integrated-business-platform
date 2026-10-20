@@ -26,7 +26,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, flt, get_datetime, get_time, getdate, now_datetime
 
 from imed_erp.imederp.booking_accounts import complete, payments_total, posted, treasury_of
-from imed_erp.imederp.booking_pricing import REVENUE_SHARE, pricing_key, price_booking, revenue_share
+from imed_erp.imederp.booking_pricing import REVENUE_SHARE, price_booking, pricing_key, revenue_share
 from imed_erp.imederp.customers import normalize_phone
 
 TENTATIVE, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW = "Tentative", "Confirmed with Deposit", "Completed", "Cancelled", "No Show"
