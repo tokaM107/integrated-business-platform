@@ -80,7 +80,9 @@ class IntegrationTestOpeningStock(IntegrationTestCase):
 	def test_arabic_digits_and_thousands_separators(self):
 		[row] = self.sheet([self.row(counted_qty="٢", valuation_rate="٦٥٠٫٥"), ])
 		self.assertEqual((row.errors, row.stock_qty, row.value), ([], 5000, 1301))
-		[row] = self.sheet([self.row(count_uom="Nos", counted_qty="1,250", valuation_rate="0.26")])
+		# Counted in the paper's own stock unit, whatever it is on this site (ورقة since setup_core.py; QA-37).
+		sheet_unit = frappe.db.get_value("Item", PAPER, "stock_uom")
+		[row] = self.sheet([self.row(count_uom=sheet_unit, counted_qty="1,250", valuation_rate="0.26")])
 		self.assertEqual((row.errors, row.stock_qty), ([], 1250))
 
 	def test_the_same_item_and_store_twice_is_refused(self):
