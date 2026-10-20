@@ -54,7 +54,7 @@ sections of this file. Each row says what it needs before it can be built.
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
 | 1 | APP-05, APP-06, ACC-13 (Must) | Done on 19 Oct: the fee is posted to the doctor's account with every student (decided that day), and a Collection goes into the treasury it names. Open: what a withdrawal does (`COUNT_WITHDRAWN`). | | |
-| 2 | ACC-03 (Must) | No daily close: nothing compares the cash counted in a box with its balance. | A shortage at a branch is found only at the weekly hand-over, if at all. | How the close is made (ERPNext POS Closing Entry per library, or a daily count per treasury) and who approves it. Accountant. |
+| 2 | ACC-03 (Must) | Half done on 20 Oct: **Treasury Balances** shows each cash box and wallet as the day began, its money in and out, and its balance (a branch manager sees her own box and the wallets). Still no daily close: nothing compares the cash counted in a box with that balance. | A shortage at a branch is found only at the weekly hand-over, if at all. | How the close is made (ERPNext POS Closing Entry per library, or a daily count per treasury) and who approves it. Accountant. |
 | 3 | ACC-05 (Must) | Revenue is recorded when the invoice is submitted (ERPNext's accrual basis), not when it is collected; the rest shows as receivables. | The P&L can show revenue not collected yet. | Keep accrual (usual accounting, receivables report shows what is owed) or follow the text. Accountant. |
 | 4 | ACC-04 (Must) | Done on 20 Oct for bookings: a deposit is a Payment Entry into the business's cash box, named with its booking, and is taken off the invoice when the booking is completed (README, *Price and money*). It is the customer's advance in العملاء: the account العرابين المقبوضة is still not used (ERPNext uses it only if the company books every advance in a separate account, a company-wide switch). | | Accountant: use العرابين المقبوضة (the company's "Book advance payments in separate party account"), or keep advances on the customer. |
 | 5 | ACC-09 (Must) | The weekly hand-over to the owner is an *Inter Business Transfer* to the main treasury; there is no owner or bank account to hand over to, and it mixes with transfers between businesses. | The owner's receipts cannot be listed on their own. | An account for the owner's custody (and a bank account if cash goes to the bank). Owner. |
@@ -64,10 +64,10 @@ sections of this file. Each row says what it needs before it can be built.
 
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
-| 7 | SEC-05 (Must) | No daily automatic backup kept off the server. | A failed server loses the data. | Set up with the production server (week C): scheduled `bench backup --with-files` and a copy off the server. |
+| 7 | SEC-05 (Must) | Script ready on 20 Oct (`scripts/backup_offsite.sh`, docs/production-hardening.md): a nightly checked backup with files, copied out of the container and, with an rclone remote, off the server. Not scheduled yet, and no remote chosen. | Until the remote is set, a failed server loses the data. | Where the copy goes (cloud drive or a disk at the office), with the hosting decision. Owner. Then cron it and restore one backup once. |
 | 8 | HR-01, HR-02, HR-04, HR-06 (Must); HR-03, HR-05 (Should) | HR is not built and HRMS (Frappe's HR app) is not installed: no payroll, attendance or salary split between businesses. Salaries are recorded as expenses. | The owner may expect payroll from the Must list. | Confirm HR is after go-live, and when HRMS is installed (an install and migrate on a live site). Owner. |
 | 9 | LIB-07 (Must) | Supplier purchases (`setup_buying.py`, on branch `feature/buying`) are not merged, though the owner's dashboard refers to it. | Purchases use ERPNext's defaults (no Update Stock default). | Merge and test `feature/buying`. |
-| 10 | Owner's dashboard (5.1) | Done on 19 Oct: studio bookings and hours, hall bookings and what is unpaid on bookings are cards on the owner's dashboard, with the bookings list and the transfers report (RPT-03). | | |
+| 10 | Owner's dashboard (5.1) | Corrected on 20 Oct (audit QA-06, QA-18): the cards on 19 Oct added up all time and counted future and tentative bookings, and revenue by business read sales invoices only. Now: revenue and expenses yesterday, revenue and platform fees this month, collected from doctors, sheets printed yesterday, studio and hall bookings and hours this month (confirmed or completed, up to today), unpaid on bookings (a completed booking's invoice outstanding), and revenue by business from the ledger's income accounts. | Integration status is not on it: no integration runs yet (19). | |
 
 ### Halls and studio
 
@@ -188,3 +188,33 @@ The two counting rules are constants at the top of `imederp/doctype/app_course/a
 | 18 | **Students' money in the revenue-share model**: collected in cash into the halls' cash box, or also by wallet? And who pays the lecturer, when? | All of it into خزينة سنتر Imed when the booking is completed; the lecturer's share stays owed under مستحقات للمحاضرين until the accountant pays it (an Expense / payment, as any payment out). | Nour / Accountant |
 | 19 | **The lecturer as a supplier**: what is owed to a lecturer is kept on a Supplier (ERPNext refuses a Customer on a payable account). | The lecturer is chosen as a Supplier on the booking; the accountant makes the supplier (it can be linked to the lecturer's customer record with ERPNext's Party Link). | Accountant |
 | 20 | **Prices of the past**: a booking is priced at the prices in force on the day it is priced (when its price is agreed), not on the day of the booking. | As said; a booking already priced keeps its prices. | Owner |
+
+## QA and security audit (20 Oct 2026): decisions taken in the fixes, to confirm
+
+The fixes are on branch `fix/audit-2026-10-20`; each commit names its audit ID. These choices were needed to fix a
+defect and are not written in the requirements. Each is one place in the code to change.
+
+| # | Where | What the code does now | Why | Who confirms |
+|---|---|---|---|---|
+| 1 | QA-02, `doctor_ledger_entry.post_by_hand` | A charge for unsold copies posts Dr مستحقات للأطباء — الكتب / Cr حصة الأطباء: it takes the copies' cost back from the doctors' share. A hand adjustment posts like a sale (books) or a platform fee (app). | The ledger and the general ledger agreed only for sales, payouts and collections. Crediting the doctors' share keeps the payable equal to the ledger without a new account. | Accountant: or a separate income account for recovered costs. |
+| 2 | QA-03, `charge_edition` | Copies are charged once over an edition's life. Copies charged when a period closed and sold after a carry-forward are given back as a draft credit at the same cost, for the accountant to submit. A rejected charge does not count as charged: the next period raises it again. | The doctor was charged twice for the same copies. | Accountant / Owner |
+| 3 | QA-04 | A return (credit note) needs the Accounts Manager role (the owner and the accountant) and a reason, as a cancellation. | Libraries take no returns; a branch manager could reverse a sale and pay cash out. | Owner |
+| 4 | QA-05 | A count treats paper sold but still waiting as a draft issue as gone, and the reconciliation leaves room for the draft, so the store ends at what was counted. | The paper was taken off twice. | Accountant |
+| 5 | QA-14 | A revenue-share booking is completed with 0 attendees, free admission or a 0% share once its lecturer is named; without a lecturer, a 0% share is still missing. | 0 was refused as missing, and the database cannot tell 0 from empty. | Owner (the share rule, question 33) |
+| 6 | QA-16 | The platform fee posts on تطبيق BA Plus whoever subscribed the student. The subscription's own cost center is still who recorded it (a library manager may), and is not used in the accounts. | The fee went to the first subscription's business. | Owner |
+| 7 | QA-20, QA-21 | Branch staff record counters on the day's screen only, one reading a machine a day. The owner and the accountant may add a reading by hand and record a counter reset (with a note) after a repair. | Readings outside the screen were in no waste figure; a reset blocked the branch. | Owner / Accountant |
+| 8 | QA-22 | Stock moved from one branch's store to another's goes through the approved request; only the accounts move it by hand, with Received By and the machine for paper. | The request and its approval could be skipped. | Raghad / Owner |
+| 9 | QA-24 | No transfer, payout or counter reading is dated after today. Branch staff cannot date an expense ahead; the owner and the accountant may (rent paid ahead). Collections into a treasury are not checked yet: the platform-fee tests date them in 2031. Cash boxes going negative are not checked. | Future dates blocked the next day's screen and moved money into another month. | Accountant |
+| 10 | QA-31 | A number typed with the country code and no plus (also on a landline, or with an extra 0) is read as Egyptian. Numbers valid before keep the same key. | Valid spellings were refused. | |
+| 11 | SEC-07 | A user with the Branch Manager role and no branch is refused on damaged stock, counts and bookings. | They were let into every branch. | Owner: give each branch manager their branch. |
+| 12 | SEC-12 | Kept from deletion: a submitted or cancelled branch request or fee schedule, an imported booking or one with money or a posting, a course with students or fees. Frappe's own link check already kept bookings with payments and courses with subscriptions. | | |
+
+Still open from the audit:
+
+- **QA-37, leftover test data.** `_Test` companies, items and warehouses from the October leaks are still on the
+  development site (QA-23's alert no longer shows them). Removing them is a delete on the site: with a backup, and
+  the owner's go-ahead. Production is built from a clean site, so they never reach it.
+- **ACC-03 daily close, ACC-09 hand-over account, HR, tasks (TSK), integrations (INT-02..13)**: not built; the
+  decisions they wait for are in the tables above.
+- **Production (SEC-04..06)**: the settings and steps are in docs/production-hardening.md; nothing is deployed.
+
