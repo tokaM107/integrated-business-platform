@@ -273,3 +273,50 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		entry.approval_status = "Approved"
 		self.assertRaisesRegex(frappe.ValidationError, "only with Approve or Reject", entry.save)
 
+
+	# ---------- The ledger and the accounts agree (QA-02) ----------
+
+	def gl_rows(self, journal_entry):
+		return sorted(
+			(g.account, g.party or None, g.debit, g.credit)
+			for g in frappe.get_all(
+				"GL Entry",
+				filters={"voucher_type": "Journal Entry", "voucher_no": journal_entry, "is_cancelled": 0},
+				fields=["account", "party", "debit", "credit"],
+			)
+		)
+
+	def test_qa02_entries_by_hand_post_to_the_accounts(self):
+		expense = "حصة الأطباء - MMG"
+		accrual = self.new_entry(today(), amount=1000).insert()
+		accrual.submit()
+		self.assertEqual(self.gl_rows(accrual.journal_entry), sorted([(expense, None, 1000, 0), (PAYABLE, None, 0, 1000)]))
+
+		charge = self.pending_charge(300)
+		frappe.get_doc(LEDGER, charge.name).approve()
+		charge.reload()
+		self.assertEqual(self.gl_rows(charge.journal_entry), sorted([(PAYABLE, None, 300, 0), (expense, None, 0, 300)]))
+
+		minus = self.new_entry(today(), entry_type="Adjustment", amount=-50).insert()
+		minus.submit()
+		self.assertEqual(self.gl_rows(minus.journal_entry), sorted([(PAYABLE, None, 50, 0), (expense, None, 0, 50)]))
+
+		# Cancelling the entry takes its journal entry with it; the journal entry alone is not cancelled.
+		self.assertRaisesRegex(
+			frappe.ValidationError, "Cancel that entry instead", frappe.get_doc("Journal Entry", charge.journal_entry).cancel
+		)
+		charge.cancel()
+		self.assertEqual(frappe.db.get_value("Journal Entry", charge.journal_entry, "docstatus"), 2)
+		self.assertEqual(self.gl_rows(charge.journal_entry), [])
+
+	def test_qa02_an_app_adjustment_is_owed_by_the_doctor_in_the_accounts(self):
+		agreement = make_agreement("App")
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		receivable, revenue = "مستحقات على الأطباء — رسوم المنصة - MMG", "إيراد رسوم المنصة - MMG"
+		entry = self.new_entry(today(), agreement=agreement, entry_type="Adjustment", amount=1000).insert()
+		entry.submit()
+		self.assertEqual(self.gl_rows(entry.journal_entry), sorted([(receivable, doctor, 1000, 0), (revenue, None, 0, 1000)]))
+		self.assertEqual(
+			set(frappe.get_all("GL Entry", filters={"voucher_no": entry.journal_entry}, pluck="cost_center")),
+			{"تطبيق BA Plus - MMG"},
+		)
