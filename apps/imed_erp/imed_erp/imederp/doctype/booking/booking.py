@@ -176,11 +176,14 @@ class Booking(Document):
 		self.expected_revenue = flt(cint(self.attendees) * flt(self.admission_price), 2)
 		self.lecturer_share, self.center_share = revenue_share(self.collected_amount, self.lecturer_share_percent)
 		if self.status == COMPLETED:
-			missing = [
-				_(self.meta.get_label(f))
-				for f in ("attendees", "admission_price", "lecturer_share_percent", "lecturer")
-				if not self.get(f)
-			]
+			# QA-14: 0 is an answer: no attendees, free admission, or a lecturer who takes no share. A share is never
+			# assumed (HAL-12), and the database keeps an empty share as 0, so naming the lecturer is what confirms
+			# it: without a lecturer, a 0% share is still missing.
+			missing = []
+			if not self.lecturer:
+				if not flt(self.lecturer_share_percent):
+					missing.append(_(self.meta.get_label("lecturer_share_percent")))
+				missing.append(_(self.meta.get_label("lecturer")))
 			if missing:
 				frappe.throw(
 					_("A revenue-share booking is completed with its {0}. The lecturer's share is agreed per booking: the owner has not set one rate.").format(
@@ -199,7 +202,13 @@ class Booking(Document):
 		if not documents:
 			return
 		shared = ("collected_amount", "lecturer_share_percent", "lecturer", "attendees", "admission_price")
-		changed = self.status != before.status or pricing_key(self) != before.pricing_key or any(
+		# QA-15: the day and times too, or the calendar would no longer match the invoice.
+		moved = (
+			getdate(before.booking_date) != getdate(self.booking_date)
+			or get_time(before.from_time) != get_time(self.from_time)
+			or get_time(before.to_time) != get_time(self.to_time)
+		)
+		changed = moved or self.status != before.status or pricing_key(self) != before.pricing_key or any(
 			flt(self.get(f)) != flt(before.get(f)) if f != "lecturer" else self.get(f) != before.get(f) for f in shared
 		)
 		if changed:
