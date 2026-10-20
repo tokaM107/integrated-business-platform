@@ -69,7 +69,8 @@ class IntegrationTestPrinterReading(IntegrationTestCase):
 
 	def test_a_draft_takes_the_reading_submitted_before_it(self):
 		self.reading(1000, opening=900)
-		draft = self.reading(1200, date="2026-10-08", submit=False)
+		# One reading a machine a day (QA-20): the draft is for the next day.
+		draft = self.reading(1200, date="2026-10-09", submit=False)
 		self.reading(1300, date="2026-10-08")
 		# Submitted after another reading of the machine, it starts from that one: 1200 is now below it.
 		self.assertRaisesRegex(frappe.ValidationError, "below the opening", draft.submit)
@@ -108,3 +109,51 @@ def make_machine(name="_Test Reading Machine"):
 		.insert()
 		.name
 	)
+
+
+class IntegrationTestPrinterReadingAudit(IntegrationTestCase):
+	"""Audit of 20 Oct 2026: QA-20, QA-21, QA-24, QA-30."""
+
+	def setUp(self):
+		frappe.db.savepoint("reading_audit")
+		self.machine = make_machine()
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="reading_audit")
+
+	def reading(self, closing, opening=None, date="2026-10-07", **values):
+		doc = frappe.get_doc(
+			{"doctype": "Printer Reading", "machine": self.machine, "reading_date": date, "opening_reading": opening,
+				"closing_reading": closing, **values}
+		).insert()
+		doc.submit()
+		return doc
+
+	def test_qa20_branch_staff_read_on_the_day_s_screen_and_once_a_day(self):
+		frappe.set_user("raghad@imed.local")
+		self.assertRaisesRegex(frappe.PermissionError, "day's screen", self.reading, 1500, opening=1000)
+		frappe.set_user("Administrator")
+		self.reading(1500, opening=1000)
+		self.assertRaisesRegex(frappe.ValidationError, "already has a reading on", self.reading, 1600)
+
+	def test_qa21_the_accountant_records_a_counter_reset(self):
+		self.reading(90000, opening=89000)
+		# After a repair the counter shows 120: the next day's reading is refused as too low...
+		self.assertRaisesRegex(frappe.ValidationError, "below the opening", self.reading, 500, date="2026-10-08")
+		# ...until the reset is recorded, with what happened; a branch manager cannot.
+		frappe.set_user("raghad@imed.local")
+		self.assertRaises(
+			frappe.PermissionError, self.reading, 120, opening=0, date="2026-10-08", counter_reset=1, reset_note="Board changed"
+		)
+		frappe.set_user("Administrator")
+		self.assertRaisesRegex(frappe.ValidationError, "what happened", self.reading, 120, opening=0, date="2026-10-08", counter_reset=1)
+		reset = self.reading(120, opening=0, date="2026-10-08", counter_reset=1, reset_note="Board changed")
+		self.assertEqual(reset.consumed, 120)
+		self.assertEqual(self.reading(500, date="2026-10-08").opening_reading, 120)
+
+	def test_qa24_qa30_no_future_date_and_a_real_first_opening(self):
+		from frappe.utils import add_days, today
+
+		self.assertRaisesRegex(frappe.ValidationError, "after today", self.reading, 1500, opening=1000, date=add_days(today(), 1))
+		self.assertRaisesRegex(frappe.ValidationError, "first reading", self.reading, 1500, opening=0)

@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days
+from frappe.utils import add_days, today
 
 from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
@@ -249,3 +249,11 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		if mawasah_machine:
 			self.assertRaises(frappe.PermissionError, get_opening, mawasah_machine[0])
 		get_opening(self.machines[0])
+
+	def test_qa24_qa30_the_day_s_screen_is_not_dated_ahead_and_a_first_opening_is_real(self):
+		first, second, third = sorted(self.machines)
+		closings = {first: 1050, second: 500, third: 100}
+		self.assertRaisesRegex(
+			frappe.ValidationError, "after today", self.sheet, closings, date=add_days(today(), 1), openings={first: 1000, second: 400, third: 50}
+		)
+		self.assertRaisesRegex(frappe.ValidationError, "first reading", self.sheet, closings, openings={first: 0, second: 400, third: 50})
