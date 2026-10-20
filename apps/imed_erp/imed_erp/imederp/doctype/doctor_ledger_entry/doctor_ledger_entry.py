@@ -6,10 +6,10 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt, today
 
-from imed_erp.imederp.doctor_accrual import PAYABLE_ACCOUNT, account, cancel
-from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT
+from imed_erp.imederp.doctor_accrual import EXPENSE_ACCOUNT, PAYABLE_ACCOUNT, account, cancel
+from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT, REVENUE_ACCOUNT, app_cost_center
 from imed_erp.imederp.doctype.book_edition.book_edition import get_copy_cost, get_sold_qty
-from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_submitted, get_balance, update_balance
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_SIGN, check_submitted, get_balance, update_balance
 from imed_erp.imederp.doctype.expense.expense import APPROVER_ROLE, get_approvers, is_approver
 from imed_erp.imederp.expense_reminders import notify
 
@@ -170,6 +170,65 @@ class DoctorLedgerEntry(Document):
 			self.journal_entry = self.post_payout()
 		elif self.entry_type == "Collection":
 			self.journal_entry = self.post_collection()
+		elif self.is_entered_by_hand():
+			self.journal_entry = self.post_by_hand()
+
+	def is_entered_by_hand(self):
+		"""An accrual, an adjustment or a charge for unsold copies that no sale and no course posted."""
+		return self.entry_type in ("Accrual", "Adjustment", UNSOLD) and not self.sales_invoice and not self.app_course
+
+	def post_by_hand(self):
+		"""QA-02: the accounts follow the doctor's ledger for what is entered by hand too, or the two drift apart.
+		  Books, more for the doctor (an accrual, a plus adjustment):
+		    Dr حصة الأطباء / Cr مستحقات للأطباء — الكتب, as a sale posts it (doctor_accrual.py)
+		  Books, less (a charge for unsold copies, a minus adjustment): the other way round. The charge takes back
+		    what the copies cost from the doctors' share, so the payable stays equal to the ledger (accountant to
+		    confirm; known-issues.md).
+		  App, more (a plus adjustment, an accrual): Dr مستحقات على الأطباء — رسوم المنصة (party: the doctor) /
+		    Cr إيراد رسوم المنصة, as a course posts it (platform_fee_posting.py); less: the other way round.
+		Every line on the business's cost center: the edition's library for books, the app for app fees."""
+		amount = abs(flt(self.amount))
+		more = BALANCE_SIGN.get(self.entry_type, 0) * flt(self.amount) > 0
+		agreement = frappe.db.get_value("Doctor Agreement", self.agreement, ["doctor", "agreement_type"], as_dict=True)
+		if agreement.agreement_type == "App":
+			# The doctor owes the group: more on his account is more owed by him.
+			cost_center = app_cost_center()
+			debit = {"account": RECEIVABLE_ACCOUNT, "party_type": "Customer", "party": agreement.doctor}
+			credit = {"account": REVENUE_ACCOUNT}
+		else:
+			cost_center = self.books_cost_center()
+			debit, credit = {"account": EXPENSE_ACCOUNT}, {"account": PAYABLE_ACCOUNT}
+		company = frappe.db.get_value("Cost Center", cost_center, "company")
+		if not more:
+			debit, credit = credit, debit
+		journal_entry = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"voucher_type": "Journal Entry",
+				"company": company,
+				"posting_date": self.entry_date,
+				"accounts": [
+					{**debit, "account": account(company, debit["account"]), "cost_center": cost_center, "debit_in_account_currency": amount},
+					{**credit, "account": account(company, credit["account"]), "cost_center": cost_center, "credit_in_account_currency": amount},
+				],
+				"user_remark": _("{0} {1} for {2} under {3}. {4}").format(
+					_(self.entry_type), self.name, agreement.doctor, self.agreement, self.remarks or ""
+				).strip(),
+			}
+		)
+		# The entry was approved where it needed to be (DOC-22); the journal entry is its posting, not a new decision.
+		journal_entry.flags.ignore_permissions = True
+		journal_entry.insert()
+		journal_entry.submit()
+		return journal_entry.name
+
+	def books_cost_center(self):
+		"""The library of the edition, else of the agreement's latest edition, else the company's default."""
+		edition = self.edition or frappe.db.get_value(
+			"Book Edition", {"agreement": self.agreement, "docstatus": 1}, "name", order_by="creation desc"
+		)
+		cost_center = edition and frappe.db.get_value("Book Edition", edition, "cost_center")
+		return cost_center or frappe.get_cached_value("Company", frappe.defaults.get_global_default("company"), "cost_center")
 
 	def post_payout(self):
 		"""Dr مستحقات للأطباء — الكتب / Cr the treasury. The journal entry runs its own checks, among them the
@@ -239,7 +298,7 @@ class DoctorLedgerEntry(Document):
 	def on_cancel(self):
 		# A payout's or a collection's journal entry goes with it; a sale's goes with the sale
 		# (doctor_accrual.cancel_accruals). A course's entries are never cancelled (platform_fee_posting.py).
-		if self.entry_type in ("Payout", "Collection") and self.journal_entry:
+		if (self.entry_type in ("Payout", "Collection") or self.is_entered_by_hand()) and self.journal_entry:
 			if frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
 				cancel("Journal Entry", self.journal_entry)
 		update_balance(self.agreement, self)
