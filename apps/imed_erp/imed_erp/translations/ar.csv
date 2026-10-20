@@ -1114,7 +1114,7 @@ it was imported from the booking system,اتستورد من نظام الحجز
 {0} {1} for {2} under {3}. {4},{0} {1} لـ {2} على الاتفاقية {3}. {4}
 "{0}: {1} copies charged earlier have been sold since, given back at {2} a copy, {3}.",{0}: {1} نسخة اتحسبت قبل كده واتباعت بعدها، بترجع بـ {2} للنسخة، {3}.
 Treasury Balances,أرصدة الخزائن
-Opening Balance,رصيد أول اليوم
+At the Start of the Day,أول اليوم
 Money In,الداخل
 Money Out,الخارج
 Date,التاريخ

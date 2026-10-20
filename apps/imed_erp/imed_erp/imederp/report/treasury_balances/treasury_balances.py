@@ -25,7 +25,7 @@ def execute(filters=None):
 def get_columns():
 	return [
 		{"label": _("Treasury"), "fieldname": "treasury", "fieldtype": "Link", "options": "Account", "width": 240},
-		{"label": _("Opening Balance"), "fieldname": "opening", "fieldtype": "Currency", "width": 140},
+		{"label": _("At the Start of the Day"), "fieldname": "opening", "fieldtype": "Currency", "width": 140},
 		{"label": _("Money In"), "fieldname": "money_in", "fieldtype": "Currency", "width": 130},
 		{"label": _("Money Out"), "fieldname": "money_out", "fieldtype": "Currency", "width": 130},
 		{"label": _("Balance"), "fieldname": "balance", "fieldtype": "Currency", "width": 140},
