@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, flt, today
+from frappe.utils import cint, flt, getdate, today
 
 from imed_erp.imederp.doctor_accrual import EXPENSE_ACCOUNT, PAYABLE_ACCOUNT, account, cancel
 from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT, REVENUE_ACCOUNT, app_cost_center
@@ -112,6 +112,9 @@ class DoctorLedgerEntry(Document):
 		if self.entry_type not in ("Payout", "Collection"):
 			self.treasury = None
 			return
+		# QA-24: cash paid to a doctor leaves the box the day it is paid.
+		if self.entry_type == "Payout" and getdate(self.entry_date) > getdate(today()):
+			frappe.throw(_("A payout cannot be dated after today."), title=_("Date in the Future"))
 		if not self.treasury:
 			frappe.throw(
 				_("Choose the treasury the money is paid from.")
