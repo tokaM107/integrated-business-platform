@@ -9,6 +9,7 @@ import json
 
 import frappe
 from frappe import _
+from frappe.rate_limiter import rate_limit
 
 from imed_erp.assistant.providers import get_provider
 
@@ -19,6 +20,7 @@ ALLOWED_ROLES = {"Super Admin", "System Manager"}
 
 MAX_MESSAGES = 30  # conversation turns sent to the provider
 MAX_MESSAGE_CHARS = 4000
+MESSAGES_PER_MINUTE = 20
 MAX_AUDIO_BYTES = 10 * 1024 * 1024  # about 10 minutes of compressed speech
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav")
 
@@ -71,6 +73,9 @@ def decode_audio(audio: str, audio_type: str) -> bytes:
 	mime = (audio_type or "").split(";")[0].strip()
 	if mime not in AUDIO_TYPES:
 		frappe.throw(_("Unsupported audio format: {0}").format(mime or "?"))
+	# SEC-11: the size is checked on the text sent, before decoding it: 4 characters of base64 carry 3 bytes.
+	if len(audio or "") > (MAX_AUDIO_BYTES + 2) // 3 * 4:
+		frappe.throw(_("The voice message is too long."))
 	try:
 		data = base64.b64decode(audio, validate=True)
 	except (binascii.Error, ValueError):
@@ -81,6 +86,8 @@ def decode_audio(audio: str, audio_type: str) -> bytes:
 
 
 @frappe.whitelist(methods=["POST"])
+# SEC-11: each message may reach a paid model; a script calling in a loop is stopped (per address, per minute).
+@rate_limit(limit=MESSAGES_PER_MINUTE, seconds=60)
 def send_message(messages=None, audio=None, audio_type=None):
 	"""Answer the last user message. With `audio` (base64) the last user turn is a voice message: it is
 	transcribed first, if the provider can, and the transcript becomes that turn's text.
