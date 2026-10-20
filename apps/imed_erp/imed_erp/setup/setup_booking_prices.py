@@ -58,8 +58,22 @@ RESOURCES = [
 
 # (package, resource, item, charged, hours included, what it includes)
 PACKAGES = [
-	("سمارت بورد 86 — 5 ساعات", "سمارت بورد 86 بوصة", "STU-SB86-5H", "Once", 5, "شامل التصوير والمونتاج وإزالة الأخطاء"),
-	("سمارت بورد 86 — 5 ساعات بدون مونتاج", "سمارت بورد 86 بوصة", "STU-SB86-5H-NOEDIT", "Once", 5, "بدون مونتاج"),
+	(
+		"سمارت بورد 86 — 5 ساعات",
+		"سمارت بورد 86 بوصة",
+		"STU-SB86-5H",
+		"Once",
+		5,
+		"شامل التصوير والمونتاج وإزالة الأخطاء",
+	),
+	(
+		"سمارت بورد 86 — 5 ساعات بدون مونتاج",
+		"سمارت بورد 86 بوصة",
+		"STU-SB86-5H-NOEDIT",
+		"Once",
+		5,
+		"بدون مونتاج",
+	),
 	("سمارت بورد 86 — 10 ساعات", "سمارت بورد 86 بوصة", "STU-SB86-10H", "Once", 10, ""),
 	("سمارت بورد 86 — 30 ساعة", "سمارت بورد 86 بوصة", "STU-SB86-30H", "Once", 30, ""),
 	("2 سمارت بورد 75 — 5 ساعات", "2 سمارت بورد 75 بوصة", "STU-SB75-5H", "Once", 5, ""),
@@ -69,7 +83,14 @@ PACKAGES = [
 	("5 ريلز", "ريلز", "STU-REEL-5", "Once", 0, ""),
 	("10 ريلز", "ريلز", "STU-REEL-10", "Once", 0, ""),
 	("15 ريلز", "ريلز", "STU-REEL-15", "Once", 0, ""),
-	("بودكاست — كاميرا واحدة", "بودكاست", "STU-PODCAST-1CAM", "Per Hour", 0, "تصوير، مونتاج، إضاءة، ميكروفونات"),
+	(
+		"بودكاست — كاميرا واحدة",
+		"بودكاست",
+		"STU-PODCAST-1CAM",
+		"Per Hour",
+		0,
+		"تصوير، مونتاج، إضاءة، ميكروفونات",
+	),
 	("بودكاست — كاميرتان", "بودكاست", "STU-PODCAST-2CAM", "Per Hour", 0, "تصوير، مونتاج، إضاءة، ميكروفونات"),
 	("بودكاست — 3 كاميرات", "بودكاست", "STU-PODCAST-3CAM", "Per Hour", 0, "تصوير، مونتاج، إضاءة، ميكروفونات"),
 ]
@@ -106,22 +127,47 @@ def run():
 		if frappe.db.exists("Item Price", {"item_code": code, "price_list": PRICE_LIST}):
 			print(f"exists Item Price {code} ({PRICE_LIST})")
 		else:
-			frappe.get_doc({"doctype": "Item Price", "item_code": code, "price_list": PRICE_LIST, "price_list_rate": price, "valid_from": "2026-01-01"}).insert()
+			frappe.get_doc(
+				{
+					"doctype": "Item Price",
+					"item_code": code,
+					"price_list": PRICE_LIST,
+					"price_list_rate": price,
+					"valid_from": "2026-01-01",
+				}
+			).insert()
 			print(f"create Item Price {code} {price}")
 	for name, item, equipment in RESOURCES:
 		make(
 			"Booking Resource",
 			name,
-			{"resource_name": name, "resource_type": "Studio Service", "cost_center": STUDIO, "item": item, "equipment": equipment},
+			{
+				"resource_name": name,
+				"resource_type": "Studio Service",
+				"cost_center": STUDIO,
+				"item": item,
+				"equipment": equipment,
+			},
 		)
 	for name, resource, item, charged, hours, inclusions in PACKAGES:
 		make(
 			"Booking Package",
 			name,
-			{"package_name": name, "resource": resource, "item": item, "charged": charged, "hours": hours, "inclusions": inclusions},
+			{
+				"package_name": name,
+				"resource": resource,
+				"item": item,
+				"charged": charged,
+				"hours": hours,
+				"inclusions": inclusions,
+			},
 		)
 	for name, item, charged, applies_to in EXTRAS:
-		make("Booking Extra", name, {"extra_name": name, "item": item, "charged": charged, "applies_to": applies_to})
+		make(
+			"Booking Extra",
+			name,
+			{"extra_name": name, "item": item, "charged": charged, "applies_to": applies_to},
+		)
 	frappe.db.commit()
 
 

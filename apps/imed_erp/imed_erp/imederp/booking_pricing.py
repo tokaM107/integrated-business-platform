@@ -68,7 +68,9 @@ def price_of(item, lists, on_date, what):
 	found = item_price(item, lists, on_date)
 	if not found or found[0] <= 0:
 		frappe.throw(
-			_("{0} has no price for {1} in {2}. The owner sets it in Item Price.").format(what, item, " / ".join(lists) or "-"),
+			_("{0} has no price for {1} in {2}. The owner sets it in Item Price.").format(
+				what, item, " / ".join(lists) or "-"
+			),
 			title=_("No Price"),
 		)
 	return found
@@ -114,7 +116,9 @@ def set_base(doc, lists, reprice):
 	if doc.package:
 		package = frappe.get_doc("Booking Package", doc.package)
 		if package.resource != doc.resource:
-			frappe.throw(_("Package {0} is for {1}, not {2}.").format(doc.package, package.resource, doc.resource))
+			frappe.throw(
+				_("Package {0} is for {1}, not {2}.").format(doc.package, package.resource, doc.resource)
+			)
 		if reprice:
 			if package.disabled:
 				frappe.throw(_("Package {0} is disabled.").format(doc.package))
@@ -122,20 +126,27 @@ def set_base(doc, lists, reprice):
 		if package.charged == ONCE:
 			if flt(package.hours) and hours > flt(package.hours):
 				frappe.throw(
-					_("Package {0} covers up to {1} hours; this booking is {2}. Book the rest separately, or choose another package.").format(
-						doc.package, flt(package.hours), hours
-					),
+					_(
+						"Package {0} covers up to {1} hours; this booking is {2}. Book the rest separately, or choose another package."
+					).format(doc.package, flt(package.hours), hours),
 					title=_("Longer Than the Package"),
 				)
 			doc.base_amount = flt(doc.rate, 2)
-			doc.pricing_note = _("Package {0}: {1} ({2}).").format(doc.package, money(doc.rate), doc.price_list)
+			doc.pricing_note = _("Package {0}: {1} ({2}).").format(
+				doc.package, money(doc.rate), doc.price_list
+			)
 		else:
 			doc.base_amount = flt(flt(doc.rate) * hours, 2)
-			doc.pricing_note = _("Package {0}: {1} hours x {2} ({3}).").format(doc.package, hours, money(doc.rate), doc.price_list)
+			doc.pricing_note = _("Package {0}: {1} hours x {2} ({3}).").format(
+				doc.package, hours, money(doc.rate), doc.price_list
+			)
 		return
 
 	if not resource.item:
-		frappe.throw(_("{0} has no price by the hour. Choose one of its packages.").format(doc.resource), title=_("No Price"))
+		frappe.throw(
+			_("{0} has no price by the hour. Choose one of its packages.").format(doc.resource),
+			title=_("No Price"),
+		)
 	if reprice:
 		doc.rate, doc.price_list = price_of(resource.item, lists, today(), doc.resource)
 	doc.base_amount = flt(flt(doc.rate) * hours, 2)
@@ -148,7 +159,10 @@ def set_extras(doc, lists, reprice):
 	hours = flt(doc.hours, 2)
 	for row in doc.extras:
 		if row.extra in seen:
-			frappe.throw(_("{0} is listed twice. Put all its pieces on one row.").format(row.extra), title=_("Extra Listed Twice"))
+			frappe.throw(
+				_("{0} is listed twice. Put all its pieces on one row.").format(row.extra),
+				title=_("Extra Listed Twice"),
+			)
 		seen.add(row.extra)
 		if cint(row.quantity) <= 0 or flt(row.quantity) != cint(row.quantity):
 			frappe.throw(_("Enter the pieces of {0}: a whole number, more than zero.").format(row.extra))
@@ -161,7 +175,9 @@ def set_extras(doc, lists, reprice):
 			row.rate = price_of(extra.item, lists, today(), row.extra)[0]
 			row.item, row.charged = extra.item, extra.charged
 		row.hours = hours if row.charged == PIECE_PER_HOUR else 0
-		row.amount = flt(cint(row.quantity) * flt(row.rate) * (hours if row.charged == PIECE_PER_HOUR else 1), 2)
+		row.amount = flt(
+			cint(row.quantity) * flt(row.rate) * (hours if row.charged == PIECE_PER_HOUR else 1), 2
+		)
 		total += row.amount
 	doc.extras_amount = flt(total, 2)
 
