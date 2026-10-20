@@ -90,7 +90,7 @@
    "label": "Tier",
    "read_only": 1,
    "no_copy": 1,
-   "description": "The tier the course was counted in, kept as it was then (QA-34)."
+   "description": "The tier the course was counted in, kept as it was then."
   },
   {
    "description": "The tier for the course's number of students, by the tiers in force when its term starts.",
