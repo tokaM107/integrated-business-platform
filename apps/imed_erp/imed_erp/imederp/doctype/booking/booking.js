@@ -64,6 +64,14 @@ function show_amounts(frm) {
 	const money = (value) => format_currency(value, frappe.defaults.get_default("currency"));
 	const owed = flt(frm.doc.outstanding_amount) > 0;
 	frm.dashboard.clear_headline();
+	// QA-35: a cancelled booking or a no-show owes nothing more; what was paid is the deposit kept.
+	if (["Cancelled", "No Show"].includes(frm.doc.status)) {
+		frm.dashboard.set_headline_alert(
+			flt(frm.doc.paid_amount) ? __("Deposit held {0}", [money(frm.doc.paid_amount)]) : __("Nothing paid"),
+			"gray"
+		);
+		return;
+	}
 	frm.dashboard.set_headline_alert(
 		[
 			__("Total {0}", [money(frm.doc.total_amount)]),
