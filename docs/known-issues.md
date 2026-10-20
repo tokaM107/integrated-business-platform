@@ -34,7 +34,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 
 | Feature | Requirements | Status |
 |---|---|---|
-| Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Built: *Booking*, *Booking Resource* (STU-01/02/03/08/14, HAL-01/02/04/07/10), the day and week calendar. The import is written (`booking_import.py`) but nothing runs it yet. Pricing, add-ons, rental models and reports: see the requirements review below |
+| Bookings for the studio and halls | STU, HAL (the studio booking system stays the source of truth; we read from it, INT) | Built: *Booking*, *Booking Resource*, *Booking Package*, *Booking Extra* (STU-01..05/08/14, HAL-01..04/07/08/10..12, ACC-04): the calendar, prices, packages, extras, the halls' two models, deposits and the invoice. The import is written (`booking_import.py`) but nothing runs it yet. Reports and the open prices: see the requirements review and the bookings questions below |
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Built: *Printing Machine*, *Daily Counter Reading*, *Printer Reading* (machine linked), the *Daily Printing* report |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
 | BA+ app subscriptions and platform fees | APP | Courses, tiers, the fee per course, posted to the doctor's account, collected into a treasury, and the report (APP-01 to 07) |
@@ -56,7 +56,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 1 | APP-05, APP-06, ACC-13 (Must) | Done on 19 Oct: the fee is posted to the doctor's account with every student (decided that day), and a Collection goes into the treasury it names. Open: what a withdrawal does (`COUNT_WITHDRAWN`). | | |
 | 2 | ACC-03 (Must) | No daily close: nothing compares the cash counted in a box with its balance. | A shortage at a branch is found only at the weekly hand-over, if at all. | How the close is made (ERPNext POS Closing Entry per library, or a daily count per treasury) and who approves it. Accountant. |
 | 3 | ACC-05 (Must) | Revenue is recorded when the invoice is submitted (ERPNext's accrual basis), not when it is collected; the rest shows as receivables. | The P&L can show revenue not collected yet. | Keep accrual (usual accounting, receivables report shows what is owed) or follow the text. Accountant. |
-| 4 | ACC-04 (Must) | A deposit (عربون) is not posted: the *Booking*'s amount paid stays on the booking, and the account العرابين المقبوضة is not used. | Cash taken as deposits is in no treasury. | With the bookings' posting question below. |
+| 4 | ACC-04 (Must) | Done on 20 Oct for bookings: a deposit is a Payment Entry into the business's cash box, named with its booking, and is taken off the invoice when the booking is completed (README, *Price and money*). It is the customer's advance in العملاء: the account العرابين المقبوضة is still not used (ERPNext uses it only if the company books every advance in a separate account, a company-wide switch). | | Accountant: use العرابين المقبوضة (the company's "Book advance payments in separate party account"), or keep advances on the customer. |
 | 5 | ACC-09 (Must) | The weekly hand-over to the owner is an *Inter Business Transfer* to the main treasury; there is no owner or bank account to hand over to, and it mixes with transfers between businesses. | The owner's receipts cannot be listed on their own. | An account for the owner's custody (and a bank account if cash goes to the bank). Owner. |
 | 6 | ACC-10 (Should) | Wallets (InstaPay, Vodafone Cash) are not reconciled with their statements. | Wallet differences go unseen. | After go-live. |
 
@@ -73,11 +73,11 @@ sections of this file. Each row says what it needs before it can be built.
 
 | # | Requirement | Gap | Needs |
 |---|---|---|---|
-| 11 | HAL-12 (Must), open question 1 | No rental model on a hall booking (fixed rent or a share of the entry fees) and no share. | The share % (open question 3). Owner. |
-| 12 | HAL-08 (Must) | No attendees or entry price on a hall booking. | Nour. |
+| 11 | HAL-12 (Must), open question 1 | Done on 20 Oct: each hall booking names its model (Fixed Rent or Revenue Share); a revenue-share booking posts what was collected, the center's share to إيراد القاعات and the lecturer's to مستحقات للمحاضرين. The share % is agreed per booking until the owner sets one (bookings question 11). | |
+| 12 | HAL-08 (Must) | Done on 20 Oct: attendees, admission price, expected revenue and what was collected, on a revenue-share hall booking. | Nour: the attendees and admission price of a fixed-rent booking are not recorded (no use found for them there). |
 | 13 | HAL-06 (Must), STU-15 (Should) | No hall report (by day and hall: bookings, attendees, rent, collected, cancelled, unpaid) and no studio occupancy report. | After 11 and 12. |
 | 14 | HAL-10, STU-02 (Must) | Done on 19 Oct: the bookings calendar, by day and by week (Bookings > Calendar, `booking_calendar.js`). Frappe's calendar view, with each booking's start and end made from its date and times on the server (`booking.get_events`). | |
-| 15 | STU-04 (Must), HAL-11 (Should) | Extras (a microphone, lights at 50 a piece an hour) cannot be listed on a booking; they are in its typed total. | Booking rows for extras with prices. |
+| 15 | STU-04 (Must), HAL-11 (Should) | Done on 20 Oct: Booking Extra (priced by its item) and the booking's extras, each with its pieces. Microphone and lights for the studio are made by setup_booking_prices.py at 50 a piece an hour; the halls' extras have no price yet. | Nour: the halls' extras and their prices. |
 | 16 | Permissions matrix, bookings | The accountant may create and edit bookings (matrix: none), and a branch manager edits and cancels without approval (matrix: with approval). | Who approves a branch manager's change or cancellation. Owner. |
 
 ### Integrations, reports and the rest
@@ -164,17 +164,27 @@ The two counting rules are constants at the top of `imederp/doctype/app_course/a
 | 2 | **A student who withdraws** after the term starts (the *Withdrew* box on the submitted subscription). | Still counted and charged: `COUNT_WITHDRAWN = True` in `app_course.py`, one line to change. | Owner |
 | 3 | **From when the tiers are in force.** | 1 Sep 2026, the start of the first term (setup_platform_fees.py). | Owner |
 
-## Open questions: bookings (HAL-01, HAL-02, STU-01, STU-08)
+## Open questions: bookings (HAL-01..03, HAL-08, HAL-11, HAL-12, STU-01, STU-03..05, STU-08, ACC-04)
 
 | # | Question | Until decided | Ask |
 |---|---|---|---|
 | 1 | **Halls and the studio share rooms**: 4 of the 8 halls are also the studio part of the time (allocation rule notes). Does a studio booking in a room block a hall booking of the same room, and the other way round? | Each resource is checked on its own; no sharing between resources. | Owner / Nour / Gilan |
 | 2 | **Studio services and the studio's rooms**: can two services (e.g. smart board and podcast) be booked at the same time, or do they use the same room? | Each service is checked on its own. | Gilan |
-| 3 | **Halls have no deposit** (HAL question 2), but STU-08's "Confirmed" is "confirmed with a deposit". How is a hall booking confirmed? | The STU-08 statuses apply to halls too, so a hall booking without a deposit stays Tentative until Completed. | Owner / Nour |
+| 3 | **Halls have no deposit** (HAL question 2), but STU-08's "Confirmed" is "confirmed with a deposit". How is a hall booking confirmed? | The STU-08 statuses apply to halls too; a hall takes no deposit (refused), so it stays Tentative until Completed, and is paid against its invoice. | Owner / Nour |
 | 4 | **The halls' data**: names, capacities, equipment and prices are blank in the requirements (HAL-01). | No resource made; entered by the owner or the accountant. | Nour |
-| 5 | **The booking's total**: hours × the item's price, or the agreed amount (packages, per reel, STU-05; price by customer category, HAL-03; rental models, HAL-12)? | Typed on the booking; nothing priced in code. | Owner |
-| 6 | **The booking's payment in the accounts** (ACC-01, STU-10): through a Sales Invoice of the service item into the business's cash box, or a Payment Entry? | Total and paid are recorded on the booking only; nothing is posted. | Accountant |
+| 5 | **The booking's total** (STU-05, HAL-03, HAL-12): priced since 20 Oct from the price lists (README, *Price and money*). Is a price ever agreed per booking (a discount, a special rent)? | Not possible: the price is the price list's; a different one is a price for the customer's category, or for the customer, in the price list (the owner's). | Owner |
+| 6 | **The booking's revenue: when** (ACC-05 says when collected; the owner said when the booking is completed). | The invoice is made when the booking is completed (revenue then); deposits before it are the customer's advances, not revenue. | Accountant |
 | 7 | **Status changes**: may a Completed, No Show or Cancelled booking be changed back? | Allowed, with the same checks as a new booking (a cancelled one taken back must not overlap); every change is in the history. | Owner |
 | 8 | **The booking system's import** (STU-11, STU-09, STU-10): its access, its status names, how changes and cancellations are taken over, and whether a customer not found is created. | Import ready for rows in this system's statuses; changes listed, never overwritten; an unknown customer fails the row. | Studio booking team |
 | 9 | **Bookings past midnight.** | Not possible: a booking ends on its own day. | Nour / Gilan |
 | 10 | **Same resource, same moment, no overlap**: the second save is asked to save again (the protection against overlaps, see README). | Accepted: it happens only when two people save the same resource within the same second. | — |
+| 11 | **The lecturer's share %** in the revenue-share model (requirements question 33). | Typed on each booking; the booking is not completed without it. One rate for all, or per lecturer, is a field to add once decided. | Owner / Nour |
+| 12 | **Hall prices and categories** (HAL-01, HAL-03, question 15): each hall's price per hour, and which customer categories pay differently (students, doctors...). | No hall is priced: a hall booking is refused until its item has a price. A category's price is its customer group's price list. | Nour / Owner |
+| 13 | **Packages over several bookings**: are the 10- and 30-hour smart board packages hours used over several sessions (a balance)? And what is charged for hours beyond a package? | A package is one booking of up to its hours; a longer booking is refused. No balance is kept. | Gilan / Owner |
+| 14 | **Partial hours**: is a booking of 1 h 20 charged 1.33 hours, or rounded (to the half hour, the hour)? | Charged for its exact length; nothing rounded up. | Owner |
+| 15 | **Extras: per hour or per booking?** The requirements say 50 a piece an hour; it was also given as 50 a piece. | 50 a piece an hour (Booking Extra > Charged can be changed to Per Piece). | Gilan |
+| 16 | **Location's price** (4.8: blank) and the halls' extras' prices. | The Location resource exists and takes no booking until it is priced. | Gilan / Nour |
+| 17 | **A cancelled booking's deposit** (question 13: the studio's refund policy). | Stays as the customer's advance (credit) in the accounts; paying it back is a payment out by the accountant, by hand. | Gilan / Owner |
+| 18 | **Students' money in the revenue-share model**: collected in cash into the halls' cash box, or also by wallet? And who pays the lecturer, when? | All of it into خزينة سنتر Imed when the booking is completed; the lecturer's share stays owed under مستحقات للمحاضرين until the accountant pays it (an Expense / payment, as any payment out). | Nour / Accountant |
+| 19 | **The lecturer as a supplier**: what is owed to a lecturer is kept on a Supplier (ERPNext refuses a Customer on a payable account). | The lecturer is chosen as a Supplier on the booking; the accountant makes the supplier (it can be linked to the lecturer's customer record with ERPNext's Party Link). | Accountant |
+| 20 | **Prices of the past**: a booking is priced at the prices in force on the day it is priced (when its price is agreed), not on the day of the booking. | As said; a booking already priced keeps its prices. | Owner |

@@ -195,6 +195,9 @@ doc_events = {
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 		],
+		# A booking's figures follow its revenue-share entry (imederp/booking_accounts.py).
+		"on_submit": "imed_erp.imederp.booking_accounts.on_posted_change",
+		"on_cancel": "imed_erp.imederp.booking_accounts.on_posted_change",
 		"before_cancel": [
 			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
@@ -211,6 +214,9 @@ doc_events = {
 		],
 		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		# A booking's Amount Paid follows its deposits and payments (imederp/booking_accounts.py).
+		"on_submit": "imed_erp.imederp.booking_accounts.on_posted_change",
+		"on_cancel": "imed_erp.imederp.booking_accounts.on_posted_change",
 	},
 	"Sales Invoice": {
 		"validate": [
@@ -236,12 +242,15 @@ doc_events = {
 			"imed_erp.imederp.edition_sales.update_sold",
 			# The doctor's amount on each copy sold goes to his ledger (DOC-07; imederp/doctor_accrual.py).
 			"imed_erp.imederp.doctor_accrual.accrue",
+			# A booking's invoice (imederp/booking_accounts.py).
+			"imed_erp.imederp.booking_accounts.on_posted_change",
 		],
 		"on_cancel": [
 			"imed_erp.imederp.paper_use.cancel_paper_used",
 			"imed_erp.imederp.paper_use.refresh_counters",
 			"imed_erp.imederp.edition_sales.update_sold",
 			"imed_erp.imederp.doctor_accrual.cancel_accruals",
+			"imed_erp.imederp.booking_accounts.on_posted_change",
 		],
 	},
 	"POS Invoice": {
@@ -396,6 +405,7 @@ period_closing_doctypes = [
 # after_migrate) and kept in step with the code on every migrate.
 after_install = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
+	"imed_erp.imederp.booking_accounts.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
@@ -403,6 +413,7 @@ after_install = [
 ]
 after_migrate = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
+	"imed_erp.imederp.booking_accounts.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",

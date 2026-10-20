@@ -10,6 +10,7 @@
   "resource_type",
   "cost_center",
   "customer",
+  "customer_group",
   "column_break_main",
   "booking_date",
   "from_time",
@@ -17,14 +18,39 @@
   "hours",
   "hall_section",
   "activity",
+  "rental_model",
   "column_break_hall",
   "responsible_name",
   "responsible_phone",
+  "revenue_share_section",
+  "attendees",
+  "admission_price",
+  "expected_revenue",
+  "column_break_share",
+  "collected_amount",
+  "lecturer_share_percent",
+  "lecturer",
+  "lecturer_share",
+  "center_share",
+  "price_section",
+  "package",
+  "price_list",
+  "pricing_note",
+  "column_break_price",
+  "rate",
+  "base_amount",
+  "pricing_key",
+  "extras_section",
+  "extras",
+  "extras_amount",
   "amounts_section",
   "total_amount",
   "column_break_amounts",
   "paid_amount",
   "outstanding_amount",
+  "treasury",
+  "sales_invoice",
+  "journal_entry",
   "status_section",
   "status",
   "column_break_status",
@@ -74,6 +100,15 @@
    "reqd": 1
   },
   {
+   "fetch_from": "customer.customer_group",
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "label": "Customer Category",
+   "options": "Customer Group",
+   "read_only": 1,
+   "description": "HAL-03: the category's price list (Customer Group > Default Price List) prices the booking, when it has a price."
+  },
+  {
    "fieldname": "column_break_main",
    "fieldtype": "Column Break"
   },
@@ -121,6 +156,15 @@
    "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
   },
   {
+   "depends_on": "eval:doc.resource_type == 'Hall'",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
+   "fieldname": "rental_model",
+   "fieldtype": "Select",
+   "label": "Rental Model",
+   "options": "\nFixed Rent\nRevenue Share",
+   "description": "HAL-12. Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the students and shares what it collected with the lecturer."
+  },
+  {
    "fieldname": "column_break_hall",
    "fieldtype": "Column Break"
   },
@@ -138,16 +182,146 @@
    "options": "Phone"
   },
   {
+   "depends_on": "eval:doc.rental_model == 'Revenue Share'",
+   "fieldname": "revenue_share_section",
+   "fieldtype": "Section Break",
+   "label": "Revenue Share"
+  },
+  {
+   "fieldname": "attendees",
+   "fieldtype": "Int",
+   "label": "Attendees",
+   "description": "HAL-08: how many attended."
+  },
+  {
+   "fieldname": "admission_price",
+   "fieldtype": "Currency",
+   "label": "Admission Price",
+   "description": "HAL-08: what each attendee pays."
+  },
+  {
+   "fieldname": "expected_revenue",
+   "fieldtype": "Currency",
+   "label": "Expected Revenue",
+   "read_only": 1,
+   "description": "Attendees x admission price."
+  },
+  {
+   "fieldname": "column_break_share",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "collected_amount",
+   "fieldtype": "Currency",
+   "label": "Collected from Attendees",
+   "description": "What the center actually collected. It is what is shared, not the expected revenue; it goes into the halls' cash box when the booking is completed."
+  },
+  {
+   "fieldname": "lecturer_share_percent",
+   "fieldtype": "Percent",
+   "label": "Lecturer's Share %",
+   "description": "Agreed for this booking: the owner has not set one rate (open question 33). Required to complete the booking."
+  },
+  {
+   "fieldname": "lecturer",
+   "fieldtype": "Link",
+   "label": "Lecturer (Supplier)",
+   "options": "Supplier",
+   "description": "Who is owed the share, under مستحقات للمحاضرين. ERPNext keeps what is owed to someone on a supplier, not on a customer."
+  },
+  {
+   "fieldname": "lecturer_share",
+   "fieldtype": "Currency",
+   "label": "Lecturer's Share",
+   "read_only": 1
+  },
+  {
+   "fieldname": "center_share",
+   "fieldtype": "Currency",
+   "label": "Center's Share",
+   "read_only": 1
+  },
+  {
+   "fieldname": "price_section",
+   "fieldtype": "Section Break",
+   "label": "Price",
+   "description": "Worked out when the booking is saved, from the price list; the prices are kept on the booking."
+  },
+  {
+   "fieldname": "package",
+   "fieldtype": "Link",
+   "label": "Package",
+   "options": "Booking Package",
+   "description": "STU-05. Leave empty to price by the hour."
+  },
+  {
+   "fieldname": "price_list",
+   "fieldtype": "Link",
+   "label": "Price List",
+   "options": "Price List",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pricing_note",
+   "fieldtype": "Small Text",
+   "label": "How It Was Priced",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_price",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "label": "Price",
+   "read_only": 1,
+   "description": "Per hour, or the package's price."
+  },
+  {
+   "fieldname": "base_amount",
+   "fieldtype": "Currency",
+   "label": "Booking Price",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pricing_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1,
+   "label": "Pricing Key"
+  },
+  {
+   "fieldname": "extras_section",
+   "fieldtype": "Section Break",
+   "label": "Extras",
+   "description": "STU-04, HAL-11: microphones, lights..."
+  },
+  {
+   "fieldname": "extras",
+   "fieldtype": "Table",
+   "label": "Extras",
+   "options": "Booking Extra Item"
+  },
+  {
+   "fieldname": "extras_amount",
+   "fieldtype": "Currency",
+   "label": "Extras Total",
+   "read_only": 1
+  },
+  {
    "fieldname": "amounts_section",
    "fieldtype": "Section Break",
    "label": "Amounts",
-   "description": "Recorded on the booking only: the payment itself is recorded through the accounts, not here."
+   "description": "Manual bookings: the total is worked out above; Amount Paid is the deposits and payments recorded (Record Payment). Imported bookings keep the booking system's amounts."
   },
   {
    "fieldname": "total_amount",
    "fieldtype": "Currency",
    "in_list_view": 1,
-   "label": "Total Amount"
+   "label": "Total Amount",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_amounts",
@@ -156,13 +330,40 @@
   {
    "fieldname": "paid_amount",
    "fieldtype": "Currency",
-   "label": "Amount Paid"
+   "label": "Amount Paid",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "outstanding_amount",
    "fieldtype": "Currency",
    "label": "Remaining",
-   "read_only": 1
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "label": "Cash Box",
+   "options": "Account",
+   "read_only": 1,
+   "description": "The business's own cash box (ACC-04): its payments go into it."
+  },
+  {
+   "fieldname": "sales_invoice",
+   "fieldtype": "Link",
+   "label": "Sales Invoice",
+   "options": "Sales Invoice",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Revenue Share Entry",
+   "options": "Journal Entry",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "status_section",
@@ -171,7 +372,7 @@
   },
   {
    "default": "Tentative",
-   "description": "STU-08. Confirmed with Deposit needs an amount paid.",
+   "description": "STU-08. Confirmed with Deposit needs a deposit recorded. Completed makes the invoice.",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -245,17 +446,57 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-18 15:00:00.000000",
+ "modified": "2026-10-20 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",
  "naming_rule": "Expression (old style)",
  "owner": "Administrator",
  "permissions": [
-  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
-  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Super Admin", "share": 1, "write": 1},
-  {"create": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "Accounts Manager", "share": 1, "write": 1},
-  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Branch Manager", "write": 1}
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Super Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Branch Manager",
+   "write": 1
+  }
  ],
  "row_format": "Dynamic",
  "sort_field": "booking_date",

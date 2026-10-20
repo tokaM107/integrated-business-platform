@@ -1,0 +1,138 @@
+{
+ "actions": [],
+ "creation": "2026-10-20 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "allow_rename": 1,
+ "autoname": "field:package_name",
+ "naming_rule": "By fieldname",
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-20 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Booking Package",
+ "owner": "Administrator",
+ "row_format": "Dynamic",
+ "states": [],
+ "fields": [
+  {
+   "fieldname": "package_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Package Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "resource",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Resource",
+   "options": "Booking Resource",
+   "reqd": 1
+  },
+  {
+   "description": "What the package is sold as. Its price is that item's Item Price (the customer category's price list first), which only the owner changes.",
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "label": "Service Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_main",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Once",
+   "description": "Once: the package's price is the booking's price, for a booking up to its hours (STU-05: hours of smart board at a special price). Per Hour: its price times the booking's hours (a podcast with two cameras).",
+   "fieldname": "charged",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Charged",
+   "options": "Once\nPer Hour",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.charged == 'Once'",
+   "description": "The longest booking the package covers. 0 when it is not counted in hours (reels).",
+   "fieldname": "hours",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Hours Included",
+   "precision": "2"
+  },
+  {
+   "default": "0",
+   "description": "A disabled package is not offered on new bookings; the bookings already on it keep their price.",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Disabled"
+  },
+  {
+   "description": "What the price includes (filming, editing...), as the price list says.",
+   "fieldname": "inclusions",
+   "fieldtype": "Small Text",
+   "label": "What It Includes"
+  }
+ ],
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Super Admin",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Branch Manager"
+  }
+ ],
+ "sort_field": "package_name",
+ "sort_order": "ASC",
+ "track_changes": 1,
+ "field_order": [
+  "package_name",
+  "resource",
+  "item",
+  "column_break_main",
+  "charged",
+  "hours",
+  "disabled",
+  "inclusions"
+ ]
+}

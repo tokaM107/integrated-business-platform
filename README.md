@@ -336,9 +336,10 @@ without changing anything if they do not (so a user is never created without the
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
 | `setup_platform_fees.py` | Submits the platform fee tiers approved by the owner (APP-02) from 1 Sep 2026: 1–100 students 250, 101–500 200, more than 500 170 a student of a course in a term. Later prices are new schedules from the Platform Fee Schedule screen. A schedule already in force from that date is left as is. Idempotent. |
+| `setup_booking_prices.py` | The studio's price list from the requirements (v1.2, 4.8): service items and their Item Prices (Standard Selling), the resources (smart boards, reels, podcast, location), the packages and the extras (microphone, lights: 50 a piece an hour). A price already set is never changed. |
 | `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, Stock Count, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
-`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `setup_platform_fees.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
+`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `setup_platform_fees.py`, `setup_booking_prices.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 
@@ -594,15 +595,16 @@ it is refused, and a damage record partly sold cannot be cancelled before its sa
 - **Setup:** `setup_core.py` ticks Damaged Store on `التالف — المواساة`; `setup_library.py` makes the
   non-stock item `DAMAGED-BY-WEIGHT` (Kg, revenue `إيراد بيع التالف بالوزن`) and the buyer `مشتري التالف`.
 
-### Bookings: halls and the studio (HAL-01, HAL-02, STU-01, STU-08, STU-14)
+### Bookings: halls and the studio (HAL-01..04, HAL-08, HAL-10..12, STU-01..05, STU-08, STU-14, ACC-04)
 
 **Booking Resource** (ImedERP > Business Operations): what can be booked (HAL-01). A **Hall**, with its Capacity
 (required) and Equipment, or a **Studio Service** (smart board, reels, podcast, filming, location). Each belongs to
 its business (cost center: the halls' or the studio's), and names the **Service Item** it is sold as
-(`HALL-HOUR`, `STUDIO-HOUR`...): its price is that item's Item Price, which only the owner changes (SEC-02).
-Nothing is priced on the resource. A disabled resource takes no new bookings. The owner and the accountant keep
-the list; branch managers read it. No resource is made by the setup scripts: the halls' capacities, equipment and
-prices are still blank in the requirements.
+(`HALL-HOUR`, `STU-SB75-HOUR`...) by the hour: its price is that item's Item Price, which only the owner changes
+(SEC-02). A hall with its own price (HAL-03) has its own item. Nothing is priced on the resource. A disabled resource
+takes no new bookings. The owner and the accountant keep the list; branch managers read it. `setup_booking_prices.py`
+makes the studio's resources, packages and extras from the requirements' price list (v1.2, 4.8); the halls'
+capacities, equipment and prices are still blank in the requirements, so none is made for them.
 
 **Booking** (`imederp/doctype/booking`), by the hour (HAL-02, STU-01):
 
@@ -610,8 +612,10 @@ prices are still blank in the requirements.
 |---|---|
 | Resource, Customer, Booking Date, From, To | Required. To after From, on the same day; Hours worked out. The customer is the one customer record (CRM-01). |
 | Activity, Responsible Person, their Phone | Required for a hall (HAL-02); the phone is checked like a customer's number. |
-| Total Amount, Amount Paid, Remaining | Not negative; paid not more than the total; Remaining = Total − Paid. **Recorded on the booking only**: nothing is posted to the accounts. |
-| Status (STU-08) | Tentative, **Confirmed with Deposit** (needs an amount paid), Completed and No Show (only once the booking has started), Cancelled (needs its reason). |
+| Rental Model (HAL-12) | Required for a hall: **Fixed Rent** or **Revenue Share** (see below). |
+| Package, Extras | The price (see *Price and money* below). |
+| Total Amount, Amount Paid, Remaining | Worked out, never typed, on a booking entered here: the total from the price, Amount Paid from its Payment Entries, Remaining = Total − Paid. An imported booking keeps the booking system's amounts (not negative, paid not more than the total) and posts nothing. |
+| Status (STU-08) | Tentative, **Confirmed with Deposit** (needs a deposit; recording one confirms a tentative booking), Completed (makes the invoice) and No Show (only once the booking has started), Cancelled (needs its reason). |
 | Source (STU-14) | **Manual** for every booking entered here (WhatsApp, walk-in), whatever is sent; **Imported** only through the import, with its source system and id. |
 
 - **No overlap** (HAL-04, STU-14), checked on the server: a Tentative, Confirmed or Completed booking of a
@@ -637,6 +641,69 @@ prices are still blank in the requirements.
   that changed in the source is listed, not overwritten. A row with an error (overlap, unknown customer phone, no
   id, wrong times) fails alone with its reason. The customer is found by phone; none is made from an import. An
   imported booking is changed only in its source: saving it here is refused (INT-01).
+
+#### Price and money (HAL-03, HAL-08, HAL-11, HAL-12, STU-03..05, ACC-04)
+
+A booking entered here is priced when it is saved, on the server (`imederp/booking_pricing.py`), from Item Prices only:
+
+- **Price list** (HAL-03): the customer's category's: **Customer Group > Default Price List** (ERPNext's own field;
+  or the customer's own Default Price List). An item with no price there takes the default selling list's
+  (`Standard Selling`). The list used, the price and how it was worked out are kept on the booking.
+- **By the hour**: the resource's service item, price × hours. Hours are the booking's exact length (90 minutes =
+  1.5); nothing is rounded up, since no rounding rule was given.
+- **Package** (STU-05, *Booking Package*: resource, service item, Charged, Hours Included, what it includes):
+  **Once**, its price is the booking's price, for a booking up to its hours (0 = not counted in hours, reels); a
+  longer booking is refused. **Per Hour**, its price × hours (podcast by cameras). Extras come on top, once.
+- **Extras** (STU-04, HAL-11, *Booking Extra*: service item, Charged, Applies To): each extra listed once with its
+  pieces; **Per Piece per Hour** = price × pieces × hours (the requirements: microphone or lights, 50 a piece an
+  hour), **Per Piece** = price × pieces. An extra for the studio only is refused on a hall booking.
+- **No price, no booking**: a resource, package or extra without a price is refused with what is missing, never
+  priced at zero.
+- The prices are those in force on the day the booking is priced, and are kept: they are looked up again only when
+  the booking's resource, customer, hours, package, rental model or extras change. A later change of a price list
+  does not change a booking already priced.
+
+**The hall's two models** (HAL-12, HAL-08), chosen on each hall booking:
+
+- **Fixed Rent**: the lecturer (the booking's customer) pays the hall's price, worked out as above; no share.
+- **Revenue Share**: no rent. Attendees × admission price is the expected revenue (HAL-08); **Collected from
+  Attendees** is what the center actually took, and is what is shared, not the expected revenue. The **Lecturer's
+  Share %** is agreed on each booking, since the owner has not set one (question 33): a booking is not completed
+  without it, nor without the **Lecturer** as a Supplier (ERPNext keeps what is owed to someone on a supplier: a
+  customer cannot be the party of the payable account `مستحقات للمحاضرين`). The lecturer's share is rounded to the
+  piastre and the center keeps the rest. The customer pays only the extras.
+- **No deposit for halls** (requirements 4.9, question 2): a hall is paid after it is completed, against its invoice.
+
+**Money** (`imederp/booking_accounts.py`), through ERPNext's own documents, in the system's name after the booking's
+own checks; nothing is written to the ledger by hand:
+
+- **Record Deposit / Record Payment** (the booking's buttons): a Payment Entry from the customer into the booking's
+  business's cash box (`خزينة X Studio` for the studio, `خزينة سنتر Imed` for the halls: `treasuries.py`
+  BUSINESS_TREASURY, through the payment method whose account it is, `نقدي — استوديو X`...), or a group wallet
+  with its transaction number. Another business's cash box is refused. It is never more than what is left to pay,
+  and names its booking (Payment Entry > Booking). One click is one payment: the dialog sends one request id,
+  unique on the Payment Entry, so a retry returns the same payment. The example of the requirements: smart board
+  86", 5 hours = 1,150; a deposit of 500 leaves 650.
+- **Completed** makes the booking's **Sales Invoice**, once (saving or asking again makes no second one): the
+  booking's lines at the prices kept on it, into the business's income account (`إيراد X Studio`, `إيراد القاعات`)
+  and cost center, with the booking's deposits taken off as advances. The rest is paid against the invoice.
+  A revenue-share booking also makes one **Journal Entry**: what was collected into `خزينة سنتر Imed`, the
+  center's share to `إيراد القاعات`, the lecturer's to `مستحقات للمحاضرين` (neither an expense nor the
+  center's income).
+- **Correcting**: while the invoice or entry stands, what it was made from cannot change. The accountant cancels it
+  (with its reason, ACC-06); the booking then changes, and **Make Invoice** makes it again. A cancelled payment is
+  taken off Amount Paid. A booking's total cannot drop below what was paid.
+- An **imported** booking posts nothing: where its money is taken is open (question 11).
+
+| Requirement | Where |
+|---|---|
+| HAL-03 price per hall and customer category | `booking_pricing.py` (price lists), a hall's own service item |
+| HAL-08 attendees, admission price, collected | Booking > Revenue Share |
+| HAL-11, STU-04 extras | *Booking Extra*, Booking > Extras |
+| HAL-12 the two models, the lecturer's share | Booking > Rental Model; `booking_pricing.revenue_share`, `booking_accounts.make_revenue_share_entry` |
+| STU-05 packages | *Booking Package* |
+| STU-03, ACC-04 deposit, remaining, each business's cash box | `booking_accounts.record_payment`, the invoice's advances |
+| STU-14 one overlap check for manual and imported bookings | `Booking.check_overlap` (both are saved through it) |
 
 ### Point of sale, customers and cancelling a sale (LIB-01, CRM-01/02/04, ACC-06, SEC-06)
 
@@ -1194,6 +1261,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking_pricing
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_daily_printing
