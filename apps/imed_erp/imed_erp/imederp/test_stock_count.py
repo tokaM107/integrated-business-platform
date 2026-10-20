@@ -326,6 +326,10 @@ class IntegrationTestStockCount(IntegrationTestCase):
 	def test_a_count_keeps_the_time_it_was_first_saved(self):
 		# Raghad counts 5,000 sheets and saves; 300 are used before she fixes a typo and saves again. The count
 		# still compares with the stock at the time she counted, so the 300 used since are not a surplus.
+		# The store may already hold paper on this site (QA-37): her count is that plus the 5,000.
+		from imed_erp.imederp.doctype.stock_count.stock_count import recorded
+
+		start = recorded(PAPER, STORE, today(), "00:00:00")[0]
 		receipt = frappe.get_doc(
 			{
 				"doctype": "Stock Entry",
@@ -340,7 +344,7 @@ class IntegrationTestStockCount(IntegrationTestCase):
 		receipt.submit()
 		frappe.set_user(RAGHAD)
 		count = frappe.get_doc(
-			{"doctype": "Stock Count", "store": STORE, "items": [{"item_code": PAPER, "counted_qty": 5000}]}
+			{"doctype": "Stock Count", "store": STORE, "items": [{"item_code": PAPER, "counted_qty": start + 5000}]}
 		).insert()
 		frappe.set_user("Administrator")
 		# As if she had counted early in the morning, before the other stock of the day moved.
@@ -360,4 +364,4 @@ class IntegrationTestStockCount(IntegrationTestCase):
 		count.posting_time = "23:59:59"  # sent through the API: ignored
 		count.save()
 		self.assertEqual(str(count.posting_time), "0:00:02")
-		self.assertEqual((count.items[0].recorded_qty, count.items[0].difference_qty), (5000, 0))
+		self.assertEqual((count.items[0].recorded_qty, count.items[0].difference_qty), (start + 5000, 0))
