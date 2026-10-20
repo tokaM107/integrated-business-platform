@@ -24,7 +24,9 @@ frappe.ui.form.on("Material Request", {
 		const status = doc.custom_approval_status;
 		if (doc.docstatus === 0 && status === "Rejected") {
 			frm.set_intro(
-				__("This request was rejected and is closed: {0}", [doc.custom_rejection_reason || __("no reason given")]),
+				__("This request was rejected and is closed: {0}", [
+					frappe.utils.escape_html(doc.custom_rejection_reason || __("no reason given")),
+				]),
 				"red"
 			);
 			frm.disable_save();
@@ -36,7 +38,7 @@ frappe.ui.form.on("Material Request", {
 				frm.page.set_primary_action(__("Approve"), () => call(frm, "approve"));
 				frm.add_custom_button(__("Reject"), () => {
 					frappe.prompt(
-						{ fieldname: "reason", fieldtype: "Small Text", label: __("Rejection Reason") },
+						{ fieldname: "reason", fieldtype: "Small Text", label: __("Rejection Reason"), reqd: 1 },
 						({ reason }) => call(frm, "reject", { reason }),
 						__("Reject Request"),
 						__("Reject")
