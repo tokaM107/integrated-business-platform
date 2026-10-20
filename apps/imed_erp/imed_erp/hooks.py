@@ -220,6 +220,7 @@ doc_events = {
 	},
 	"Sales Invoice": {
 		"validate": [
+			"imed_erp.imederp.sales_cancellation.restrict_returns",
 			"imed_erp.imederp.library_revenue.set_library_income_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 			"imed_erp.imederp.services.clear_service_warehouses",
@@ -255,6 +256,7 @@ doc_events = {
 	},
 	"POS Invoice": {
 		"validate": [
+			"imed_erp.imederp.sales_cancellation.restrict_returns",
 			"imed_erp.imederp.library_revenue.set_library_income_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 			"imed_erp.imederp.services.clear_service_warehouses",
