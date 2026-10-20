@@ -320,3 +320,14 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 			set(frappe.get_all("GL Entry", filters={"voucher_no": entry.journal_entry}, pluck="cost_center")),
 			{"تطبيق BA Plus - MMG"},
 		)
+
+	def test_qa11_the_agreement_is_locked_before_its_balance_is_read(self):
+		# Two sessions cannot run in one test; what keeps them apart is the lock taken before the balance is read.
+		self.new_entry(today(), amount=500).insert().submit()
+		module = "imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry"
+		calls = []
+		with patch(f"{module}.lock_agreement", side_effect=calls.append), patch(
+			f"{module}.get_balance", side_effect=lambda agreement: calls.append("balance") or 500
+		):
+			self.payout(100, submit=False)
+		self.assertEqual(calls[:2], [make_agreement("Books"), "balance"])
