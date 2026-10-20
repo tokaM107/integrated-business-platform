@@ -306,7 +306,15 @@ def approve(name):
 
 @frappe.whitelist()
 def reject(name, reason=None):
+	# SEC-01: kept as plain text; db_set skips Frappe's cleaning, and the form shows it. QA-25: and it is required.
+	from imed_erp.imederp.sales_cancellation import MAX_REASON_LENGTH, clean_reason
+
 	doc = get_pending(name)
+	reason = clean_reason(reason)
+	if not reason:
+		frappe.throw(_("Give the reason for rejecting the request."), title=_("Rejection Reason Required"))
+	if len(reason) > MAX_REASON_LENGTH:
+		frappe.throw(_("The rejection reason is too long: at most {0} characters.").format(MAX_REASON_LENGTH))
 	doc.flags.imed_approval = True
 	# db_set: from now on validate refuses every save.
 	doc.db_set(
@@ -317,8 +325,8 @@ def reject(name, reason=None):
 			"custom_rejection_reason": reason,
 		}
 	)
-	doc.add_comment("Comment", _("Rejected: {0}").format(reason or _("no reason given")))
-	notify_requester(doc, _("Material Request {0} was rejected.") + (f" {reason}" if reason else ""))
+	doc.add_comment("Comment", _("Rejected: {0}").format(reason))
+	notify_requester(doc, _("Material Request {0} was rejected.") + f" {reason}")
 
 
 def get_pending(name):
