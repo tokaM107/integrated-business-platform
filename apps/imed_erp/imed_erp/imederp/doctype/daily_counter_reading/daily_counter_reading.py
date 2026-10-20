@@ -44,7 +44,7 @@ class DailyCounterReading(Document):
 			self.update(margin(self.branch, self.reading_date, self.sold_sheets, self.cost_per_sheet))
 			return
 		rates = get_rates()
-		paper = get_paper_cost(self.branch, rates.waste_per_sheet)
+		paper = get_paper_cost(self.branch, rates.waste_per_sheet, as_of=self.reading_date)
 		if not paper:
 			frappe.msgprint(
 				_("{0} has no paper price yet (no A4 paper received in its store), so the cost of a sheet leaves the paper out.").format(self.branch),
