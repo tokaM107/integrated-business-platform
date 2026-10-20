@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import getdate
 
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_active
 
@@ -15,8 +16,11 @@ class AppSubscription(Document):
             frappe.throw(_("Choose the student's course."))
         course = frappe.db.get_value("App Course", self.course, ["agreement", "doctor", "period", "status"], as_dict=True)
         self.agreement, self.doctor, self.period = course.agreement, course.doctor, course.period
-        if self.docstatus == 0 and course.status != "Active":
+        # QA-07: checked on submit too (validate runs on save and submit only; on submit docstatus is already 1),
+        # so a draft saved while the course was open is not submitted, and charged, after it closed.
+        if course.status != "Active":
             frappe.throw(_("Course {0} is closed. It takes no new subscriptions.").format(self.course))
+        self.check_date_in_term()
         # A student counts once in a course: twice would raise the count, maybe to another tier, and charge
         # the doctor for him twice (APP-03). A draft may wait beside it; only one is submitted. Cancel the old
         # subscription to subscribe him again.
@@ -31,8 +35,20 @@ class AppSubscription(Document):
         # DOC-02: a subscription belongs to an app agreement, not to a books one.
         if frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type") != "App":
             frappe.throw(_("Agreement {0} is not an app agreement.").format(self.agreement))
-        if self.docstatus == 0:
-            check_active(self.agreement)
+        check_active(self.agreement)
+
+    def check_date_in_term(self):
+        # QA-17: the fee is posted on the subscription's term; a date outside it would put it in another month.
+        term = frappe.db.get_value("Academic Period", self.period, ["start_date", "end_date"], as_dict=True)
+        if term and self.subscription_date and not (getdate(term.start_date) <= getdate(self.subscription_date) <= getdate(term.end_date)):
+            frappe.throw(
+                _("The subscription date must be in the course's term {0}: from {1} to {2}.").format(
+                    self.period,
+                    frappe.format_value(term.start_date, {"fieldtype": "Date"}),
+                    frappe.format_value(term.end_date, {"fieldtype": "Date"}),
+                ),
+                title=_("Date Outside the Term"),
+            )
 
     def before_update_after_submit(self):
         # The fee is worked out for the course (APP-03), not typed: a form opened before the course was
