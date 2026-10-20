@@ -51,10 +51,11 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 			"_TEST-FLAT": [(STANDARD, 120)],
 			"_TEST-NO-PRICE": [],
 		}
+		# By the hour, as the real service items (setup_core.py): a booking of 40 minutes bills 0.67 of an hour.
 		for item, rates in prices.items():
 			if not frappe.db.exists("Item", item):
 				frappe.get_doc(
-					{"doctype": "Item", "item_code": item, "item_name": item, "item_group": "الخدمات", "stock_uom": "Nos", "is_stock_item": 0}
+					{"doctype": "Item", "item_code": item, "item_name": item, "item_group": "الخدمات", "stock_uom": "ساعة", "is_stock_item": 0}
 				).insert()
 			for price_list, rate in rates:
 				frappe.get_doc({"doctype": "Item Price", "item_code": item, "price_list": price_list, "price_list_rate": rate}).insert()
@@ -358,3 +359,31 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		booking = frappe.get_doc("Booking", imported["inserted"][0])
 		self.assertEqual((booking.total_amount, booking.price_list, booking.treasury), (400, None, None))
 		self.assertRaisesRegex(frappe.ValidationError, "imported", record_payment, booking.name, 100)
+
+	# ---------- Audit 20 Oct 2026 ----------
+
+	def test_qa13_a_part_hour_is_priced_from_its_minutes(self):
+		# 40 minutes of the podcast with two cameras at 1,750 an hour: 1,166.67, not 0.67 x 1,750 = 1,172.50.
+		booking = self.book(self.podcast, start="10:00", end="10:40", date=PAST, package=self.two_cameras, extras=[(self.mic, 3)])
+		self.assertEqual(booking.hours, 0.67)
+		self.assertEqual((booking.base_amount, booking.extras_amount), (1166.67, 100))
+		# The invoice bills the same.
+		booking = self.complete(booking)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", booking.sales_invoice, "grand_total"), 1266.67)
+
+	def test_qa14_a_free_lecture_with_no_share_is_completed(self):
+		share = dict(rental_model="Revenue Share", attendees=0, admission_price=0, collected_amount=0)
+		booking = self.book(start="10:00", end="12:00", date=PAST, **share)
+		# Without a lecturer, a 0% share is not an answer yet.
+		self.assertRaisesRegex(frappe.ValidationError, "Lecturer", self.complete, booking)
+		booking = self.complete(booking, lecturer_share_percent=0, lecturer=self.lecturer)
+		self.assertEqual((booking.status, booking.lecturer_share, booking.center_share), ("Completed", 0, 0))
+
+	def test_qa15_an_invoiced_booking_is_not_moved(self):
+		booking = self.complete(self.book(self.sb75, start="10:00", end="11:00", date=PAST))
+		self.assertTrue(booking.sales_invoice)
+		for change in ({"booking_date": add_days(PAST, -1)}, {"from_time": "09:00:00"}, {"to_time": "10:30:00"}):
+			with self.subTest(change):
+				moved = frappe.get_doc("Booking", booking.name)
+				moved.update(change)
+				self.assertRaisesRegex(frappe.ValidationError, "Cancel it first", moved.save)
