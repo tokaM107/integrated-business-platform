@@ -84,6 +84,8 @@ class StockCount(Document):
 	def set_differences(self):
 		for row in self.items:
 			row.recorded_qty, row.valuation_rate = recorded(row.item_code, self.store, self.posting_date, self.posting_time)
+			# QA-05: paper sold before the count but still waiting as a draft issue is already gone from the shelf.
+			row.recorded_qty -= pending_issues(row.item_code, self.store, self.posting_date, self.posting_time)
 			row.difference_qty = flt(row.counted_qty) - row.recorded_qty
 			row.difference_value = flt(row.difference_qty * row.valuation_rate, row.precision("difference_value"))
 		self.items_counted = len(self.items)
@@ -104,8 +106,16 @@ class StockCount(Document):
 				"set_posting_time": 1,
 				"custom_count_type": self.count_type,
 				"custom_counted_by": self.counted_by,
+				# What was counted, plus what the draft issues will still take off when the accountant submits them,
+				# so the store ends at what was counted and nothing is taken twice (QA-05).
 				"items": [
-					{"item_code": row.item_code, "warehouse": self.store, "qty": flt(row.counted_qty)} for row in changed
+					{
+						"item_code": row.item_code,
+						"warehouse": self.store,
+						"qty": flt(row.counted_qty)
+						+ pending_issues(row.item_code, self.store, self.posting_date, self.posting_time),
+					}
+					for row in changed
 				],
 			}
 		)
@@ -128,6 +138,22 @@ class StockCount(Document):
 
 def can_date_counts(user=None):
 	return DATING_ROLE in frappe.get_roles(user)
+
+
+def pending_issues(item_code, store, posting_date, posting_time):
+	"""Stock units of an item that sales made before the count took from the store, in issues still waiting as drafts
+	for the accountant (paper_use.py: the store showed too few sheets)."""
+	from frappe.utils import get_datetime
+
+	return flt(
+		frappe.db.sql(
+			"""select sum(sed.transfer_qty) from `tabStock Entry Detail` sed
+			join `tabStock Entry` se on se.name = sed.parent
+			where se.docstatus = 0 and ifnull(se.sales_invoice_no, '') != ''
+				and sed.item_code = %s and sed.s_warehouse = %s and se.creation <= %s""",
+			(item_code, store, get_datetime(f"{posting_date} {posting_time}")),
+		)[0][0]
+	)
 
 
 def recorded(item_code, store, posting_date, posting_time):
