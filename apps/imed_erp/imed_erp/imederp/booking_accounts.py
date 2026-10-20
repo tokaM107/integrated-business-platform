@@ -312,17 +312,37 @@ def invoice_lines(doc):
 		"income_account": income,
 		"cost_center": cost_center,
 	}
+	# QA-13: an hourly line bills the amount the booking was priced at, from its exact length; the hours shown
+	# are rounded, so the rate is the amount over them (40 minutes: 0.67 x 2,238.81 = 1,500).
+	by_hours = lambda item, qty, amount: line(item, qty, rate_for(amount, qty))
 	lines = []
 	if flt(doc.base_amount):
 		if doc.package:
 			package = frappe.get_doc("Booking Package", doc.package)
-			lines.append(line(package.item, 1, flt(doc.base_amount)) if package.charged == ONCE else line(package.item, flt(doc.hours, 2), flt(doc.rate)))
+			lines.append(
+				line(package.item, 1, flt(doc.base_amount))
+				if package.charged == ONCE
+				else by_hours(package.item, flt(doc.hours, 2), flt(doc.base_amount))
+			)
 		else:
-			lines.append(line(frappe.db.get_value("Booking Resource", doc.resource, "item"), flt(doc.hours, 2), flt(doc.rate)))
+			lines.append(by_hours(frappe.db.get_value("Booking Resource", doc.resource, "item"), flt(doc.hours, 2), flt(doc.base_amount)))
 	for row in doc.extras:
-		qty = row.quantity * (flt(doc.hours, 2) if row.charged == PIECE_PER_HOUR else 1)
-		lines.append(line(row.item, qty, flt(row.rate)))
+		if row.charged == PIECE_PER_HOUR:
+			lines.append(by_hours(row.item, row.quantity * flt(doc.hours, 2), flt(row.amount)))
+		else:
+			lines.append(line(row.item, row.quantity, flt(row.rate)))
 	return lines
+
+
+def rate_for(amount, qty):
+	"""The rate, to the piastre, that bills `amount` for `qty`: the closest one whose qty x rate rounds to it."""
+	if not flt(qty):
+		return flt(amount, 2)
+	rate = flt(amount / qty, 2)
+	for step in (0, 0.01, -0.01, 0.02, -0.02):
+		if flt(flt(rate + step, 2) * qty, 2) == flt(amount, 2):
+			return flt(rate + step, 2)
+	return rate
 
 
 def advances(doc, total):
