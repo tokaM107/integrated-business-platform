@@ -400,3 +400,21 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "imported", frappe.delete_doc, "Booking", imported)
 		# A booking with nothing on it is still deleted as a mistake.
 		frappe.delete_doc("Booking", self.book(self.sb75, start="16:00", end="17:00").name)
+
+	def test_sec13_a_payment_names_a_booking_only_through_record_payment(self):
+		booking = self.book(self.sb75, start="10:00", end="11:00", status="Cancelled", cancellation_reason="_Test cancelled")
+		from erpnext.accounts.party import get_party_account
+
+		company = frappe.db.get_value("Cost Center", STUDIO, "company")
+		payment = frappe.get_doc(
+			{
+				"doctype": "Payment Entry", "payment_type": "Receive", "company": company,
+				"party_type": "Customer", "party": self.customer,
+				"paid_from": get_party_account("Customer", self.customer, company),
+				"paid_to": STUDIO_BOX, "paid_amount": 999, "received_amount": 999, "cost_center": STUDIO,
+				"custom_booking": booking.name,
+			}
+		)
+		payment.setup_party_account_field()
+		payment.set_missing_values()
+		self.assertRaisesRegex(frappe.ValidationError, "Record Payment", payment.insert)
