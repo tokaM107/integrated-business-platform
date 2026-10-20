@@ -207,6 +207,20 @@ def on_posted_change(doc, method=None):
 		refresh_booking(doc.custom_booking)
 
 
+def guard_booking_link(doc, method=None):
+	"""Payment Entry validate (SEC-13): a payment names a booking only through record_payment, which checks the
+	booking (not imported, cancelled or a no-show; not more than is owed; its business's cash box). One made
+	through the API or the form with the field set would skip all of that and still count on the booking."""
+	if not doc.get("custom_booking") or doc.flags.from_booking:
+		return
+	before = doc.get_doc_before_save()
+	if doc.is_new() or not before or before.get("custom_booking") != doc.custom_booking:
+		frappe.throw(
+			_("A booking's payment is recorded from the booking (Record Payment), not by naming it on a payment."),
+			title=_("Not Allowed"),
+		)
+
+
 # ---------- Recording a payment ----------
 
 
