@@ -208,6 +208,7 @@ for report, lbl, col in [
     ("Owner Share Plan vs Actual", "Owner Share Plan vs Actual", "Green"),
     ("Inter Business Transfers", "Inter Business Transfers", "Grey"),
     ("Platform Fees", "Platform Fees", "Pink"),
+    ("Treasury Balances", "Treasury Balances", "Green"),
 ]:
     if frappe.db.exists("Report", report):
         reports.append({"type": "Report", "link_to": report, "label": lbl, "color": col, "doc_view": ""})
