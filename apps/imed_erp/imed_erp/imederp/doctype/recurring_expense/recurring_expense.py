@@ -69,8 +69,18 @@ class RecurringExpense(Document):
         )
 
     def make_expense(self):
-        """Make this month's draft, if the bill has an expected amount, and move on to next month."""
-        expense = self.new_expense().insert() if flt(self.amount) else None
+        """Make this month's draft, if the bill has an expected amount and nothing is recorded for its month yet
+        (QA-09: paid by hand early), and move on to next month."""
+        due = getdate(self.next_date)
+        recorded = frappe.db.exists(
+            "Expense",
+            {
+                "recurring_expense": self.name,
+                "docstatus": ("<", 2),
+                "posting_date": ("between", (get_first_day(due), get_last_day(due))),
+            },
+        )
+        expense = self.new_expense().insert() if flt(self.amount) and not recorded else None
         self.db_set("next_date", due_date_in(add_months(self.next_date, 1), self.day_of_month))
         return expense
 
