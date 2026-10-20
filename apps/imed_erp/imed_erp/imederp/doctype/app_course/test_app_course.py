@@ -368,3 +368,58 @@ class IntegrationTestPlatformFeePosting(IntegrationTestCase):
 		paid.cancel()
 		self.assertEqual(frappe.db.get_value("Journal Entry", paid.journal_entry, "docstatus"), 2)
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 500)
+
+	def test_card_definition_of_done_300_students_40000_collected_20000_carried(self):
+		# 300 students -> 60,000 owed by the doctor (Dr receivable / Cr revenue); 40,000 collected into the app's
+		# treasury; the 20,000 left is a debt (APP-08) and the next term's balance brought forward (APP-12), and the
+		# app statement shows the course, its students, tier and fee (APP-11).
+		from imed_erp.imederp.report.doctor_debts.doctor_debts import execute as debts
+		from imed_erp.imederp.report.doctor_statement.doctor_statement import execute as statement
+
+		agreement = make_agreement("App", 92)
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		term = make_term()
+		course = make_course("_Test Done Course", agreement, term)
+		subscribe(course, 300)
+		journal_entries = [e.journal_entry for e in self.ledger(course)]
+		receivable = frappe.db.sql(
+			"""select sum(debit - credit) from `tabGL Entry` where voucher_no in %s and is_cancelled = 0
+			and party = %s""",
+			(journal_entries, doctor),
+		)[0][0]
+		revenue = frappe.db.sql(
+			"""select sum(credit - debit) from `tabGL Entry` where voucher_no in %s and is_cancelled = 0
+			and account like 'إيراد رسوم المنصة%%'""",
+			(journal_entries,),
+		)[0][0]
+		self.assertEqual((receivable, revenue), (60000, 60000))
+
+		collected = frappe.get_doc(
+			{
+				"doctype": "Doctor Ledger Entry",
+				"agreement": agreement,
+				"period": term,
+				"entry_type": "Collection",
+				"amount": 40000,
+				"entry_date": "2031-12-31",
+				"treasury": APP_TREASURY,
+			}
+		).insert()
+		collected.submit()
+		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 20000)
+		self.assertEqual({r["agreement"]: r["debt"] for r in debts({"as_of": "2031-12-31"})[1]}.get(agreement), 20000)
+
+		columns, rows, _message, _chart, summary = statement({"agreement": agreement, "period": term})
+		self.assertIn("course_name", [c["fieldname"] for c in columns])
+		[fee] = [r for r in rows if r.get("course_name") == "_Test Done Course"]
+		self.assertEqual(
+			(fee["students"], fee["tier"], fee["fee_per_student"], fee["owed"]), (300, "101–500", 200, 60000)
+		)
+		self.assertEqual(rows[-1]["balance"], 20000)
+
+		# The next term starts from the 20,000 still owed.
+		later = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": "_Test Next Fee Term", "period_type": "Term", "start_date": "2032-01-01", "end_date": "2032-04-15"}
+		).insert()
+		rows = statement({"agreement": agreement, "period": later.name})[1]
+		self.assertEqual((rows[0]["balance"], rows[-1]["balance"]), (20000, 20000))
