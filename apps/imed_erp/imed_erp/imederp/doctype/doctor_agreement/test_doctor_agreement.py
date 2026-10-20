@@ -327,19 +327,24 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 
 		# The last settlement is the latest payout; an accrual is not one.
 		self.entry(agreement.name, "Accrual", 800)
-		self.entry(agreement.name, "Payout", 300)
+		# A payout is never dated ahead (QA-24): the earlier one is entered for last week, the later one today.
+		earlier_date = frappe.utils.add_days(today(), -7)
+		earlier = frappe.get_doc(
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": earlier_date, "entry_type": "Payout", "amount": 300, "treasury": TREASURY}
+		).insert()
+		earlier.submit()
 		later = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2027-06-01", "entry_type": "Payout", "amount": 200, "treasury": TREASURY}
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": today(), "entry_type": "Payout", "amount": 200, "treasury": TREASURY}
 		).insert()
 		later.submit()
 		self.assertEqual(
 			frappe.db.get_value("Doctor Agreement", agreement.name, ["balance", "last_settlement_date", "last_settlement_amount"]),
-			(300, frappe.utils.getdate("2027-06-01"), 200),
+			(300, frappe.utils.getdate(today()), 200),
 		)
 		later.cancel()
 		self.assertEqual(
 			frappe.db.get_value("Doctor Agreement", agreement.name, ["last_settlement_date", "last_settlement_amount"]),
-			(frappe.utils.getdate(today()), 300),
+			(frappe.utils.getdate(earlier_date), 300),
 		)
 
 	def test_each_agreement_has_its_own_summary(self):
