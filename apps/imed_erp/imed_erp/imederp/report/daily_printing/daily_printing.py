@@ -136,7 +136,8 @@ def period_rows(period):
 			"sold": flt(sum(m.sold for m in period.values()), 1),
 			"variance": flt(sum(m.consumed - m.sold for m in period.values()), 1),
 			"variance_value": flt(sum(m.variance_value for m in period.values()), 2),
-			"fault": _("{0} days").format(sum(m.faults for m in period.values())) or None,
+			# QA-36: nothing when there was no breakdown, not "0 days".
+			"fault": _("{0} days").format(faults) if (faults := sum(m.faults for m in period.values())) else None,
 			"is_total": 1,
 		}
 	)
