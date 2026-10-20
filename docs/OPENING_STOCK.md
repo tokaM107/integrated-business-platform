@@ -59,7 +59,7 @@ the site:
 | Opening reconciliations already made | None. |
 | Stock already recorded | Yes, test data: books, memos and paper in `خامات المواساة`, `خامات الأزاريطة` and `إصدارات الأطباء — الأزاريطة`. Must be cleared before go-live, or each row will show a difference that the opening replaces. |
 | Stock items | Only `BOOK`, `MEMO` (generic) and `A4-PAPER`. No ink, binding or consumable items yet, and the real book and memo catalogue is not in the system (LIB-06, LIB-11). |
-| Paper units | On this site A4 paper's stock unit is still `Nos`, not `ورقة`, and it is valued FIFO, not moving average, because stock moved before `setup_core.py` could change them. The conversions to ream (500) and box (2,500) are right. On the live site, run `setup_core.py` before any paper is received. |
+| Paper units | A4 paper's stock unit is `ورقة` (sheet), with ream (`رزمة`, 500) and box (`كرتونة`, 2,500); count it in any of them. On the live site, run `setup_core.py` before any paper is received, so the unit and moving-average valuation are set before stock moves. |
 | Valuation method | FIFO for every item (Stock Settings) except paper, which `setup_core.py` sets to moving average. |
 
 ## Missing inputs
