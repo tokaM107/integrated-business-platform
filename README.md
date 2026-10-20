@@ -48,6 +48,9 @@ service in one commit, then run `bench --site frontend migrate`.
 
 ## Setup from scratch
 
+This is the **development** setup: `admin` passwords, the site open on every interface, developer mode and tests on.
+For the production server, follow [docs/production-hardening.md](docs/production-hardening.md) instead.
+
 Prerequisites: Docker Desktop (with WSL 2 on Windows) and Git. Nothing else is needed on the host;
 Python and bench live inside the containers.
 
