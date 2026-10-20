@@ -288,6 +288,46 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		self.close(self.term2)
 		self.assertEqual([c.period for c in self.charges(edition)], [self.term2])
 
+	def test_qa03_copies_charged_before_a_carry_forward_are_not_charged_again(self):
+		# 50 for the doctor, 30 sold in the first term: 20 charged when it closes. Carried forward, 5 more sell in
+		# the second term. The doctor has now paid for 5 copies that sold: they are given back, nothing is charged
+		# again, and 15 copies are charged in all.
+		edition = self.edition(period=self.term1)
+		self.sell(self.items[0], 30)
+		self.close(self.term1)
+		[charge] = self.charges(edition)
+		self.assertEqual(charge.qty, 20)
+		frappe.get_doc(LEDGER, charge.name).approve()
+
+		carry_forward(edition.name, self.term2)
+		self.sell(self.items[0], 5)
+		self.close(self.term2)
+		self.assertEqual([c.qty for c in self.charges(edition)], [20])
+		[credit] = frappe.get_all(
+			LEDGER,
+			filters={"edition": edition.name, "entry_type": "Adjustment", "sales_invoice": ("is", "not set")},
+			fields=["name", "docstatus", "period", "qty", "amount"],
+		)
+		self.assertEqual(
+			(credit.docstatus, credit.period, credit.qty, credit.amount),
+			(0, self.term2, 5, round(5 * get_copy_cost(edition), 2)),
+		)
+		frappe.get_doc(LEDGER, credit.name).submit()
+		# Closing again adds nothing either way.
+		frappe.db.set_value("Academic Period", self.term2, "is_closed", 0)
+		self.close(self.term2)
+		self.assertEqual(len(frappe.get_all(LEDGER, filters={"edition": edition.name, "sales_invoice": ("is", "not set")})), 2)
+
+	def test_qa03_a_rejected_charge_does_not_count_as_charged(self):
+		edition = self.edition(period=self.term1)
+		self.sell(self.items[0], 30)
+		self.close(self.term1)
+		[charge] = self.charges(edition)
+		frappe.get_doc(LEDGER, charge.name).reject("_Test the doctor took his copies")
+		carry_forward(edition.name, self.term2)
+		self.close(self.term2)
+		self.assertEqual(sorted(c.qty for c in self.charges(edition)), [20, 20])
+
 	def test_closing_a_term_is_the_accounts_job(self):
 		# A branch manager neither closes the term nor approves a charge on a doctor.
 		self.edition()
