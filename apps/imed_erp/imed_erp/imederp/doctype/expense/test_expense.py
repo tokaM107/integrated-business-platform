@@ -14,7 +14,7 @@ import os
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import flt
+from frappe.utils import add_months, flt, getdate, today
 
 # The linked records already exist on the site; without this Frappe would generate its own
 # "_Test ..." records for every linked doctype and commit them.
@@ -619,3 +619,41 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		frappe.set_user("Administrator")
 		versions = frappe.get_all("Version", filters={"ref_doctype": "Expense", "docname": expense.name}, pluck="data")
 		self.assertTrue(any("Rejected" in data for data in versions))
+
+
+class IntegrationTestMonthlyBillPaidEarly(ExpenseFixtures, IntegrationTestCase):
+	"""QA-09: a monthly bill paid by hand before its day is not drafted again on its day, nor reminded."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		cls.make_fixtures()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.remove_fixture_files()
+		super().tearDownClass()
+
+	def test_qa09_a_bill_paid_early_moves_on_to_next_month(self):
+		from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
+
+		# Due on the month's last day, so it is still to come whatever today is.
+		bill = frappe.get_doc(
+			{
+				"doctype": "Recurring Expense",
+				"activity": self.activity,
+				"expense_category": self.electricity,
+				"treasury": self.treasury,
+				"amount": 1000,
+				"day_of_month": 31,
+			}
+		).insert()
+		bill.db_set("next_date", due_date_in(today(), 31))
+		self.submit_expense(expense_type="Every Month", recurring_expense=bill.name, posting_date=today())
+		self.assertEqual(getdate(frappe.db.get_value("Recurring Expense", bill.name, "next_date")), due_date_in(add_months(today(), 1), 31))
+
+		# Due again this month (moved back by hand, or a draft made some other way): no second draft.
+		bill.db_set("next_date", due_date_in(today(), 31))
+		bill.reload()
+		self.assertIsNone(bill.make_expense())
+		self.assertEqual(frappe.db.count("Expense", {"recurring_expense": bill.name}), 1)
