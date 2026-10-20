@@ -289,7 +289,7 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 
 	# ---------- Transfer Mawasah -> Azarita (LIB-08) ----------
 	def test_transfer_moves_stock_without_creating_any(self):
-		item = make_item("TEST-WH-MOVE")
+		item = make_item("TEST-WH-MOVE", group="مستهلكات")
 		stock_entry(
 			"Material Receipt",
 			[
@@ -298,11 +298,20 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 			],
 		)
 
-		# Raghad sends 100 to Azarita.
+		rows = [{"item_code": item.name, "qty": 100, "s_warehouse": MAWASAH_STORE, "t_warehouse": AZARITA_STORE}]
+		# QA-22: Raghad sends to Azarita through Azarita's approved request (test_material_issue.py), not by hand.
 		frappe.set_user(RAGHAD)
-		transfer = stock_entry(
-			"Material Transfer", [{"item_code": item.name, "qty": 100, "s_warehouse": MAWASAH_STORE, "t_warehouse": AZARITA_STORE}]
-		)
+		frappe.db.savepoint("refused")
+		self.assertRaisesRegex(frappe.ValidationError, "through its request", stock_entry, "Material Transfer", rows)
+		frappe.db.rollback(save_point="refused")
+		self.assertEqual(qty(item.name, AZARITA_STORE), 200)
+		# The accountant may, correcting a mistake, with who received it.
+		frappe.set_user("accountant@imed.local")
+		transfer = frappe.get_doc(
+			{"doctype": "Stock Entry", "company": COMPANY, "stock_entry_type": "Material Transfer", "purpose": "Material Transfer",
+				"custom_received_by": "Ahmed (Azarita)", "items": rows}
+		).insert()
+		transfer.submit()
 		frappe.set_user("Administrator")
 
 		self.assertEqual(qty(item.name, MAWASAH_STORE), 900)
@@ -317,7 +326,7 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 		)
 		self.assertEqual(sorted((m.warehouse, m.actual_qty) for m in moves), sorted([(MAWASAH_STORE, -100), (AZARITA_STORE, 100)]))
 		self.assertEqual(transfer.purpose, "Material Transfer")
-		self.assertEqual(transfer.owner, RAGHAD)
+		self.assertEqual(transfer.owner, "accountant@imed.local")
 		# Not a purchase: no supplier document, and the stock value only moves between the two stock accounts.
 		gl = frappe.get_all("GL Entry", filters={"voucher_no": transfer.name, "is_cancelled": 0}, fields=["account", "debit", "credit"])
 		self.assertEqual(sum(g.debit - g.credit for g in gl), 0)
