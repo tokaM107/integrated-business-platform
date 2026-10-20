@@ -240,6 +240,7 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		before = self.balance(edition.agreement)
 		sale = self.sell([(self.items[0], 3)])
 		credit = make_sales_return(sale.name)
+		credit.return_reason = "_Test returned by the accountant"
 		credit.items[0].qty = -1
 		credit.insert()
 		credit.submit()

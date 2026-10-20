@@ -170,6 +170,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		first, second, third = sorted(self.machines)
 		sale = self.sell([("COPY-SVC", 50)])
 		refund = make_sales_return(sale.name)
+		refund.return_reason = "_Test returned by the accountant"
 		refund.insert()
 		refund.submit()
 		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=DAY, openings={first: 1000, second: 500, third: 100})
