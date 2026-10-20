@@ -158,6 +158,24 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		_columns, data, _summary = self.statement(self.term1)
 		self.assertEqual([row["description"] for row in data[1:-1]], ["Adjustment — 15-06-2026 — _Test from the first term"])
 
+	def test_qa01_a_settlement_of_the_last_term_recorded_in_this_one_is_brought_forward(self):
+		# QA-01: earned in the first term, then paid out and charged in the first term's name after the second
+		# had started. Both belong to the first term, so the second starts from what is left of it.
+		before = self.opening()
+		self.entry("Accrual", 1000, "2026-03-01", self.term1)
+		self.entry("Payout", 700, "2026-08-10", self.term1)
+		self.entry("Unsold Copies Charge", 300, "2026-08-15", self.term1)
+		self.entry("Accrual", 500, "2026-09-01", self.term2)
+
+		_columns, data, summary = self.statement()
+		self.assertEqual(summary["Balance Brought Forward"], before)
+		self.assertEqual(data[-1]["balance"], before + 500)
+		self.assertAlmostEqual(
+			flt(frappe.db.get_value("Doctor Agreement", self.agreement, "balance")), data[-1]["balance"], places=2
+		)
+		# The first term's statement shows them as its own.
+		self.assertEqual(self.statement(self.term1)[2]["Paid / Deducted"], 1000)
+
 	def test_the_cost_of_a_copy_leaves_out_the_library_s_side(self):
 		# DOC-11: paper 0.30 + ink per sheet x 100 sheets + binding (with the cover). Not the overheads per sheet
 		# ("no other operating expense"), the profit, the marketing, the doctor's amount or a price set by hand.
