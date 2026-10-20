@@ -402,6 +402,17 @@ doc_events = {
 		"onload": "imed_erp.imederp.material_issue.material_request_onload",
 		"validate": "imed_erp.imederp.material_issue.validate_material_request",
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_material_request",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	# SEC-12: kept once they carry money, postings, students or fees (imederp/no_delete.py).
+	"Platform Fee Schedule": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Booking": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_kept",
+	},
+	"App Course": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_kept",
 	},
 }
 # Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
