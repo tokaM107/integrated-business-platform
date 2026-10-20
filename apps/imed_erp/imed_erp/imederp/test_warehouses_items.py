@@ -228,6 +228,36 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 		self.assertEqual({a.warehouse for a in get_reorder_alerts()}, {AZARITA_STORE})
 		self.assertRaises(frappe.PermissionError, get_reorder_alerts, MAWASAH)
 
+	def test_qa27_a_back_dated_entry_or_a_cancelled_receipt(self):
+		item = self.paper_with_levels()
+		subjects = lambda: frappe.db.count("Notification Log", {"for_user": SARA, "subject": ["like", f"%{item.name}%"]})
+		first = frappe.get_doc(
+			{
+				"doctype": "Stock Entry", "company": COMPANY, "stock_entry_type": "Material Receipt", "purpose": "Material Receipt",
+				"set_posting_time": 1, "posting_date": frappe.utils.add_days(frappe.utils.today(), -10),
+				"items": [{"item_code": item.name, "qty": 600, "t_warehouse": AZARITA_STORE, "basic_rate": 1}],
+			}
+		).insert()
+		first.submit()
+		stock_entry("Material Issue", [{"item_code": item.name, "qty": 200, "s_warehouse": AZARITA_STORE}])
+		self.assertEqual(subjects(), 1)
+		# A receipt keeps it above the level; an issue entered for last week (stock was 600 then) does not alert
+		# again: the stock now goes from 900 to 850, still above 500.
+		top_up = stock_entry("Material Receipt", [{"item_code": item.name, "qty": 500, "t_warehouse": AZARITA_STORE, "basic_rate": 1}])
+		late = frappe.get_doc(
+			{
+				"doctype": "Stock Entry", "company": COMPANY, "stock_entry_type": "Material Issue", "purpose": "Material Issue",
+				"set_posting_time": 1, "posting_date": frappe.utils.add_days(frappe.utils.today(), -7),
+				"items": [{"item_code": item.name, "qty": 50, "s_warehouse": AZARITA_STORE}],
+			}
+		)
+		late.insert()
+		late.submit()
+		self.assertEqual((qty(item.name, AZARITA_STORE), subjects()), (850, 1))
+		# Cancelling the receipt takes it back to 350, below 500: that alerts.
+		top_up.cancel()
+		self.assertEqual((qty(item.name, AZARITA_STORE), subjects()), (350, 2))
+
 	# ---------- Permissions ----------
 	def test_raghad_and_sara_warehouses(self):
 		for warehouse in (MAWASAH, MAWASAH_STORE, DAMAGED, AZARITA_STORE):
