@@ -242,3 +242,8 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 		self.assertEqual(
 			frappe.db.count("Journal Entry", {"user_remark": ("like", f"%{transfer.name}: received%"), "docstatus": 1}), 1
 		)
+
+	def test_qa24_no_transfer_dated_ahead(self):
+		from frappe.utils import add_days, today
+
+		self.assertRaisesRegex(frappe.ValidationError, "after today", self.new_transfer(posting_date=add_days(today(), 1)).insert)

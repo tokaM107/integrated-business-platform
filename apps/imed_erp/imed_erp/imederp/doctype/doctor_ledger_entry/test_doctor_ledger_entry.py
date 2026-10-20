@@ -331,3 +331,10 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		):
 			self.payout(100, submit=False)
 		self.assertEqual(calls[:2], [make_agreement("Books"), "balance"])
+
+	def test_qa24_no_payout_dated_ahead(self):
+		from frappe.utils import add_days
+
+		self.new_entry(today(), amount=500).insert().submit()
+		entry = self.new_entry(add_days(today(), 1), entry_type="Payout", amount=10, treasury=CASH_BOX)
+		self.assertRaisesRegex(frappe.ValidationError, "after today", entry.insert)
