@@ -275,7 +275,10 @@ class Expense(Document):
 
     def add_to_monthly_bills(self):
         """A monthly expense whose bill was not in the list adds it, so next month it can be picked."""
-        if self.expense_type != EVERY_MONTH or self.recurring_expense:
+        if self.expense_type != EVERY_MONTH:
+            return
+        if self.recurring_expense:
+            self.move_bill_on()
             return
         filters = {"activity": self.activity, "expense_category": self.expense_category}
         bill = frappe.db.get_value("Recurring Expense", filters)
@@ -295,6 +298,20 @@ class Expense(Document):
             bill.flags.ignore_permissions = True
             bill = bill.insert().name
         self.db_set("recurring_expense", bill)
+
+    def move_bill_on(self):
+        """QA-09: a bill paid by hand before its due date this month is paid: it is next due the month after, so the
+        scheduler makes no second draft for it and no reminder follows."""
+        from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
+
+        bill = frappe.db.get_value("Recurring Expense", self.recurring_expense, ["next_date", "day_of_month"], as_dict=True)
+        if not bill or not bill.next_date:
+            return
+        posted, due = getdate(self.posting_date), getdate(bill.next_date)
+        if (posted.year, posted.month) == (due.year, due.month) and posted <= due:
+            frappe.db.set_value(
+                "Recurring Expense", self.recurring_expense, "next_date", due_date_in(add_months(due, 1), bill.day_of_month)
+            )
 
     def on_cancel(self):
         if self.journal_entry and frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
