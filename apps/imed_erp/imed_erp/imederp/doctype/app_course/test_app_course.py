@@ -104,10 +104,15 @@ class IntegrationTestAppCourse(IntegrationTestCase):
 def subscribe(course, count):
 	# Each subscription is another student: a student counts once in a course.
 	start = frappe.db.count("App Subscription", {"course": course})
+	# Dated in the course's term (QA-17): 15 Sep 2031 in the tests' term, else the first day of the course's own.
+	term = frappe.db.get_value(
+		"Academic Period", frappe.db.get_value("App Course", course, "period"), ["start_date", "end_date"], as_dict=True
+	)
+	date = "2031-09-15" if str(term.start_date) <= "2031-09-15" <= str(term.end_date) else term.start_date
 	subscriptions = []
 	for i in range(start, start + count):
 		doc = frappe.get_doc(
-			{"doctype": "App Subscription", "student": make_student(i), "course": course, "subscription_date": "2031-09-15", "cost_center": APP}
+			{"doctype": "App Subscription", "student": make_student(i), "course": course, "subscription_date": date, "cost_center": APP}
 		).insert()
 		doc.submit()
 		subscriptions.append(doc)

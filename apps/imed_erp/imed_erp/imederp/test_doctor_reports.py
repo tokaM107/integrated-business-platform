@@ -44,7 +44,13 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		cls.entry(cls.negative, "2026-09-01", "Unsold Copies Charge", 300)
 		# App: two students post 250 each to the doctor's account (APP-05), 300 collected on 1 Oct into the app's
 		# treasury (APP-06). An app agreement is in Doctor Debts, never in these receivables.
-		make_schedule()
+		# A 2026 term for the 2026 subscriptions (QA-17: a subscription is dated inside its course's term), with
+		# the tests' tiers in force from its start, whatever schedule the site holds.
+		make_schedule("2026-07-01")
+		cls.term = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": "_Test Report Term", "period_type": "Term",
+				"start_date": "2026-07-01", "end_date": "2026-12-31"}
+		).insert().name
 		cls.app = make_agreement("App", 83)
 		cls.subscription(cls.app, "2026-07-01")
 		cls.subscription(cls.app, "2026-09-20")
@@ -75,14 +81,14 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		).insert()
 		doc.submit()
 
-	@staticmethod
-	def subscription(agreement, date):
+	@classmethod
+	def subscription(cls, agreement, date):
 		doc = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
 				# A student counts once in a course.
 				"student": make_doctor(f"_Test Report Student {date}"),
-				"course": make_course(agreement=agreement),
+				"course": make_course(agreement=agreement, period=cls.term),
 				"subscription_date": date,
 				"cost_center": APP,
 			}
