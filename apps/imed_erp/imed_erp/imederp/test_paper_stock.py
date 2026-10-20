@@ -134,6 +134,19 @@ class IntegrationTestPaperStock(IntegrationTestCase):
 		waste = get_rates().waste_per_sheet
 		self.assertAlmostEqual(get_paper_cost(f"مكتبة المواساة - {ABBR}"), rate + waste, places=4)
 
+	def test_qa28_a_day_s_paper_is_valued_at_that_day_s_cost(self):
+		# Counters entered late for yesterday: paper received today at a new price does not change yesterday's cost.
+		from frappe.utils import add_days
+
+		from imed_erp.imederp.doctype.book_edition.book_edition import get_paper_cost
+
+		library = f"مكتبة المواساة - {ABBR}"
+		self.receive((1, 650, BOX))
+		yesterday = get_paper_cost(library, 0, as_of=add_days(today(), -1))
+		self.receive((4, 2000, BOX))
+		self.assertNotEqual(get_paper_cost(library, 0), yesterday)
+		self.assertEqual(get_paper_cost(library, 0, as_of=add_days(today(), -1)), yesterday)
+
 	def test_reams_and_boxes_are_whole_numbers(self):
 		for uom in (REAM, BOX):
 			with self.subTest(uom):
