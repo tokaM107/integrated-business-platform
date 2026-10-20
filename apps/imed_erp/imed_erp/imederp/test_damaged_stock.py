@@ -147,6 +147,20 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		finally:
 			frappe.set_user("Administrator")
 
+	def test_sec07_a_branch_manager_without_a_branch_is_refused(self):
+		# A new account given the role but not yet its branch: refused everywhere, not let into every branch.
+		user = frappe.get_doc(
+			{
+				"doctype": "User",
+				"email": "_test-no-branch@imed.local",
+				"first_name": "_Test No Branch",
+				"send_welcome_email": 0,
+				"roles": [{"role": "Branch Manager"}, {"role": "Stock User"}],
+			}
+		).insert(ignore_permissions=True)
+		self.assert_refused(frappe.PermissionError, self.damage, user=user.name)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged)
+
 	# ---------- 1, 3, 12: damage recorded, moved, loss on the library ----------
 	def test_damage_is_a_loss_and_waits_in_the_damaged_store(self):
 		rate_before = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": MAWASAH_STORE}, "valuation_rate"))

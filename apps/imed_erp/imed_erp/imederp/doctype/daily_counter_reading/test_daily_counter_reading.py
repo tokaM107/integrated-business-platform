@@ -238,3 +238,14 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		doc.machines[-1].fault_note = "Paper jam"
 		doc.insert()
 
+
+	def test_sec08_another_library_s_machines_and_counters_are_not_shown(self):
+		from imed_erp.imederp.doctype.printer_reading.printer_reading import get_opening
+
+		mawasah_machine = frappe.get_all("Printing Machine", filters={"cost_center": MAWASAH}, pluck="name", limit=1)
+		frappe.set_user(SARA)
+		self.assertTrue(get_machines(AZARITA))
+		self.assertRaises(frappe.PermissionError, get_machines, MAWASAH)
+		if mawasah_machine:
+			self.assertRaises(frappe.PermissionError, get_opening, mawasah_machine[0])
+		get_opening(self.machines[0])
