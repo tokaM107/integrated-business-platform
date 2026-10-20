@@ -161,6 +161,16 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		self.assert_refused(frappe.PermissionError, self.damage, user=user.name)
 		self.assertEqual(qty(PAPER, DAMAGED), self.damaged)
 
+	def test_qa29_a_count_of_the_damaged_store_finds_a_surplus(self):
+		# Damaged goods are kept at no value; a count finding more of them than recorded posts the surplus at none.
+		self.damage()
+		count = frappe.get_doc(
+			{"doctype": "Stock Count", "store": DAMAGED, "items": [{"item_code": PAPER, "counted_qty": self.damaged + 1005}]}
+		)
+		as_user(RAGHAD, count.insert)
+		as_user(RAGHAD, count.submit)
+		self.assertEqual((qty(PAPER, DAMAGED), stock_value(PAPER, DAMAGED)), (self.damaged + 1005, 0))
+
 	# ---------- 1, 3, 12: damage recorded, moved, loss on the library ----------
 	def test_damage_is_a_loss_and_waits_in_the_damaged_store(self):
 		rate_before = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": MAWASAH_STORE}, "valuation_rate"))
