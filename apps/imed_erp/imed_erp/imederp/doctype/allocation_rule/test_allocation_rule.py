@@ -26,15 +26,16 @@ SHARED = f"مصروفات المقر المشتركة - {ABBR}"
 HALLS = f"قاعات Imed - {ABBR}"
 STUDIO = f"استوديو X - {ABBR}"
 TREASURY = f"الخزينة الرئيسية - {ABBR}"
-RECEIPT = "/files/_test_allocation_receipt.png"
 
 
 class IntegrationTestAllocationRule(IntegrationTestCase):
-	@classmethod
-	def setUpClass(cls):
-		super().setUpClass()
-		# Only the File record is needed: the expense checks that the receipt was uploaded, not its content.
-		frappe.get_doc({"doctype": "File", "file_name": "receipt.png", "file_url": RECEIPT}).db_insert()
+	@staticmethod
+	def receipt():
+		"""Only a File record is needed, one per expense (SEC-03): the expense checks that its receipt is its own
+		private upload, not its content."""
+		url = f"/private/files/_test_allocation_receipt_{frappe.generate_hash(length=8)}.png"
+		frappe.get_doc({"doctype": "File", "file_name": "receipt.png", "file_url": url, "is_private": 1}).db_insert()
+		return url
 
 	def free_date(self):
 		"""A day after every expense and rule already on the shared cost center, so a new rule is accepted."""
@@ -72,7 +73,7 @@ class IntegrationTestAllocationRule(IntegrationTestCase):
 				"expense_category": "الكهرباء",
 				"amount": amount,
 				"treasury": TREASURY,
-				"receipt": RECEIPT,
+				"receipt": self.receipt(),
 			}
 		).insert()
 		expense.submit()
