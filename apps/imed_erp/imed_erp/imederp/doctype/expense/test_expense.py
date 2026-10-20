@@ -158,6 +158,9 @@ class ExpenseFixtures:
 
 	@classmethod
 	def upload(cls, file_name="_test_receipt.png", content=PNG):
+		# Bytes after the end of the image keep it valid and make each upload its own file: Frappe gives identical
+		# content one URL, and a receipt is filed under one expense only (SEC-03).
+		content = content + frappe.generate_hash().encode()
 		file = frappe.get_doc({"doctype": "File", "file_name": file_name, "content": content, "is_private": 1}).insert()
 		cls.files.append(file.get_full_path())
 		return file.file_url
@@ -231,8 +234,9 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 		}
 		for label, receipt in cases.items():
 			with self.subTest(label):
-				expense = self.new_expense(receipt=receipt).insert()
-				self.assertRaises(frappe.ValidationError, expense.submit)
+				# Refused on save, or at the latest on submit.
+				with self.assertRaises(frappe.ValidationError):
+					self.new_expense(receipt=receipt).insert().submit()
 
 		pdf = self.new_expense(receipt=self.upload("_test_receipt.pdf", blank_pdf())).insert()
 		pdf.submit()
@@ -320,18 +324,44 @@ class IntegrationTestExpense(ExpenseFixtures, IntegrationTestCase):
 
 	def test_branch_manager_pays_from_their_own_cash_box(self):
 		# Sara runs Azarita's library: its cash box or the group's wallets, not another business's treasury.
-		receipt = self.upload()
+		# Each expense has its own receipt, uploaded by her (SEC-03).
 		frappe.set_user("sara@imed.local")
 		try:
 			azarita = "مكتبة الأزاريطة - MMG"
 			for treasury in ("الخزينة الرئيسية - MMG", "خزينة مكتبة المواساة - MMG"):
 				with self.subTest(treasury):
-					expense = self.new_expense(activity=azarita, treasury=treasury, receipt=receipt)
-					self.assertRaises(frappe.ValidationError, expense.insert)
+					expense = self.new_expense(activity=azarita, treasury=treasury, receipt=self.upload())
+					self.assertRaisesRegex(frappe.ValidationError, "treasury", expense.insert)
 			for treasury in ("خزينة مكتبة الأزاريطة - MMG", "محفظة InstaPay - MMG"):
-				self.new_expense(activity=azarita, treasury=treasury, receipt=receipt).insert()
+				self.new_expense(activity=azarita, treasury=treasury, receipt=self.upload()).insert()
 		finally:
 			frappe.set_user("Administrator")
+
+	def test_sec03_the_receipt_is_this_expense_s_own_private_file(self):
+		# Another expense's receipt, a file someone else uploaded, and a public file are all refused: on save
+		# Frappe would attach that file to this expense and open it to whoever can read the expense.
+		filed = self.submit_expense()
+		self.assertRaisesRegex(frappe.ValidationError, "already filed", self.new_expense(receipt=filed.receipt).insert)
+
+		someone_else = self.upload()
+		frappe.set_user("sara@imed.local")
+		try:
+			azarita = "مكتبة الأزاريطة - MMG"
+			expense = self.new_expense(activity=azarita, treasury="خزينة مكتبة الأزاريطة - MMG", receipt=someone_else)
+			self.assertRaisesRegex(frappe.ValidationError, "file from elsewhere", expense.insert)
+			self.assertFalse(frappe.db.exists("File", {"file_url": someone_else, "attached_to_doctype": "Expense"}))
+		finally:
+			frappe.set_user("Administrator")
+
+		public = frappe.get_doc({"doctype": "File", "file_name": "_test_public_receipt.png", "content": PNG, "is_private": 0}).insert()
+		self.files.append(public.get_full_path())
+		self.assertRaisesRegex(frappe.ValidationError, "private file", self.new_expense(receipt=public.file_url).insert)
+
+		# Its own receipt stays accepted once it is attached to it, through approval and submit.
+		own = self.new_expense(receipt=self.upload()).insert()
+		self.assertTrue(frappe.db.exists("File", {"file_url": own.receipt, "attached_to_name": own.name}))
+		own.reload()
+		own.submit()
 
 	def test_posted_expense_is_never_deleted(self):
 		# ACC-07: a mistake is cancelled, which keeps it on record; only a draft can be deleted.
@@ -416,8 +446,9 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		frappe.set_user("Administrator")
 
 	def draft(self, amount, user=SARA):
-		receipt = self.upload()
+		# Uploaded by whoever records the expense, as from the form (SEC-03).
 		frappe.set_user(user)
+		receipt = self.upload()
 		return self.new_expense(amount=amount, activity=AZARITA, treasury=AZARITA_CASH, receipt=receipt).insert()
 
 	def as_user(self, user, expense):
@@ -480,8 +511,8 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 
 	def test_a_new_expense_starts_without_an_approval(self):
 		# An expense made with an approval already on it (a copy, an amendment, the API) is approved afresh.
-		receipt = self.upload()
 		frappe.set_user(SARA)
+		receipt = self.upload()
 		expense = self.new_expense(
 			amount=100, activity=AZARITA, treasury=AZARITA_CASH, receipt=receipt,
 			approval_status="Approved", approved_by=ACCOUNTANT,
@@ -515,11 +546,20 @@ class IntegrationTestExpenseApproval(ExpenseFixtures, IntegrationTestCase):
 		# The accountant's and the owner's own expenses are approved as they submit them.
 		for user in (ACCOUNTANT, OWNER):
 			with self.subTest(user):
-				receipt = self.upload()
 				frappe.set_user(user)
+				receipt = self.upload()
 				expense = self.new_expense(amount=46000, receipt=receipt).insert()
 				expense.submit()
 				self.assertEqual((expense.docstatus, expense.approval_status, expense.approved_by), (1, "Approved", user))
+
+	def test_sec09_a_request_does_not_carry_a_forged_approval(self):
+		expense = self.draft(46000)
+		expense.approved_by, expense.rejection_reason = ACCOUNTANT, "<b>forged</b>"
+		expense.request_approval()
+		self.assertEqual(
+			frappe.db.get_value("Expense", expense.name, ["approval_status", "approved_by", "rejection_reason"]),
+			("Pending Approval", None, None),
+		)
 
 	def test_decision_goes_to_who_asked_for_approval(self):
 		# A monthly draft is made by the scheduler, as Administrator; Sara asks for the approval.
