@@ -6,9 +6,9 @@
 # (type Transfer for Azarita, which Mawasah supplies; Purchase for Mawasah). This module adds:
 #
 #   validate_reorder_levels  Item validate: one row per warehouse, never a group warehouse.
-#   alert_on_reorder_level   on_submit of stock documents: when an item's stock in one warehouse drops to
-#                            or below that warehouse's level, an in-app alert goes to the stock users who
-#                            may see that warehouse (notification_service.notify).
+#   alert_on_reorder_level   on_submit and on_cancel of stock documents: when an item's stock in one warehouse
+#                            drops to or below that warehouse's level, an in-app alert goes to the stock users
+#                            who may see that warehouse (notification_service.notify).
 #   get_reorder_alerts       Items at or below their level, warehouse by warehouse; used by the
 #                            Reorder Alerts report.
 #
@@ -60,40 +60,44 @@ def stock_qty(item_code, warehouse):
 	return flt(frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty"))
 
 
-def qty_before(sle):
-	"""Stock of the SLE's item and warehouse just before this document moved it."""
-	previous = frappe.db.sql(
-		"""select qty_after_transaction from `tabStock Ledger Entry`
-		where item_code = %(item_code)s and warehouse = %(warehouse)s and is_cancelled = 0
-			and voucher_no != %(voucher_no)s
-			and (posting_datetime < %(posting_datetime)s
-				or (posting_datetime = %(posting_datetime)s and creation < %(creation)s))
-		order by posting_datetime desc, creation desc limit 1""",
-		sle,
-	)
-	return flt(previous[0][0]) if previous else 0
-
-
 def alert_on_reorder_level(doc, method=None):
-	"""on_submit of a stock document: alert once, when a warehouse's stock crosses its reorder level."""
-	entries = frappe.get_all(
-		"Stock Ledger Entry",
-		filters={"voucher_type": doc.doctype, "voucher_no": doc.name, "is_cancelled": 0},
-		fields=["item_code", "warehouse", "voucher_no", "posting_datetime", "creation"],
-		order_by="posting_datetime asc, creation asc",
-	)
-	first_entry = {}
-	for sle in entries:
-		first_entry.setdefault((sle.item_code, sle.warehouse), sle)
+	"""on_submit and on_cancel of a stock document: alert once, when this document takes a warehouse's stock to
+	or below its reorder level (no repeat alert on every sale below it).
 
-	for (item_code, warehouse), sle in first_entry.items():
+	QA-27: compared on the stock as it is now, before and after this document, not on the ledger at the
+	document's date: a back-dated entry does not alert again for a level crossed long ago, and cancelling a
+	receipt that had kept the stock above the level does alert."""
+	if doc.docstatus == 2:
+		before = doc.flags.reorder_stock_before or {}
+	else:
+		before = {}
+		for (item_code, warehouse), moved in own_movements(doc).items():
+			before[(item_code, warehouse)] = stock_qty(item_code, warehouse) - moved
+	for (item_code, warehouse), qty_before in before.items():
 		level = reorder_level(item_code, warehouse)
 		if level is None:
 			continue
 		qty = stock_qty(item_code, warehouse)
-		# Only when this document takes it to the level: no repeat alert on every sale below it.
-		if qty <= level < qty_before(sle):
+		if qty <= level < qty_before:
 			send_reorder_alert(item_code, warehouse, qty, level, doc)
+
+
+def remember_stock_before_cancel(doc, method=None):
+	"""before_cancel of a stock document: the stock of each warehouse it moved, for alert_on_reorder_level."""
+	doc.flags.reorder_stock_before = {key: stock_qty(*key) for key in own_movements(doc)}
+
+
+def own_movements(doc):
+	"""{(item, warehouse): quantity} the document's live ledger entries moved."""
+	moved = {}
+	for sle in frappe.get_all(
+		"Stock Ledger Entry",
+		filters={"voucher_type": doc.doctype, "voucher_no": doc.name, "is_cancelled": 0},
+		fields=["item_code", "warehouse", "actual_qty"],
+	):
+		key = (sle.item_code, sle.warehouse)
+		moved[key] = moved.get(key, 0) + flt(sle.actual_qty)
+	return moved
 
 
 def alert_recipients(warehouse):
@@ -135,7 +139,10 @@ def get_reorder_alerts(warehouse=None):
 	Limited to the warehouses the current user may see (frappe.get_list applies User Permissions);
 	asking for any other warehouse is refused.
 	"""
-	allowed = frappe.get_list("Warehouse", filters={"is_group": 0}, pluck="name")
+	# QA-23: the group's own warehouses only, not another company's (test companies left on a site, a demo one).
+	allowed = frappe.get_list(
+		"Warehouse", filters={"is_group": 0, "company": frappe.defaults.get_global_default("company")}, pluck="name"
+	)
 	if warehouse:
 		if not frappe.has_permission("Warehouse", "read", doc=warehouse):
 			frappe.throw(_("Not permitted to view warehouse {0}").format(warehouse), frappe.PermissionError)
