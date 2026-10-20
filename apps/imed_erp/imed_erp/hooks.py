@@ -232,6 +232,7 @@ doc_events = {
 			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 			# A sale is cancelled only with its reason (ACC-06; imederp/sales_cancellation.py).
 			"imed_erp.imederp.sales_cancellation.require_cancel_reason",
+			"imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"on_submit": [
@@ -247,6 +248,7 @@ doc_events = {
 			"imed_erp.imederp.booking_accounts.on_posted_change",
 		],
 		"on_cancel": [
+			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 			"imed_erp.imederp.paper_use.cancel_paper_used",
 			"imed_erp.imederp.paper_use.refresh_counters",
 			"imed_erp.imederp.edition_sales.update_sold",
@@ -270,6 +272,8 @@ doc_events = {
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Entry": {
@@ -285,17 +289,23 @@ doc_events = {
 		"before_cancel": [
 			"imed_erp.imederp.paper_use.block_cancel_of_paper_issue",
 			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
+			"imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
 		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Delivery Note": {
 		"validate": "imed_erp.imederp.damaged_stock.guard_damaged_store",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Receipt": {
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Reconciliation": {
@@ -303,8 +313,12 @@ doc_events = {
 			"imed_erp.imederp.stock_count.check_count_type",
 			"imed_erp.imederp.stock_count.set_branch_cost_center",
 		],
-		"before_cancel": "imed_erp.imederp.doctype.stock_count.stock_count.block_cancel_of_count_reconciliation",
+		"before_cancel": [
+			"imed_erp.imederp.doctype.stock_count.stock_count.block_cancel_of_count_reconciliation",
+			"imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Cost Center Allocation": {
