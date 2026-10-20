@@ -56,8 +56,11 @@ class AppCourse(Document):
 def recalculate_course(course, date=None):
 	"""APP-03: count the students, take the tier for that count and charge every counted subscription the
 	tier's fee, by TIER_COUNTED_PER and COUNT_WITHDRAWN above, and post the change to the doctor's account
-	(APP-05). Nothing changes once the term is closed."""
-	agreement, period = frappe.db.get_value("App Course", course, ["agreement", "period"])
+	(APP-05). Nothing changes once the term is closed.
+
+	QA-12: the course's row is locked before counting, so two subscriptions submitted together are counted one
+	after the other and neither misses the other."""
+	agreement, period = frappe.db.get_value("App Course", course, ["agreement", "period"], for_update=True)
 	term = frappe.db.get_value("Academic Period", period, ["start_date", "is_closed"], as_dict=True)
 	if term.is_closed:
 		return
