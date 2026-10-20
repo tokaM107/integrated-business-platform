@@ -82,5 +82,7 @@ def last_reading(machine, exclude=None):
 def get_opening(machine):
     """For the form: the machine's last closing reading, or None for its first reading."""
     frappe.has_permission("Printer Reading", "create", throw=True)
+    # SEC-08: another library's machine, and its counter, are not shown.
+    frappe.has_permission("Printing Machine", "read", doc=machine, throw=True)
     last = last_reading(machine)
     return last.closing_reading if last else None

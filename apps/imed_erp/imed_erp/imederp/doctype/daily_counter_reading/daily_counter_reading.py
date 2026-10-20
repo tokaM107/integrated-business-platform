@@ -183,6 +183,8 @@ def refresh_sold(library, date):
 def get_machines(branch):
 	"""The library's machines in service, each with its opening: its last closing reading, or None for a first."""
 	frappe.has_permission("Daily Counter Reading", "create", throw=True)
+	# SEC-08: another library's machines and counters are not shown.
+	frappe.has_permission("Cost Center", "read", doc=branch, throw=True)
 	machines = []
 	for machine in frappe.get_all(
 		"Printing Machine",
