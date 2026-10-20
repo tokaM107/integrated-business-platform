@@ -26,6 +26,13 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_S
 LEDGER = "Doctor Ledger Entry"
 RECEIVABLE_ACCOUNT = "مستحقات على الأطباء — رسوم المنصة"
 REVENUE_ACCOUNT = "إيراد رسوم المنصة"
+# QA-16: the fee is the app's revenue, whoever subscribed the student.
+APP_BUSINESS = "تطبيق BA Plus"
+
+
+def app_cost_center(company=None):
+	company = company or frappe.defaults.get_global_default("company")
+	return f"{APP_BUSINESS} - {frappe.get_cached_value('Company', company, 'abbr')}"
 
 
 def posted(course):
@@ -45,9 +52,7 @@ def post_fee_change(course, date=None):
 	difference = flt(flt(course.platform_fee_total) - posted(course.name), 2)
 	if not difference:
 		return None
-	cost_center = frappe.db.get_value(
-		"App Subscription", {"course": course.name, "docstatus": ("in", (1, 2))}, "cost_center", order_by="creation"
-	)
+	cost_center = app_cost_center()
 	entry = frappe.get_doc(
 		{
 			"doctype": LEDGER,
