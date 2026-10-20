@@ -38,8 +38,23 @@ class StockCount(Document):
 				),
 				title=_("Count Again"),
 			)
+		self.check_no_later_count()
 		# The stock may have moved since the count was saved.
 		self.set_differences()
+
+	def check_no_later_count(self):
+		"""QA-19: a count compares with the stock at its own time. One of the same store submitted since, and dated
+		at or after it, has already set the stock from then on; this one would post the same shortage again."""
+		later = frappe.db.sql(
+			"""select name from `tabStock Count` where store = %s and docstatus = 1 and name != %s
+			and timestamp(posting_date, posting_time) >= timestamp(%s, %s) limit 1""",
+			(self.store, self.name, self.posting_date, self.posting_time),
+		)
+		if later:
+			frappe.throw(
+				_("Count {0} of this store was submitted after this one was made. Count again.").format(later[0][0]),
+				title=_("Count Again"),
+			)
 
 	def set_count_time(self):
 		# A branch manager's count is dated when it is first saved, whatever was typed: the quantities were
