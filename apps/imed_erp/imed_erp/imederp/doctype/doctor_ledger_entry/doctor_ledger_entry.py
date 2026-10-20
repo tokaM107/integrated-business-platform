@@ -122,6 +122,9 @@ class DoctorLedgerEntry(Document):
 		treasury = frappe.db.get_value("Account", self.treasury, ["account_type", "is_group"], as_dict=True)
 		if not treasury or treasury.is_group or treasury.account_type not in ("Cash", "Bank"):
 			frappe.throw(_("{0} is not a treasury. Choose a cash box or a wallet.").format(self.treasury), title=_("Wrong Treasury"))
+		# QA-11: the agreement's row is locked first, so two payouts or collections submitted together wait for each
+		# other and the second sees the balance the first left.
+		lock_agreement(self.agreement)
 		owed = flt(get_balance(self.agreement), 2)
 		if self.entry_type == "Collection":
 			if flt(self.amount) > owed:
@@ -305,6 +308,10 @@ class DoctorLedgerEntry(Document):
 
 
 UNSOLD = "Unsold Copies Charge"
+
+
+def lock_agreement(agreement):
+	frappe.db.get_value("Doctor Agreement", agreement, "name", for_update=True)
 
 
 EDITION_COST_FIELDS = ["paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"]
