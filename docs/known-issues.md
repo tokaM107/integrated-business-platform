@@ -91,7 +91,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
-| 24 | APP-11 (Must) | The doctor's statement for an app agreement lists each course's fee entries (course, students × fee) and the collections, but not a table of courses with their tier. | A course table on the statement. |
+| 24 | APP-11 (Must) | Done on 20 Oct: the app statement has one row per course (students, tier, fee per student, fee), the collections and the balance carried into the next term. | |
 | 25 | RPT-01, RPT-02 (Must) | Revenue per business and period, and profit before and after the shared costs, are ERPNext's P&L by cost center; the README does not say how to read them. | A README section, or a report. |
 | 26 | PRN-03 (Should) | Waste and losses are in three places (Daily Printing, damaged stock, Stock Count Variance), not one monthly report. | A report. |
 | 27 | PRN-04 (Must) | The paper balance is in sheets only, not in boxes and reams. | A column in boxes and reams. |
