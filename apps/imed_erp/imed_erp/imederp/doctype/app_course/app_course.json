@@ -15,6 +15,7 @@
   "fee_section",
   "subscriptions",
   "column_break_fee",
+  "tier",
   "fee_per_student",
   "platform_fee_total"
  ],
@@ -84,6 +85,14 @@
    "fieldtype": "Column Break"
   },
   {
+   "fieldname": "tier",
+   "fieldtype": "Data",
+   "label": "Tier",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The tier the course was counted in, kept as it was then (QA-34)."
+  },
+  {
    "description": "The tier for the course's number of students, by the tiers in force when its term starts.",
    "fieldname": "fee_per_student",
    "fieldtype": "Currency",
@@ -103,7 +112,7 @@
  ],
  "grid_page_length": 50,
  "links": [],
- "modified": "2026-10-19 13:00:00.000000",
+ "modified": "2026-10-20 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Course",
