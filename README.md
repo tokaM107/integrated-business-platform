@@ -1181,6 +1181,11 @@ becomes 20,200). Each has its journal entry: Dr مستحقات على الأطب
 Cr إيراد رسوم المنصة, on the app's cost center. They need no approval, send no statement, and are cancelled only
 by changing the course's subscriptions. The doctor's balance, Doctor Debts and Accounts Receivable show the fees.
 
+**The app statement (APP-11).** The *Doctor Statement* of an app agreement shows one row per course: its
+students, tier, fee per student and the fee posted in the term, then the collections, and the balance. A fee not
+collected stays the doctor's debt (Doctor Debts, APP-08) and is the next term's balance brought forward (APP-12):
+300 students → 60,000, 40,000 collected → 20,000 carried into the next term.
+
 **Collecting them (APP-06).** A *Collection* in the doctor's ledger names the treasury the money goes into and
 is never more than he owes; it posts Dr the treasury / Cr the same receivable, and cancelling it takes the money
 back out.
