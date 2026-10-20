@@ -143,4 +143,14 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		self.assertEqual((total["consumed"], total["sold"], total["variance"]), (500, 100, 400))
 		days = [r for r in rows[:heading] if r.get("is_total")]
 		self.assertAlmostEqual(total["variance_value"], sum(d["variance_value"] for d in days), places=1)
+		self.assertEqual(total["fault"], "2 days")
+
+	def test_qa36_a_period_without_breakdowns_shows_none(self):
+		first_day = add_days(DAY, -1)
+		self.day([10, 10, 10], date=first_day)
+		self.sell(100)
+		self.day([100, 50, 50])
+		rows = self.report(from_date=first_day)
+		heading = next(i for i, r in enumerate(rows) if r.get("machine_type") == "The Period")
+		self.assertIsNone(rows[heading + 4]["fault"])
 
