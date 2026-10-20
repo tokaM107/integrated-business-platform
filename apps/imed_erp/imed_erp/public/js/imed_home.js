@@ -107,12 +107,12 @@
 				return false;
 			}
 		}).forEach((a) => {
-			$(`<button type="button" class="imed-home-action" role="listitem">
+			// The list item wraps the button, so a screen reader still announces a button (it is one).
+			const $button = $(`<button type="button" class="imed-home-action">
 					${frappe.utils.icon(a.icon, "sm")}
 					<span>${frappe.utils.escape_html(a.label())}</span>
-				</button>`)
-				.on("click", a.go)
-				.appendTo($actions);
+				</button>`).on("click", a.go);
+			$('<div role="listitem" class="imed-home-action-item"></div>').append($button).appendTo($actions);
 		});
 		if (!$actions.children().length) $actions.remove();
 		return $hero;
