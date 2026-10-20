@@ -155,6 +155,46 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		self.assertEqual(frappe.db.get_value("Sales Invoice", invoice.name, ["docstatus", REASON_FIELD]), (1, None))
 
+	# ---------- Returns (QA-04) ----------
+
+	def make_return(self, invoice, user, reason=None):
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+
+		frappe.set_user(user)
+		try:
+			credit = make_sales_return(invoice.name)
+			credit.return_reason = reason
+			# The cash goes back out of the box, without the change given on the sale.
+			credit.change_amount = credit.base_change_amount = 0
+			for payment in credit.payments:
+				payment.amount = payment.base_amount = credit.grand_total or -315
+			credit.insert()
+			credit.submit()
+			return credit
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_qa04_a_branch_manager_cannot_return_a_sale(self):
+		before = self.books()
+		invoice = self.sell()
+		self.assertRaisesRegex(frappe.PermissionError, "Only the owner or the accountant", self.make_return, invoice, RAGHAD, "Mistake")
+		# Nothing was reversed: the books stay sold and the cash stays in the box.
+		self.assertEqual(self.books(), before - 2)
+		self.assertFalse(frappe.db.exists("Sales Invoice", {"return_against": invoice.name}))
+
+	def test_qa04_a_return_needs_its_reason(self):
+		invoice = self.sell()
+		for blank in (None, "  ", "<b></b>"):
+			with self.subTest(blank):
+				self.assertRaisesRegex(frappe.ValidationError, "reason", self.make_return, invoice, ACCOUNTANT, blank)
+
+	def test_qa04_the_accountant_returns_a_sale_with_its_reason(self):
+		before = self.books()
+		invoice = self.sell()
+		credit = self.make_return(invoice, ACCOUNTANT, "  <i>Wrong book</i> given  ")
+		self.assertEqual((credit.docstatus, credit.return_reason), (1, "Wrong book given"))
+		self.assertEqual(self.books(), before)
+
 	def test_another_branch_cannot_see_the_sale(self):
 		invoice = self.sell()
 		frappe.set_user(SARA)
