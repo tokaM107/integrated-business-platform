@@ -222,3 +222,23 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 		# The accountant still makes them.
 		frappe.set_user("accountant@imed.local")
 		entry(LIBRARY_CASH).insert()
+
+	def test_qa08_the_money_lands_in_the_receiving_business_s_box(self):
+		# Sara (Azarita) sends to the halls: their box or a group wallet, never her own box under their name.
+		frappe.set_user("sara@imed.local")
+		self.assertRaisesRegex(
+			frappe.ValidationError, "is not a treasury of", self.new_transfer(to_treasury=f"خزينة مكتبة المواساة - {ABBR}").insert
+		)
+		self.new_transfer(to_treasury=f"محفظة InstaPay - {ABBR}").insert()
+		self.new_transfer().insert()
+
+	def test_qa10_a_receipt_read_before_another_click_is_not_posted_twice(self):
+		transfer = self.make_transfer()
+		transfer.submit()
+		# Two screens opened the transfer while it was Sent; the first confirms.
+		first, second = frappe.get_doc(transfer.doctype, transfer.name), frappe.get_doc(transfer.doctype, transfer.name)
+		first.confirm_receipt()
+		self.assertRaisesRegex(frappe.ValidationError, "Only a Sent transfer", second.confirm_receipt)
+		self.assertEqual(
+			frappe.db.count("Journal Entry", {"user_remark": ("like", f"%{transfer.name}: received%"), "docstatus": 1}), 1
+		)
