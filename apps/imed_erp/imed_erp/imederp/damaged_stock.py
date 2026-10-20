@@ -28,6 +28,7 @@ import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
+from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.system_user import as_administrator
 
 # Account names of the chart of accounts (setup_coa.py), without the company abbreviation.
@@ -79,6 +80,7 @@ def default_damaged_store(company=None):
 def check_own_branch(branch, what):
 	"""A branch manager works only for their own branch (their cost centers in User Permission)."""
 	allowed = frappe.get_all("User Permission", filters={"user": frappe.session.user, "allow": "Cost Center"}, pluck="for_value")
+	check_has_branch(allowed)
 	if allowed and branch not in allowed:
 		frappe.throw(
 			_("{0} is not your branch's. You can work for: {1}.").format(what, ", ".join(sorted(allowed))),

@@ -12,6 +12,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, getdate, nowtime, today
 
+from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.stock_count import branch_of
 from imed_erp.imederp.system_user import as_administrator
 
@@ -72,6 +73,7 @@ class StockCount(Document):
 		allowed = frappe.get_all(
 			"User Permission", filters={"user": frappe.session.user, "allow": "Cost Center"}, pluck="for_value"
 		)
+		check_has_branch(allowed)
 		if allowed and self.branch not in allowed:
 			frappe.throw(
 				_("{0} is not a store of your branch. You can count the stores of: {1}.").format(

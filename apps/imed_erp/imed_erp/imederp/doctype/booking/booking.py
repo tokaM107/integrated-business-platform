@@ -25,6 +25,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt, get_datetime, get_time, getdate, now_datetime
 
+from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.booking_accounts import complete, payments_total, posted, treasury_of
 from imed_erp.imederp.booking_pricing import REVENUE_SHARE, pricing_key, price_booking, revenue_share
 from imed_erp.imederp.customers import normalize_phone
@@ -53,6 +54,7 @@ def check_own_business(cost_center):
 		for p in get_user_permissions(frappe.session.user).get("Cost Center", [])
 		if not p.get("applicable_for") or p.get("applicable_for") == "Booking"
 	]
+	check_has_branch(allowed)
 	if allowed and cost_center not in allowed:
 		frappe.throw(
 			_("{0} is not your business. You can book for: {1}.").format(cost_center, ", ".join(sorted(allowed))),
