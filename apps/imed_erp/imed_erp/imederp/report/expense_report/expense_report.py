@@ -5,6 +5,9 @@ import frappe
 from frappe import _
 from frappe.utils import flt, getdate
 
+# The shared premises' cost center (setup_core.py); its expenses are split by an Allocation Rule (EXP-03).
+SHARED_PREMISES = "مصروفات المقر المشتركة"
+
 # "Group Totals By" option -> the columns the totals are grouped on, in order.
 GROUPINGS = {
     "Expense Category": ["expense_category"],
@@ -19,12 +22,25 @@ def execute(filters=None):
     filters = frappe._dict(filters or {})
     expenses = get_expenses(filters)
 
+    message = shared_premises_note(expenses)
     group_by = GROUPINGS.get(filters.get("group_by"))
     if not group_by:
-        return get_detail_columns(), expenses
+        return get_detail_columns(), expenses, message
 
     data = group_expenses(expenses, group_by)
-    return get_group_columns(group_by), data, None, get_chart(data, group_by)
+    return get_group_columns(group_by), data, message, get_chart(data, group_by)
+
+
+def shared_premises_note(expenses):
+    """QA-32: an expense of the shared premises is listed as it was paid, under the shared cost center; the profit
+    and loss by business shows it split by the allocation rule (EXP-03). Said on the report, so the two are not
+    taken to disagree."""
+    shared = [e for e in expenses if frappe.db.get_value("Cost Center", e.activity, "cost_center_name") == SHARED_PREMISES]
+    if not shared:
+        return None
+    return _(
+        "{0} of these expenses ({1}) are on the shared premises. They are listed as paid; the Profit and Loss by business shows them split between the halls and the studio by the allocation rule."
+    ).format(len(shared), frappe.format_value(sum(flt(e.amount) for e in shared), {"fieldtype": "Currency"}))
 
 
 def get_detail_columns():
