@@ -1049,3 +1049,67 @@ The price when the booking was priced: a later change of the price list does not
 Booking Packages,باقات الحجز
 Booking Extras,الخدمات الإضافية للحجز
 Collected,المحصَّل
+"A booking's payment is recorded from the booking (Record Payment), not by naming it on a payment.",دفعة الحجز بتتسجّل من الحجز نفسه (تسجيل دفعة)، مش بكتابة الحجز على دفعة.
+A counter reading cannot be dated after today.,قراءة العدّاد ماينفعش يكون تاريخها بعد النهارده.
+A payout cannot be dated after today.,الصرف للطبيب ماينفعش يكون تاريخه بعد النهارده.
+A transfer cannot be dated after today.,التحويل ماينفعش يكون تاريخه بعد النهارده.
+Already Read,اتقرا قبل كده
+An expense cannot be dated after today.,المصروف ماينفعش يكون تاريخه بعد النهارده.
+Attach the receipt as a private file.,ارفع الإيصال كملف خاص (Private).
+Attach the receipt to this expense; a file from elsewhere is not accepted.,ارفع إيصال المصروف ده عليه؛ ملف من مكان تاني مش مقبول.
+Bookings Saved,الحجوزات اتحفظت
+Collected from Doctors This Month,المحصَّل من الأطباء الشهر ده
+Count {0} of this store was submitted after this one was made. Count again.,الجرد {0} للمخزن ده اتأكد بعد ما الجرد ده اتعمل. اعمل جرد تاني.
+Counter Reset,تصفير العدّاد
+Credit {0} of {1} to {2} for copies of {3} charged and sold since is waiting for you to submit it.,رد {0} بمبلغ {1} لـ {2} عن نسخ من {3} اتحسبت عليه واتباعت بعدها، مستني تأكيدك.
+Date Outside the Term,التاريخ برّه الترم
+Date in the Future,تاريخ في المستقبل
+Deposit held {0},العربون المحتفظ بيه {0}
+Expenses Yesterday,مصروفات امبارح
+Give the reason for rejecting the request.,اكتب سبب رفض الطلب.
+Give the reason for this return.,اكتب سبب المرتجع ده.
+Hall Bookings This Month,حجوزات القاعات الشهر ده
+Import Key,مفتاح الاستيراد
+"Materials go to another branch through its request, once approved: issue them from the request.",الخامات بتروح لفرع تاني من خلال طلبه بعد الموافقة عليه: اصرفها من الطلب.
+No Branch,مفيش فرع
+Not Allowed,غير مسموح
+Nothing paid,مفيش حاجة اتدفعت
+"Only the owner or the accountant may return a sale. Ask them, or cancel a sale made by mistake with its reason.",المرتجع للمالك أو المحاسب بس. اطلب منهم، أو الغي البيع الغلط وقول السبب.
+Only the owner or the accountant records a counter reset.,تصفير العدّاد بيسجّله المالك أو المحاسب بس.
+Opening Needed,القراءة الافتتاحية مطلوبة
+Platform Fees This Month,رسوم المنصة الشهر ده
+"Read the counters on the day's screen (Daily Counter Reading), with every machine of the library.",سجّل العدّادات من شاشة اليوم (قراءة العدادات اليومية)، بكل مكن المكتبة.
+Receipt Not Private,الإيصال مش خاص
+Receipt Used,الإيصال مستخدم
+Rejection Reason Required,سبب الرفض مطلوب
+Request Needed,محتاج طلب
+Reset Note,ملاحظة التصفير
+Return Reason,سبب المرتجع
+Return Reason Required,سبب المرتجع مطلوب
+Revenue This Month,إيرادات الشهر ده
+Revenue Yesterday,إيرادات امبارح
+Sales Invoice {0}: the doctor's amount was not counted; its period is closed,فاتورة البيع {0}: حق الطبيب ماتحسبش؛ الفترة بتاعتها مقفولة
+Say what happened to the counter.,قول إيه اللي حصل للعدّاد.
+Sheets Printed Yesterday,الورق اللي اتطبع امبارح
+Studio Bookings This Month,حجوزات الاستوديو الشهر ده
+Studio Hours This Month,ساعات الاستوديو الشهر ده
+"The machine's counter was reset (a repair, a new board): the opening is typed, below the last reading. The owner and the accountant only.",عدّاد المكنة اتصفّر (صيانة، بوردة جديدة): القراءة الافتتاحية بتتكتب، أقل من آخر قراءة. للمالك والمحاسب بس.
+The rejection reason is too long: at most {0} characters.,سبب الرفض طويل: {0} حرف بالكتير.
+The return reason is too long: at most {0} characters.,سبب المرتجع طويل: {0} حرف بالكتير.
+The subscription date must be in the course's term {0}: from {1} to {2}.,تاريخ الاشتراك لازم يكون جوه ترم الكورس {0}: من {1} لـ {2}.
+"The tier the course was counted in, kept as it was then.",الشريحة اللي الكورس اتحسب عليها، زي ما كانت وقتها.
+This receipt is already filed under expense {0}.,الإيصال ده متسجّل قبل كده على المصروف {0}.
+Type the counter of {0} as it shows before today's printing: its first reading.,اكتب عدّاد {0} زي ما هو قبل طباعة النهارده: دي أول قراءة ليه.
+Use the Day's Screen,استخدم شاشة اليوم
+"What happened to the counter, and its last reading before the reset if known.",إيه اللي حصل للعدّاد، وآخر قراءة قبل التصفير لو معروفة.
+Wrong Receipt,إيصال غلط
+Your account is not given a branch yet. Ask the owner to give you your branch.,حسابك لسه مالوش فرع. اطلب من المالك يحدد فرعك.
+it has money or a posting on it,عليه فلوس أو قيد
+it has subscriptions or fees,عليه اشتراكات أو رسوم
+it was imported from the booking system,اتستورد من نظام الحجز
+{0} already has a reading on {1}: {2}.,{0} ليها قراءة يوم {1}: {2}.
+{0} is already subscribed to course {1}: {2}.,{0} مشترك بالفعل في الكورس {1}: {2}.
+{0} of these expenses ({1}) are on the shared premises. They are listed as paid; the Profit and Loss by business shows them split between the halls and the studio by the allocation rule.,{0} من المصروفات دي ({1}) على المقر المشترك. ظاهرة هنا زي ما اتدفعت؛ وقائمة الأرباح والخسائر لكل نشاط بتقسمها بين القاعات والاستوديو حسب قاعدة التوزيع.
+{0} {1} cannot be deleted: {2}. Cancel or close it instead: it stays on record.,{0} {1} ماينفعش يتمسح: {2}. الغيه أو اقفله بدل كده: هيفضل متسجّل.
+{0} {1} for {2} under {3}. {4},{0} {1} لـ {2} على الاتفاقية {3}. {4}
+"{0}: {1} copies charged earlier have been sold since, given back at {2} a copy, {3}.",{0}: {1} نسخة اتحسبت قبل كده واتباعت بعدها، بترجع بـ {2} للنسخة، {3}.
