@@ -9,7 +9,9 @@
 # Discrepancies of earlier weeks still open are listed apart (Still Open from Earlier Weeks): each is counted in the
 # week of its own close, never again in a later week's totals, and never dropped while it is open.
 #
-# The week starts on the day set in Cash Close Settings once the reporting week is confirmed; any day until then.
+# The week runs from the day set in Cash Close Settings to the last working day set there (owner, 21 Oct 2026:
+# Saturday to Thursday); any seven days while they are empty. The closes are read for all seven days, so a close made
+# on a day off is still in its week; a day off without a close is not listed as missing.
 #
 # One per week and business (or per week for every business). A close of the week reopened afterwards marks it
 # Needs Review Again (treasury_close.mark_for_review); cancel and amend it to review the week again.
@@ -19,7 +21,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, flt, getdate, now_datetime, today
 
-from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import week_starts_on
+from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import week_ends_on, week_starts_on
 from imed_erp.imederp.doctype.cash_discrepancy.cash_discrepancy import OPEN
 from imed_erp.imederp.treasuries import BUSINESS_TREASURY, abbr_of, plain
 
@@ -29,12 +31,18 @@ class WeeklyCashReconciliation(Document):
 		# Frappe checks the links before any hook: a close reopened since the last save is cancelled, so the closes
 		# are read again first, the reopened one replaced by its correction.
 		if self.docstatus == 0 and self.week_start:
-			self.week_end = add_days(self.week_start, 6)
+			self.set_week_end()
 			self.fill()
 		super()._validate_links()
 
+	def set_week_end(self):
+		"""The week's last working day: the first day set as its end, within seven days; the seventh day otherwise."""
+		last = week_ends_on()
+		days = [add_days(self.week_start, i) for i in range(7)]
+		self.week_end = next((d for d in days if getdate(d).strftime("%A") == last), days[-1]) if last else days[-1]
+
 	def validate(self):
-		self.week_end = add_days(self.week_start, 6)
+		self.set_week_end()
 		if getdate(self.week_start) > getdate(today()):
 			frappe.throw(_("The week has not started yet."))
 		first_day = week_starts_on()
@@ -75,7 +83,8 @@ class WeeklyCashReconciliation(Document):
 			frappe.throw(_("This week is already reconciled: {0}.").format(other), title=_("Already Reconciled"))
 
 	def fill(self):
-		filters = {"close_date": ("between", (self.week_start, self.week_end)), "docstatus": 1}
+		# All seven days: a close made on a day off belongs to its week too.
+		filters = {"close_date": ("between", (self.week_start, add_days(self.week_start, 6))), "docstatus": 1}
 		if self.business:
 			filters["business"] = self.business
 		closes = frappe.get_all(
@@ -184,7 +193,8 @@ def mark_weeks_for_review(treasury, from_date, note):
 	business = frappe.db.get_value("Treasury Close", {"treasury": treasury}, "business")
 	for week in frappe.get_all(
 		"Weekly Cash Reconciliation",
-		filters={"docstatus": 1, "week_end": (">=", from_date)},
+		# A week holds seven days from its start, its days off included.
+		filters={"docstatus": 1, "week_start": (">=", add_days(from_date, -6))},
 		fields=["name", "business"],
 	):
 		if week.business and week.business != business:

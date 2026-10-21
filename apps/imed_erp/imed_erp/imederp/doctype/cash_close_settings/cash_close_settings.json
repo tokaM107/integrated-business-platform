@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 18:00:00.000000",
- "modified": "2026-10-21 18:00:00.000000",
+ "modified": "2026-10-21 19:00:00.000000",
  "name": "Cash Close Settings",
  "issingle": 1,
  "track_changes": 1,
@@ -34,6 +34,13 @@
    "label": "Reporting Week Starts On",
    "options": "\nSaturday\nSunday\nMonday\nTuesday\nWednesday\nThursday\nFriday",
    "description": "Empty until the reporting week is confirmed: a weekly review may then start on any day. Once set, every weekly review starts on this day."
+  },
+  {
+   "fieldname": "week_ends_on",
+   "fieldtype": "Select",
+   "label": "Reporting Week Ends On",
+   "options": "\nSaturday\nSunday\nMonday\nTuesday\nWednesday\nThursday\nFriday",
+   "description": "The last working day of the week (owner: Saturday to Thursday). The days after it, to the next week's start, are days off: a close made on one still shows in the week, and a day off without a close is not listed as missing."
   },
   {
    "fieldname": "recovery_section",
@@ -72,6 +79,7 @@
  ],
  "field_order": [
   "week_starts_on",
+  "week_ends_on",
   "recovery_section",
   "recovery_policy_approved",
   "recovery_policy_reference",

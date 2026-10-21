@@ -2,7 +2,8 @@
 # For license information, please see license.txt
 
 # Two settings of the cash close that wait for a decision (21 Oct 2026):
-# - the reporting week's first day: empty until it is confirmed, so a weekly review may start on any day;
+# - the reporting week: its first and last working days (owner, 21 Oct 2026: Saturday to Thursday, Friday off);
+#   empty, a weekly review may start on any day and covers seven days;
 # - whether shortages may be recovered from employees at all: off until the owner approves a written policy checked
 #   by a lawyer or HR. Only the owner switches it, and who and when is kept. Nothing is deducted from a salary by the
 #   system either way (cash_discrepancy.py).
@@ -31,6 +32,10 @@ class CashCloseSettings(Document):
 
 def week_starts_on():
 	return frappe.db.get_single_value("Cash Close Settings", "week_starts_on") or None
+
+
+def week_ends_on():
+	return frappe.db.get_single_value("Cash Close Settings", "week_ends_on") or None
 
 
 def recovery_allowed():
