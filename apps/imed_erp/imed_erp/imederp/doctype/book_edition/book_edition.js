@@ -16,6 +16,10 @@ frappe.ui.form.on("Book Edition", {
 				]),
 				"red"
 			);
+			// Its copies left are disposed of as scrap: the library's loss, never the doctor's.
+			if (frm.doc.remaining_qty > 0 && frm.perm[0] && frm.perm[0].write) {
+				frm.add_custom_button(__("Dispose as Scrap"), () => dispose_as_scrap(frm), __("Edition"));
+			}
 			return;
 		}
 		if (!frm.perm[0] || !frm.perm[0].write) return;
@@ -84,5 +88,32 @@ function cancel_for_curriculum_change(frm) {
 				.then(() => frm.reload_doc()),
 		__("Cancel: Curriculum Changed"),
 		__("Cancel Edition")
+	);
+}
+
+function dispose_as_scrap(frm) {
+	frappe.prompt(
+		[
+			{
+				fieldname: "qty",
+				fieldtype: "Int",
+				label: __("Copies"),
+				reqd: 1,
+				default: frm.doc.remaining_qty,
+				description: __(
+					"They leave the store as the library's loss and wait in the damaged store to be sold by weight. The doctor is not charged."
+				),
+			},
+		],
+		({ qty }) =>
+			frappe
+				.call({
+					method: "imed_erp.imederp.doctype.book_edition.book_edition.dispose_as_scrap",
+					args: { edition: frm.doc.name, qty },
+					freeze: true,
+				})
+				.then((r) => frappe.set_route("Form", "Damaged Stock Entry", r.message)),
+		__("Dispose as Scrap"),
+		__("Make the Disposal")
 	);
 }
