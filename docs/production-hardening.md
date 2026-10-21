@@ -123,7 +123,8 @@ scripts/backup_offsite.sh
 # 2. The code.
 git fetch && git checkout <the approved branch or tag>
 
-# 3. The database: new doctypes and fields. Since 20 Oct 2026: Treasury Close; Book Edition > Disposed Qty;
+# 3. The database: new doctypes and fields. Since 20 Oct 2026: Treasury Close (and its new fields), Cash
+#    Discrepancy, Weekly Cash Reconciliation, Cash Close Settings, the report Cash Discrepancies; Book Edition > Disposed Qty;
 #    Damaged Stock Entry > Obsolete Edition; Printer Reading > Counter Reset and Reset Note; App Course > Tier;
 #    Sales Invoice and POS Invoice > Return Reason (custom fields).
 docker exec frappe_docker-backend-1 bench --site <site> migrate
@@ -150,4 +151,44 @@ After it, before staff use it:
 
 The browser tests (`tests/e2e/`) and the two-sessions check (`setup/concurrency_check.py`) run on a throwaway copy
 restored from the same backup, never on the production site.
+
+## 7. Opening cash on the first day (ACC-03)
+
+A cash box never goes below zero, so each box must hold, in the books, the cash really in it before the first sale,
+expense or payout; otherwise the first payment out of it is refused. Production starts from a clean site, with no
+demo transactions.
+
+1. **The evening before:** check every treasury (read-only):
+
+   ```python
+   # bench --site <site> console
+   from imed_erp.imederp import opening_cash
+   opening_cash.check()
+   ```
+
+   Each cash box should show its business, no entries and a zero balance. Anything marked `!!` is fixed first
+   (a box without a business is closed by nobody). The app's treasury, خزينة تطبيق BA Plus, is a bank account:
+   the close and the check below zero do not reach it (a decision is open; see the production readiness report).
+2. **The go-live morning, before the first sale:** in each branch the manager and a second person count the cash
+   in the box and both sign a count sheet. The count sheets go to the accountant.
+3. **The accountant** prepares one draft opening entry from the signed counts, checks it line by line against
+   the sheets, attaches them, and submits it:
+
+   ```python
+   opening_cash.prepare({
+       "الخزينة الرئيسية - MMG": 0,
+       "خزينة مكتبة الأزاريطة - MMG": 0,
+       "خزينة مكتبة المواساة - MMG": 0,
+       "خزينة سنتر Imed - MMG": 0,
+       "خزينة X Studio - MMG": 0,
+   }, "<go-live date>")
+   ```
+
+   It is an Opening Entry against حقوق ملكية الأرصدة الافتتاحية, dated the go-live day. It refuses a wallet, an
+   amount below zero, and a box that already has entries (its opening would count twice). The wallets' opening
+   balances come from their statements, entered separately by the accountant.
+4. **That evening:** each branch manager makes their box's first close; its opening is the balance entered in step
+   3, and its expected closing should match the count.
+5. **Cash Close Settings:** leave *Reporting Week Starts On* empty until the reporting week is confirmed, and
+   *Recovery Policy Approved* off until the owner approves a written policy checked by a lawyer or HR.
 

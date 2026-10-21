@@ -502,10 +502,15 @@ Rules confirmed by the owner on 21 Oct 2026.
 - **Cash Discrepancy** (`doctype/cash_discrepancy`): the accountant investigates; the owner sees all; a branch
   manager reads her branch's and decides nothing.
   - Shortage: Pending Investigation -> Responsibility Determined (notes written, responsible employees marked) ->
-    Recovery Approved (each responsible employee told and heard, the recovery checked against the contract and the
-    labour law, an amount typed for each; not more than the shortage) or Written Off (the company bears it).
-    Nothing is split between employees by itself; nobody is responsible for having been on shift.
-  - Surplus: Pending Review -> Explained. Never revenue by itself.
+    Recovery Recommended by the accountant (each responsible employee told and heard, the recovery checked against
+    the contract and the labour law, an amount typed for each; not more than the shortage) -> Recovery Approved by
+    the owner (four eyes: never by whoever recommended it; the owner may return it with a reason), or Written Off
+    (the company bears it). Nothing is split between employees by itself; nobody is responsible for having been on
+    shift.
+  - **Recovery is blocked** until the owner ticks *Recovery Policy Approved* in **Cash Close Settings**, naming the
+    written policy checked by a lawyer or HR; until then nothing can be approved.
+  - Surplus: Pending Review -> Explained, only with where the cash came from. Until then it stays under review: in
+    the open count, the report's Still Open Only and every later weekly review. Never revenue by itself.
   - Post Adjustment (accountant, once, after it is settled): a journal entry dated today between the box and
     فروقات الخزينة, so the books match the cash counted. The next close leaves it out (its opening is already the
     count).
@@ -514,8 +519,13 @@ Rules confirmed by the owner on 21 Oct 2026.
 - **Weekly Cash Reconciliation** (`doctype/weekly_cash_reconciliation`, accountant and owner): one per week and
   business (or all businesses). Lists every close of the week with its figures, the discrepancy's status and who
   was found responsible; the week's shortages and surpluses; open discrepancies; days a box was not closed.
-  Submitting it marks the week reviewed (a note is required while discrepancies are open). It moves no money: it
-  does not assume the cash went to the accountant.
+  Discrepancies of earlier weeks still open are listed apart (Still Open from Earlier Weeks), not added to this
+  week's totals: each difference counts once, in its own week, and stays visible until settled. The next close
+  never repeats a difference: its opening is the cash counted. Submitting it marks the week reviewed (a note is
+  required while any discrepancy is open). It moves no money: it does not assume the cash went to the accountant.
+  The week starts on the day set in Cash Close Settings (*Reporting Week Starts On*), on any day while it is empty.
+- **Opening cash** on a new site: `imederp/opening_cash.py` checks every treasury and prepares the counted cash as
+  a draft opening entry (docs/production-hardening.md, section 7).
 - Owner's page: Cash Shortages This Month, Open Cash Discrepancies, and shortcuts to the closes, the discrepancies
   waiting, the weekly reviews and the report.
 

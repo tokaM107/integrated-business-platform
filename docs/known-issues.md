@@ -221,17 +221,30 @@ Still open from the audit (updated 21 Oct 2026):
   read the group's company only, and the 37 `_Test Fiscal Year`s that name no company are not used for the group's
   dates (`dates.py`). The tests no longer depend on them. Production is built from a clean site.
 - **ACC-03, what is still to confirm** (built to the owner's rules of 21 Oct 2026; README, *Cash boxes*):
-  - Recovering a shortage from an employee: the limits on deductions under the labour law and the employment
-    contracts, and the notice the employee gets, are for a lawyer or HR to confirm. The system only records the
-    accountant's confirmation (a check box), the day the employee was told and their response; it deducts nothing.
-  - Four eyes: today the same accountant may determine responsibility and approve the recovery. Whether the owner
-    must approve recoveries (or recoveries over an amount) is the owner's decision.
-  - The adjustment account: Post Adjustment uses فروقات الخزينة (an expense account) both ways; whether a surplus
-    should go to another account (or wait as a liability to return to a customer) is the accountant's call.
-  - The week: any seven days from the date chosen; whether weeks must start on Saturday is the accountant's call.
-  - Historical balances: Mawasah's box is at -936.50 on the development site from the demo entries of 18 Oct
-    (sales 1,800 and 605, payout 400, expense 450, transfers out 1,500 and 1,000, payment 8.50). Not changed; on
-    production the opening balances are entered first, so this does not arise.
+  - **Recovering a shortage from an employee is blocked** (Cash Close Settings, *Recovery Policy Approved* off)
+    until the owner approves a written policy that a lawyer or HR has checked: the limits on deductions under the
+    labour law and the contracts, how and when the employee is told and heard, appeals, and how a recovery reaches
+    payroll (there is no HR or payroll module: HR-01..07). The four-eyes flow is built: the accountant recommends,
+    the owner approves or returns; nobody approves their own recommendation. The system deducts nothing.
+  - The adjustment account: Post Adjustment uses فروقات الخزينة (an expense account) both ways, and only after a
+    surplus is explained; whether an explained surplus should instead be held as owed to a customer is the
+    accountant's call.
+  - The reporting week: the requirements say only "daily, weekly and monthly" reports (RPT, v1.2) and name no first
+    day. Cash Close Settings > *Reporting Week Starts On* is empty (any day) until the owner and the accountant
+    confirm it; Saturday to Friday matches the Egyptian working week and is the suggestion.
+  - خزينة تطبيق BA Plus is a bank account: no daily close and no check below zero. Whether the app takes cash at
+    all (Owner) decides whether it becomes a cash box.
+  - Opening cash on production: counted, signed and entered before the first sale (docs/production-hardening.md,
+    section 7); Mawasah's -936.50 on the development site came from the demo transactions of 18 Oct entered with no
+    opening cash (two sales 1,800 + 605 in; a doctor payout 400, an expense 450 and two transfers 1,500 + 1,000
+    out; a scrap payment 8.50 in). Those transactions were erased on 21 Oct at the owner's request (below).
+- **Development data erased, 21 Oct 2026** (owner's request, after a full backup in
+  `~/imed-backups/sets/20261021_165852-before-demo-erase/`): every transaction of Mohamed Mamdouh group, by
+  ERPNext's Transaction Deletion Record TDL0003 (ledger, invoices, payments, journal and stock entries, stock bins,
+  material requests, the app's expenses and damaged stock) and by direct deletion of the app's transfers, doctors'
+  ledger entries, subscriptions, counter readings, day counters and stock counts. Kept: the allocation rule and its
+  cost center allocation, monthly bills, the fee schedule, periods, categories, machines, the demo doctors'
+  agreements and editions, customers, items, users and settings, and the `_Test` records of other companies.
 - **ACC-09 hand-over, HR, tasks (TSK), integrations (INT-02..13)**: not built; the decisions or files they wait for are
   in the tables above.
 - **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on
