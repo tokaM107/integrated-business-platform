@@ -183,8 +183,10 @@ approvals = [
     waiting("Inter Business Transfer", "Transfers to Confirm", [["status", "=", "Sent"]]),
     # DOC-22: a charge on a doctor is applied only once the owner or the accountant approves (submits) it.
     waiting("Doctor Ledger Entry", "Doctor Charges to Approve", [["approval_status", "=", "Pending Approval"], ["docstatus", "=", 0]]),
-    # A shortage or surplus at a daily close, still waiting for the accountant (Cash Discrepancy).
-    waiting("Cash Discrepancy", "Cash Discrepancies to Review", [["status", "in", ["Pending Investigation", "Responsibility Determined", "Pending Review"]]]),
+    # A shortage or surplus at a daily close still open (Cash Discrepancy, OPEN), and the recoveries the accountant
+    # recommended, which only the owner approves.
+    waiting("Cash Discrepancy", "Cash Discrepancies to Review", [["status", "in", ["Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review"]]]),
+    waiting("Cash Discrepancy", "Recoveries to Approve", [["status", "=", "Recovery Recommended"]]),
 ]
 follow_up = []
 for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
