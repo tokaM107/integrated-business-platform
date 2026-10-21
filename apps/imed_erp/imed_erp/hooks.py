@@ -197,9 +197,15 @@ doc_events = {
 		"validate": "imed_erp.imederp.dates.refuse_future_date",
 		# A cash box never goes below zero, whatever pays out of it (imederp/cash_balance.py). After the document's
 		# own on_submit and on_cancel, which post its ledger lines.
-		"on_submit": "imed_erp.imederp.cash_balance.check_on_submit",
+		"on_submit": [
+			"imed_erp.imederp.cash_balance.check_on_submit",
+			"imed_erp.imederp.doctype.treasury_close.treasury_close.check_closed_days",
+		],
 		"before_cancel": "imed_erp.imederp.cash_balance.remember_before_cancel",
-		"on_cancel": "imed_erp.imederp.cash_balance.check_on_cancel",
+		"on_cancel": [
+			"imed_erp.imederp.cash_balance.check_on_cancel",
+			"imed_erp.imederp.doctype.treasury_close.treasury_close.check_closed_days",
+		],
 	},
 	"Journal Entry": {
 		"validate": [
@@ -427,6 +433,9 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_kept",
 	},
 	"Treasury Close": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Weekly Cash Reconciliation": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	# CORE-07: a user is disabled, never deleted (imederp/users.py).

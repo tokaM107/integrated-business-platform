@@ -10,16 +10,34 @@
   "business",
   "column_break_head",
   "close_date",
+  "closed_on",
   "counted_by",
+  "shift",
   "figures_section",
+  "last_close",
   "opening",
   "money_in",
   "money_out",
+  "collections",
+  "transfers_in",
+  "expenses_and_payouts",
+  "transfers_out",
+  "other_out",
   "column_break_figures",
   "expected",
   "counted",
   "difference",
+  "book_balance",
   "note",
+  "evidence",
+  "cash_discrepancy",
+  "review_section",
+  "needs_review",
+  "review_note",
+  "column_break_review",
+  "reopen_reason",
+  "reopened_by",
+  "reopened_on",
   "amended_from"
  ],
  "fields": [
@@ -31,7 +49,7 @@
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "The cash box or wallet counted."
+   "description": "The cash box counted: the branch's own."
   },
   {
    "fieldname": "business",
@@ -56,12 +74,26 @@
    "in_standard_filter": 1
   },
   {
+   "fieldname": "closed_on",
+   "fieldtype": "Datetime",
+   "label": "Closed On",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "counted_by",
    "fieldtype": "Link",
    "options": "User",
-   "label": "Counted By",
+   "label": "Closed By",
    "read_only": 1,
-   "no_copy": 1
+   "no_copy": 1,
+   "description": "The branch manager who closed the box: whoever submits it."
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Data",
+   "label": "Shift",
+   "description": "Morning, evening, or who was on the till, if the branch works in shifts."
   },
   {
    "fieldname": "figures_section",
@@ -69,23 +101,69 @@
    "label": "The Day in the Books"
   },
   {
-   "fieldname": "opening",
-   "fieldtype": "Currency",
-   "label": "At the Start of the Day",
+   "fieldname": "last_close",
+   "fieldtype": "Link",
+   "options": "Treasury Close",
+   "label": "Last Close",
    "read_only": 1,
    "no_copy": 1
+  },
+  {
+   "fieldname": "opening",
+   "fieldtype": "Currency",
+   "label": "Opening",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "The cash counted at the box's last close; for its first close, what the books held when the day began."
   },
   {
    "fieldname": "money_in",
    "fieldtype": "Currency",
    "label": "Money In",
    "read_only": 1,
-   "no_copy": 1
+   "no_copy": 1,
+   "description": "Collections and transfers in since the last close."
   },
   {
    "fieldname": "money_out",
    "fieldtype": "Currency",
    "label": "Money Out",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Expenses, payouts, transfers out and other payments since the last close."
+  },
+  {
+   "fieldname": "collections",
+   "fieldtype": "Currency",
+   "label": "Collections",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "transfers_in",
+   "fieldtype": "Currency",
+   "label": "Transfers In",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "expenses_and_payouts",
+   "fieldtype": "Currency",
+   "label": "Expenses and Payouts",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "transfers_out",
+   "fieldtype": "Currency",
+   "label": "Transfers Out",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "other_out",
+   "fieldtype": "Currency",
+   "label": "Refunds and Other Payments",
    "read_only": 1,
    "no_copy": 1
   },
@@ -96,11 +174,11 @@
   {
    "fieldname": "expected",
    "fieldtype": "Currency",
-   "label": "Expected Balance",
+   "label": "Expected Closing",
    "read_only": 1,
    "no_copy": 1,
    "in_list_view": 1,
-   "description": "What the books show at the end of the day: start + in - out."
+   "description": "Opening + money in - money out."
   },
   {
    "fieldname": "counted",
@@ -113,16 +191,85 @@
   {
    "fieldname": "difference",
    "fieldtype": "Currency",
-   "label": "Difference",
+   "label": "Shortage (-) / Surplus (+)",
    "read_only": 1,
    "no_copy": 1,
    "in_list_view": 1,
-   "description": "Counted - expected: below zero a shortage, above zero a surplus. Recorded only: nothing is posted for it yet (docs/known-issues.md)."
+   "description": "Cash counted - expected closing. Recorded: the books are not changed to match the cash."
+  },
+  {
+   "fieldname": "book_balance",
+   "fieldtype": "Currency",
+   "label": "Balance in the Books",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "What the ledger holds at the end of the day, with the earlier differences not adjusted yet."
   },
   {
    "fieldname": "note",
    "fieldtype": "Small Text",
    "label": "Note"
+  },
+  {
+   "fieldname": "evidence",
+   "fieldtype": "Attach",
+   "label": "Evidence",
+   "description": "A photo of the count sheet, or anything that explains a difference."
+  },
+  {
+   "fieldname": "cash_discrepancy",
+   "fieldtype": "Link",
+   "options": "Cash Discrepancy",
+   "label": "Cash Discrepancy",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Reopening and Review",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "needs_review",
+   "fieldtype": "Check",
+   "label": "Needs Review",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Set when an earlier close of this box was reopened, or an entry was dated into a day this close covers."
+  },
+  {
+   "fieldname": "review_note",
+   "fieldtype": "Small Text",
+   "label": "Review Note",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_review",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "reopen_reason",
+   "fieldtype": "Small Text",
+   "label": "Reopening Reason",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "reopened_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Reopened By",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "reopened_on",
+   "fieldtype": "Datetime",
+   "label": "Reopened On",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "amended_from",
@@ -136,7 +283,7 @@
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-21 14:00:00.000000",
+ "modified": "2026-10-21 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Treasury Close",
