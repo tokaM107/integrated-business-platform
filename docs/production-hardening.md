@@ -111,3 +111,43 @@ docker exec frappe_docker-backend-1 bench --site restore-test restore <set>-data
   Branch Manager role and no branch is refused everywhere (SEC-07).
 - Two people click Confirm Receipt on the same transfer at once, and two payouts of one doctor are submitted at
   once: one goes through, the other is refused.
+
+## 6. Deploying a new version (this branch included)
+
+Never without the owner's approval, and only after a backup copied off the server (section 4).
+
+```bash
+# 1. Backup, checked and copied out.
+scripts/backup_offsite.sh
+
+# 2. The code.
+git fetch && git checkout <the approved branch or tag>
+
+# 3. The database: new doctypes and fields. Since 20 Oct 2026: Treasury Close; Book Edition > Disposed Qty;
+#    Damaged Stock Entry > Obsolete Edition; Printer Reading > Counter Reset and Reset Note; App Course > Tier;
+#    Sales Invoice and POS Invoice > Return Reason (custom fields).
+docker exec frappe_docker-backend-1 bench --site <site> migrate
+
+# 4. The setup scripts that changed (all idempotent), from bench console, in this order:
+#    setup_core.py       the student customer group (CRM-01)
+#    setup_users.py      Stock Settings readable by the library managers
+#    setup_dashboard.py  the owner's cards and reports
+docker exec -it frappe_docker-backend-1 bench --site <site> console
+
+# 5. The web and background workers load new modules (a new doctype's folder) only when they start.
+docker restart frappe_docker-backend-1 frappe_docker-queue-short-1 frappe_docker-queue-long-1 frappe_docker-scheduler-1
+docker exec frappe_docker-backend-1 bench --site <site> clear-cache
+```
+
+After it, before staff use it:
+
+- `setup/verify_users.py` passes; `setup/check_doctor_accounts.py` lists nothing new.
+- `bench --site <site> scheduler status` says enabled; `bench doctor` shows the workers online.
+- One login each for the owner, the accountant, a library manager and the studio manager (section 5); the owner's
+  page shows its cards without "NaN".
+- If anything is wrong: restore the backup of step 1 onto the site (`bench --site <site> restore ...`) and
+  check out the previous version.
+
+The browser tests (`tests/e2e/`) and the two-sessions check (`setup/concurrency_check.py`) run on a throwaway copy
+restored from the same backup, never on the production site.
+
