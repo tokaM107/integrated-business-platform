@@ -54,7 +54,7 @@ sections of this file. Each row says what it needs before it can be built.
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
 | 1 | APP-05, APP-06, ACC-13 (Must) | Done on 19 Oct: the fee is posted to the doctor's account with every student (decided that day), and a Collection goes into the treasury it names. Open: what a withdrawal does (`COUNT_WITHDRAWN`). | | |
-| 2 | ACC-03 (Must) | Mostly done on 21 Oct: **Treasury Balances** (each box's day from the ledger) and **Treasury Close** (once a box a day: the cash counted against the balance, and the difference). Recorded only: approval, the posting of a difference and reopening wait for the decisions below (audit section). | A shortage at a branch is found only at the weekly hand-over, if at all. | How the close is made (ERPNext POS Closing Entry per library, or a daily count per treasury) and who approves it. Accountant. |
+| 2 | ACC-03 (Must) | Done on 21 Oct 2026 to the owner's confirmed rules: the daily close by the branch manager, the Cash Discrepancy investigated by the accountant, the weekly review, reopening by the owner and the accountant, cash boxes never below zero (README, *Cash boxes*). | - | Legal and accounting points still to confirm: *ACC-03, what is still to confirm* below. |
 | 3 | ACC-05 (Must) | Revenue is recorded when the invoice is submitted (ERPNext's accrual basis), not when it is collected; the rest shows as receivables. | The P&L can show revenue not collected yet. | Keep accrual (usual accounting, receivables report shows what is owed) or follow the text. Accountant. |
 | 4 | ACC-04 (Must) | Done on 20 Oct for bookings: a deposit is a Payment Entry into the business's cash box, named with its booking, and is taken off the invoice when the booking is completed (README, *Price and money*). It is the customer's advance in العملاء: the account العرابين المقبوضة is still not used (ERPNext uses it only if the company books every advance in a separate account, a company-wide switch). | | Accountant: use العرابين المقبوضة (the company's "Book advance payments in separate party account"), or keep advances on the customer. |
 | 5 | ACC-09 (Must) | The weekly hand-over to the owner is an *Inter Business Transfer* to the main treasury; there is no owner or bank account to hand over to, and it mixes with transfers between businesses. | The owner's receipts cannot be listed on their own. | An account for the owner's custody (and a bank account if cash goes to the bank). Owner. |
@@ -204,7 +204,7 @@ defect and are not written in the requirements. Each is one place in the code to
 | 6 | QA-16 | The platform fee posts on تطبيق BA Plus whoever subscribed the student. The subscription's own cost center is still who recorded it (a library manager may), and is not used in the accounts. | The fee went to the first subscription's business. | Owner |
 | 7 | QA-20, QA-21 | Branch staff record counters on the day's screen only, one reading a machine a day. The owner and the accountant may add a reading by hand and record a counter reset (with a note) after a repair. | Readings outside the screen were in no waste figure; a reset blocked the branch. | Owner / Accountant |
 | 8 | QA-22 | Stock moved from one branch's store to another's goes through the approved request; only the accounts move it by hand, with Received By and the machine for paper. | The request and its approval could be skipped. | Raghad / Owner |
-| 9 | QA-24, owner's decision of 21 Oct 2026 | No completed transaction is dated after today, for anyone (`imederp/dates.py`: the app's documents and ERPNext's invoices, payments, journal and stock entries); plans keep their future dates. A date must also be in one of the company's own fiscal years. The tests that used 2031 now use dates in the fiscal year. | Staff never record completed transactions ahead. | Done. Open: a cash box going below zero is not refused (seen on the copy site, 21 Oct): Owner / Accountant. |
+| 9 | QA-24, owner's decision of 21 Oct 2026 | No completed transaction is dated after today, for anyone (`imederp/dates.py`: the app's documents and ERPNext's invoices, payments, journal and stock entries); plans keep their future dates. A date must also be in one of the company's own fiscal years. The tests that used 2031 now use dates in the fiscal year. | Staff never record completed transactions ahead. | Done. A cash box going below zero is refused since 21 Oct (owner's rule; `cash_balance.py`). |
 | 10 | QA-31 | A number typed with the country code and no plus (also on a landline, or with an extra 0) is read as Egyptian. Numbers valid before keep the same key. | Valid spellings were refused. | |
 | 11 | SEC-07 | A user with the Branch Manager role and no branch is refused on damaged stock, counts and bookings. | They were let into every branch. | Owner: give each branch manager their branch. |
 | 12 | SEC-12 | Kept from deletion: a submitted or cancelled branch request or fee schedule, an imported booking or one with money or a posting, a course with students or fees. Frappe's own link check already kept bookings with payments and courses with subscriptions. | | |
@@ -220,12 +220,18 @@ Still open from the audit (updated 21 Oct 2026):
   2026). They do not reach the group's figures: reorder alerts, the dashboard, Treasury Balances and the reports
   read the group's company only, and the 37 `_Test Fiscal Year`s that name no company are not used for the group's
   dates (`dates.py`). The tests no longer depend on them. Production is built from a clean site.
-- **ACC-03, the rest of the daily close.** Built: Treasury Balances and Treasury Close (the count and the
-  difference, recorded). To decide: who approves a close; what a shortage or a surplus does (post it to
-  فروقات الخزينة, charge the employee as SEC-04 suggests, or only record it); whether a closed day can take more
-  entries or be reopened, and by whom. Proposal: the branch manager closes her box at the end of the day, the
-  accountant approves; a difference is posted to فروقات الخزينة on approval with the close's note; a closed day
-  refuses new cash entries for that box unless the accountant reopens it, which the close's history records.
+- **ACC-03, what is still to confirm** (built to the owner's rules of 21 Oct 2026; README, *Cash boxes*):
+  - Recovering a shortage from an employee: the limits on deductions under the labour law and the employment
+    contracts, and the notice the employee gets, are for a lawyer or HR to confirm. The system only records the
+    accountant's confirmation (a check box), the day the employee was told and their response; it deducts nothing.
+  - Four eyes: today the same accountant may determine responsibility and approve the recovery. Whether the owner
+    must approve recoveries (or recoveries over an amount) is the owner's decision.
+  - The adjustment account: Post Adjustment uses فروقات الخزينة (an expense account) both ways; whether a surplus
+    should go to another account (or wait as a liability to return to a customer) is the accountant's call.
+  - The week: any seven days from the date chosen; whether weeks must start on Saturday is the accountant's call.
+  - Historical balances: Mawasah's box is at -936.50 on the development site from the demo entries of 18 Oct
+    (sales 1,800 and 605, payout 400, expense 450, transfers out 1,500 and 1,000, payment 8.50). Not changed; on
+    production the opening balances are entered first, so this does not arise.
 - **ACC-09 hand-over, HR, tasks (TSK), integrations (INT-02..13)**: not built; the decisions or files they wait for are
   in the tables above.
 - **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on

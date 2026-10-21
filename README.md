@@ -473,15 +473,51 @@ Shares are fixed percentages. Shares worked out from each business's area or rev
 task, were left out on purpose: the owner chose a fixed 60/40 (8 halls, 4 of which also serve as the
 studio part of the time), and the rule's Notes record what the shares are based on.
 
-### Cash boxes: balances and the daily close (ACC-03)
+### Cash boxes: balances, the daily close and the weekly review (ACC-03)
 
-- **Treasury Balances** (report): each cash box and wallet on a date, from the ledger: at the start of the day, money
-  in, money out, the balance. A branch manager sees her business's box and the group's wallets.
-- **Treasury Close** (one a cash box a day, `doctype/treasury_close`): the same figures, the **Cash Counted** typed
-  by whoever counts, and the **Difference** (below zero a shortage, above zero a surplus). Read again from the
-  ledger when submitted. A branch manager closes her own box or a wallet; Counted By is the login. It is a record
-  only: no journal entry is made for a difference, no one approves it, and a closed day still takes entries; those
-  three are the owner's and the accountant's to decide (docs/known-issues.md, ACC-03).
+Rules confirmed by the owner on 21 Oct 2026.
+
+- **A cash box never goes below zero** (`imederp/cash_balance.py`, every document that posts to the ledger): an
+  expense, a transfer, a payout, a cash refund or any payment of more than the box holds is refused, on any day from
+  its date to today; cancelling cash that came in is checked too. The box's account is locked and its ledger read
+  with locking reads, so two payments at once cannot spend the same money. Wallets (bank accounts) are not checked.
+  Balances already below zero are not changed; the next payment out of such a box is refused until the money that
+  came in is recorded. A POS Invoice posts to the ledger only when it is consolidated, so it is checked then.
+- **Treasury Balances** (report): each cash box and wallet on a date, from the ledger.
+- **Treasury Close** (`doctype/treasury_close`): the branch manager closes her own branch's cash box at the end of
+  the day; no daily approval.
+  - Opening = the cash counted at the box's last close (the ledger's balance before the day for its first close).
+  - Since the last close, from the ledger: Collections, Transfers In, Expenses and Payouts (expenses and doctors'
+    payouts), Transfers Out, Refunds and Other Payments. Expected Closing = Opening + in - out.
+  - Shortage (-) / Surplus (+) = Cash Counted - Expected Closing. Balance in the Books shows the ledger beside it.
+  - Once a day per box, and in order (no close for a day before the box's last one). Closed By, Closed On, Shift,
+    Note and Evidence are kept.
+  - It posts nothing and changes no ledger line. A difference opens a **Cash Discrepancy**.
+  - A cash entry dated into a closed day is refused to a branch manager; the accountant's is accepted, and the
+    closes it changes are marked Needs Review.
+  - **Reopen** (owner and accountant only, with a reason): the close is cancelled and kept with its figures, who
+    reopened it, when and why; a new draft amends it. Its discrepancy is withdrawn; later closes of the box and any
+    reviewed week holding it are marked for review. Refused once its discrepancy is adjusted in the books or has an
+    approved recovery (undo those first). Branch managers cannot reopen or cancel.
+- **Cash Discrepancy** (`doctype/cash_discrepancy`): the accountant investigates; the owner sees all; a branch
+  manager reads her branch's and decides nothing.
+  - Shortage: Pending Investigation -> Responsibility Determined (notes written, responsible employees marked) ->
+    Recovery Approved (each responsible employee told and heard, the recovery checked against the contract and the
+    labour law, an amount typed for each; not more than the shortage) or Written Off (the company bears it).
+    Nothing is split between employees by itself; nobody is responsible for having been on shift.
+  - Surplus: Pending Review -> Explained. Never revenue by itself.
+  - Post Adjustment (accountant, once, after it is settled): a journal entry dated today between the box and
+    فروقات الخزينة, so the books match the cash counted. The next close leaves it out (its opening is already the
+    count).
+  - **No salary is deducted by the system** (there is no payroll). An approved recovery is listed in the report
+    **Cash Discrepancies -> Payroll Review** for the accountant to take to payroll by hand.
+- **Weekly Cash Reconciliation** (`doctype/weekly_cash_reconciliation`, accountant and owner): one per week and
+  business (or all businesses). Lists every close of the week with its figures, the discrepancy's status and who
+  was found responsible; the week's shortages and surpluses; open discrepancies; days a box was not closed.
+  Submitting it marks the week reviewed (a note is required while discrepancies are open). It moves no money: it
+  does not assume the cash went to the accountant.
+- Owner's page: Cash Shortages This Month, Open Cash Discrepancies, and shortcuts to the closes, the discrepancies
+  waiting, the weekly reviews and the report.
 
 ### Dates
 
