@@ -1317,3 +1317,41 @@ Cash Shortages This Month,عجز الخزاين الشهر ده
 Open Cash Discrepancies,فروقات خزينة مفتوحة
 Cash Discrepancies to Review,فروقات خزينة مستنية مراجعة
 Weekly Cash Reviews,مراجعات الخزينة الأسبوعية
+Cash Close Settings,إعدادات تقفيل الخزينة
+Reporting Week Starts On,أسبوع التقارير بيبدأ يوم
+"Empty until the reporting week is confirmed: a weekly review may then start on any day. Once set, every weekly review starts on this day.",فاضي لحد ما أسبوع التقارير يتأكد: ساعتها المراجعة الأسبوعية ممكن تبدأ أي يوم. أول ما يتحدد، كل مراجعة أسبوعية هتبدأ في اليوم ده.
+Recovering Shortages from Employees,استرداد العجز من الموظفين
+Recovery Policy Approved,سياسة الاسترداد متوافق عليها
+"Off until the owner approves a written policy checked by a lawyer or HR (deduction limits under the labour law and the contracts, how the employee is told and heard). While off, the owner cannot approve any recovery. The system never deducts from a salary either way.",مقفولة لحد ما صاحب الشغل يوافق على سياسة مكتوبة يراجعها محامي أو الموارد البشرية (حدود الخصم في قانون العمل والعقود، وإزاي الموظف يتبلّغ ويتسمع). طول ما هي مقفولة، صاحب الشغل مش هيقدر يوافق على أي استرداد. والسيستم مش بيخصم من المرتب في كل الأحوال.
+Policy Reference,مرجع السياسة
+"The approved policy: its title, date and who checked it.",السياسة المتوافق عليها: اسمها وتاريخها ومين راجعها.
+Only the owner approves or withdraws the recovery policy.,صاحب الشغل بس هو اللي يوافق على سياسة الاسترداد أو يلغيها.
+"Name the approved policy first: its title, date and who checked it.",اكتب السياسة المتوافق عليها الأول: اسمها وتاريخها ومين راجعها.
+Policy Needed,محتاج السياسة
+Recovery Recommended,الاسترداد مقترح
+Recommended By,اقترحه
+Recommended On,اتقترح في
+Approved By (Owner),وافق عليه (صاحب الشغل)
+Recovering shortages from employees is blocked until the recovery policy is approved (Cash Close Settings).,استرداد العجز من الموظفين متوقف لحد ما سياسة الاسترداد يتوافق عليها (إعدادات تقفيل الخزينة).
+Recovery Blocked,الاسترداد متوقف
+You recommended this recovery: another person approves it.,إنت اللي اقترحت الاسترداد ده: لازم حد تاني يوافق عليه.
+Four Eyes,موافقة شخصين
+Returning a recommendation needs a reason.,رجوع الاقتراح محتاج سبب.
+Recommendation returned: {0},الاقتراح رجع: {0}
+"Write where the extra cash came from. If it is not known yet, leave the surplus under review.",اكتب الفلوس الزيادة جت منين. لو لسه مش معروف، سيب الزيادة تحت المراجعة.
+Recommend Recovery,اقترح الاسترداد
+Return to the Accountant,رجّعه للمحاسب
+Why is it returned?,ليه بيرجع؟
+Owner,صاحب الشغل
+Recommended by {0}. Waiting for the owner's approval.,اقترحه {0}. مستني موافقة صاحب الشغل.
+Under review until the accountant finds where the extra cash came from. It is not revenue.,تحت المراجعة لحد ما المحاسب يعرف الفلوس الزيادة جت منين. دي مش إيراد.
+Still Open from Earlier Weeks,لسه مفتوحة من أسابيع قبل كده
+"Counted in their own week's totals, not this week's.",محسوبة في إجماليات أسبوعها، مش الأسبوع ده.
+Earlier Discrepancies Still Open,فروقات قديمة لسه مفتوحة
+The reporting week starts on {0}. Choose a {0}.,أسبوع التقارير بيبدأ يوم {0}. اختار يوم {0}.
+Wrong Day,يوم غلط
+{0} is not a cash box of {1}.,{0} مش خزينة نقدية تبع {1}.
+The cash counted in {0} cannot be below zero.,الفلوس المعدودة في {0} مينفعش تكون أقل من صفر.
+{0} already has entries: its opening would count twice.,{0} عليها قيود بالفعل: رصيدها الافتتاحي هيتحسب مرتين.
+No cash to enter.,مفيش فلوس تتسجل.
+"Opening cash, counted in each branch",النقدية الافتتاحية، معدودة في كل فرع
