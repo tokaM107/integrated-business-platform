@@ -196,25 +196,38 @@ defect and are not written in the requirements. Each is one place in the code to
 
 | # | Where | What the code does now | Why | Who confirms |
 |---|---|---|---|---|
-| 1 | QA-02, `doctor_ledger_entry.post_by_hand` | A charge for unsold copies posts Dr مستحقات للأطباء — الكتب / Cr حصة الأطباء: it takes the copies' cost back from the doctors' share. A hand adjustment posts like a sale (books) or a platform fee (app). | The ledger and the general ledger agreed only for sales, payouts and collections. Crediting the doctors' share keeps the payable equal to the ledger without a new account. | Accountant: or a separate income account for recovered costs. |
-| 2 | QA-03, `charge_edition` | Copies are charged once over an edition's life. Copies charged when a period closed and sold after a carry-forward are given back as a draft credit at the same cost, for the accountant to submit. A rejected charge does not count as charged: the next period raises it again. | The doctor was charged twice for the same copies. | Accountant / Owner |
+| 1 | QA-02, `doctor_ledger_entry.post_by_hand` | An accrual or adjustment entered by hand posts like a sale (books: Dr حصة الأطباء / Cr مستحقات للأطباء — الكتب, a minus one the other way round) or a platform fee (app: Dr مستحقات على الأطباء — رسوم المنصة, party the doctor / Cr إيراد رسوم المنصة). Cancelling the entry cancels its journal entry. | The ledger and the general ledger agreed only for sales, payouts and collections. | Accountant: the account a minus books adjustment credits (now the doctors' share). |
+| 2 | QA-03, owner's decision of 21 Oct 2026 (confirmed policy, replaces the 20 Oct fix) | The doctor is never charged for unsold copies. Closing a term charges nothing; carried copies sell next year and earn the doctor his amount as they sell. A curriculum change: the edition is obsolete and its copies left are disposed of as scrap (Dispose as Scrap → Damaged Stock Entry naming the edition), their cost a loss on the library (الهالك والتالف), then sold by weight (إيراد بيع التالف بالوزن). No Unsold Copies Charge is saved or submitted any more. | Requirements v1.2 DOC-18 charged the doctor his share; the owner confirmed the library bears 100%. DOC-22's approval of such charges no longer applies. | Done. Requirements v1.3 should replace DOC-18's text. |
 | 3 | QA-04 | A return (credit note) needs the Accounts Manager role (the owner and the accountant) and a reason, as a cancellation. | Libraries take no returns; a branch manager could reverse a sale and pay cash out. | Owner |
 | 4 | QA-05 | A count treats paper sold but still waiting as a draft issue as gone, and the reconciliation leaves room for the draft, so the store ends at what was counted. | The paper was taken off twice. | Accountant |
 | 5 | QA-14 | A revenue-share booking is completed with 0 attendees, free admission or a 0% share once its lecturer is named; without a lecturer, a 0% share is still missing. | 0 was refused as missing, and the database cannot tell 0 from empty. | Owner (the share rule, question 33) |
 | 6 | QA-16 | The platform fee posts on تطبيق BA Plus whoever subscribed the student. The subscription's own cost center is still who recorded it (a library manager may), and is not used in the accounts. | The fee went to the first subscription's business. | Owner |
 | 7 | QA-20, QA-21 | Branch staff record counters on the day's screen only, one reading a machine a day. The owner and the accountant may add a reading by hand and record a counter reset (with a note) after a repair. | Readings outside the screen were in no waste figure; a reset blocked the branch. | Owner / Accountant |
 | 8 | QA-22 | Stock moved from one branch's store to another's goes through the approved request; only the accounts move it by hand, with Received By and the machine for paper. | The request and its approval could be skipped. | Raghad / Owner |
-| 9 | QA-24 | No transfer, payout or counter reading is dated after today. Branch staff cannot date an expense ahead; the owner and the accountant may (rent paid ahead). Collections into a treasury are not checked yet: the platform-fee tests date them in 2031. Cash boxes going negative are not checked. | Future dates blocked the next day's screen and moved money into another month. | Accountant |
+| 9 | QA-24, owner's decision of 21 Oct 2026 | No completed transaction is dated after today, for anyone (`imederp/dates.py`: the app's documents and ERPNext's invoices, payments, journal and stock entries); plans keep their future dates. A date must also be in one of the company's own fiscal years. The tests that used 2031 now use dates in the fiscal year. | Staff never record completed transactions ahead. | Done. Open: a cash box going below zero is not refused (seen on the copy site, 21 Oct): Owner / Accountant. |
 | 10 | QA-31 | A number typed with the country code and no plus (also on a landline, or with an extra 0) is read as Egyptian. Numbers valid before keep the same key. | Valid spellings were refused. | |
 | 11 | SEC-07 | A user with the Branch Manager role and no branch is refused on damaged stock, counts and bookings. | They were let into every branch. | Owner: give each branch manager their branch. |
 | 12 | SEC-12 | Kept from deletion: a submitted or cancelled branch request or fee schedule, an imported booking or one with money or a posting, a course with students or fees. Frappe's own link check already kept bookings with payments and courses with subscriptions. | | |
 
-Still open from the audit:
+Still open from the audit (updated 21 Oct 2026):
 
-- **QA-37, leftover test data.** `_Test` companies, items and warehouses from the October leaks are still on the
-  development site (QA-23's alert no longer shows them). Removing them is a delete on the site: with a backup, and
-  the owner's go-ahead. Production is built from a clean site, so they never reach it.
-- **ACC-03 daily close, ACC-09 hand-over account, HR, tasks (TSK), integrations (INT-02..13)**: not built; the
-  decisions they wait for are in the tables above.
+- **Historical records to review (no change made).** `setup/check_doctor_accounts.py` on the development site lists
+  one draft Unsold Copies Charge (3,040 for 38 copies of a demo edition, waiting for approval, never applied: an
+  approver should reject it) and three demo entries of 18 Oct with no journal entry (an adjustment of -1,000, an
+  accrual of 500, a collection of 250), entered before QA-02: each needs a journal entry by hand, or cancelling and
+  entering again, by the accountant.
+- **QA-37, leftover test data.** Kept on the development site on purpose, for looking at the screens (owner, 21 Oct
+  2026). They do not reach the group's figures: reorder alerts, the dashboard, Treasury Balances and the reports
+  read the group's company only, and the 37 `_Test Fiscal Year`s that name no company are not used for the group's
+  dates (`dates.py`). The tests no longer depend on them. Production is built from a clean site.
+- **ACC-03, the rest of the daily close.** Built: Treasury Balances and Treasury Close (the count and the
+  difference, recorded). To decide: who approves a close; what a shortage or a surplus does (post it to
+  فروقات الخزينة, charge the employee as SEC-04 suggests, or only record it); whether a closed day can take more
+  entries or be reopened, and by whom. Proposal: the branch manager closes her box at the end of the day, the
+  accountant approves; a difference is posted to فروقات الخزينة on approval with the close's note; a closed day
+  refuses new cash entries for that box unless the accountant reopens it, which the close's history records.
+- **ACC-09 hand-over, HR, tasks (TSK), integrations (INT-02..13)**: not built; the decisions or files they wait for are
+  in the tables above.
+- **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on
+  the copy site: the daily jobs are idempotent (a bill due today makes one draft; a second run makes none).
 - **Production (SEC-04..06)**: the settings and steps are in docs/production-hardening.md; nothing is deployed.
-
