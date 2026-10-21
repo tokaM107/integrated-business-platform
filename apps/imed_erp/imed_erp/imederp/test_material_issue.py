@@ -382,6 +382,25 @@ class IntegrationTestMaterialIssue(IntegrationTestCase):
 		# Sara sees her branch's requests in the report; Nour, without stock rights, cannot open it.
 		self.assertTrue(as_user(SARA, material_issues_report, frappe._dict(material_request=mr.name)))
 
+	def test_9b_another_company_s_requests_are_left_out(self):
+		# A request of a test company left on the site, written straight to the table (only what the report reads).
+		other = frappe.get_doc(
+			{
+				"doctype": "Material Request", "name": f"_Test MR {frappe.generate_hash(length=6)}", "company": "_Test Company",
+				"material_request_type": "Material Transfer", "transaction_date": nowdate(), "docstatus": 0,
+			}
+		)
+		other.db_insert()
+		frappe.get_doc(
+			{
+				"doctype": "Material Request Item", "parent": other.name, "parenttype": "Material Request", "parentfield": "items",
+				# Even naming the group's stores: the company decides.
+				"item_code": PAPER, "qty": 1, "uom": "Nos", "from_warehouse": MAWASAH_STORE, "warehouse": AZARITA_STORE,
+				"name": frappe.generate_hash(length=10),
+			}
+		).db_insert()
+		self.assertEqual(material_issues_report(frappe._dict(material_request=other.name)), [])
+
 
 def make_machine(name, warehouse):
 	if frappe.db.exists("Printing Machine", name):

@@ -81,7 +81,12 @@ def get_data(filters):
 			mri.stock_uom,
 			mri.custom_printing_machine.as_("requested_machine"),
 		)
-		.where((mr.material_request_type == "Material Transfer") & (mr.docstatus < 2))
+		# The group's requests only, not another company's (test companies left on a site).
+		.where(
+			(mr.material_request_type == "Material Transfer")
+			& (mr.docstatus < 2)
+			& (mr.company == frappe.defaults.get_global_default("company"))
+		)
 		.orderby(mr.transaction_date, order=frappe.qb.desc)
 		.orderby(mr.name, order=frappe.qb.desc)
 		.orderby(mri.idx)
