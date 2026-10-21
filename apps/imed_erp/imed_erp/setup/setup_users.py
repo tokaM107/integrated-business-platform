@@ -370,6 +370,22 @@ def ensure_items_visible_to_branches():
 	print("update Item Default.selling_cost_center: ignore_user_permissions = 1")
 
 
+def ensure_stock_settings_readable():
+	"""Seen in the browser (21 Oct 2026): a library manager's new Stock Entry form failed with "No permission for
+	Stock Settings". ERPNext's form reads a value from Stock Settings, and Frappe applies her User Permissions on
+	warehouses to the settings' own Default Warehouse (المخزن العام), which is not hers, so she could not read the
+	settings at all. Reading the settings is not limited by that field; her stock stays limited to her own stores."""
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+	field = frappe.get_meta("Stock Settings").get_field("default_warehouse")
+	if field.ignore_user_permissions:
+		print("exists Stock Settings.default_warehouse: ignore_user_permissions = 1")
+		return
+	make_property_setter("Stock Settings", "default_warehouse", "ignore_user_permissions", 1, "Check", validate_fields_for_doctype=False)
+	frappe.clear_cache(doctype="Stock Settings")
+	print("update Stock Settings.default_warehouse: ignore_user_permissions = 1")
+
+
 def run():
 	# Safety check: stop before writing anything if the company, a role, a cost center or a
 	# warehouse is missing. Otherwise a user could be created with roles but without restrictions.
@@ -405,6 +421,7 @@ def run():
 		# ---------- 4) Permissions matrix (section 3.2) on financial documents ----------
 		apply_permission_matrix()
 		ensure_items_visible_to_branches()
+		ensure_stock_settings_readable()
 		let_the_owner_read_everything()
 
 		# ---------- 5) Strict user permissions: OFF ----------
