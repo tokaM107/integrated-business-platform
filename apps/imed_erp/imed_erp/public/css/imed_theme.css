@@ -1909,3 +1909,128 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 		display: none;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 23. Every page in the Owner Dashboard's look: soft cards            */
+/* ------------------------------------------------------------------ */
+/* The owner's request of 21 Oct 2026: the other pages in the dashboard's style (§22). Lists, reports, workspace
+   widgets and each section of a form sit on the canvas as soft cards (rounded, a light shadow), headings are
+   bolder, rows a little roomier. Look only: no field moves, nothing is hidden. Comes last, so it refines §7, §8,
+   §9 and §19 above. */
+:root {
+	--imed-card-radius: 18px;
+	--imed-card-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 10px 24px -20px rgba(16, 34, 42, 0.35);
+	--imed-card-shadow-hover: 0 1px 2px rgba(16, 34, 42, 0.05), 0 16px 30px -20px rgba(16, 34, 42, 0.45);
+}
+[data-theme="dark"] {
+	--imed-card-shadow: 0 0 0 1px rgba(64, 174, 161, 0.06);
+	--imed-card-shadow-hover: 0 0 0 1px rgba(64, 174, 161, 0.16);
+}
+
+/* Page titles */
+.page-head .page-title .title-text {
+	color: var(--heading-color);
+	font-size: 20px;
+	font-weight: 700;
+}
+
+/* Lists and reports: one soft card */
+.layout-main-list .frappe-list,
+.page-content .frappe-list,
+.report-wrapper {
+	border: 1px solid var(--imed-border);
+	border-radius: var(--imed-card-radius);
+	box-shadow: var(--imed-card-shadow);
+	overflow: hidden;
+}
+.frappe-list .result,
+.list-row-head,
+.list-row-head .list-row {
+	border-radius: var(--imed-card-radius) var(--imed-card-radius) 0 0;
+}
+.list-row-head .list-row-col,
+.list-row-head .level-left,
+.list-row-head .list-subject {
+	color: var(--heading-color);
+}
+.frappe-list .list-row {
+	min-height: 52px;
+}
+/* A report's chart in its own card above the table. */
+.layout-main-section > .chart-wrapper:not(:empty) {
+	margin-bottom: 16px;
+	padding: 12px 16px 4px;
+	border: 1px solid var(--imed-border);
+	border-radius: var(--imed-card-radius);
+	background: var(--fg-color);
+	box-shadow: var(--imed-card-shadow);
+}
+.report-footer {
+	padding-inline: 4px;
+}
+
+/* Forms: each section its own card on the canvas (instead of one white page divided by hairlines). */
+.std-form-layout .form-page {
+	background: transparent;
+	box-shadow: none;
+}
+.std-form-layout .form-section.card-section {
+	margin-bottom: 16px;
+	padding: 18px 20px;
+	border: 1px solid var(--imed-border) !important;
+	border-radius: var(--imed-card-radius);
+	background: var(--fg-color);
+	box-shadow: var(--imed-card-shadow);
+}
+.form-layout .form-section + .form-section.card-section {
+	margin-top: 0;
+	padding-top: 18px;
+}
+.std-form-layout .form-section .section-head {
+	color: var(--heading-color);
+	font-size: 17px;
+	font-weight: 700;
+}
+.std-form-layout .form-section .section-head::before {
+	height: 1.05em;
+	width: 4px;
+}
+/* The tabs, when a form has them, as the top of the card stack. */
+.std-form-layout .form-tabs-list {
+	margin-bottom: 16px;
+	border: 1px solid var(--imed-border);
+	border-radius: var(--imed-card-radius);
+	box-shadow: var(--imed-card-shadow);
+}
+
+/* Workspace widgets everywhere as on the Owner Dashboard */
+.widget.number-widget-box,
+.widget.shortcut-widget-box,
+.widget.dashboard-widget-box,
+.widget.links-widget-box,
+.widget.onboarding-widget-box,
+.widget.quick-list-widget-box {
+	border-radius: var(--imed-card-radius);
+	box-shadow: var(--imed-card-shadow);
+	transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.widget.number-widget-box:hover,
+.widget.shortcut-widget-box:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--imed-card-shadow-hover);
+}
+
+/* A card drawn inside a form section (the booking's summary, booking.js) needs no frame of its own: the section is it. */
+.std-form-layout .form-section.card-section .imed-booking-card {
+	margin-bottom: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+@media (max-width: 767.98px) {
+	.std-form-layout .form-section.card-section {
+		padding: 14px;
+		margin-bottom: 12px;
+	}
+}

@@ -339,3 +339,13 @@ with the **ImedERP sidebar beside it**: every screen on the side, the money in t
   they may open (a branch manager: Bookings). A user with nothing in that sidebar (HR) keeps the home screen.
 - **The AI assistant on every page** (`imed_assistant.js`): its button and panel are fixed to the window and mounted
   once on the page, not inside the home screen; shown only to the users the server allows (`assistant/api.py`).
+
+## Worked example — every page in the dashboard's look (`imed_theme.css` §22, §23)
+
+The Owner Dashboard (§22, with `imed_owner_dashboard.js`): a welcome band (date, greeting, what waits for approval),
+each money card with an icon and its meaning's colour (in green, out and due orange, we owe purple, counts cyan, a
+negative amount red), calm approvals (green when nothing waits). The other pages follow it (§23, all pages at once,
+no per-screen work): lists, reports (the chart in its own card) and workspace widgets are soft cards (18px corners,
+a light shadow); **each section of a form is its own card** on the canvas instead of one white page divided by
+hairlines; headings are bolder. Colours are Frappe's status tokens and the theme's, so light and dark both follow.
+A card drawn inside a form section (the booking's summary) loses its own frame: the section is the card.
