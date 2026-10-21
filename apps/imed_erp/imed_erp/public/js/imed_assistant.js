@@ -1,9 +1,9 @@
-// IMED ERP assistant: an animated character on the home screen that opens a chat panel at the side.
+// IMED ERP assistant: an animated character in the corner of every page that opens a chat panel at the side.
 // Text and voice messages go to imed_erp.assistant.api.send_message; which AI answers is decided on
 // the server (imed_erp/assistant/providers.py), so this file does not change when a model is connected.
 //
 // Shown only to users the server allows (the owner; see ALLOWED_ROLES in assistant/api.py). Mounted on
-// Frappe's "desktop_screen" event; the conversation is kept in memory for the browser tab.
+// the page once Frappe has started; the conversation is kept in memory for the browser tab.
 (() => {
 	const is_ar = () => (frappe.boot.lang || "").startsWith("ar");
 	// Strings for this file only; the full Arabic translation of the app is planned for week 11.
@@ -346,17 +346,15 @@
 	}
 
 	// ------------------------------------------------------------------ hook
-	function attach(scope) {
+	// On every page, not only the home screen (owner's request of 21 Oct 2026: the owner opens on her dashboard,
+	// with the assistant). The button and the panel are fixed to the window, so they sit in the body once and stay
+	// there from page to page, the conversation with them.
+	function attach() {
 		get_status().then((status) => {
 			if (!status || !status.allowed) return;
-			const $wrapper = $(scope || document).find(".desktop-wrapper").first();
-			if ($wrapper.length && !$wrapper.find(".imed-assistant").length) mount($wrapper);
+			if (!$("body > .imed-assistant").length) mount($("body"));
 		});
 	}
 
-	$(document).on("desktop_screen", (e, args) => {
-		attach(args && args.desktop && args.desktop.page ? args.desktop.page.body : document);
-	});
-	// In case the home screen was drawn before this file loaded.
-	$(() => attach(document));
+	$(() => attach());
 })();

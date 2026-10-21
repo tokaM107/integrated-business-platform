@@ -1,4 +1,5 @@
-// IMED ERP home screen: a greeting band with today's date and quick actions, above Frappe's app grid.
+// IMED ERP home screen: a greeting band with today's date and quick actions, above Frappe's app grid. The owner
+// has none: she is sent to her dashboard (send_owner_to_dashboard below).
 //
 // Hooks into Frappe's own "desktop_screen" event, fired every time the home screen is drawn. It only
 // adds elements; Frappe's grid, its edit mode and its routes are untouched. Every quick action is
@@ -204,9 +205,30 @@
 		$box.trigger("click");
 	});
 
+	// ------------------------------------------------------------------ the owner
+	// The owner has no home screen (owner's request of 21 Oct 2026): she works from her dashboard, with the
+	// ImedERP sidebar and the assistant, and comes back to it from the logo or the home link. The Administrator
+	// (the developer) keeps the home screen.
+	const OWNER_ROLE = "Super Admin";
+	const is_owner = () =>
+		frappe.session.user !== "Administrator" &&
+		(frappe.user_roles || []).includes(OWNER_ROLE) &&
+		(frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard");
+
+	function send_owner_to_dashboard() {
+		if (!is_owner()) return false;
+		frappe.route_flags.replace_route = true;
+		frappe.set_route(frappe.router.slug("Owner Dashboard"));
+		return true;
+	}
+
 	$(document).on("desktop_screen", (e, args) => {
+		if (send_owner_to_dashboard()) return;
 		decorate(args && args.desktop && args.desktop.page ? args.desktop.page.body : document);
 	});
 	// In case the home screen was drawn before this file loaded.
-	$(() => decorate(document));
+	$(() => {
+		if ($(".desktop-wrapper:visible").length && send_owner_to_dashboard()) return;
+		decorate(document);
+	});
 })();
