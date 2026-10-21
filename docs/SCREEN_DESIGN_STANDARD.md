@@ -313,17 +313,13 @@ group starts **closed**, so the sidebar is eight short lines; a group opens with
 only the links they may read, so a branch manager sees their part only. A new screen goes in its activity's group; a
 screen that is set up once and rarely changed goes in Settings.
 
-## Worked example — the home screen's tiles (`imederp/home_screen.py`, `desktop_icon/imederp.json`)
+## Worked example — the home screen's tiles (`desktop_icon/imederp.json`, `imederp/home_screen.py`)
 
-The owner sees six tiles: Owner Dashboard, ImedERP (the group's own screens: bookings, libraries, doctors, the app,
-expenses), Accounting, Selling, Buying and Stock. ERPNext areas the group does not use (Manufacturing, Projects,
-Quality, Subcontracting, Assets; in Accounting: Taxes, Budget, Share Management, Subscription) are hidden for
-everyone, and the technical ones (Framework, ERPNext Settings, Organization) are shown to the Administrator only; the
-"new versions" pop-up is off. Nothing is deleted: hidden screens are still found by search. Applied after every
-migrate (an ERPNext update may bring its tiles back), straight to the database: saving a standard tile in developer
-mode would write it into ERPNext's own files. To show a hidden tile again, take it out of `HIDDEN` in
-`home_screen.py` and unhide it.
-
+ERPNext's own tiles are all shown, as ERPNext ships them (the owner asked on 21 Oct 2026 to hide the unused ones, then
+to bring them back the same day). The app adds one: **ImedERP**, the group's own screens (bookings, libraries,
+doctors, the app, expenses, financial reports), which had no tile before. The Owner Dashboard has no tile of its own:
+the owner lands on it after login, and it is the ImedERP tile's first link and a quick action on the home screen.
+The "new versions of Frappe / ERPNext" pop-up is off (System Settings).
 ## Worked example — the owner's landing page (Owner Dashboard, `setup/setup_dashboard.py`)
 
 The owner logs in to the Owner Dashboard (`User.default_workspace`, the page Frappe sends a user to after login),
