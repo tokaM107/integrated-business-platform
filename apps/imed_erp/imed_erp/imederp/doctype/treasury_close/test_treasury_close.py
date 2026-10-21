@@ -257,6 +257,9 @@ class IntegrationTestReopening(IntegrationTestCase):
 
 	def setUp(self):
 		frappe.db.savepoint("reopening")
+		from imed_erp.imederp.doctype.weekly_cash_reconciliation.test_weekly_cash_reconciliation import any_week
+
+		any_week()
 
 	def tearDown(self):
 		frappe.set_user("Administrator")

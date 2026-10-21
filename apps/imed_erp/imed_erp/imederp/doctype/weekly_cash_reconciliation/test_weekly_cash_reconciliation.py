@@ -31,6 +31,11 @@ def review_week(week_start, business=None, note=None, submit=True):
 	return doc.name
 
 
+def any_week():
+	"""Weeks of any seven days, whatever the site's Cash Close Settings say (rolled back with the test)."""
+	frappe.db.set_single_value("Cash Close Settings", {"week_starts_on": None, "week_ends_on": None})
+
+
 def closed(day, off_by, treasury=AZARITA_BOX, business=AZARITA):
 	doc = close(0, day, treasury, business)
 	doc.counted = doc.expected + off_by
@@ -46,6 +51,7 @@ class IntegrationTestWeeklyCashReconciliation(IntegrationTestCase):
 
 	def setUp(self):
 		frappe.db.savepoint("weekly")
+		any_week()
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
@@ -146,3 +152,19 @@ class IntegrationTestWeeklyCashReconciliation(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "starts on Saturday", review_week, add_days(saturday, 1), HALLS, submit=False)
 		week = frappe.get_doc("Weekly Cash Reconciliation", review_week(saturday, HALLS, submit=False))
 		self.assertEqual(getdate(week.week_end).strftime("%A"), "Friday")
+
+	def test_saturday_to_thursday_with_friday_off(self):
+		frappe.set_user("Administrator")
+		settings = frappe.get_single("Cash Close Settings")
+		settings.week_starts_on, settings.week_ends_on = "Saturday", "Thursday"
+		settings.save()
+		saturday = next(add_days(today(), -i) for i in range(7, 14) if getdate(add_days(today(), -i)).weekday() == 5)
+		friday = add_days(saturday, 6)
+		on_friday = closed(friday, 0)
+		week = frappe.get_doc("Weekly Cash Reconciliation", review_week(saturday, AZARITA, submit=False))
+		self.assertEqual(getdate(week.week_end).strftime("%A"), "Thursday")
+		# A close made on the Friday is still in its week; a Friday without one is not missing.
+		self.assertIn(on_friday.name, [row.treasury_close for row in week.items])
+		halls = frappe.get_doc("Weekly Cash Reconciliation", review_week(saturday, HALLS, submit=False))
+		self.assertNotIn(frappe.format_value(friday, {"fieldtype": "Date"}), halls.missing_days)
+		self.assertIn(frappe.format_value(add_days(saturday, 5), {"fieldtype": "Date"}), halls.missing_days)
