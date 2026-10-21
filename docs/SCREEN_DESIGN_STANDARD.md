@@ -281,3 +281,71 @@ ERPNext's own page, not a form, so `imed.screen.apply` does not apply; the same 
   event, so prices, accounts and checks stay ERPNext's (Scope: no business rules in the UI).
 - **Arabic / RTL:** labels from translations (`translations/ar.csv`); styles in `imed_theme.css` §20 use logical
   properties and theme tokens only; prices are isolated left-to-right (§7, §8).
+
+## Worked example — Booking (`imederp/doctype/booking`)
+
+A custom doctype used every day by branch staff (Nour, Gilan) who are not accountants. Goal: someone opening it for
+the first time knows what to do, without reading field descriptions.
+
+- **A card on top** (`summary_html`, drawn by `booking.js`, styles in `imed_theme.css` §21): on a new booking, the three
+  steps; on a saved one, the hall or service, day and time, its status in its colour, the price, extras, total, paid
+  and remaining as tiles (remaining amber while owed, green when paid), and **one line saying what to do next**. A
+  revenue-share hall booking adds what was collected and the two shares. Colours are Frappe's own status tokens
+  (`--bg-*`, `--text-on-*`), so they follow light and dark; amounts and times are isolated left to right (§7).
+- **The work first** (`booking.json` field order, §3): hall or service and customer → day and time → the hall's
+  details and model → package and extras → status and notes. The worked-out fields (price details), the money
+  (payments and accounts), the business and category, and the import source are in **collapsed sections** below.
+- **Actions as buttons** (§9, all secondary): Record Deposit / Record Payment, Mark Completed (once the booking has
+  started, with a confirmation saying what it posts), and under *More*: No Show, Cancel Booking (asks the reason).
+  Staff do not need to know which status comes after which; the status field stays for corrections.
+- **Plain help texts**: no requirement codes (HAL-03, STU-05...) under the fields; "Resource" is "Hall or Service".
+- **The list** (`booking_list.js`): each booking's status in the same colour as on its form and in the calendar.
+- **Arabic**: Frappe's own Arabic for *Package* (طَرد), *Amount* (كمية), *Completed* and *Cancelled* was wrong or
+  misspelt; `ar.csv` overrides them (الباقة، المبلغ، مكتمل، ملغي) for the whole site.
+- **Nothing on the server changed**: the price, the checks and the postings are as before (the booking tests pass).
+
+## Worked example — the ImedERP sidebar (`workspace_sidebar/imederp.json`)
+
+Grouped by **activity**, the way the owner and the branches think, not by module: Owner Dashboard and Bookings on
+top, then Libraries, Store and Stock, Doctors and Editions, BA+ App, Expenses and Cash, and **Settings** (resources,
+packages, extras, expense categories and settings, printing costs and machines, academic periods, fee tiers). Every
+group starts **closed**, so the sidebar is eight short lines; a group opens with one click. Frappe shows each user
+only the links they may read, so a branch manager sees their part only. A new screen goes in its activity's group; a
+screen that is set up once and rarely changed goes in Settings.
+
+## Worked example — the home screen's tiles (`desktop_icon/imederp.json`, `imederp/home_screen.py`)
+
+ERPNext's own tiles are all shown, as ERPNext ships them (the owner asked on 21 Oct 2026 to hide the unused ones, then
+to bring them back the same day). The app adds one: **ImedERP**, the group's own screens (bookings, libraries,
+doctors, the app, expenses, financial reports), which had no tile before. The Owner Dashboard has no tile of its own:
+the owner lands on it after login, and it is the ImedERP tile's first link and a quick action on the home screen.
+The "new versions of Frappe / ERPNext" pop-up is off (System Settings).
+## Worked example — the owner's landing page (Owner Dashboard, `setup/setup_dashboard.py`)
+
+The owner logs in to the Owner Dashboard (`User.default_workspace`, the page Frappe sends a user to after login),
+with the **ImedERP sidebar beside it**: every screen on the side, the money in the middle (owner, 21 Oct 2026).
+
+- **Middle, top to bottom:** what waits for the owner's approval; **the money** (cash in the cash boxes, revenue,
+  expenses and net this month, owed to us, we owe: `imederp/owner_figures.py`, from the ledger) and the cash in each
+  box (the *Cash Box Balances* report's chart); the bookings' figures; revenue by business, sales and stock value.
+- **Side:** the ImedERP sidebar. Frappe shows a workspace with the sidebar of its own name; the dashboard's own one
+  (made by Frappe when the dashboard was created) is removed after every migrate (`imederp/home_screen.py`), so the
+  sidebar that links to the dashboard, ImedERP, is shown. Its *Financial Reports* group has the reports that sidebar
+  had (profit per business, cash movements, who owes us, stock and paper) and the cash box balances.
+- The figures are the company's as a whole: only the owner and the accountant read them, checked on the server.
+- **No home screen** (owner, 21 Oct 2026): whoever opens the system lands on a page with the ImedERP sidebar, and the
+  logo, the home link or `/desk` take them back there (`imed_home.js`, `leave_home_screen`). Whoever may open the
+  Owner Dashboard (the owner, the Administrator) lands on it; everyone else on the first screen of the ImedERP sidebar
+  they may open (a branch manager: Bookings). A user with nothing in that sidebar (HR) keeps the home screen.
+- **The AI assistant on every page** (`imed_assistant.js`): its button and panel are fixed to the window and mounted
+  once on the page, not inside the home screen; shown only to the users the server allows (`assistant/api.py`).
+
+## Worked example — every page in the dashboard's look (`imed_theme.css` §22, §23)
+
+The Owner Dashboard (§22, with `imed_owner_dashboard.js`): a welcome band (date, greeting, what waits for approval),
+each money card with an icon and its meaning's colour (in green, out and due orange, we owe purple, counts cyan, a
+negative amount red), calm approvals (green when nothing waits). The other pages follow it (§23, all pages at once,
+no per-screen work): lists, reports (the chart in its own card) and workspace widgets are soft cards (18px corners,
+a light shadow); **each section of a form is its own card** on the canvas instead of one white page divided by
+hairlines; headings are bolder. Colours are Frappe's status tokens and the theme's, so light and dark both follow.
+A card drawn inside a form section (the booking's summary) loses its own frame: the section is the card.

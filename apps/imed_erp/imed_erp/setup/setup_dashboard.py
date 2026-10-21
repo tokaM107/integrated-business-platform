@@ -20,35 +20,27 @@ TEAL, TEAL_LIGHT, AMBER, SLATE = "#0f766e", "#1d9386", "#b7791f", "#48565f"
 # ---------------- Number Cards ----------------
 # full=1 shows the exact amount (EGP 92,437.50) instead of "92.44 K"; it also avoids Frappe showing
 # "EGP NaN" for a sum of zero (shorten_number(0) returns an empty string).
-cards = [
-    dict(label="Total Sales", doc="Sales Invoice",
-         func="Sum", field="grand_total", color=TEAL, full=1,
-         filters=[["Sales Invoice", "docstatus", "=", 1]]),
-    dict(label="Invoices Count", doc="Sales Invoice",
-         func="Count", field="", color=SLATE,
-         filters=[["Sales Invoice", "docstatus", "=", 1]]),
-    dict(label="Outstanding from Customers", doc="Sales Invoice",
-         func="Sum", field="outstanding_amount", color=AMBER, full=1,
-         filters=[["Sales Invoice", "docstatus", "=", 1]]),
-    # The library buys with one Purchase Invoice that updates stock (setup_buying.py), without a receipt.
-    dict(label="Total Purchases", doc="Purchase Invoice",
-         func="Sum", field="grand_total", color=SLATE, full=1,
-         filters=[["Purchase Invoice", "docstatus", "=", 1]]),
-    # A customer is never submitted (docstatus is always 0), so a disabled one is what is left out.
-    dict(label="Customers", doc="Customer",
-         func="Count", field="", color=SLATE,
-         filters=[["Customer", "disabled", "=", 0]]),
-    dict(label="Doctor Agreements", doc="Doctor Agreement",
-         func="Count", field="", color=SLATE,
-         filters=[["Doctor Agreement", "docstatus", "=", 1]]),
-    # The owner's own figures (5.1): the studio's bookings and hours and the halls' bookings. A booking is not
-    # submitted; a cancelled one or a no-show is left out.
+#
+# The owner's request of 21 Oct 2026: the sidebar has every screen, the dashboard the money. First the money,
+# worked out from the ledger (imederp/owner_figures.py, "Custom" cards), then the bookings' own figures.
+money_cards = [
+    dict(label="Cash in the Cash Boxes", method="cash_in_boxes", color=TEAL),
+    dict(label="Revenue This Month", method="revenue_this_month", color=TEAL),
+    dict(label="Expenses This Month", method="expenses_this_month", color=AMBER),
+    dict(label="Net This Month", method="net_this_month", color=TEAL),
+    dict(label="Owed to Us", method="owed_to_us", color=AMBER),
+    dict(label="We Owe", method="we_owe", color=SLATE),
+]
+# The owner's own figures (5.1): the studio's bookings and hours and the halls' bookings. A booking is not
+# submitted; a cancelled one or a no-show is left out.
+booking_cards = [
     dict(label="Studio Bookings", doc="Booking",
          func="Count", field="", color=TEAL,
          filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
                   ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
+    # Hours, not money: no currency, and the full number (a zero would otherwise show as NaN).
     dict(label="Studio Hours", doc="Booking",
-         func="Sum", field="hours", color=TEAL,
+         func="Sum", field="hours", color=TEAL, full=1, plain=1,
          filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
                   ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
     dict(label="Hall Bookings", doc="Booking",
@@ -59,26 +51,49 @@ cards = [
          func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
 ]
+cards = money_cards + booking_cards
+# Cards the dashboard showed before 21 Oct 2026: counts and all-time sums, not the owner's money.
+RETIRED_CARDS = ["Total Sales", "Invoices Count", "Outstanding from Customers", "Total Purchases", "Customers",
+                 "Doctor Agreements"]
+for label in RETIRED_CARDS:
+    if frappe.db.exists("Number Card", label):
+        frappe.delete_doc("Number Card", label, force=1)
+        print("removed card:", label)
 
 created_cards = []
 for c in cards:
     try:
         if frappe.db.exists("Number Card", c["label"]):
             frappe.delete_doc("Number Card", c["label"], force=1)
-        doc = frappe.get_doc({
+        values = {
             "doctype": "Number Card",
             "label": c["label"],
-            "type": "Document Type",
-            "document_type": c["doc"],
-            "function": c["func"],
-            "aggregate_function_based_on": c["field"],
-            "filters_json": frappe.as_json(c["filters"]),
             "is_public": 1,
-            "show_percentage_stats": 1,
-            "stats_time_interval": "Monthly",
             "color": c["color"],
             "show_full_number": c.get("full", 0),
-        }).insert()
+        }
+        if c.get("method"):
+            values.update({
+                "type": "Custom",
+                "method": f"imed_erp.imederp.owner_figures.{c['method']}",
+                "currency": frappe.get_cached_value("Company", COMPANY, "default_currency"),
+                "show_full_number": 1,
+                "show_percentage_stats": 0,
+            })
+        else:
+            values.update({
+                "type": "Document Type",
+                "document_type": c["doc"],
+                "function": c["func"],
+                "aggregate_function_based_on": c["field"],
+                "filters_json": frappe.as_json(c["filters"]),
+                "show_percentage_stats": 1,
+                "stats_time_interval": "Monthly",
+            })
+        doc = frappe.get_doc(values).insert()
+        if c.get("plain"):
+            # Frappe fills an empty currency with the user's default on insert.
+            frappe.db.set_value("Number Card", doc.name, "currency", None)
         c["real"] = doc.name
         created_cards.append(c)
         print("card:", doc.name)
@@ -90,14 +105,16 @@ frappe.db.commit()
 # ---------------- Charts ----------------
 # Only submitted sales: Frappe's charts count drafts too unless told otherwise.
 charts = [
-    dict(label="Sales Trend", doc="Sales Invoice",
-         based_on="posting_date", value_field="grand_total",
-         ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
-         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
+    # What is in each cash box now: the Cash Box Balances report's own chart.
+    dict(label="Cash by Cash Box", report="Cash Box Balances", ctype="Bar", color=TEAL),
     dict(label="Revenue by Business", doc="Sales Invoice Item",
          based_on="cost_center", value_field="base_net_amount",
          ctype="Bar", color=TEAL_LIGHT, timespan=None, time_interval=None,
          parent_doc="Sales Invoice", filters=[["Sales Invoice Item", "docstatus", "=", 1]]),
+    dict(label="Sales Trend", doc="Sales Invoice",
+         based_on="posting_date", value_field="grand_total",
+         ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
+         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
     dict(label="Stock Value by Warehouse", doc="Bin",
          based_on="warehouse", value_field="stock_value",
          ctype="Donut", color=TEAL, timespan=None, time_interval=None,
@@ -112,14 +129,16 @@ for ch in charts:
         d = {
             "doctype": "Dashboard Chart",
             "chart_name": ch["label"],
-            "document_type": ch["doc"],
             "type": ch["ctype"],
             "color": ch["color"],
             "is_public": 1,
-            "filters_json": frappe.as_json(ch.get("filters", [])),
         }
-        if ch["ctype"] in ("Bar", "Donut"):
+        if ch.get("report"):
+            d.update({"chart_type": "Report", "report_name": ch["report"], "use_report_chart": 1, "filters_json": "{}"})
+        elif ch["ctype"] in ("Bar", "Donut"):
             d.update({
+                "document_type": ch["doc"],
+                "filters_json": frappe.as_json(ch.get("filters", [])),
                 "chart_type": "Group By",
                 "group_by_type": "Sum",
                 "group_by_based_on": ch["based_on"],
@@ -128,6 +147,8 @@ for ch in charts:
             })
         else:
             d.update({
+                "document_type": ch["doc"],
+                "filters_json": frappe.as_json(ch.get("filters", [])),
                 "chart_type": "Sum",
                 "based_on": ch["based_on"],
                 "value_based_on": ch["value_field"],
@@ -148,8 +169,9 @@ frappe.db.commit()
 
 # ---------------- Shortcuts ----------------
 # The owner follows everything himself and mostly confirms (owner, 12 Oct 2026): what waits for him comes
-# first, with its count, then one click to every list of the staff's work, then the reports. The section
-# headers are written in Arabic (a workspace header is shown as written); the shortcut labels are translated.
+# first, with its count. Every list and report is in the sidebar (ImedERP; owner, 21 Oct 2026), so the
+# dashboard keeps only these. The section headers are written in Arabic (a workspace header is shown as
+# written); the shortcut labels are translated.
 def waiting(doctype, label, filters):
     return {
         "type": "DocType", "link_to": doctype, "label": label, "doc_view": "List", "color": "Orange",
@@ -164,41 +186,7 @@ approvals = [
     # DOC-22: a charge on a doctor is applied only once the owner or the accountant approves (submits) it.
     waiting("Doctor Ledger Entry", "Doctor Charges to Approve", [["approval_status", "=", "Pending Approval"], ["docstatus", "=", 0]]),
 ]
-follow_up = []
-for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
-                     ("Expense", "Expenses", "Orange"),
-                     ("Purchase Invoice", "Purchases", "Blue"),
-                     ("Stock Count", "Stock Counts", "Cyan"),
-                     ("Stock Entry", "Stock Movements", "Grey"),
-                     ("Material Request", "Branch Requests", "Grey"),
-                     ("Doctor Agreement", "Doctor Agreements", "Purple"),
-                     ("Book Edition", "Book Editions", "Purple"),
-                     ("Printer Reading", "Paper Counters", "Cyan"),
-                     ("Booking", "Bookings", "Blue"),
-                     ("App Subscription", "App Subscriptions", "Pink"),
-                     ("Version", "All Changes", "Grey")]:
-    if frappe.db.exists("DocType", dt):
-        follow_up.append({"type": "DocType", "link_to": dt, "label": lbl, "color": col, "doc_view": "List"})
-reports = [
-    {"type": "Report", "link_to": "Profit and Loss Statement", "label": "Profit per Business", "color": "Green", "doc_view": ""},
-    {"type": "Report", "link_to": "Stock Balance", "label": "Stock & Paper", "color": "Blue", "doc_view": ""},
-    {"type": "Report", "link_to": "General Ledger", "label": "Cash Movements", "color": "Grey", "doc_view": ""},
-    {"type": "Report", "link_to": "Accounts Receivable", "label": "Who Owes Us", "color": "Orange", "doc_view": ""},
-]
-for report, lbl, col in [
-    ("Daily Printing", "Daily Printing", "Cyan"),
-    ("Expense Report", "Expense Report", "Orange"),
-    ("Stock Count Variance", "Stock Count Variance", "Red"),
-    ("Doctor Statement", "Doctor Statement", "Purple"),
-    ("Doctor Debts", "Doctor Debts", "Red"),
-    ("Doctor Receivables", "Doctor Receivables", "Orange"),
-    ("Owner Share Plan vs Actual", "Owner Share Plan vs Actual", "Green"),
-    ("Inter Business Transfers", "Inter Business Transfers", "Grey"),
-    ("Platform Fees", "Platform Fees", "Pink"),
-]:
-    if frappe.db.exists("Report", report):
-        reports.append({"type": "Report", "link_to": report, "label": lbl, "color": col, "doc_view": ""})
-shortcuts = approvals + follow_up + reports
+shortcuts = approvals
 
 
 def header(text):
@@ -210,24 +198,29 @@ def spacer():
 
 
 # ---------------- Content layout ----------------
+# What waits for the owner, then the money, then the bookings, then the charts.
 content = header("محتاج موافقتك")
-content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 4}} for s in approvals]
+content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 6}} for s in approvals]
 
-content += spacer() + header("الأرقام")
+content += spacer() + header("الفلوس")
 for c in created_cards:
-    content.append({"type": "number_card", "data": {"number_card_name": c["real"], "col": 4}})
+    if c in money_cards:
+        content.append({"type": "number_card", "data": {"number_card_name": c["real"], "col": 4}})
+for ch in created_charts:
+    if ch.get("report"):
+        content.append({"type": "chart", "data": {"chart_name": ch["real"], "col": 12}})
 
-if created_charts:
-    content += spacer() + header("الرسوم")
-    for ch in created_charts:
+content += spacer() + header("الحجوزات")
+for c in created_cards:
+    if c in booking_cards:
+        content.append({"type": "number_card", "data": {"number_card_name": c["real"], "col": 3}})
+
+other_charts = [ch for ch in created_charts if not ch.get("report")]
+if other_charts:
+    content += spacer() + header("الإيرادات والمخزون")
+    for ch in other_charts:
         col = 12 if ch["ctype"] == "Line" else 6
         content.append({"type": "chart", "data": {"chart_name": ch["real"], "col": col}})
-
-content += spacer() + header("متابعة شغل الموظفين")
-content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 3}} for s in follow_up]
-
-content += spacer() + header("التقارير")
-content += [{"type": "shortcut", "data": {"shortcut_name": s["label"], "col": 3}} for s in reports]
 
 # ---------------- Workspace ----------------
 if frappe.db.exists("Workspace", "Owner Dashboard"):

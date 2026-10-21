@@ -608,6 +608,10 @@ capacities, equipment and prices are still blank in the requirements, so none is
 
 **Booking** (`imederp/doctype/booking`), by the hour (HAL-02, STU-01):
 
+The screen (docs/SCREEN_DESIGN_STANDARD.md, *Worked example — Booking*): a card on top with the three steps of a new
+booking, or a saved booking's total, paid, remaining and what to do next; the actions as buttons (Record Deposit,
+Mark Completed, No Show, Cancel Booking); the worked-out and technical fields in collapsed sections.
+
 | Field | Rule |
 |---|---|
 | Resource, Customer, Booking Date, From, To | Required. To after From, on the same day; Hours worked out. The customer is the one customer record (CRM-01). |

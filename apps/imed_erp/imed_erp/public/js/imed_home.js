@@ -1,4 +1,5 @@
-// IMED ERP home screen: a greeting band with today's date and quick actions, above Frappe's app grid.
+// IMED ERP home screen: a greeting band with today's date and quick actions, above Frappe's app grid. It is no
+// longer shown: whoever opens it is sent to a page with the ImedERP sidebar (leave_home_screen below).
 //
 // Hooks into Frappe's own "desktop_screen" event, fired every time the home screen is drawn. It only
 // adds elements; Frappe's grid, its edit mode and its routes are untouched. Every quick action is
@@ -13,8 +14,8 @@
 		{
 			label: () => t("Owner Dashboard", "لوحة المالك"),
 			icon: "layout-dashboard",
-			allowed: () =>
-				(frappe.boot.desktop_icons || []).some((i) => i.label === "Owner Dashboard" && !i.hidden),
+			// The workspaces the user may open (its tile is hidden: the dashboard opens with the ImedERP sidebar).
+			allowed: () => (frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard"),
 			go: () => frappe.set_route(frappe.router.slug("Owner Dashboard")),
 		},
 		{
@@ -204,9 +205,40 @@
 		$box.trigger("click");
 	});
 
+	// ------------------------------------------------------------------ no home screen
+	// There is no home screen (owner's request of 21 Oct 2026): whoever opens the system lands on a page with the
+	// ImedERP sidebar beside it, and comes back there from the logo or the home link. The owner (and whoever may
+	// open it) lands on the Owner Dashboard; everyone else on the first screen of the ImedERP sidebar they may open
+	// (Frappe sends each user only the links they may read). A user with nothing in that sidebar keeps the home
+	// screen, rather than land nowhere.
+	function landing_route() {
+		if ((frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard")) {
+			return frappe.utils.generate_route({ type: "workspace", name: "Owner Dashboard", public: 1 });
+		}
+		const items = frappe.boot.workspace_sidebar_item?.imederp?.items || [];
+		const first = items.find((i) => i.type === "Link" && i.link_to && ["DocType", "Workspace"].includes(i.link_type));
+		if (!first) return null;
+		return first.link_type === "Workspace"
+			? frappe.utils.generate_route({ type: "workspace", name: first.link_to, public: 1 })
+			: frappe.utils.generate_route({ type: "doctype", name: first.link_to, doc_view: "List" });
+	}
+
+	function leave_home_screen() {
+		const route = landing_route();
+		if (!route) return false;
+		frappe.route_flags.replace_route = true;
+		// generate_route gives "/desk/owner-dashboard"; set_route takes the part after /desk/.
+		frappe.set_route(route.replace(/^\/desk\//, ""));
+		return true;
+	}
+
 	$(document).on("desktop_screen", (e, args) => {
+		if (leave_home_screen()) return;
 		decorate(args && args.desktop && args.desktop.page ? args.desktop.page.body : document);
 	});
 	// In case the home screen was drawn before this file loaded.
-	$(() => decorate(document));
+	$(() => {
+		if ($(".desktop-wrapper:visible").length && leave_home_screen()) return;
+		decorate(document);
+	});
 })();

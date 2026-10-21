@@ -1,3 +1,5 @@
+import os
+
 app_name = "imed_erp"
 app_title = "ImedERP"
 app_publisher = "toka mohamed"
@@ -26,20 +28,35 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # IMED ERP theme: plain CSS (no build step), served from imed_erp/public at /assets/imed_erp.
+
+
+def asset(path):
+	"""/assets/imed_erp/<path>?v=<when the file last changed>. These files are not built (no hash in their name)
+	and are sent with no caching rule, so a browser kept its old copy after a change (21 Oct 2026: the owner saw
+	the old home screen). A new address after each change makes every browser fetch it again."""
+	try:
+		version = int(os.path.getmtime(os.path.join(os.path.dirname(__file__), "public", path)))
+	except OSError:
+		version = 0
+	return f"/assets/imed_erp/{path}?v={version}"
+
+
 app_include_css = [
-	"/assets/imed_erp/css/imed_fonts.css",
-	"/assets/imed_erp/css/imed_theme.css",
-	"/assets/imed_erp/css/imed_assistant.css",
+	asset("css/imed_fonts.css"),
+	asset("css/imed_theme.css"),
+	asset("css/imed_assistant.css"),
 ]
 # Home screen: greeting band and quick actions; the AI assistant character + chat panel; a light/dark
 # switch next to the notifications
 # (all only add elements, see the files).
 app_include_js = [
 	# Reusable screen design standard (imed.screen.apply); loaded first so doctype scripts can use it.
-	"/assets/imed_erp/js/imed_form_standard.js",
-	"/assets/imed_erp/js/imed_home.js",
-	"/assets/imed_erp/js/imed_assistant.js",
-	"/assets/imed_erp/js/imed_theme_toggle.js",
+	asset("js/imed_form_standard.js"),
+	asset("js/imed_home.js"),
+	asset("js/imed_assistant.js"),
+	# The Owner Dashboard's welcome band, card icons and colours.
+	asset("js/imed_owner_dashboard.js"),
+	asset("js/imed_theme_toggle.js"),
 ]
 
 # include js, css files in header of web template (the theme there only touches the login page)
@@ -418,6 +435,8 @@ after_migrate = [
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
+	# The home screen's tiles: what the group uses (imederp/home_screen.py).
+	"imed_erp.imederp.home_screen.tidy_home",
 ]
 
 # Scheduled Tasks

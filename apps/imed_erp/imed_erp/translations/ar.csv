@@ -687,7 +687,7 @@ Booking Resource,مورد حجز
 Booking Resources,موارد الحجز
 Resource,المورد
 Resource Name,اسم المورد
-Resource Type,نوع المورد
+Resource Type,النوع (قاعة أو خدمة)
 Hall,قاعة
 Studio Service,خدمة استوديو
 Business (Cost Center),النشاط (مركز التكلفة)
@@ -1048,4 +1048,86 @@ Pieces,عدد القطع
 The price when the booking was priced: a later change of the price list does not change it.,السعر وقت ما الحجز اتسعّر: تغيير قائمة الأسعار بعد كده مش بيغيّره.
 Booking Packages,باقات الحجز
 Booking Extras,الخدمات الإضافية للحجز
+"Choose the hall or service, and the customer.",اختار القاعة أو الخدمة، والعميل.
+"Set the day and the time. A hall also needs its activity, the person responsible and the rental model.",حدد اليوم والوقت. القاعة كمان محتاجة النشاط، والمسؤول، ونموذج التأجير.
+"Add a package or extras if there are any, then Save: the price is worked out by itself.",ضيف باقة أو خدمات إضافية لو فيه، وبعدين احفظ: السعر بيتحسب لوحده.
+New booking in three steps,حجز جديد في 3 خطوات
+Rent,الإيجار
+None: revenue share,مفيش: اقتسام إيراد
+Lecturer's Share ({0}%),نصيب المحاضر ({0}%)
+% not set yet,النسبة لسه ما اتحددتش
+Collected from the attendees,المحصَّل من الحاضرين
+Expected,المتوقع
 Collected,المحصَّل
+"Next: when the booking is over, press Mark Completed. A hall takes no deposit; it is paid after that.",الخطوة الجاية: لما الحجز يخلص اضغط «تم الحجز». القاعة مافيهاش عربون؛ بتتدفع بعدها.
+Next: record the customer's deposit (Record Deposit) to confirm the booking.,الخطوة الجاية: سجّل عربون العميل («تسجيل عربون») عشان الحجز يتأكد.
+"Confirmed. Next: when the booking is over, press Mark Completed: its invoice is made and the deposit taken off it.",الحجز متأكد. الخطوة الجاية: لما الحجز يخلص اضغط «تم الحجز»: الفاتورة بتتعمل والعربون بيتخصم منها.
+"Completed, but its invoice was cancelled: press Make Invoice.",الحجز تم، بس فاتورته اتلغت: اضغط «عمل الفاتورة».
+Completed. {0} is still to be paid: press Record Payment.,الحجز تم. لسه فاضل {0}: اضغط «تسجيل دفعة».
+Completed and paid in full.,الحجز تم واتدفع بالكامل.
+Cancelled: {0},اتلغى: {0}
+The deposit of {0} stays with the customer until the accountant pays it back.,العربون ({0}) بيفضل رصيد للعميل لحد ما المحاسب يرجّعه.
+The customer did not come.,العميل ما جاش.
+Mark Completed,تم الحجز
+More,المزيد
+Cancel Booking,إلغاء الحجز
+"The amount collected ({0}) goes into the cash box and is shared with the lecturer. Make sure the attendees, the collected amount and the lecturer's share are right.",المبلغ المحصَّل ({0}) هيدخل الخزينة ويتقسم مع المحاضر. اتأكد إن عدد الحاضرين والمحصَّل ونسبة المحاضر صح.
+"The booking's invoice of {0} is made, and its deposit taken off it.",هتتعمل فاتورة الحجز بـ {0}، والعربون هيتخصم منها.
+Mark this booking completed?,تأكيد إن الحجز تم؟
+Why is it cancelled?,سبب الإلغاء إيه؟
+Summary,الملخص
+Hall or Service,القاعة أو الخدمة
+"The hall, or the studio's service.",القاعة، أو خدمة الاستوديو.
+Find them by name or phone.,دوّر عليه بالاسم أو التليفون.
+Hall Details,بيانات القاعة
+Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the attendees and shares it with the lecturer.,إيجار ثابت: المحاضر بيدفع سعر القاعة. اقتسام إيراد: السنتر بيحصّل من الحاضرين وبيقسم مع المحاضر.
+"The lecture, course or event.",المحاضرة أو الكورس أو الفعالية.
+What each attendee pays.,اللي بيدفعه كل حاضر.
+Attendees × admission price.,عدد الحاضرين × سعر الدخول.
+What was actually collected: this is what is shared.,اللي اتحصّل فعلاً: وده اللي بيتقسم.
+Agreed for this booking. Needed to complete it.,متفق عليها في الحجز ده. لازمة عشان الحجز يتم.
+"The lecturer as a supplier, to be paid their share.",المحاضر كمورد، عشان ياخد نصيبه.
+Package and Extras,الباقة والخدمات الإضافية
+Leave empty to price by the hour.,سيبها فاضية عشان يتحسب بالساعة.
+"Microphones, lights... with how many pieces.",ميكروفونات، إضاءة... وعدد القطع.
+Status and Notes,الحالة والملاحظات
+"Changed with the buttons on top: Record Deposit, Mark Completed, Cancel Booking.",بتتغير من الزراير اللي فوق: تسجيل عربون، تم الحجز، إلغاء الحجز.
+Price Details,تفاصيل السعر
+Worked out when the booking is saved; the prices are kept on it.,بيتحسب لما الحجز يتحفظ؛ والأسعار بتفضل محفوظة عليه.
+Payments and Accounts,المدفوعات والحسابات
+Amount Paid is the deposits and payments recorded on the booking. An imported booking keeps the booking system's amounts.,المدفوع هو العرابين والدفعات المسجلة على الحجز. الحجز المستورد بيفضل بمبالغ نظام الحجز.
+Where this business's payments go.,الخزينة اللي مدفوعات النشاط ده بتدخلها.
+More Details,تفاصيل أكتر
+Some categories have their own prices.,بعض الفئات ليها أسعار خاصة.
+Import Key,مفتاح الاستيراد
+Source System and External ID together: an imported booking is recorded once.,اسم النظام ورقم الحجز فيه مع بعض: الحجز المستورد بيتسجل مرة واحدة بس.
+"Once: the package's price is the booking's price, for a booking up to its hours (hours of smart board at a special price). Per Hour: its price times the booking's hours (a podcast with two cameras).",مرة واحدة: سعر الباقة هو سعر الحجز، لحجز لحد ساعاتها (ساعات سمارت بورد بسعر خاص). بالساعة: سعرها × ساعات الحجز (بودكاست بكاميرتين).
+"Per Piece per Hour: its price times the pieces times the booking's hours (a microphone or lights, 50 a piece an hour). Per Piece: its price times the pieces.",للقطعة في الساعة: سعرها × عدد القطع × ساعات الحجز (مايك أو إضاءة، 50 للقطعة في الساعة). للقطعة: سعرها × عدد القطع.
+"Which bookings may add it: the studio's, the halls', or both.",الحجوزات اللي ممكن تضيفها: الاستوديو، أو القاعات، أو الاتنين.
+Package,الباقة
+Amount,المبلغ
+Completed,مكتمل
+Cancelled,ملغي
+Libraries,المكتبات
+Store and Stock,المخزن
+BA+ App,تطبيق BA Plus
+Expenses and Cash,المصروفات والخزن
+Settings,الإعدادات
+Reorder Alerts,تنبيهات إعادة الطلب
+Financial Reports,التقارير المالية
+Cash Box Balances,رصيد كل خزينة
+Cash in the Cash Boxes,الفلوس في الخزن
+Revenue This Month,إيرادات الشهر
+Expenses This Month,مصروفات الشهر
+Net This Month,صافي الشهر
+Owed to Us,المستحق لنا
+We Owe,المستحق علينا
+Cash by Cash Box,الفلوس في كل خزينة
+Only the owner and the accountant see the company's figures.,أرقام الشركة بيشوفها المالك والمحاسب بس.
+Good morning,صباح الخير
+Good afternoon,مساء الخير
+Good evening,مساء الخير
+"{0}, {1}","{0}، {1}"
+{0} waiting for your approval.,{0} مستني موافقتك.
+Nothing waits for your approval. Here is where the money stands.,مفيش حاجة مستنية موافقتك. ودي حالة الفلوس دلوقتي.
+ID,الرقم

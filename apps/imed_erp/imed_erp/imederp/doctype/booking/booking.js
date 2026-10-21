@@ -2,7 +2,23 @@
 // For license information, please see license.txt
 
 // Booking (HAL-02, STU-01, STU-08). The checks, the price and the money are on the server (booking.py,
-// booking_pricing.py, booking_accounts.py); this only helps the screen.
+// booking_pricing.py, booking_accounts.py); this only helps the screen (docs/SCREEN_DESIGN_STANDARD.md):
+//   - a card on top: on a new booking, the three steps; on a saved one, its total, paid and remaining, its status
+//     and what to do next;
+//   - the actions as buttons (Record Deposit, Mark Completed, No Show, Cancel Booking), so nobody has to know
+//     which status comes after which;
+//   - the worked-out and technical fields stay in the collapsed sections below (booking.json).
+
+// The calendar's colours (booking_calendar.js), so a status looks the same everywhere.
+const BOOKING_STATUS_COLORS = {
+	Tentative: "orange",
+	"Confirmed with Deposit": "green",
+	Completed: "blue",
+	Cancelled: "gray",
+	"No Show": "gray",
+};
+const BOOKING_OPEN = ["Tentative", "Confirmed with Deposit"];
+
 frappe.ui.form.on("Booking", {
 	setup(frm) {
 		frm.set_query("resource", () => ({ filters: { disabled: 0 } }));
@@ -17,7 +33,8 @@ frappe.ui.form.on("Booking", {
 	},
 
 	refresh(frm) {
-		imed.screen.apply(frm, { collapse_on_new: ["source_section"] });
+		imed.screen.apply(frm, {});
+		show_card(frm);
 		if (frm.doc.source === "Imported") {
 			// Changed only in the booking system it came from (INT-01); the server refuses a change here.
 			frm.set_intro(
@@ -29,7 +46,6 @@ frappe.ui.form.on("Booking", {
 			frm.disable_form();
 			return;
 		}
-		show_amounts(frm);
 		add_buttons(frm);
 	},
 
@@ -58,43 +74,179 @@ function set_shares(frm) {
 	frm.set_value("center_share", flt(frm.doc.collected_amount) - lecturer);
 }
 
-function show_amounts(frm) {
-	if (frm.is_new()) return;
-	// One line, drawn again on every refresh (indicators would pile up).
-	const money = (value) => format_currency(value, frappe.defaults.get_default("currency"));
-	const owed = flt(frm.doc.outstanding_amount) > 0;
-	frm.dashboard.clear_headline();
-	frm.dashboard.set_headline_alert(
-		[
-			__("Total {0}", [money(frm.doc.total_amount)]),
-			__("Paid {0}", [money(frm.doc.paid_amount)]),
-			__("Remaining {0}", [money(frm.doc.outstanding_amount)]),
-		].join(" · "),
-		owed ? "orange" : "green"
-	);
+// ---------- The card on top ----------
+
+const esc = (value) => frappe.utils.escape_html(value == null ? "" : String(value));
+const money = (value) => format_currency(flt(value), frappe.defaults.get_default("currency"));
+
+function show_card(frm) {
+	const field = frm.fields_dict.summary_html;
+	if (!field) return;
+	field.$wrapper.html(frm.is_new() ? steps_html() : card_html(frm));
 }
+
+function steps_html() {
+	const steps = [
+		__("Choose the hall or service, and the customer."),
+		__("Set the day and the time. A hall also needs its activity, the person responsible and the rental model."),
+		__("Add a package or extras if there are any, then Save: the price is worked out by itself."),
+	];
+	return `<div class="imed-booking-card imed-booking-steps">
+		<div class="imed-booking-title">${esc(__("New booking in three steps"))}</div>
+		<ol>${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>
+	</div>`;
+}
+
+function card_html(frm) {
+	const doc = frm.doc;
+	const color = BOOKING_STATUS_COLORS[doc.status] || "gray";
+	const when = [
+		doc.booking_date ? frappe.datetime.str_to_user(doc.booking_date) : "",
+		doc.from_time && doc.to_time ? `${doc.from_time.slice(0, 5)} – ${doc.to_time.slice(0, 5)}` : "",
+	]
+		.filter(Boolean)
+		.join(" · ");
+	const share = doc.rental_model === "Revenue Share";
+	const tile = (label, value, kind = "") =>
+		`<div class="imed-booking-tile ${kind}"><div class="imed-booking-tile-label">${esc(label)}</div>
+		<div class="imed-booking-tile-value">${esc(value)}</div></div>`;
+
+	const tiles = [
+		share ? tile(__("Rent"), __("None: revenue share")) : tile(__("Booking Price"), money(doc.base_amount)),
+		tile(__("Extras"), money(doc.extras_amount)),
+		tile(__("Total"), money(doc.total_amount), "is-total"),
+		tile(__("Paid"), money(doc.paid_amount)),
+		tile(
+			__("Remaining"),
+			money(doc.outstanding_amount),
+			flt(doc.outstanding_amount) > 0 ? "is-due" : "is-done"
+		),
+	];
+	if (doc.source === "Imported") {
+		// The booking system's amounts: only the total, paid and remaining mean something here.
+		tiles.splice(0, 2);
+	}
+
+	let shares = "";
+	if (share) {
+		const percent = flt(doc.lecturer_share_percent)
+			? tile(__("Lecturer's Share ({0}%)", [flt(doc.lecturer_share_percent)]), money(doc.lecturer_share))
+			: tile(__("Lecturer's Share"), __("% not set yet"), "is-due");
+		shares = `<div class="imed-booking-subtitle">${esc(__("Collected from the attendees"))}</div>
+		<div class="imed-booking-tiles">
+			${tile(__("Expected"), money(doc.expected_revenue))}
+			${tile(__("Collected"), money(doc.collected_amount), "is-total")}
+			${percent}
+			${tile(__("Center's Share"), money(doc.center_share))}
+		</div>`;
+	}
+
+	return `<div class="imed-booking-card">
+		<div class="imed-booking-head">
+			<span class="indicator-pill ${color}">${esc(__(doc.status))}</span>
+			<span class="imed-booking-what">${esc(doc.resource || "")}</span>
+			<span class="imed-booking-when">${esc(when)}</span>
+		</div>
+		<div class="imed-booking-tiles">${tiles.join("")}</div>
+		${shares}
+		${next_step_html(frm)}
+	</div>`;
+}
+
+function next_step_html(frm) {
+	const doc = frm.doc;
+	if (doc.source === "Imported") return "";
+	const hall = doc.resource_type === "Hall";
+	const link = (doctype, name) =>
+		name && frappe.model.can_read(doctype)
+			? ` <a href="/desk/${frappe.router.slug(doctype)}/${encodeURIComponent(name)}">${esc(name)}</a>`
+			: "";
+	let text, kind;
+	if (doc.status === "Tentative") {
+		kind = "is-todo";
+		text = hall
+			? __("Next: when the booking is over, press Mark Completed. A hall takes no deposit; it is paid after that.")
+			: __("Next: record the customer's deposit (Record Deposit) to confirm the booking.");
+	} else if (doc.status === "Confirmed with Deposit") {
+		kind = "is-todo";
+		text = __("Confirmed. Next: when the booking is over, press Mark Completed: its invoice is made and the deposit taken off it.");
+	} else if (doc.status === "Completed") {
+		if (!doc.sales_invoice && flt(doc.total_amount) > 0) {
+			kind = "is-due";
+			text = __("Completed, but its invoice was cancelled: press Make Invoice.");
+		} else if (flt(doc.outstanding_amount) > 0) {
+			kind = "is-due";
+			text = __("Completed. {0} is still to be paid: press Record Payment.", [money(doc.outstanding_amount)]);
+		} else {
+			kind = "is-done";
+			text = __("Completed and paid in full.");
+		}
+	} else if (doc.status === "Cancelled") {
+		kind = "is-off";
+		text = __("Cancelled: {0}", [doc.cancellation_reason || ""]);
+		if (flt(doc.paid_amount) > 0) {
+			text += " " + __("The deposit of {0} stays with the customer until the accountant pays it back.", [money(doc.paid_amount)]);
+		}
+	} else {
+		kind = "is-off";
+		text = __("The customer did not come.");
+	}
+	const documents = link("Sales Invoice", doc.sales_invoice) + link("Journal Entry", doc.journal_entry);
+	return `<div class="imed-booking-next ${kind}">${esc(text)}${documents}</div>`;
+}
+
+// ---------- The actions ----------
 
 function add_buttons(frm) {
 	if (frm.is_new() || frm.is_dirty() || !frm.perm[0].write) return;
-	const open = !["Cancelled", "No Show"].includes(frm.doc.status);
+	const doc = frm.doc;
+	const open = BOOKING_OPEN.includes(doc.status);
+	const started = doc.booking_date && doc.from_time && frappe.datetime.str_to_obj(`${doc.booking_date} ${doc.from_time}`) <= new Date();
+
 	// A hall takes no deposit: it is paid once its invoice is made.
-	const can_pay = frm.doc.resource_type !== "Hall" || frm.doc.sales_invoice;
-	if (open && can_pay && flt(frm.doc.outstanding_amount) > 0) {
-		frm.add_custom_button(
-			frm.doc.sales_invoice ? __("Record Payment") : __("Record Deposit"),
-			() => record_payment(frm)
-		);
+	const can_pay = doc.resource_type !== "Hall" || doc.sales_invoice;
+	if (!["Cancelled", "No Show"].includes(doc.status) && can_pay && flt(doc.outstanding_amount) > 0) {
+		frm.add_custom_button(doc.sales_invoice ? __("Record Payment") : __("Record Deposit"), () => record_payment(frm));
 	}
-	if (frm.doc.status === "Completed" && !frm.doc.sales_invoice && flt(frm.doc.total_amount) > 0) {
+	if (open && started) {
+		frm.add_custom_button(__("Mark Completed"), () => mark_completed(frm));
+		frm.add_custom_button(__("No Show"), () => set_status(frm, "No Show"), __("More"));
+	}
+	if (open) {
+		frm.add_custom_button(__("Cancel Booking"), () => cancel_booking(frm), __("More"));
+	}
+	if (doc.status === "Completed" && !doc.sales_invoice && flt(doc.total_amount) > 0) {
 		frm.add_custom_button(__("Make Invoice"), () =>
 			frappe.call({
 				method: "imed_erp.imederp.booking_accounts.make_booking_invoice",
-				args: { booking: frm.doc.name },
+				args: { booking: doc.name },
 				freeze: true,
 				callback: () => frm.reload_doc(),
 			})
 		);
 	}
+}
+
+function set_status(frm, status, values = {}) {
+	frm.set_value({ status, ...values }).then(() => frm.save());
+}
+
+function mark_completed(frm) {
+	const doc = frm.doc;
+	const message =
+		doc.rental_model === "Revenue Share"
+			? __("The amount collected ({0}) goes into the cash box and is shared with the lecturer. Make sure the attendees, the collected amount and the lecturer's share are right.", [money(doc.collected_amount)])
+			: __("The booking's invoice of {0} is made, and its deposit taken off it.", [money(doc.total_amount)]);
+	frappe.confirm(`${esc(__("Mark this booking completed?"))}<br><br>${esc(message)}`, () => set_status(frm, "Completed"));
+}
+
+function cancel_booking(frm) {
+	frappe.prompt(
+		[{ fieldname: "reason", fieldtype: "Small Text", label: __("Why is it cancelled?"), reqd: 1 }],
+		(values) => set_status(frm, "Cancelled", { cancellation_reason: values.reason }),
+		__("Cancel Booking"),
+		__("Cancel Booking")
+	);
 }
 
 function record_payment(frm) {
