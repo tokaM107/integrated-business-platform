@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, get_datetime, getdate, today
+from frappe.utils import cint, get_datetime, getdate
 
 from imed_erp.imederp.doctype.printing_machine.printing_machine import check_library
 
@@ -20,9 +20,6 @@ class PrinterReading(Document):
         # The library is the machine's, never typed.
         self.branch = machine.cost_center
         check_library(self.branch)
-        # QA-24: a counter is read when it is there to read.
-        if getdate(self.reading_date) > getdate(today()):
-            frappe.throw(_("A counter reading cannot be dated after today."), title=_("Date in the Future"))
         self.check_who_reads()
         self.check_one_a_day()
         self.set_opening()

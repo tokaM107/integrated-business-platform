@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate, now_datetime, today
+from frappe.utils import flt, now_datetime, today
 
 from imed_erp.imederp.treasuries import check_treasury
 
@@ -29,9 +29,6 @@ class InterBusinessTransfer(Document):
     def validate_amount(self):
         if flt(self.amount) <= 0:
             frappe.throw(_("Amount must be greater than zero, got {0}.").format(self.amount))
-        # QA-24: money is sent when it leaves the box.
-        if self.posting_date and getdate(self.posting_date) > getdate(today()):
-            frappe.throw(_("A transfer cannot be dated after today."), title=_("Date in the Future"))
 
     def validate_businesses(self):
         if self.from_business == self.to_business:

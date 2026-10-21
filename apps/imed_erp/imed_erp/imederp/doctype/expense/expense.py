@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_months, flt, format_datetime, getdate, now_datetime, nowdate
+from frappe.utils import add_months, flt, format_datetime, getdate, now_datetime
 
 from imed_erp.imederp.doctype.expense_category.expense_category import get_expense_account
 from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
@@ -55,11 +55,6 @@ class Expense(Document):
     def validate_amount(self):
         if flt(self.amount) <= 0:
             frappe.throw(_("Amount must be greater than zero, got {0}.").format(self.amount))
-        # QA-24: money is paid out when it is paid; a monthly bill's draft is dated its day, which is never ahead.
-        # The owner and the accountant may date one ahead (rent paid in advance for next month).
-        ahead = self.posting_date and getdate(self.posting_date) > getdate(nowdate())
-        if ahead and not {"Accounts Manager", "System Manager"} & set(frappe.get_roles()):
-            frappe.throw(_("An expense cannot be dated after today."), title=_("Date in the Future"))
 
     def validate_activity(self):
         # Expenses are charged to one business; group cost centers cannot hold transactions.
