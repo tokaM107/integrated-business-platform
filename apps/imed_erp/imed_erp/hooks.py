@@ -190,6 +190,10 @@ page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
 # branch's (imederp/stock_count.py).
 doc_events = {
+	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).
+	"*": {
+		"validate": "imed_erp.imederp.dates.refuse_future_date",
+	},
 	"Journal Entry": {
 		"validate": [
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",

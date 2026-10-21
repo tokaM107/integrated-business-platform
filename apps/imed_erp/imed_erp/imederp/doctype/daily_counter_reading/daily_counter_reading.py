@@ -9,7 +9,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, flt, getdate, today
+from frappe.utils import cint, flt, getdate
 
 from imed_erp.imederp.doctype.book_edition.book_edition import get_paper_cost
 from imed_erp.imederp.doctype.printer_reading.printer_reading import last_reading
@@ -62,9 +62,6 @@ class DailyCounterReading(Document):
 		self.update(margin(self.branch, self.reading_date, self.sold_sheets, self.cost_per_sheet))
 
 	def check_one_a_day(self):
-		# QA-24: the counters are read when they are there to read.
-		if getdate(self.reading_date) > getdate(today()):
-			frappe.throw(_("A counter reading cannot be dated after today."), title=_("Date in the Future"))
 		# QA-26: the library is locked first, so two screens of the same day saved at once wait for each other and
 		# the second sees the first.
 		frappe.db.get_value("Cost Center", self.branch, "name", for_update=True)
