@@ -2028,6 +2028,99 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 	background: transparent;
 }
 
+/* ------------------------------------------------------------------ */
+/* 24. List pages: the filter bar as a toolbar card, a friendly empty  */
+/* ------------------------------------------------------------------ */
+/* The owner's note of 21 Oct 2026 on the empty bookings list ("it looks the same"): §23 framed the list, but the
+   filters above it and the "nothing yet" message were still Frappe's plain grey. The filters now sit in one soft
+   card like the list below them, and an empty list shows a large tinted icon, a clear sentence and a real button. */
+.layout-main-section-wrapper .page-form {
+	margin: 0 0 14px;
+	padding: 10px 12px;
+	border: 1px solid var(--imed-border);
+	border-radius: var(--imed-card-radius);
+	background: var(--fg-color);
+	box-shadow: var(--imed-card-shadow);
+}
+/* Same width as the list card below it (Frappe gives the list 15px on each side). */
+.layout-main-list > .page-form {
+	margin-inline: 15px;
+}
+.layout-main-section-wrapper .page-form .form-control,
+.layout-main-section-wrapper .page-form .filter-button,
+.layout-main-section-wrapper .page-form .sort-selector .btn {
+	border-radius: 10px;
+}
+.layout-main-section-wrapper .page-form .filter-x-button {
+	border-radius: 0 10px 10px 0;
+}
+[dir="rtl"] .layout-main-section-wrapper .page-form .filter-x-button {
+	border-radius: 10px 0 0 10px;
+}
+
+/* The empty list */
+.frappe-list .no-result {
+	min-height: 420px;
+	background:
+		radial-gradient(circle at 50% 38%, var(--imed-teal-50) 0, transparent 260px),
+		var(--fg-color);
+}
+.frappe-list .no-result .msg-box {
+	max-width: 440px;
+	padding: 24px;
+	text-align: center;
+}
+.frappe-list .no-result .msg-box > .mb-4 {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 88px;
+	height: 88px;
+	margin-bottom: 20px !important;
+	border-radius: 50%;
+	background: var(--imed-teal-100);
+	box-shadow: 0 0 0 10px var(--imed-teal-50);
+}
+.frappe-list .no-result .msg-box > .mb-4 .icon {
+	width: 40px;
+	height: 40px;
+	stroke: var(--imed-teal-600) !important;
+}
+.frappe-list .no-result .msg-box p:first-of-type {
+	color: var(--heading-color);
+	font-size: 17px;
+	font-weight: 600;
+	line-height: 1.6;
+}
+.frappe-list .no-result .btn-new-doc.btn-default {
+	margin-top: 6px;
+	padding: 9px 22px;
+	border: 0;
+	border-radius: 999px;
+	background: var(--imed-teal-600);
+	color: #fff;
+	font-size: 14px;
+	font-weight: 600;
+	box-shadow: 0 8px 18px -10px var(--imed-teal-600);
+	transition: transform 0.18s ease, background 0.18s ease;
+}
+.frappe-list .no-result .btn-new-doc.btn-default:hover {
+	background: var(--imed-teal-700);
+	transform: translateY(-1px);
+}
+[data-theme="dark"] .frappe-list .no-result {
+	background:
+		radial-gradient(circle at 50% 38%, rgba(64, 174, 161, 0.1) 0, transparent 260px),
+		var(--fg-color);
+}
+[data-theme="dark"] .frappe-list .no-result .msg-box > .mb-4 {
+	background: rgba(64, 174, 161, 0.18);
+	box-shadow: 0 0 0 10px rgba(64, 174, 161, 0.07);
+}
+[data-theme="dark"] .frappe-list .no-result .msg-box > .mb-4 .icon {
+	stroke: var(--imed-teal-300) !important;
+}
+
 @media (max-width: 767.98px) {
 	.std-form-layout .form-section.card-section {
 		padding: 14px;
