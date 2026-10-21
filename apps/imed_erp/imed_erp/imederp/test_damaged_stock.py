@@ -13,6 +13,7 @@ from frappe.utils import flt, nowdate
 
 from imed_erp.imederp import damaged_stock
 from imed_erp.imederp.damaged_stock import SCRAP_BUYER
+from imed_erp.imederp.testing import fund_cash_boxes
 
 COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
@@ -77,6 +78,12 @@ def receive(item, quantity, warehouse, rate):
 
 
 class IntegrationTestDamagedStock(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# A sale by weight cancelled takes its cash back out of the box (cash_balance.py): the box holds it first.
+		fund_cash_boxes()
+
 	def setUp(self):
 		frappe.set_user("Administrator")
 		frappe.db.savepoint("damaged_stock_test")

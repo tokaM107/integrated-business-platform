@@ -15,6 +15,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
 from imed_erp.imederp.sales_cancellation import REASON_FIELD, cancel_with_reason
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # A test module outside a doctype folder builds no "_Test ..." records; keep it here, not under a doctype.
 COMPANY = "Mohamed Mamdouh group"
@@ -33,6 +34,8 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		# Cancelling a cash sale takes its cash back out of the box (cash_balance.py): the box holds it first.
+		fund_cash_boxes()
 		cls.customer = frappe.get_doc(
 			{
 				"doctype": "Customer",
