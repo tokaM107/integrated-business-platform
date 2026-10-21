@@ -1031,31 +1031,33 @@ figures and in words (`فقط ألف و مئتان و خمسون جنيه مصر
 accountant's signatures. Arabic when printed in Arabic, like the invoice. A simple version; the final design comes
 in week C. Any other ledger entry prints the same way under the title حركة حساب طبيب.
 
-**The doctor's unsold copies** (DOC-18, DOC-22) are charged to him when the edition is cancelled because the
-curriculum changed (whoever records the cancellation, a branch manager too; the charge is raised by the system and
-only an approver applies it), or at the end of its term or module, whichever comes first.
+**The doctor's unsold copies are never his to pay** (owner, 21 Oct 2026; this replaces DOC-18 of requirements v1.2
+and the decision of 10 Oct 2026, and with it DOC-22's approval of such charges):
 
-**The end of a term or module** (DOC-18, DOC-22). When the accountant or the owner closes an Academic Period, every
-approved edition whose period is that one or one under it (its rounds and modules) gets a **draft Unsold Copies
-Charge**: the copies the doctor asked for and did not sell × the cost of a copy (owner's decision of 10 Oct 2026).
-Sales count against the doctor's copies first, so the library's extra copies are never charged to him. An edition
-carried forward ends with the period it was carried to. The charge is applied only when the accountant or the
-owner submits it; until then it is listed on the owner's page under «خصومات أطباء مستنية الاعتماد» and does not
-touch the balance. An edition already charged for the period is skipped, so closing again adds nothing.
+- *Curriculum unchanged:* the copies left stay in the store. The edition is carried forward to the next period and
+  they are sold there; the doctor earns his amount on each copy as it sells, in the period it sells in. Closing a
+  term or module charges nobody and posts nothing.
+- *Curriculum changed:* **Cancel: Curriculum Changed** marks the edition obsolete and charges nothing. Its copies
+  left are disposed of with **Dispose as Scrap** (on the edition, menu Edition): a draft **Damaged Stock Entry**
+  naming the edition, for its copies left, from its library's store. Submitted, the copies leave the store at their
+  cost, posted to الهالك والتالف on the library's cost center (the library bears 100% of it), and wait in the
+  damaged store; the edition shows them as **Disposed Qty**. They are then sold by weight with a **Damaged Stock
+  Sale** naming that damage record: the kilograms, the price a kilogram and the money, to إيراد بيع التالف بالوزن.
+  Cancelling the sale, then the disposal, puts the copies back on the edition.
+- No **Unsold Copies Charge** is saved or submitted any more. One recorded before can only be rejected (a draft) or
+  cancelled (a submitted one); `setup/check_doctor_accounts.py` lists them.
 
-A closed academic period takes no new entries (`period_lock.py`), except the ones that settle it after it ends:
-the Unsold Copies Charge and the Payout. A sale of an edition whose period is closed is refused until the edition
-is carried forward.
+A closed academic period takes no new entries (`period_lock.py`), except the payout that settles it after it ends.
+A sale of an edition whose period is closed is refused until the edition is carried forward.
 
-**Approving a deduction** (DOC-22). A deduction from the doctor, a charge for unsold copies or an adjustment
-taking money off him by hand, is applied only once the owner or the accountant approves it, the same way as an
-expense (role Expense Approver). A charge raised when a period closes is a draft **Pending Approval** and the
-accountant is notified; the form shows **Approve** (which submits it) and **Reject** (with a reason; a rejected
-one is closed for good). An approver's own deduction is approved as he submits it. Approval Status, Approved /
+**Approving a deduction** (DOC-22). A deduction from the doctor, an adjustment taking money off him by hand, is
+applied only once the owner or the accountant approves it, the same way as an expense (role Expense Approver). The
+form shows **Approve** (which submits it) and **Reject** (with a reason; a rejected one is closed for good). An approver's own deduction is approved as he submits it. Approval Status, Approved /
 Rejected By and Rejection Reason are set only by the system, Approve and Reject, never by editing or the API. The
 owner's page counts the deductions waiting. A credit note's adjustment is not a deduction: the copies came back.
 
-**A negative balance stays a debt** (DOC-20). A books doctor charged more than he earned owes the group. The
+**A negative balance stays a debt** (DOC-20). A books doctor whose approved deductions are more than he earned owes
+the group. The
 balance stays below zero and is never closed on its own: what he earns next pays it off first, and nothing is paid
 out to him while he owes (a payout is never more than the balance). The report **Doctor Debts** lists, as of a
 date, every agreement under which the doctor owes the group: a books agreement below zero and an app agreement's
@@ -1149,9 +1151,9 @@ change only by Cancel and Amend.
   edition is marked Cancelled with the **Notice Date** (not in the future, not before the edition) and the
   employee who received the notice and records it, taken from the login, never typed; the time it was
   recorded is kept too. The edition stays approved with its sales, stock and costs; no more copies are sold.
-  The doctor's unsold copies are charged to him as a draft for approval (DOC-18, DOC-22; see the doctors'
-  accounts below). What the library's extra copies cost it is not posted yet.
-- Status and these fields change only through the two buttons (the server refuses them otherwise), and the
+  Nothing is charged to the doctor (owner, 21 Oct 2026): the copies left are disposed of as scrap at the library's
+  loss with **Dispose as Scrap** (see the doctors' accounts below).
+- Status and these fields change only through these buttons (the server refuses them otherwise), and the
   edition's history shows each change. Branch managers act on their own library's editions; the owner and the
   accountant on any.
 - An item with no edition sells as before. Open questions (which copies sell first, an Item per edition, how
