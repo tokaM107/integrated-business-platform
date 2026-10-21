@@ -1,0 +1,140 @@
+{
+ "doctype": "DocType",
+ "module": "ImedERP",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-21 17:00:00.000000",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "links": [],
+ "actions": [],
+ "states": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "name": "Weekly Cash Reconciliation Item",
+ "istable": 1,
+ "editable_grid": 1,
+ "permissions": [],
+ "fields": [
+  {
+   "fieldname": "close_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Cash Box",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "business",
+   "fieldtype": "Link",
+   "options": "Cost Center",
+   "label": "Business",
+   "read_only": 1
+  },
+  {
+   "fieldname": "treasury_close",
+   "fieldtype": "Link",
+   "options": "Treasury Close",
+   "label": "Treasury Close",
+   "read_only": 1
+  },
+  {
+   "fieldname": "closed_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Closed By",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "opening",
+   "fieldtype": "Currency",
+   "label": "Opening",
+   "read_only": 1
+  },
+  {
+   "fieldname": "collections",
+   "fieldtype": "Currency",
+   "label": "Collections",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expenses_and_payouts",
+   "fieldtype": "Currency",
+   "label": "Expenses and Payouts",
+   "read_only": 1
+  },
+  {
+   "fieldname": "transfers",
+   "fieldtype": "Currency",
+   "label": "Transfers (In - Out)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expected",
+   "fieldtype": "Currency",
+   "label": "Expected Closing",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "counted",
+   "fieldtype": "Currency",
+   "label": "Cash Counted",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Currency",
+   "label": "Shortage (-) / Surplus (+)",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "cash_discrepancy",
+   "fieldtype": "Link",
+   "options": "Cash Discrepancy",
+   "label": "Cash Discrepancy",
+   "read_only": 1
+  },
+  {
+   "fieldname": "discrepancy_status",
+   "fieldtype": "Data",
+   "label": "Discrepancy Status",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "responsible",
+   "fieldtype": "Small Text",
+   "label": "Responsible",
+   "read_only": 1
+  }
+ ],
+ "field_order": [
+  "close_date",
+  "treasury",
+  "business",
+  "treasury_close",
+  "closed_by",
+  "opening",
+  "collections",
+  "expenses_and_payouts",
+  "transfers",
+  "expected",
+  "counted",
+  "difference",
+  "cash_discrepancy",
+  "discrepancy_status",
+  "responsible"
+ ]
+}
