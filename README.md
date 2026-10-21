@@ -473,9 +473,35 @@ Shares are fixed percentages. Shares worked out from each business's area or rev
 task, were left out on purpose: the owner chose a fixed 60/40 (8 halls, 4 of which also serve as the
 studio part of the time), and the rule's Notes record what the shares are based on.
 
+### Cash boxes: balances and the daily close (ACC-03)
+
+- **Treasury Balances** (report): each cash box and wallet on a date, from the ledger: at the start of the day, money
+  in, money out, the balance. A branch manager sees her business's box and the group's wallets.
+- **Treasury Close** (one a cash box a day, `doctype/treasury_close`): the same figures, the **Cash Counted** typed
+  by whoever counts, and the **Difference** (below zero a shortage, above zero a surplus). Read again from the
+  ledger when submitted. A branch manager closes her own box or a wallet; Counted By is the login. It is a record
+  only: no journal entry is made for a difference, no one approves it, and a closed day still takes entries; those
+  three are the owner's and the accountant's to decide (docs/known-issues.md, ACC-03).
+
+### Dates
+
+No completed transaction is dated after today, for anyone, through the form or the API (`imederp/dates.py`, owner
+21 Oct 2026): expenses, transfers, doctor ledger entries (payouts, collections, adjustments), counter readings, stock
+counts, damaged stock and its sale, app subscriptions, treasury closes, and ERPNext's invoices, payments, journal and
+stock entries. What is planned keeps its future date: bookings, a monthly bill's next date, an allocation rule's or
+a fee schedule's Valid From, academic periods. A date must also fall in one of the company's own fiscal years
+(2026-2027 from 1 Sep 2026); the `_Test Fiscal Year`s the October test runs left on the development site name no
+company and are not used for the group.
+
+### Users
+
+A user is disabled (untick Enabled), never deleted (CORE-07; `imederp/users.py`): their name stays on what they
+recorded. Only the developers' account, Administrator, may remove an account made by mistake.
+
 ### Paper units and cost
 
-Paper is bought by the box, used by the sheet and stocked in sheets:
+Paper is bought by the box, used by the sheet and stocked in sheets. **Paper Balance** (report, PRN-04) shows each
+store's paper in sheets and as boxes + reams + loose sheets (11,030 = 4 boxes, 2 reams, 30 sheets):
 
 | UOM | Sheets |
 |---|---|
@@ -599,7 +625,12 @@ it is refused, and a damage record partly sold cannot be cancelled before its sa
 - **Setup:** `setup_core.py` ticks Damaged Store on `التالف — المواساة`; `setup_library.py` makes the
   non-stock item `DAMAGED-BY-WEIGHT` (Kg, revenue `إيراد بيع التالف بالوزن`) and the buyer `مشتري التالف`.
 
-### Bookings: halls and the studio (HAL-01..04, HAL-08, HAL-10..12, STU-01..05, STU-08, STU-14, ACC-04)
+### Bookings: halls and the studio (HAL-01..04, HAL-06, HAL-08, HAL-10..12, STU-01..05, STU-08, STU-14, ACC-04)
+
+**Hall Bookings** (report, HAL-06): the halls' bookings between two dates, one hall or all: day, hall, activity,
+rental model, status, attendees, admission price, rent, collected (a fixed rent: what the customer paid; a revenue
+share: what was collected at the door), unpaid (a completed booking's invoice outstanding) and cancellations, with
+a total. The halls manager sees her own halls.
 
 **Booking Resource** (ImedERP > Business Operations): what can be booked (HAL-01). A **Hall**, with its Capacity
 (required) and Equipment, or a **Studio Service** (smart board, reels, podcast, filming, location). Each belongs to
@@ -1239,11 +1270,24 @@ they are executed, so they must never be imported as a Python module.
 
 ## Tests
 
+Three kinds:
+
+- **Integration tests** (below): each doctype's and module's, rolled back; 507 on 21 Oct 2026. Run them behind the
+  leak guard (`scripts/run_tests.sh`).
+- **Two sessions at once** (`setup/concurrency_check.py`): a transfer confirmed twice, two payouts, two subscriptions,
+  two day screens, two bookings of one hour, each from two database connections at the same moment. It commits its
+  records, so it runs only on a throwaway copy of the site (it refuses `frontend`):
+  `docker exec frappe_docker-backend-1 bench --site restore-test execute imed_erp.setup.concurrency_check.run`.
+- **Browser tests** (`tests/e2e/`, Playwright): each role's logins, pages, refused calls, branch isolation, Arabic,
+  phone width and the main workflows, on a throwaway copy too; see `tests/e2e/README.md`.
+
 Each doctype has integration tests next to it; the expense reminders have their own module:
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests true
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_test_records  # first: catches a missing IGNORE entry before it commits _Test records
+# or, the guard first and the rest only if it passes:
+scripts/run_tests.sh --app imed_erp
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
