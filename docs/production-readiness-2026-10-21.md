@@ -2,14 +2,14 @@
 
 Follows the audit fixes of 20 Oct (docs/audit-fixes-2026-10-20.md) on branch `fix/audit-2026-10-20` (158 commits,
 not pushed, not merged, nothing deployed). Today: the owner's confirmed policies on unsold books and dates, real
-concurrency tests, browser tests by role, a restore test, the scheduler, the daily cash close, and four Must
-requirements. Decisions still open are in docs/known-issues.md, section *QA and security audit*.
+concurrency tests, browser tests by role, a restore test, the scheduler, four Must requirements, and (afternoon)
+the owner's rules for cash: boxes never below zero, the daily close, discrepancies and the weekly review. Decisions still open are in docs/known-issues.md, section *QA and security audit*.
 
 ## Decision
 
 - **Limited go-live (libraries, expenses, doctors' accounts, bookings, app subscriptions, with data typed by hand):
   GO once the five steps under "Before go-live" are done.** The code is ready for it: every audit defect is fixed,
-  the confirmed policies are in, 507 automated tests, 5 two-session races and 116 browser checks pass.
+  the confirmed policies are in, 535 automated tests, 7 two-session races and 123 browser checks pass.
 - **Full requirements coverage: NO-GO.** HR and payroll, tasks, the integrations (library sales, studio bookings,
   the BA+ app), the owner hand-over account (ACC-09) and the AI model are not built; each waits for a decision or for
   files and access from another team.
@@ -19,8 +19,9 @@ requirements. Decisions still open are in docs/known-issues.md, section *QA and 
 1. The production server set up per docs/production-hardening.md: passwords, 127.0.0.1 behind TLS, developer mode and
    tests off, the session and login settings, the scheduler on, built from a clean site.
 2. The backup's off-server destination chosen, the nightly job scheduled, one restore tried there.
-3. The accountant's answers on the cash close (who approves; what a difference does; reopening) and on whether a
-   cash box may go below zero. Until then the close is a record only.
+3. The legal points on recovering a shortage from an employee confirmed by a lawyer or HR (docs/known-issues.md,
+   *ACC-03, what is still to confirm*); until then the accountant can record and write off, and should not approve
+   recoveries. Opening balances of every cash box entered on the production site before the first sale.
 4. The historical records listed by `setup/check_doctor_accounts.py` reviewed (one waiting charge to reject, three
    demo entries without journal entries).
 5. The owner signs off on going live without the modules listed above.
@@ -36,6 +37,11 @@ requirements. Decisions still open are in docs/known-issues.md, section *QA and 
 | The doctor's loss | None. No Unsold Copies Charge is saved or submitted. Charges recorded before are rejected (draft) or cancelled (submitted), never applied. A books doctor goes below zero only through an approved deduction by hand. |
 | Free lectures and 0% shares | Accepted once the lecturer is named; a booking with no lecturer and no share is still refused; paid bookings unchanged. |
 | Future dates | No completed transaction is dated after today, for anyone; plans (bookings, monthly bills' next dates, rules and schedules, periods) keep their future dates. A date must be in one of the company's own fiscal years. |
+| Cash boxes (21 Oct) | A cash box never goes below zero: any payment of more than it holds is refused, on any day from its date to today, under a lock; cancelling cash that came in is checked too. Existing balances are not changed. |
+| The daily close (21 Oct) | The branch manager closes her own box; no daily approval. Opening = last count; movements since by kind; Expected = Opening + in - out; Variance = Counted - Expected. Posts nothing. Once a day per box, in order. A cash entry dated into a closed day: refused to a branch manager, marked for review when the accountant makes it. |
+| Discrepancies (21 Oct) | Every difference opens a Cash Discrepancy. Shortage: investigated; nobody responsible by default; no automatic split; a recovery only after the employee is told and heard, the law and contract checked, amounts typed; written off otherwise. Surplus: explained, never revenue by itself. The books are adjusted (فروقات الخزينة) only after the review. Nothing is deducted from a salary by the system: approved recoveries go to a payroll review report. |
+| Reopening (21 Oct) | Owner and accountant only, with a reason; the original kept, cancelled, with who and why; a draft amends it; later closes and reviewed weeks marked for review; refused once its discrepancy is adjusted or a recovery approved. |
+| Weekly review (21 Oct) | Weekly Cash Reconciliation by the accountant: the week's closes, shortages, surpluses, open discrepancies, responsible employees, days not closed; submitted = reviewed. |
 | Demonstration data | The `_Test` records stay on the development site for looking at the screens; they do not reach the group's figures and the tests do not depend on them. Production starts from a clean site. |
 
 The requirements document (v1.2) still says, in DOC-18, that the doctor pays for his unsold copies on cancellation;
@@ -46,8 +52,10 @@ v1.3 should replace it with the rule above, and drop DOC-22's approval of such c
 | Question | Who | Where it is in the code |
 |---|---|---|
 | A minus books adjustment by hand credits حصة الأطباء; or another account? | Accountant | `doctor_ledger_entry.post_by_hand` |
-| The daily close: who approves it, what a difference posts (فروقات الخزينة?), reopening a closed day | Accountant / Owner | `doctype/treasury_close` records only |
-| May a cash box go below zero? | Owner / Accountant | not checked |
+| Recovering a shortage from an employee: the labour law's limits on deductions, the contracts, the notice | Lawyer / HR | the accountant records a confirmation only; nothing is deducted |
+| Must the owner approve recoveries too (four eyes), or over an amount? | Owner | the accountant approves alone |
+| A surplus adjusted to فروقات الخزينة, or held to return to a customer? | Accountant | فروقات الخزينة |
+| Must the weekly review start on Saturday? | Accountant | any seven days |
 | ACC-09: the owner's custody account and the bank | Owner | not built |
 | PRN-01: is the closing counter reading enough, or one at the start of the day too? | Owner | closing only |
 | The studio's opening hours (for occupancy, STU-15) | Owner | not built |
@@ -56,11 +64,14 @@ v1.3 should replace it with the rule above, and drop DOC-22's approval of such c
 
 | Kind | Run | Result |
 |---|---|---|
-| Integration tests, `run-tests --app imed_erp` behind the leak guard, after a backup | 21 Oct, 140 s | **507 passed, 0 failed, 0 skipped.** No `_Test` record leaked (counts unchanged). |
+| Integration tests, `run-tests --app imed_erp` behind the leak guard, after a backup | 21 Oct, evening, 168 s | **535 passed, 0 failed, 0 skipped.** No `_Test` record leaked (counts unchanged). |
+| New in the afternoon | 6 cash-box tests; 16 close and reopening tests; 6 discrepancy tests; 5 weekly-review tests; 2 suites given opening cash | the cash-box tests fail without the hooks; the weekly test of a reopened close fails without its fix (seen first in the browser) |
 | New today | 24 tests; 9 tests of the superseded DOC-18 policy replaced by tests of the confirmed one | each new one failed on the code before its fix |
 | Two sessions at once (`setup/concurrency_check.py`, two database connections at a barrier, on the copy site) | QA-10 transfer confirmed twice, QA-11 two payouts, QA-12 two subscriptions, QA-26 two day screens, two bookings of one hour | **5 of 5**: one receipt, one payout (balance 200), consistent counts and fees, one screen, one booking. The losing session is refused by the database and rolled back. |
+| Two sessions at once, afternoon | two payments of 300 from a box holding 500; two closes of one box for one day | **2 of 2**: box ends at 200, one close. The close race **failed first (two closes saved)**: the duplicate check read an old snapshot; fixed with a locking read. QA-26 could not run again today (each library already has today's screen). |
 | Browser, roles and security (`tests/e2e/roles.js`, Chromium) | 7 roles | **57 of 57**: login and logout, Arabic and right to left, pages and server calls refused, branch isolation, returns, cancellations and journal entries refused, phone width, home page accessibility |
 | Browser, screens (`screens.js`) | 47 list and new-form screens over 5 roles | **47 of 47** open with no script error or failed request |
+| Browser, the close and its review (`close.js`, afternoon) | Sara sees her close in Arabic with no Reopen, her reopen and write-off calls refused (403); the accountant reopens with a reason, closes 15 short, writes it off, reviews the week | **7 of 7**. Found and fixed: a draft weekly review could not be saved once one of its closes was reopened. |
 | Browser, workflows (`workflows.js`, `close.js`) | expense request to posting; transfer sent and confirmed; obsolete edition scrapped (48 copies, loss 3,360 on the library, doctor's balance unchanged); doctor statement; studio booking (1.5 h, 150); app subscription (fee 250); daily cash close | **12 of 12** on their first run on fresh data; re-runs meet their own earlier records, as expected (the booking slot taken, the edition already scrapped) |
 | Private files over HTTP | a receipt fetched by its owner, another branch's manager, a guest | 200 / 403 / 403 |
 | Restore into a separate site | today's backup into `restore-test` | every record count and the ledger, stock and doctor totals identical; a private file deleted and restored with the same checksum; retention removes sets older than 30 days |
@@ -98,8 +109,8 @@ Per issue, the root cause and fix are in docs/audit-fixes-2026-10-20.md and in t
 
 | | |
 |---|---|
-| Completed and verified today | ACC-03 (balances and the close, recorded), CORE-07, PRN-04, HAL-06, CRM-01 (student category) |
-| Partly built | ACC-03 (approval and posting of a difference), ACC-04, ACC-05, ACC-08, ACC-09, CORE-04, CORE-06, LIB-01, LIB-07, PRN-01, PRN-03, PRN-09, STU-06, STU-09, STU-10, APP-10, DOC-12, DOC-26, INT-01, INT-04, INT-06, INT-08, INT-14, RPT-01, RPT-02, RPT-05, RPT-11, SEC-02, SEC-06 |
+| Completed and verified today | ACC-03 (the close, discrepancies, the weekly review, reopening, boxes never below zero), CORE-07, PRN-04, HAL-06, CRM-01 (student category) |
+| Partly built | ACC-04, ACC-05, ACC-08, ACC-09, CORE-04, CORE-06, LIB-01, LIB-07, PRN-01, PRN-03, PRN-09, STU-06, STU-09, STU-10, APP-10, DOC-12, DOC-26, INT-01, INT-04, INT-06, INT-08, INT-14, RPT-01, RPT-02, RPT-05, RPT-11, SEC-02, SEC-06 |
 | Missing, specified enough to build next | CRM-03 call log (Should) |
 | Waiting for a business decision | ACC-09, ACC-10, DOC-18's text (superseded), HAL-05 and RPT-04 (marked Open), PRN-01, STU-15, APP-09, RPT-09, HR-01..07 (HRMS to be installed), TSK-01..05 |
 | Waiting for other teams, files or credentials | LIB-11, STU-07, STU-11..13, HAL-09, APP-13, INT-02..13, AI-01..10 (no model connected), SEC-09 |
