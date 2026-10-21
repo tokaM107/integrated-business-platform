@@ -323,3 +323,17 @@ everyone, and the technical ones (Framework, ERPNext Settings, Organization) are
 migrate (an ERPNext update may bring its tiles back), straight to the database: saving a standard tile in developer
 mode would write it into ERPNext's own files. To show a hidden tile again, take it out of `HIDDEN` in
 `home_screen.py` and unhide it.
+
+## Worked example — the owner's landing page (Owner Dashboard, `setup/setup_dashboard.py`)
+
+The owner logs in to the Owner Dashboard (`User.default_workspace`, the page Frappe sends a user to after login),
+with the **ImedERP sidebar beside it**: every screen on the side, the money in the middle (owner, 21 Oct 2026).
+
+- **Middle, top to bottom:** what waits for the owner's approval; **the money** (cash in the cash boxes, revenue,
+  expenses and net this month, owed to us, we owe: `imederp/owner_figures.py`, from the ledger) and the cash in each
+  box (the *Cash Box Balances* report's chart); the bookings' figures; revenue by business, sales and stock value.
+- **Side:** the ImedERP sidebar. Frappe shows a workspace with the sidebar of its own name; the dashboard's own one
+  (made by Frappe when the dashboard was created) is removed after every migrate (`imederp/home_screen.py`), so the
+  sidebar that links to the dashboard, ImedERP, is shown. Its *Financial Reports* group has the reports that sidebar
+  had (profit per business, cash movements, who owes us, stock and paper) and the cash box balances.
+- The figures are the company's as a whole: only the owner and the accountant read them, checked on the server.

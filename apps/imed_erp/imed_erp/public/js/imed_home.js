@@ -13,8 +13,8 @@
 		{
 			label: () => t("Owner Dashboard", "لوحة المالك"),
 			icon: "layout-dashboard",
-			allowed: () =>
-				(frappe.boot.desktop_icons || []).some((i) => i.label === "Owner Dashboard" && !i.hidden),
+			// The workspaces the user may open (its tile is hidden: the dashboard opens with the ImedERP sidebar).
+			allowed: () => (frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard"),
 			go: () => frappe.set_route(frappe.router.slug("Owner Dashboard")),
 		},
 		{
