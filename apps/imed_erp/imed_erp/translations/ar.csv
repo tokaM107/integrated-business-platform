@@ -687,7 +687,7 @@ Booking Resource,مورد حجز
 Booking Resources,موارد الحجز
 Resource,المورد
 Resource Name,اسم المورد
-Resource Type,نوع المورد
+Resource Type,النوع (قاعة أو خدمة)
 Hall,قاعة
 Studio Service,خدمة استوديو
 Business (Cost Center),النشاط (مركز التكلفة)
@@ -1108,3 +1108,9 @@ Package,الباقة
 Amount,المبلغ
 Completed,مكتمل
 Cancelled,ملغي
+Libraries,المكتبات
+Store and Stock,المخزن
+BA+ App,تطبيق BA Plus
+Expenses and Cash,المصروفات والخزن
+Settings,الإعدادات
+Reorder Alerts,تنبيهات إعادة الطلب

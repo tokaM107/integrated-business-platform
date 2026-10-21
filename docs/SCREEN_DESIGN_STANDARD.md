@@ -303,3 +303,12 @@ the first time knows what to do, without reading field descriptions.
 - **Arabic**: Frappe's own Arabic for *Package* (طَرد), *Amount* (كمية), *Completed* and *Cancelled* was wrong or
   misspelt; `ar.csv` overrides them (الباقة، المبلغ، مكتمل، ملغي) for the whole site.
 - **Nothing on the server changed**: the price, the checks and the postings are as before (the booking tests pass).
+
+## Worked example — the ImedERP sidebar (`workspace_sidebar/imederp.json`)
+
+Grouped by **activity**, the way the owner and the branches think, not by module: Owner Dashboard and Bookings on
+top, then Libraries, Store and Stock, Doctors and Editions, BA+ App, Expenses and Cash, and **Settings** (resources,
+packages, extras, expense categories and settings, printing costs and machines, academic periods, fee tiers). Every
+group starts **closed**, so the sidebar is eight short lines; a group opens with one click. Frappe shows each user
+only the links they may read, so a branch manager sees their part only. A new screen goes in its activity's group; a
+screen that is set up once and rarely changed goes in Settings.
