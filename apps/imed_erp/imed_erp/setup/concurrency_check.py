@@ -1,8 +1,9 @@
-# Two sessions at once, for real (audit QA-10, QA-11, QA-12, QA-26, and bookings of one resource).
+# Two sessions at once, for real (audit QA-10, QA-11, QA-12, QA-26, bookings of one resource, and on 21 Oct 2026
+# two payments out of one cash box and two closes of one cash box).
 #
 # Each scenario opens two database connections in two threads, holds them at a barrier, then runs the same
 # operation in both at the same moment and commits each. Then it reads what the database holds: one receipt, one
-# payout, both students counted once, one day's screen, one booking.
+# payout, both students counted once, one day's screen, one booking, a cash box not below zero, one close.
 #
 # It COMMITS its records (a second connection sees only committed data), so it refuses to run on the main site:
 # run it on a throwaway copy, e.g. the site a backup was restored into (docs/production-hardening.md):
@@ -102,6 +103,7 @@ def agreement(kind, tag):
 
 def check_transfer_receipt():
 	"""QA-10: two people confirm the receipt of one transfer at once."""
+	fund(AZARITA_BOX, AZARITA, 1000)
 	transfer = frappe.get_doc(
 		{
 			"doctype": "Inter Business Transfer",
@@ -142,6 +144,43 @@ def payout(agreement_name, amount):
 	return make
 
 
+def box_balance(box):
+	return flt(
+		frappe.db.sql("select sum(debit - credit) from `tabGL Entry` where account = %s and is_cancelled = 0", box)[0][0], 2
+	)
+
+
+def capital():
+	return frappe.get_all("Account", filters={"company": COMPANY, "root_type": "Equity", "is_group": 0}, pluck="name", limit=1)[0]
+
+
+def cash_entry(box, business, amount, submit=True):
+	"""Cash into (or, below zero, out of) a box against capital, dated today."""
+	doc = frappe.get_doc(
+		{
+			"doctype": "Journal Entry",
+			"company": COMPANY,
+			"posting_date": today(),
+			"user_remark": "_Conc cash",
+			"accounts": [
+				{"account": box, "debit_in_account_currency": max(amount, 0), "credit_in_account_currency": max(-amount, 0), "cost_center": business},
+				{"account": capital(), "debit_in_account_currency": max(-amount, 0), "credit_in_account_currency": max(amount, 0), "cost_center": business},
+			],
+		}
+	).insert()
+	if submit:
+		doc.submit()
+	return doc.name
+
+
+def fund(box, business, at_least):
+	"""Cash into the box today so that it holds at least `at_least` from today on (committed; copy site only)."""
+	held = box_balance(box)
+	if held < at_least:
+		cash_entry(box, business, at_least - held)
+		frappe.db.commit()
+
+
 def books_agreement_owed(amount, tag):
 	name = agreement("Books", tag)
 	frappe.get_doc(
@@ -157,6 +196,8 @@ def check_two_payouts(lock=True):
 	from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_balance
 
 	name = books_agreement_owed(500, suffix())
+	# The box holds enough for both: only the agreement's balance is under test here.
+	fund(AZARITA_BOX, AZARITA, 1000)
 	if lock:
 		outcome = at_once(payout(name, 300), payout(name, 300))
 	else:
@@ -259,11 +300,57 @@ def check_two_bookings():
 	report("Bookings of one resource and hour at once", saved == 1, f"{outcome}; bookings saved: {saved}")
 
 
+def check_two_cash_payments():
+	"""Two payments of 300 at once out of a box holding exactly 500 (cash_balance.py): one is paid, the other refused;
+	the box ends at 200, not -100."""
+	held = box_balance(HALLS_BOX)
+	if held != 500:
+		cash_entry(HALLS_BOX, HALLS, 500 - held) if held < 500 else cash_entry(HALLS_BOX, HALLS, -(held - 500))
+		frappe.db.commit()
+	# Saved first, so the two sessions meet at the box's lock when they submit, not at the naming series.
+	first, second = cash_entry(HALLS_BOX, HALLS, -300, submit=False), cash_entry(HALLS_BOX, HALLS, -300, submit=False)
+	frappe.db.commit()
+	outcome = at_once(
+		lambda: frappe.get_doc("Journal Entry", first).submit(), lambda: frappe.get_doc("Journal Entry", second).submit()
+	)
+	after = box_balance(HALLS_BOX)
+	done = [o for o in outcome if o[0] == "done"]
+	report("Two cash payments at once from a box holding 500", len(done) == 1 and after == 200, f"{outcome}; box now {after}")
+
+
+def check_two_closes():
+	"""Two closes of one cash box for one day at once: one is saved, the other refused (treasury_close.py)."""
+	box, business = None, None
+	from imed_erp.imederp.doctype.weekly_cash_reconciliation.weekly_cash_reconciliation import boxes
+
+	for business_name, box_name in boxes():
+		if not frappe.db.exists("Treasury Close", {"treasury": box_name, "close_date": (">=", today()), "docstatus": ("<", 2)}):
+			box, business = box_name, business_name
+			break
+	if not box:
+		report("Two closes of one box at once", False, "every box is already closed today on this site")
+		return
+
+	def close():
+		# Named apart, so the two sessions meet at the box's lock, not at the naming series.
+		doc = frappe.get_doc(
+			{"doctype": "Treasury Close", "treasury": box, "business": business, "close_date": today(), "counted": 0, "note": "_Conc"}
+		).insert(set_name=f"_Conc TCL {suffix()}")
+		return doc.name
+
+	outcome = at_once(close, close)
+	saved = frappe.db.count("Treasury Close", {"treasury": box, "close_date": today(), "docstatus": ("<", 2)})
+	report("Two closes of one box at once", saved == 1 and sum(o[0] == "done" for o in outcome) == 1, f"{outcome}; closes saved: {saved}")
+
+
 def run():
 	if frappe.local.site == MAIN_SITE:
 		print(f"REFUSED: concurrency_check commits records; run it on a throwaway copy of the site, not {MAIN_SITE}.")
 		return
-	for check in (check_transfer_receipt, check_two_payouts, check_two_subscriptions, check_two_day_screens, check_two_bookings):
+	for check in (
+		check_transfer_receipt, check_two_payouts, check_two_subscriptions, check_two_day_screens, check_two_bookings,
+		check_two_cash_payments, check_two_closes,
+	):
 		try:
 			check()
 		except Exception as e:
