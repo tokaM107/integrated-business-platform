@@ -9,7 +9,7 @@ the owner's rules for cash: boxes never below zero, the daily close, discrepanci
 
 - **Limited go-live (libraries, expenses, doctors' accounts, bookings, app subscriptions, with data typed by hand):
   GO once the five steps under "Before go-live" are done.** The code is ready for it: every audit defect is fixed,
-  the confirmed policies are in, 535 automated tests, 7 two-session races and 123 browser checks pass.
+  the confirmed policies are in, 543 automated tests, 7 two-session races and 123 browser checks pass.
 - **Full requirements coverage: NO-GO.** HR and payroll, tasks, the integrations (library sales, studio bookings,
   the BA+ app), the owner hand-over account (ACC-09) and the AI model are not built; each waits for a decision or for
   files and access from another team.
@@ -19,12 +19,14 @@ the owner's rules for cash: boxes never below zero, the daily close, discrepanci
 1. The production server set up per docs/production-hardening.md: passwords, 127.0.0.1 behind TLS, developer mode and
    tests off, the session and login settings, the scheduler on, built from a clean site.
 2. The backup's off-server destination chosen, the nightly job scheduled, one restore tried there.
-3. The legal points on recovering a shortage from an employee confirmed by a lawyer or HR (docs/known-issues.md,
-   *ACC-03, what is still to confirm*); until then the accountant can record and write off, and should not approve
-   recoveries. Opening balances of every cash box entered on the production site before the first sale.
-4. The historical records listed by `setup/check_doctor_accounts.py` reviewed (one waiting charge to reject, three
-   demo entries without journal entries).
+3. Opening cash: every box counted and signed on the go-live morning and entered as one opening entry before the
+   first sale (docs/production-hardening.md, section 7). Without it the first payment out of a box is refused.
+4. The owner decides whether خزينة تطبيق BA Plus takes cash (then it becomes a cash box, closed daily) or not.
 5. The owner signs off on going live without the modules listed above.
+
+Not blocking the launch: recovering shortages from employees stays **blocked in the system** (Cash Close Settings)
+until the owner approves a written policy checked by a lawyer or HR; shortages are recorded, investigated and
+written off meanwhile. The reporting week stays configurable until confirmed.
 
 ## Business rules
 
@@ -52,10 +54,10 @@ v1.3 should replace it with the rule above, and drop DOC-22's approval of such c
 | Question | Who | Where it is in the code |
 |---|---|---|
 | A minus books adjustment by hand credits حصة الأطباء; or another account? | Accountant | `doctor_ledger_entry.post_by_hand` |
-| Recovering a shortage from an employee: the labour law's limits on deductions, the contracts, the notice | Lawyer / HR | the accountant records a confirmation only; nothing is deducted |
-| Must the owner approve recoveries too (four eyes), or over an amount? | Owner | the accountant approves alone |
-| A surplus adjusted to فروقات الخزينة, or held to return to a customer? | Accountant | فروقات الخزينة |
-| Must the weekly review start on Saturday? | Accountant | any seven days |
+| The recovery policy: the labour law's limits on deductions, the contracts, how the employee is told and heard, appeals, how a recovery reaches payroll | Lawyer / HR, then the Owner | recovery blocked (Cash Close Settings); four eyes built: the accountant recommends, the owner approves |
+| An explained surplus adjusted to فروقات الخزينة, or held to return to a customer? | Accountant | فروقات الخزينة, only after it is explained; an unexplained one stays under review |
+| The reporting week's first day (Saturday to Friday suggested) | Owner / Accountant | empty: any day (Cash Close Settings) |
+| Does the BA Plus app take cash? (its treasury is a bank account today) | Owner | no daily close, no check below zero |
 | ACC-09: the owner's custody account and the bank | Owner | not built |
 | PRN-01: is the closing counter reading enough, or one at the start of the day too? | Owner | closing only |
 | The studio's opening hours (for occupancy, STU-15) | Owner | not built |
@@ -117,11 +119,26 @@ Per issue, the root cause and fix are in docs/audit-fixes-2026-10-20.md and in t
 
 The rest were built before 20 Oct and are listed in the audit's coverage table.
 
+## Follow-up checks, 21 Oct evening
+
+| Check | Result |
+|---|---|
+| Open shortages and surpluses through later closes and weeks | Not repeated and not hidden: the next close opens with the cash counted, so a difference is never counted again; each counts in its own week's totals; a later week lists the earlier ones still open apart (*Still Open from Earlier Weeks*) and needs a note while any is open. New: the carried list (it was missing: an open discrepancy of an earlier week appeared in no later review). |
+| Mawasah at -936.50 | From the demo transactions of 18 Oct, entered with no opening cash: sales ACC-SINV-2026-00002 (1,800) and -00003 (605) in; payout ACC-JV-2026-00006 (400, Doctor Ledger Entry 5rc1gthld0), expense ACC-JV-2026-00007 (450, EXP-2026-00001), transfers ACC-JV-2026-00009 (1,500, IBT-2026-00001) and -00011 (1,000, IBT-2026-00002) out; scrap payment ACC-PAY-2026-00001 (8.50) in. No logic error. At the owner's request the group's transactions were then erased on the development site (docs/known-issues.md); no fake collection was made. |
+| Four eyes | Built: Recommend Recovery (accountant) -> Approve Recovery or Return (owner only, never their own recommendation). No payroll deduction anywhere. |
+| Unexplained surplus | Stays Pending Review, in the open counts and later weeks; no entry is posted until it is explained. |
+| Saturday to Friday | The requirements name no first day ("daily, weekly and monthly" reports); configurable, empty until confirmed. |
+| Recovery dependencies | Legal (deduction limits, notice, appeal), payroll (no HR module: recoveries leave as a report), authorization (owner approves; policy switch owner-only), accounting (adjustment account). Recovery blocked until the policy is approved. |
+| Tests after these changes | Full suite on the cleaned development site: **543 passed, 0 failed**. 8 new tests (four eyes, policy block, owner returns, policy owner-only, unexplained surplus, carried discrepancy, week's first day, opening cash x2). 3 older suites relied on the erased demo data (cash in the main box, books in Mawasah's store, no paper below its level) and now make their own. Browser close and review: 7 of 7. |
+| Opening cash | On the cleaned development site every cash box is mapped to its business, with no entries and a zero balance; BA Plus's treasury is a bank account. Instructions and a draft-only helper: docs/production-hardening.md, section 7. |
+
 ## Environment notes
 
-- The development site (`frontend`) was changed only by configuration: the owner dashboard's cards, Stock Settings'
-  default warehouse no longer hiding the settings from branch managers, and two new doctypes and fields from this
-  branch. No business record was changed or deleted. Its scheduler is still off.
+- The development site (`frontend`): configuration (the owner dashboard's cards, Stock Settings' default warehouse,
+  the new doctypes and fields of this branch) and, on 21 Oct at the owner's request, **every transaction of the
+  group erased** after a full backup (`~/imed-backups/sets/20261021_165852-before-demo-erase/`; details in
+  docs/known-issues.md). Masters, setup and the `_Test` records of other companies are kept. Its scheduler is still
+  off.
 - `restore-test` is a throwaway copy made from today's backup, used for the restore test, the concurrency checks and
   the browser tests; its staff accounts have a test password. Drop it when no longer needed
   (`bench drop-site restore-test`), which needs your go-ahead.
