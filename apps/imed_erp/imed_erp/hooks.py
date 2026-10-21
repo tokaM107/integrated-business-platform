@@ -418,6 +418,8 @@ after_migrate = [
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
+	# The home screen's tiles: what the group uses (imederp/home_screen.py).
+	"imed_erp.imederp.home_screen.tidy_home",
 ]
 
 # Scheduled Tasks
