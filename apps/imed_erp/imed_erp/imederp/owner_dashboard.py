@@ -173,6 +173,28 @@ def sheets_printed_yesterday(filters=None):
 	return card(value, "Int")
 
 
+@frappe.whitelist()
+def cash_discrepancies_open(filters=None):
+	"""Shortages and surpluses from the daily closes still waiting for the accountant."""
+	check_access()
+	from imed_erp.imederp.doctype.cash_discrepancy.cash_discrepancy import OPEN
+
+	return card(frappe.db.count("Cash Discrepancy", {"status": ("in", OPEN)}), "Int")
+
+
+@frappe.whitelist()
+def cash_shortages_this_month(filters=None):
+	"""What the daily closes found short this month, whatever was decided on it since (withdrawn ones aside)."""
+	check_access()
+	start, end = month_to_date()
+	value = frappe.db.sql(
+		"""select sum(amount) from `tabCash Discrepancy`
+		where kind = 'Shortage' and status != 'Withdrawn' and close_date between %s and %s""",
+		(start, end),
+	)[0][0]
+	return card(value)
+
+
 def revenue_by_business(from_date, to_date):
 	"""{business: revenue} from the ledger, every income account, between two dates (QA-06)."""
 	return gl_total("Income", from_date, to_date, by_cost_center=True)

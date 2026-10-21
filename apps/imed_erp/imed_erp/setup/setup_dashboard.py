@@ -37,6 +37,8 @@ cards = [
     dict(label="Studio Hours This Month", method=M + "studio_hours_this_month", color=TEAL),
     dict(label="Hall Bookings This Month", method=M + "hall_bookings_this_month", color=SLATE),
     dict(label="Unpaid on Bookings", money=1, method=M + "unpaid_on_bookings_card", color=AMBER, full=1),
+    dict(label="Cash Shortages This Month", money=1, method=M + "cash_shortages_this_month", color=AMBER, full=1),
+    dict(label="Open Cash Discrepancies", method=M + "cash_discrepancies_open", color=AMBER),
     dict(label="Outstanding from Customers", doc="Sales Invoice",
          func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
@@ -181,6 +183,8 @@ approvals = [
     waiting("Inter Business Transfer", "Transfers to Confirm", [["status", "=", "Sent"]]),
     # DOC-22: a charge on a doctor is applied only once the owner or the accountant approves (submits) it.
     waiting("Doctor Ledger Entry", "Doctor Charges to Approve", [["approval_status", "=", "Pending Approval"], ["docstatus", "=", 0]]),
+    # A shortage or surplus at a daily close, still waiting for the accountant (Cash Discrepancy).
+    waiting("Cash Discrepancy", "Cash Discrepancies to Review", [["status", "in", ["Pending Investigation", "Responsibility Determined", "Pending Review"]]]),
 ]
 follow_up = []
 for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
@@ -195,6 +199,8 @@ for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
                      ("Booking", "Bookings", "Blue"),
                      ("App Subscription", "App Subscriptions", "Pink"),
                      ("Treasury Close", "Cash Box Closes", "Green"),
+                     ("Cash Discrepancy", "Cash Discrepancies", "Red"),
+                     ("Weekly Cash Reconciliation", "Weekly Cash Reviews", "Green"),
                      ("Version", "All Changes", "Grey")]:
     if frappe.db.exists("DocType", dt):
         follow_up.append({"type": "DocType", "link_to": dt, "label": lbl, "color": col, "doc_view": "List"})
@@ -215,6 +221,7 @@ for report, lbl, col in [
     ("Inter Business Transfers", "Inter Business Transfers", "Grey"),
     ("Platform Fees", "Platform Fees", "Pink"),
     ("Treasury Balances", "Treasury Balances", "Green"),
+    ("Cash Discrepancies", "Cash Discrepancies", "Red"),
     ("Paper Balance", "Paper Balance", "Cyan"),
     ("Hall Bookings", "Hall Bookings", "Blue"),
 ]:
