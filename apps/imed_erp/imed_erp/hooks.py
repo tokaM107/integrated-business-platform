@@ -54,6 +54,8 @@ app_include_js = [
 	asset("js/imed_form_standard.js"),
 	asset("js/imed_home.js"),
 	asset("js/imed_assistant.js"),
+	# The Owner Dashboard's welcome band, card icons and colours.
+	asset("js/imed_owner_dashboard.js"),
 	asset("js/imed_theme_toggle.js"),
 ]
 

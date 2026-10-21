@@ -1674,3 +1674,238 @@ body:has(.modal.imed-search-anchored.show) .modal-backdrop.show {
 	color: inherit;
 	text-decoration: underline;
 }
+
+/* ------------------------------------------------------------------ */
+/* 22. The Owner Dashboard: welcome band, money cards, approvals       */
+/*     (public/js/imed_owner_dashboard.js)                            */
+/* ------------------------------------------------------------------ */
+/* Only on the Owner Dashboard. Each card's meaning (data-imed-kind) picks Frappe's own status colours, which
+   follow the light and dark themes: in = green, cash and net = teal/blue, out and due = orange, we owe = purple,
+   counts = cyan; a negative amount is red. */
+body[data-route="Workspaces/Owner Dashboard"] .layout-main-section {
+	background: transparent;
+}
+body[data-route="Workspaces/Owner Dashboard"] .codex-editor .ce-block {
+	padding-block: 6px;
+}
+
+/* The welcome band */
+.imed-dash-welcome {
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--margin-lg);
+	margin: 8px 0 22px;
+	padding: 26px 30px;
+	border-radius: 22px;
+	color: #ffffff;
+	background:
+		radial-gradient(480px 240px at 0% 0%, rgba(244, 185, 66, 0.2), transparent 65%),
+		linear-gradient(135deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
+	box-shadow: 0 18px 40px -26px rgba(15, 98, 91, 0.75);
+}
+html[dir="rtl"] .imed-dash-welcome {
+	background:
+		radial-gradient(480px 240px at 100% 0%, rgba(244, 185, 66, 0.2), transparent 65%),
+		linear-gradient(225deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
+}
+[data-theme="dark"] .imed-dash-welcome {
+	background:
+		radial-gradient(480px 240px at 100% 0%, rgba(244, 185, 66, 0.12), transparent 65%),
+		linear-gradient(225deg, #0f5a53 0%, #0e4541 55%, #0b2f2c 100%);
+	box-shadow: 0 0 0 1px rgba(64, 174, 161, 0.18);
+}
+.imed-dash-welcome__date {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.14);
+	font-size: var(--text-sm);
+}
+.imed-dash-welcome__date .icon {
+	stroke: var(--imed-amber-400);
+}
+.imed-dash-welcome h1 {
+	margin: 12px 0 6px;
+	color: #ffffff;
+	font-size: 26px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+.imed-dash-welcome__note {
+	margin: 0;
+	color: rgba(255, 255, 255, 0.82);
+	font-size: var(--text-base);
+}
+.imed-dash-welcome__art {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 92px;
+	height: 92px;
+	border-radius: 28px;
+	background: rgba(255, 255, 255, 0.1);
+}
+.imed-dash-welcome__art .icon {
+	width: 46px;
+	height: 46px;
+	stroke: rgba(255, 255, 255, 0.85);
+	stroke-width: 1.5;
+}
+
+/* Section headers: an icon in a soft chip, more room above. */
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-block-start: 10px;
+}
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head,
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head * {
+	color: var(--heading-color) !important;
+	font-size: 18px !important;
+	font-weight: 700 !important;
+}
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-dash-head-icon,
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-dash-head-icon * {
+	color: var(--imed-teal-700) !important;
+}
+.imed-dash-head-icon {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+}
+[data-theme="dark"] .imed-dash-head-icon {
+	background: rgba(64, 174, 161, 0.14);
+	color: var(--imed-teal-300);
+}
+.imed-dash-head-icon .icon {
+	stroke: currentColor;
+}
+
+/* Money and booking cards */
+body[data-route="Workspaces/Owner Dashboard"] .widget.number-widget-box,
+body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box,
+body[data-route="Workspaces/Owner Dashboard"] .widget.shortcut-widget-box {
+	border: 1px solid var(--imed-border);
+	border-radius: 18px;
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 10px 24px -20px rgba(16, 34, 42, 0.35);
+	transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+body[data-route="Workspaces/Owner Dashboard"] .widget.number-widget-box:hover,
+body[data-route="Workspaces/Owner Dashboard"] .widget.shortcut-widget-box:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.05), 0 16px 30px -20px rgba(16, 34, 42, 0.45);
+}
+/* The card's meaning is its icon and colour: no accent line on the edge. */
+body[data-route="Workspaces/Owner Dashboard"] .widget.number-widget-box::before {
+	display: none;
+}
+.imed-dash-card {
+	--kind-bg: var(--bg-blue);
+	--kind-fg: var(--text-on-blue);
+	padding: 18px 20px !important;
+}
+.imed-dash-card[data-imed-kind="in"] {
+	--kind-bg: var(--bg-green);
+	--kind-fg: var(--text-on-green);
+}
+.imed-dash-card[data-imed-kind="out"],
+.imed-dash-card[data-imed-kind="due"] {
+	--kind-bg: var(--bg-orange);
+	--kind-fg: var(--text-on-orange);
+}
+.imed-dash-card[data-imed-kind="owe"] {
+	--kind-bg: var(--bg-purple);
+	--kind-fg: var(--text-on-purple);
+}
+.imed-dash-card[data-imed-kind="count"] {
+	--kind-bg: var(--bg-cyan);
+	--kind-fg: var(--text-on-cyan);
+}
+.imed-dash-card.is-negative {
+	--kind-bg: var(--bg-red);
+	--kind-fg: var(--text-on-red);
+}
+.imed-dash-card .widget-label {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.imed-dash-card-icon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 13px;
+	background: var(--kind-bg);
+	color: var(--kind-fg);
+}
+.imed-dash-card-icon .icon {
+	stroke: currentColor;
+}
+.imed-dash-card .widget-title {
+	color: var(--text-muted) !important;
+	font-size: var(--text-base) !important;
+	font-weight: 500 !important;
+}
+.imed-dash-card .widget-content .number {
+	margin-block-start: 10px;
+	color: var(--kind-fg) !important;
+	font-size: 28px;
+	font-weight: 700;
+	/* Amounts read left to right in Arabic too. */
+	direction: ltr;
+	unicode-bidi: isolate;
+	text-align: end;
+}
+
+/* Approvals: calm green when nothing waits, amber when something does. */
+.imed-dash-approval.is-clear {
+	background: linear-gradient(0deg, var(--bg-green), var(--bg-green)) padding-box, var(--fg-color);
+	border-color: transparent !important;
+}
+.imed-dash-approval.is-clear .indicator-pill {
+	background: var(--fg-color) !important;
+	color: var(--text-on-green) !important;
+}
+.imed-dash-approval.is-waiting {
+	border-color: var(--imed-amber-400) !important;
+	background: var(--bg-orange);
+}
+.imed-dash-approval.is-waiting .indicator-pill {
+	background: var(--imed-amber-400) !important;
+	color: #3b2a07 !important;
+	font-weight: 700;
+}
+.imed-dash-approval .widget-title {
+	font-weight: 600 !important;
+}
+
+/* Charts */
+body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widget-title {
+	color: var(--heading-color);
+	font-size: var(--text-base);
+	font-weight: 600;
+}
+
+@media (max-width: 767px) {
+	.imed-dash-welcome {
+		padding: 20px;
+	}
+	.imed-dash-welcome h1 {
+		font-size: 21px;
+	}
+	.imed-dash-welcome__art {
+		display: none;
+	}
+}
