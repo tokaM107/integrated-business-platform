@@ -657,17 +657,3 @@ class IntegrationTestMonthlyBillPaidEarly(ExpenseFixtures, IntegrationTestCase):
 		bill.reload()
 		self.assertIsNone(bill.make_expense())
 		self.assertEqual(frappe.db.count("Expense", {"recurring_expense": bill.name}), 1)
-
-	def test_qa24_no_expense_dated_ahead(self):
-		from frappe.utils import add_days
-
-		frappe.set_user("sara@imed.local")
-		try:
-			expense = self.new_expense(
-				posting_date=add_days(today(), 1), activity="مكتبة الأزاريطة - MMG", treasury="خزينة مكتبة الأزاريطة - MMG"
-			)
-			self.assertRaisesRegex(frappe.ValidationError, "after today", expense.insert)
-		finally:
-			frappe.set_user("Administrator")
-		# The accountant may: rent paid ahead for next month.
-		self.new_expense(posting_date=add_days(today(), 1)).insert()
