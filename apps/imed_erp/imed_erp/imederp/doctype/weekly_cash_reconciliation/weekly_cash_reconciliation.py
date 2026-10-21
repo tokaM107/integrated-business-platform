@@ -6,6 +6,11 @@
 # week's shortages and surpluses; the discrepancies still open; the days a box was not closed. Submitting it marks the
 # week reviewed. It moves no money: nothing here says the cash went to the accountant.
 #
+# Discrepancies of earlier weeks still open are listed apart (Still Open from Earlier Weeks): each is counted in the
+# week of its own close, never again in a later week's totals, and never dropped while it is open.
+#
+# The week starts on the day set in Cash Close Settings once the reporting week is confirmed; any day until then.
+#
 # One per week and business (or per week for every business). A close of the week reopened afterwards marks it
 # Needs Review Again (treasury_close.mark_for_review); cancel and amend it to review the week again.
 
@@ -14,6 +19,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, date_diff, flt, getdate, now_datetime, today
 
+from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import week_starts_on
 from imed_erp.imederp.doctype.cash_discrepancy.cash_discrepancy import OPEN
 from imed_erp.imederp.treasuries import BUSINESS_TREASURY, abbr_of, plain
 
@@ -31,6 +37,11 @@ class WeeklyCashReconciliation(Document):
 		self.week_end = add_days(self.week_start, 6)
 		if getdate(self.week_start) > getdate(today()):
 			frappe.throw(_("The week has not started yet."))
+		first_day = week_starts_on()
+		if first_day and getdate(self.week_start).strftime("%A") != first_day:
+			frappe.throw(
+				_("The reporting week starts on {0}. Choose a {0}.").format(_(first_day)), title=_("Wrong Day")
+			)
 		if self.business and frappe.db.get_value("Cost Center", self.business, "is_group"):
 			frappe.throw(_("Cost Center {0} is a group. Choose a business under it.").format(self.business))
 		self.check_once_a_week()
@@ -39,9 +50,11 @@ class WeeklyCashReconciliation(Document):
 	def before_submit(self):
 		self.check_once_a_week()
 		self.fill()
-		if self.unresolved and not (self.review_note or "").strip():
+		if (self.unresolved or self.earlier_open) and not (self.review_note or "").strip():
 			frappe.throw(
-				_("{0} discrepancies are still open. Write a note on them before marking the week reviewed.").format(self.unresolved),
+				_("{0} discrepancies are still open. Write a note on them before marking the week reviewed.").format(
+					self.unresolved + self.earlier_open
+				),
 				title=_("Note Needed"),
 			)
 		self.reviewed_by = frappe.session.user
@@ -117,6 +130,26 @@ class WeeklyCashReconciliation(Document):
 		self.total_shortage = flt(self.total_shortage, 2)
 		self.total_surplus = flt(self.total_surplus, 2)
 		self.missing_days = self.days_without_a_close(closes)
+		self.carry_earlier_open()
+
+	def carry_earlier_open(self):
+		filters = {"status": ("in", OPEN), "close_date": ("<", self.week_start)}
+		if self.business:
+			filters["business"] = self.business
+		earlier = frappe.get_all(
+			"Cash Discrepancy",
+			filters=filters,
+			fields=["name", "close_date", "treasury", "kind", "amount", "status"],
+			order_by="close_date asc",
+		)
+		self.earlier_open = len(earlier)
+		self.earlier_open_list = "\n".join(
+			"{0} {1} {2}: {3} {4} ({5})".format(
+				d.name, frappe.format_value(d.close_date, {"fieldtype": "Date"}), d.treasury, _(d.kind),
+				frappe.format_value(d.amount, {"fieldtype": "Currency"}), _(d.status),
+			)
+			for d in earlier
+		)
 
 	def days_without_a_close(self, closes):
 		last = min(getdate(self.week_end), getdate(today()))

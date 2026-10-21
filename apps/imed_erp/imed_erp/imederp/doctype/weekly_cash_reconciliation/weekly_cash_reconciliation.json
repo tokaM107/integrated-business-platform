@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 17:00:00.000000",
- "modified": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-21 18:00:00.000000",
  "engine": "InnoDB",
  "row_format": "Dynamic",
  "links": [],
@@ -128,6 +128,21 @@
    "no_copy": 1
   },
   {
+   "fieldname": "earlier_open",
+   "fieldtype": "Int",
+   "label": "Still Open from Earlier Weeks",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Counted in their own week's totals, not this week's."
+  },
+  {
+   "fieldname": "earlier_open_list",
+   "fieldtype": "Small Text",
+   "label": "Earlier Discrepancies Still Open",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "review_section",
    "fieldtype": "Section Break",
    "label": "Review"
@@ -174,6 +189,8 @@
   "closes_section",
   "items",
   "missing_days",
+  "earlier_open",
+  "earlier_open_list",
   "review_section",
   "review_note",
   "reviewed_by",
