@@ -44,8 +44,23 @@ class DoctorLedgerEntry(Document):
 			frappe.throw(_("Edition {0} belongs to another agreement.").format(self.edition))
 		if self.app_course and frappe.db.get_value("App Course", self.app_course, "agreement") != self.agreement:
 			frappe.throw(_("Course {0} belongs to another agreement.").format(self.app_course))
+		self.refuse_unsold_copies_charge()
 		self.validate_source()
 		self.validate_payout()
+
+	def refuse_unsold_copies_charge(self):
+		"""Owner, 21 Oct 2026: the doctor bears nothing for copies left unsold, carried forward or made obsolete by a
+		change of curriculum; the library bears the loss (book_edition.dispose_as_scrap). No charge is saved or
+		submitted any more. One recorded before stays on record: a draft can only be rejected, a submitted one
+		cancelled (docs/known-issues.md lists them)."""
+		if self.entry_type != UNSOLD:
+			return
+		if self.flags.approval_action and self.approval_status == REJECTED:
+			return
+		frappe.throw(
+			_("A doctor is never charged for unsold copies: the library bears them. A curriculum change is disposed of as scrap on the edition."),
+			title=_("Not Charged to the Doctor"),
+		)
 
 	def is_deduction(self):
 		"""A charge for unsold copies, or an adjustment taking money off the doctor by hand. A credit note's
@@ -180,7 +195,8 @@ class DoctorLedgerEntry(Document):
 			self.journal_entry = self.post_by_hand()
 
 	def is_entered_by_hand(self):
-		"""An accrual, an adjustment or a charge for unsold copies that no sale and no course posted."""
+		"""An accrual, an adjustment, or a charge for unsold copies recorded before 21 Oct 2026, that no sale and no
+		course posted."""
 		return self.entry_type in ("Accrual", "Adjustment", UNSOLD) and not self.sales_invoice and not self.app_course
 
 	def post_by_hand(self):
@@ -318,120 +334,6 @@ def lock_agreement(agreement):
 
 
 EDITION_COST_FIELDS = ["paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"]
-
-
-def charge_unsold_copies(period):
-	"""When a term or a module ends (its Academic Period is closed), the copies the doctor asked for and did not
-	sell are charged to him at what they cost to make (owner, 10 Oct 2026; DOC-18). An edition carried forward
-	ends with the period it was carried to. Returns the drafts made."""
-	periods = [period, *descendants(period)]
-	drafts = []
-	for edition in frappe.get_all(
-		"Book Edition",
-		filters={"docstatus": 1},
-		fields=["name", "agreement", "period", "carried_to_period", "doctor_qty", "edition_name", *EDITION_COST_FIELDS],
-	):
-		if (edition.carried_to_period or edition.period) in periods:
-			drafts.append(charge_edition(edition, _("when {0} ended").format(period)))
-	return [d for d in drafts if d]
-
-
-def charge_edition(edition, reason):
-	"""The draft charge for the doctor's unsold copies of one edition, in its current period, or None when there is
-	nothing to charge or it is charged already (closing again, or a period closing after the edition was cancelled,
-	adds nothing). Copies the library added are its own, so sales count against the doctor's copies first. The
-	charge is applied only when the accountant or the owner approves it (DOC-22), and the accountant is told.
-
-	QA-03: copies are charged once over the edition's life. An edition carried forward was maybe charged when its
-	first period closed; what that charge (and any credit since) covers is taken off. Copies charged and sold
-	afterwards are given back to the doctor as a draft credit (an Adjustment) at the same cost a copy."""
-	if isinstance(edition, str):
-		edition = frappe.db.get_value(
-			"Book Edition",
-			edition,
-			["name", "agreement", "period", "carried_to_period", "doctor_qty", "edition_name", *EDITION_COST_FIELDS],
-			as_dict=True,
-		)
-	current = edition.carried_to_period or edition.period
-	unsold = max(cint(edition.doctor_qty) - cint(get_sold_qty(edition.name)), 0)
-	outstanding = unsold - charged_qty(edition.name)
-	if not outstanding:
-		return None
-	cost = get_copy_cost(edition)
-	if outstanding > 0:
-		entry_type, qty, amount = UNSOLD, outstanding, flt(outstanding * cost, 2)
-		remarks = _("{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.").format(
-			edition.edition_name, outstanding, cint(edition.doctor_qty), cost, reason
-		)
-	else:
-		entry_type, qty, amount = "Adjustment", -outstanding, flt(-outstanding * cost, 2)
-		remarks = _("{0}: {1} copies charged earlier have been sold since, given back at {2} a copy, {3}.").format(
-			edition.edition_name, -outstanding, cost, reason
-		)
-	if amount <= 0 or frappe.db.exists(
-		"Doctor Ledger Entry",
-		{"edition": edition.name, "period": current, "entry_type": entry_type, "sales_invoice": ("is", "not set"),
-			"docstatus": ["<", 2]},
-	):
-		return None
-	entry = frappe.get_doc(
-		{
-			"doctype": "Doctor Ledger Entry",
-			"agreement": edition.agreement,
-			"period": current,
-			"entry_date": today(),
-			"entry_type": entry_type,
-			"edition": edition.name,
-			"qty": qty,
-			"amount": amount,
-			"remarks": remarks,
-		}
-	)
-	if entry_type == UNSOLD:
-		entry.approval_status = PENDING
-	entry.flags.approval_action = True
-	# Raised by the system for whoever closed the period or recorded the cancellation (a branch manager may);
-	# only an approver applies it.
-	entry.flags.ignore_permissions = True
-	entry.insert()
-	notify(
-		get_approvers(),
-		_("Charge {0} of {1} on {2} for unsold copies of {3} is waiting for your approval.").format(
-			entry.name, frappe.format_value(amount, {"fieldtype": "Currency"}), edition.agreement, edition.edition_name
-		)
-		if entry_type == UNSOLD
-		else _("Credit {0} of {1} to {2} for copies of {3} charged and sold since is waiting for you to submit it.").format(
-			entry.name, frappe.format_value(amount, {"fieldtype": "Currency"}), edition.agreement, edition.edition_name
-		),
-		"Doctor Ledger Entry",
-		entry.name,
-		event="expense_approval",
-	)
-	return entry.name
-
-
-def charged_qty(edition):
-	"""The doctor's copies of an edition charged to him and not given back: charges applied or waiting for approval
-	(a rejected one charged nothing), less the credits for copies sold since."""
-	entries = frappe.get_all(
-		"Doctor Ledger Entry",
-		filters={
-			"edition": edition,
-			"entry_type": ("in", (UNSOLD, "Adjustment")),
-			"sales_invoice": ("is", "not set"),
-			"docstatus": ("<", 2),
-		},
-		fields=["entry_type", "qty", "amount", "approval_status"],
-	)
-	qty = 0
-	for entry in entries:
-		if entry.approval_status == REJECTED:
-			continue
-		if entry.entry_type == UNSOLD:
-			qty += cint(entry.qty)
-		elif flt(entry.amount) > 0:
-			qty -= cint(entry.qty)
-	return qty
 
 
 def descendants(period):
