@@ -1,0 +1,20 @@
+{
+ "add_total_row": 1,
+ "creation": "2026-10-21 15:30:00.000000",
+ "docstatus": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "modified": "2026-10-21 15:30:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Hall Bookings",
+ "owner": "Administrator",
+ "ref_doctype": "Booking",
+ "report_name": "Hall Bookings",
+ "report_type": "Script Report",
+ "roles": [
+  { "role": "System Manager" },
+  { "role": "Accounts Manager" },
+  { "role": "Branch Manager" }
+ ]
+}

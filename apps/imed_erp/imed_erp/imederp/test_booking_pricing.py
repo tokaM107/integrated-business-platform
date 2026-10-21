@@ -418,3 +418,36 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		payment.setup_party_account_field()
 		payment.set_missing_values()
 		self.assertRaisesRegex(frappe.ValidationError, "Record Payment", payment.insert)
+
+	# ---------- HAL-06: the halls' report ----------
+
+	def test_hal06_the_halls_report(self):
+		from imed_erp.imederp.report.hall_bookings.hall_bookings import execute as halls
+
+		fixed = self.complete(self.book(start="10:00", end="12:00", date=PAST))  # 2 h at 300: rent 600, not paid yet
+		share = self.book(
+			start="13:00", end="15:00", date=PAST,
+			rental_model="Revenue Share", attendees=30, admission_price=100, collected_amount=2500,
+		)
+		share = self.complete(share, lecturer_share_percent=40, lecturer=self.lecturer)
+		gone = self.book(start="16:00", end="17:00", date=PAST)
+		gone.reload()
+		gone.update({"status": "Cancelled", "cancellation_reason": "_Test cancelled"})
+		gone.save()
+
+		rows = {r["name"]: r for r in halls({"from_date": PAST, "to_date": PAST, "hall": self.hall})[1]}
+		self.assertEqual(
+			(rows[fixed.name]["rent"], rows[fixed.name]["collected"], rows[fixed.name]["unpaid"], rows[fixed.name]["cancelled"]),
+			(600, 0, 600, 0),
+		)
+		self.assertEqual(
+			(rows[share.name]["attendees"], rows[share.name]["admission_price"], rows[share.name]["collected"], rows[share.name]["rent"]),
+			(30, 100, 2500, 0),
+		)
+		self.assertEqual((rows[gone.name]["cancelled"], rows[gone.name]["unpaid"], rows[gone.name]["rent"]), (1, 0, 0))
+		# Nour runs the halls; Gilan (the studio) sees none of them.
+		frappe.set_user(GILAN)
+		try:
+			self.assertEqual(halls({"from_date": PAST, "to_date": PAST})[1], [])
+		finally:
+			frappe.set_user("Administrator")
