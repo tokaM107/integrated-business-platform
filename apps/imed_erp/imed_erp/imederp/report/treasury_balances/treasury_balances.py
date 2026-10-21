@@ -46,10 +46,8 @@ def treasuries():
 	return [name for name in every if name in allowed]
 
 
-def get_data(date):
-	names = treasuries()
-	if not names:
-		return []
+def day_figures(names, date):
+	"""{treasury: (at the start of the day, money in, money out)} from the ledger, for a date."""
 	moves = {
 		row.account: row
 		for row in frappe.db.sql(
@@ -64,10 +62,21 @@ def get_data(date):
 			as_dict=True,
 		)
 	}
+	return {
+		name: (flt(row.opening, 2), flt(row.money_in, 2), flt(row.money_out, 2))
+		for name in names
+		for row in [moves.get(name) or frappe._dict(opening=0, money_in=0, money_out=0)]
+	}
+
+
+def get_data(date):
+	names = treasuries()
+	if not names:
+		return []
+	figures = day_figures(names, date)
 	rows = []
 	for name in names:
-		row = moves.get(name) or frappe._dict(opening=0, money_in=0, money_out=0)
-		opening, money_in, money_out = flt(row.opening, 2), flt(row.money_in, 2), flt(row.money_out, 2)
+		opening, money_in, money_out = figures[name]
 		rows.append(
 			{
 				"treasury": name,
