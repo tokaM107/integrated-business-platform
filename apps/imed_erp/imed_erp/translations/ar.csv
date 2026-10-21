@@ -1157,3 +1157,12 @@ The cash counted cannot be below zero.,النقدية المعدودة ماين�
 Already Closed,متقفلة قبل كده
 Short by {0}.,عجز {0}.
 Over by {0}.,زيادة {0}.
+Paper Balance,رصيد الورق
+Sheets,ورقة
+Boxes,كراتين
+Reams,رزم
+Loose Sheets,ورق فرط
+Rent,الإيجار
+Unpaid,غير المسدد
+A user is not deleted: disable the account instead (untick Enabled). Their history stays on record.,المستخدم مابيتمسحش: عطّل الحساب بدل كده (شيل علامة مفعّل). تاريخه بيفضل متسجّل.
+Disable Instead,عطّله بدل الحذف
