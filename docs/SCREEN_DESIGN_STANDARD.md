@@ -281,3 +281,25 @@ ERPNext's own page, not a form, so `imed.screen.apply` does not apply; the same 
   event, so prices, accounts and checks stay ERPNext's (Scope: no business rules in the UI).
 - **Arabic / RTL:** labels from translations (`translations/ar.csv`); styles in `imed_theme.css` §20 use logical
   properties and theme tokens only; prices are isolated left-to-right (§7, §8).
+
+## Worked example — Booking (`imederp/doctype/booking`)
+
+A custom doctype used every day by branch staff (Nour, Gilan) who are not accountants. Goal: someone opening it for
+the first time knows what to do, without reading field descriptions.
+
+- **A card on top** (`summary_html`, drawn by `booking.js`, styles in `imed_theme.css` §21): on a new booking, the three
+  steps; on a saved one, the hall or service, day and time, its status in its colour, the price, extras, total, paid
+  and remaining as tiles (remaining amber while owed, green when paid), and **one line saying what to do next**. A
+  revenue-share hall booking adds what was collected and the two shares. Colours are Frappe's own status tokens
+  (`--bg-*`, `--text-on-*`), so they follow light and dark; amounts and times are isolated left to right (§7).
+- **The work first** (`booking.json` field order, §3): hall or service and customer → day and time → the hall's
+  details and model → package and extras → status and notes. The worked-out fields (price details), the money
+  (payments and accounts), the business and category, and the import source are in **collapsed sections** below.
+- **Actions as buttons** (§9, all secondary): Record Deposit / Record Payment, Mark Completed (once the booking has
+  started, with a confirmation saying what it posts), and under *More*: No Show, Cancel Booking (asks the reason).
+  Staff do not need to know which status comes after which; the status field stays for corrections.
+- **Plain help texts**: no requirement codes (HAL-03, STU-05...) under the fields; "Resource" is "Hall or Service".
+- **The list** (`booking_list.js`): each booking's status in the same colour as on its form and in the calendar.
+- **Arabic**: Frappe's own Arabic for *Package* (طَرد), *Amount* (كمية), *Completed* and *Cancelled* was wrong or
+  misspelt; `ar.csv` overrides them (الباقة، المبلغ، مكتمل، ملغي) for the whole site.
+- **Nothing on the server changed**: the price, the checks and the postings are as before (the booking tests pass).

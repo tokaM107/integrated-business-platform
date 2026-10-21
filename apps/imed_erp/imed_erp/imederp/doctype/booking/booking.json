@@ -6,19 +6,18 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
+  "summary_html",
+  "main_section",
   "resource",
-  "resource_type",
-  "cost_center",
   "customer",
-  "customer_group",
   "column_break_main",
   "booking_date",
   "from_time",
   "to_time",
   "hours",
   "hall_section",
-  "activity",
   "rental_model",
+  "activity",
   "column_break_hall",
   "responsible_name",
   "responsible_phone",
@@ -32,65 +31,64 @@
   "lecturer",
   "lecturer_share",
   "center_share",
-  "price_section",
+  "extras_section",
   "package",
-  "price_list",
-  "pricing_note",
-  "column_break_price",
+  "extras",
+  "status_section",
+  "status",
+  "cancellation_reason",
+  "column_break_status",
+  "notes",
+  "price_section",
   "rate",
   "base_amount",
-  "pricing_key",
-  "extras_section",
-  "extras",
   "extras_amount",
+  "column_break_price",
+  "price_list",
+  "pricing_note",
+  "pricing_key",
   "amounts_section",
   "total_amount",
-  "column_break_amounts",
   "paid_amount",
   "outstanding_amount",
+  "column_break_amounts",
   "treasury",
   "sales_invoice",
   "journal_entry",
-  "status_section",
-  "status",
-  "column_break_status",
-  "cancellation_reason",
+  "details_section",
+  "resource_type",
+  "cost_center",
+  "column_break_details",
+  "customer_group",
   "source_section",
   "source",
   "source_system",
   "column_break_source",
   "external_id",
-  "import_key",
-  "notes"
+  "import_key"
  ],
  "fields": [
+  {
+   "fieldname": "summary_html",
+   "fieldtype": "HTML",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "main_section",
+   "fieldtype": "Section Break"
+  },
   {
    "fieldname": "resource",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Resource",
+   "label": "Hall or Service",
    "options": "Booking Resource",
-   "reqd": 1
+   "reqd": 1,
+   "description": "The hall, or the studio's service."
   },
   {
-   "fetch_from": "resource.resource_type",
-   "fieldname": "resource_type",
-   "fieldtype": "Data",
-   "in_standard_filter": 1,
-   "label": "Resource Type",
-   "read_only": 1
-  },
-  {
-   "fetch_from": "resource.cost_center",
-   "fieldname": "cost_center",
-   "fieldtype": "Link",
-   "label": "Business (Cost Center)",
-   "options": "Cost Center",
-   "read_only": 1
-  },
-  {
-   "description": "The customer's one record (CRM-01): find them by name or phone.",
+   "description": "Find them by name or phone.",
    "fieldname": "customer",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -98,15 +96,6 @@
    "label": "Customer",
    "options": "Customer",
    "reqd": 1
-  },
-  {
-   "fetch_from": "customer.customer_group",
-   "fieldname": "customer_group",
-   "fieldtype": "Link",
-   "label": "Customer Category",
-   "options": "Customer Group",
-   "read_only": 1,
-   "description": "HAL-03: the category's price list (Customer Group > Default Price List) prices the booking, when it has a price."
   },
   {
    "fieldname": "column_break_main",
@@ -146,14 +135,7 @@
    "depends_on": "eval:doc.resource_type == 'Hall'",
    "fieldname": "hall_section",
    "fieldtype": "Section Break",
-   "label": "Hall Booking"
-  },
-  {
-   "description": "The lecture, course or event the hall is booked for (HAL-02).",
-   "fieldname": "activity",
-   "fieldtype": "Data",
-   "label": "Activity",
-   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+   "label": "Hall Details"
   },
   {
    "depends_on": "eval:doc.resource_type == 'Hall'",
@@ -162,7 +144,14 @@
    "fieldtype": "Select",
    "label": "Rental Model",
    "options": "\nFixed Rent\nRevenue Share",
-   "description": "HAL-12. Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the students and shares what it collected with the lecturer."
+   "description": "Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the attendees and shares it with the lecturer."
+  },
+  {
+   "description": "The lecture, course or event.",
+   "fieldname": "activity",
+   "fieldtype": "Data",
+   "label": "Activity",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
   },
   {
    "fieldname": "column_break_hall",
@@ -190,21 +179,20 @@
   {
    "fieldname": "attendees",
    "fieldtype": "Int",
-   "label": "Attendees",
-   "description": "HAL-08: how many attended."
+   "label": "Attendees"
   },
   {
    "fieldname": "admission_price",
    "fieldtype": "Currency",
    "label": "Admission Price",
-   "description": "HAL-08: what each attendee pays."
+   "description": "What each attendee pays."
   },
   {
    "fieldname": "expected_revenue",
    "fieldtype": "Currency",
    "label": "Expected Revenue",
    "read_only": 1,
-   "description": "Attendees x admission price."
+   "description": "Attendees × admission price."
   },
   {
    "fieldname": "column_break_share",
@@ -214,20 +202,20 @@
    "fieldname": "collected_amount",
    "fieldtype": "Currency",
    "label": "Collected from Attendees",
-   "description": "What the center actually collected. It is what is shared, not the expected revenue; it goes into the halls' cash box when the booking is completed."
+   "description": "What was actually collected: this is what is shared."
   },
   {
    "fieldname": "lecturer_share_percent",
    "fieldtype": "Percent",
    "label": "Lecturer's Share %",
-   "description": "Agreed for this booking: the owner has not set one rate (open question 33). Required to complete the booking."
+   "description": "Agreed for this booking. Needed to complete it."
   },
   {
    "fieldname": "lecturer",
    "fieldtype": "Link",
    "label": "Lecturer (Supplier)",
    "options": "Supplier",
-   "description": "Who is owed the share, under مستحقات للمحاضرين. ERPNext keeps what is owed to someone on a supplier, not on a customer."
+   "description": "The lecturer as a supplier, to be paid their share."
   },
   {
    "fieldname": "lecturer_share",
@@ -242,34 +230,62 @@
    "read_only": 1
   },
   {
-   "fieldname": "price_section",
+   "fieldname": "extras_section",
    "fieldtype": "Section Break",
-   "label": "Price",
-   "description": "Worked out when the booking is saved, from the price list; the prices are kept on the booking."
+   "label": "Package and Extras"
   },
   {
    "fieldname": "package",
    "fieldtype": "Link",
    "label": "Package",
    "options": "Booking Package",
-   "description": "STU-05. Leave empty to price by the hour."
+   "description": "Leave empty to price by the hour."
   },
   {
-   "fieldname": "price_list",
-   "fieldtype": "Link",
-   "label": "Price List",
-   "options": "Price List",
-   "read_only": 1
+   "fieldname": "extras",
+   "fieldtype": "Table",
+   "label": "Extras",
+   "options": "Booking Extra Item",
+   "description": "Microphones, lights... with how many pieces."
   },
   {
-   "fieldname": "pricing_note",
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status and Notes"
+  },
+  {
+   "default": "Tentative",
+   "description": "Changed with the buttons on top: Record Deposit, Mark Completed, Cancel Booking.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Tentative\nConfirmed with Deposit\nCompleted\nCancelled\nNo Show",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.status == 'Cancelled'",
+   "fieldname": "cancellation_reason",
    "fieldtype": "Small Text",
-   "label": "How It Was Priced",
-   "read_only": 1
+   "label": "Cancellation Reason",
+   "mandatory_depends_on": "eval:doc.status == 'Cancelled'"
   },
   {
-   "fieldname": "column_break_price",
+   "fieldname": "column_break_status",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "price_section",
+   "fieldtype": "Section Break",
+   "label": "Price Details",
+   "description": "Worked out when the booking is saved; the prices are kept on it.",
+   "collapsible": 1
   },
   {
    "fieldname": "rate",
@@ -285,6 +301,29 @@
    "read_only": 1
   },
   {
+   "fieldname": "extras_amount",
+   "fieldtype": "Currency",
+   "label": "Extras Total",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_price",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "price_list",
+   "fieldtype": "Link",
+   "label": "Price List",
+   "options": "Price List",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pricing_note",
+   "fieldtype": "Small Text",
+   "label": "How It Was Priced",
+   "read_only": 1
+  },
+  {
    "fieldname": "pricing_key",
    "fieldtype": "Data",
    "hidden": 1,
@@ -293,28 +332,11 @@
    "label": "Pricing Key"
   },
   {
-   "fieldname": "extras_section",
-   "fieldtype": "Section Break",
-   "label": "Extras",
-   "description": "STU-04, HAL-11: microphones, lights..."
-  },
-  {
-   "fieldname": "extras",
-   "fieldtype": "Table",
-   "label": "Extras",
-   "options": "Booking Extra Item"
-  },
-  {
-   "fieldname": "extras_amount",
-   "fieldtype": "Currency",
-   "label": "Extras Total",
-   "read_only": 1
-  },
-  {
    "fieldname": "amounts_section",
    "fieldtype": "Section Break",
-   "label": "Amounts",
-   "description": "Manual bookings: the total is worked out above; Amount Paid is the deposits and payments recorded (Record Payment). Imported bookings keep the booking system's amounts."
+   "label": "Payments and Accounts",
+   "description": "Amount Paid is the deposits and payments recorded on the booking. An imported booking keeps the booking system's amounts.",
+   "collapsible": 1
   },
   {
    "fieldname": "total_amount",
@@ -322,10 +344,6 @@
    "in_list_view": 1,
    "label": "Total Amount",
    "read_only": 1
-  },
-  {
-   "fieldname": "column_break_amounts",
-   "fieldtype": "Column Break"
   },
   {
    "fieldname": "paid_amount",
@@ -342,12 +360,16 @@
    "no_copy": 1
   },
   {
+   "fieldname": "column_break_amounts",
+   "fieldtype": "Column Break"
+  },
+  {
    "fieldname": "treasury",
    "fieldtype": "Link",
    "label": "Cash Box",
    "options": "Account",
    "read_only": 1,
-   "description": "The business's own cash box (ACC-04): its payments go into it."
+   "description": "Where this business's payments go."
   },
   {
    "fieldname": "sales_invoice",
@@ -366,31 +388,39 @@
    "no_copy": 1
   },
   {
-   "fieldname": "status_section",
+   "fieldname": "details_section",
    "fieldtype": "Section Break",
-   "label": "Status"
+   "label": "More Details",
+   "collapsible": 1
   },
   {
-   "default": "Tentative",
-   "description": "STU-08. Confirmed with Deposit needs a deposit recorded. Completed makes the invoice.",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
+   "fetch_from": "resource.resource_type",
+   "fieldname": "resource_type",
+   "fieldtype": "Data",
    "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Tentative\nConfirmed with Deposit\nCompleted\nCancelled\nNo Show",
-   "reqd": 1
+   "label": "Resource Type",
+   "read_only": 1
   },
   {
-   "fieldname": "column_break_status",
+   "fetch_from": "resource.cost_center",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Business (Cost Center)",
+   "options": "Cost Center",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_details",
    "fieldtype": "Column Break"
   },
   {
-   "depends_on": "eval:doc.status == 'Cancelled'",
-   "fieldname": "cancellation_reason",
-   "fieldtype": "Small Text",
-   "label": "Cancellation Reason",
-   "mandatory_depends_on": "eval:doc.status == 'Cancelled'"
+   "fetch_from": "customer.customer_group",
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "label": "Customer Category",
+   "options": "Customer Group",
+   "read_only": 1,
+   "description": "Some categories have their own prices."
   },
   {
    "collapsible": 1,
@@ -437,16 +467,11 @@
    "no_copy": 1,
    "read_only": 1,
    "unique": 1
-  },
-  {
-   "fieldname": "notes",
-   "fieldtype": "Small Text",
-   "label": "Notes"
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-20 10:00:00.000000",
+ "modified": "2026-10-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",

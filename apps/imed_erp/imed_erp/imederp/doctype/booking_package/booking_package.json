@@ -9,7 +9,7 @@
  "naming_rule": "By fieldname",
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-20 10:00:00.000000",
+ "modified": "2026-10-21 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking Package",
@@ -48,7 +48,7 @@
   },
   {
    "default": "Once",
-   "description": "Once: the package's price is the booking's price, for a booking up to its hours (STU-05: hours of smart board at a special price). Per Hour: its price times the booking's hours (a podcast with two cameras).",
+   "description": "Once: the package's price is the booking's price, for a booking up to its hours (hours of smart board at a special price). Per Hour: its price times the booking's hours (a podcast with two cameras).",
    "fieldname": "charged",
    "fieldtype": "Select",
    "in_list_view": 1,
