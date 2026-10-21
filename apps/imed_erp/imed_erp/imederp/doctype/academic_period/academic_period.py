@@ -11,21 +11,6 @@ PARENT_TYPE = {"Round": "Term", "Module": "Round"}
 
 
 class AcademicPeriod(Document):
-	def on_update(self):
-		# A term or module that ends charges the doctors for their unsold copies, as drafts to approve (DOC-18/22).
-		if self.is_closed and self.has_value_changed("is_closed"):
-			from imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry import charge_unsold_copies
-
-			drafts = charge_unsold_copies(self.name)
-			if drafts:
-				frappe.msgprint(
-					_("{0} charges for unsold copies are waiting for approval in the doctors' ledger: {1}").format(
-						len(drafts), ", ".join(drafts)
-					),
-					title=_("Unsold Copies"),
-					indicator="orange",
-				)
-
 	def validate(self):
 		if getdate(self.end_date) < getdate(self.start_date):
 			frappe.throw(_("End Date {0} is before Start Date {1}.").format(self.end_date, self.start_date))
