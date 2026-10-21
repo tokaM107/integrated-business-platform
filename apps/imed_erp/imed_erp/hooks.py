@@ -195,6 +195,11 @@ doc_events = {
 	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).
 	"*": {
 		"validate": "imed_erp.imederp.dates.refuse_future_date",
+		# A cash box never goes below zero, whatever pays out of it (imederp/cash_balance.py). After the document's
+		# own on_submit and on_cancel, which post its ledger lines.
+		"on_submit": "imed_erp.imederp.cash_balance.check_on_submit",
+		"before_cancel": "imed_erp.imederp.cash_balance.remember_before_cancel",
+		"on_cancel": "imed_erp.imederp.cash_balance.check_on_cancel",
 	},
 	"Journal Entry": {
 		"validate": [
