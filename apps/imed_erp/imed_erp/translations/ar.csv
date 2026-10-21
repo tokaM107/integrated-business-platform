@@ -1118,3 +1118,27 @@ At the Start of the Day,أول اليوم
 Money In,الداخل
 Money Out,الخارج
 Date,التاريخ
+A disposal of edition {0} lists its item {1} only.,التخلص من الإصدار {0} بيشمل صنفه {1} بس.
+A doctor is never charged for unsold copies: the library bears them. A curriculum change is disposed of as scrap on the edition.,الطبيب عمره ما بيتحاسب على النسخ اللي ماتباعتش: المكتبة هي اللي بتتحملها. لو المنهج اتغيّر، النسخ بتتباع خردة من الإصدار نفسه.
+Copies,النسخ
+"Copies of an obsolete edition (the curriculum changed) disposed of as scrap, from its submitted Damaged Stock Entries. The library's loss, never the doctor's.",نسخ إصدار قديم (المنهج اتغيّر) اتصرفت خردة، من قيود التالف المعتمدة بتاعته. خسارة على المكتبة، مش على الطبيب أبداً.
+Dispose as Scrap,التخلص منه كخردة
+Disposed Qty,الكمية اللي اتصرفت خردة
+Edition {0} has {1} copies left to dispose of.,الإصدار {0} فاضل منه {1} نسخة بس للتخلص منها.
+Edition {0} is not obsolete (Cancel: Curriculum Changed).,الإصدار {0} مش قديم (لازم يتسجّل إلغاء: المنهج اتغيّر).
+Edition {0} is {1}'s; dispose of it from that library's store.,الإصدار {0} تبع {1}؛ اتخلص منه من مخزن المكتبة دي.
+"Edition {0} names no item, so its copies are not in stock.",الإصدار {0} مالوش صنف، فنسخه مش في المخزن.
+Make the Disposal,اعمل قيد التخلص
+No Fiscal Year,مفيش سنة مالية
+No store of {0} holds copies of {1}.,مفيش مخزن في {0} فيه نسخ من {1}.
+Not Charged to the Doctor,مش على حساب الطبيب
+Not Obsolete,الإصدار مش قديم
+Obsolete Edition,الإصدار القديم
+Only an edition whose curriculum changed is disposed of as scrap. Record Cancel: Curriculum Changed first.,الإصدار اللي منهجه اتغيّر بس هو اللي يتباع خردة. سجّل الأول إلغاء: المنهج اتغيّر.
+Set by Dispose as Scrap on an edition whose curriculum changed: its unsold copies leave the store as the library's loss.,بيتحط من زرار التخلص منه كخردة على إصدار منهجه اتغيّر: نسخه اللي ماتباعتش بتطلع من المخزن خسارة على المكتبة.
+They leave the store as the library's loss and wait in the damaged store to be sold by weight. The doctor is not charged.,بتطلع من المخزن خسارة على المكتبة وتستنى في مخزن التالف لحد ما تتباع بالوزن. الطبيب مش بيتحاسب عليها.
+Too Many Copies,عدد نسخ أكتر من اللازم
+Total Qty - Sold Qty - Disposed Qty.,إجمالي الكمية - المباع - اللي اتصرف خردة.
+{0} cannot be dated after today: {1}. Record it on the day it happens.,{0} ماينفعش يكون تاريخه بعد النهارده: {1}. سجّله في يومه.
+{0} is not in a fiscal year of {1}. Choose a date in an open fiscal year.,{0} مش جوه سنة مالية بتاعة {1}. اختار تاريخ في سنة مالية مفتوحة.
+{0}: the curriculum changed (notice of {1}); sold as scrap by weight.,{0}: المنهج اتغيّر (إخطار يوم {1})؛ بيتباع خردة بالوزن.
