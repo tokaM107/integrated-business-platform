@@ -160,12 +160,12 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		self.assertEqual([row["description"] for row in data[1:-1]], ["Adjustment — 15-06-2026 — _Test from the first term"])
 
 	def test_qa01_a_settlement_of_the_last_term_recorded_in_this_one_is_brought_forward(self):
-		# QA-01: earned in the first term, then paid out and charged in the first term's name after the second
+		# QA-01: earned in the first term, then paid out and adjusted in the first term's name after the second
 		# had started. Both belong to the first term, so the second starts from what is left of it.
 		before = self.opening()
 		self.entry("Accrual", 1000, "2026-03-01", self.term1)
 		self.entry("Payout", 700, "2026-08-10", self.term1)
-		self.entry("Unsold Copies Charge", 300, "2026-08-15", self.term1)
+		self.entry("Adjustment", -300, "2026-08-15", self.term1)
 		self.entry("Accrual", 500, "2026-09-01", self.term2)
 
 		_columns, data, summary = self.statement()
@@ -197,9 +197,10 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		self.assertNotIn(edition.name, [row.get("edition") for row in self.statement(self.term1)[1]])
 
 	def test_a_negative_balance_is_a_debt_the_doctor_owes(self):
-		# DOC-20: charged more than he earned, the doctor owes the group; the statement says so.
+		# DOC-20: a deduction by hand larger than what he earned leaves the doctor owing the group; the statement says
+		# so. (He is never charged for unsold copies: owner, 21 Oct 2026.)
 		before = self.opening()
-		self.entry("Unsold Copies Charge", before + 100, period=self.term2)
+		self.entry("Adjustment", -(before + 100), period=self.term2)
 		_columns, data, summary = self.statement()
 		self.assertEqual(data[-1]["balance"], -100)
 		self.assertEqual(summary["Balance — Owed by Doctor"], 100)
@@ -215,7 +216,11 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		roles = {r.role for r in frappe.get_doc("Report", "Doctor Statement").roles}
 		self.assertEqual(roles, {"System Manager", "Accounts Manager"})
 
-	# ---------- The end of a term or module: unsold copies (DOC-18, DOC-22) ----------
+	# ---------- The end of a term, carry forward and curriculum changes (owner, 21 Oct 2026) ----------
+	#
+	# The doctor bears nothing for copies left unsold. Curriculum unchanged: they stay in the store, are carried
+	# forward and sold next year, earning the doctor his amount as they sell. Curriculum changed: the edition is
+	# obsolete and its copies left are disposed of as scrap, a loss on the library, and sold by weight.
 
 	def close(self, period):
 		doc = frappe.get_doc("Academic Period", period)
@@ -223,126 +228,53 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		doc.save()
 
 	def charges(self, edition):
+		"""Entries on the doctor's account for the edition that no sale made: there must be none."""
+		return frappe.get_all(LEDGER, filters={"edition": edition.name, "sales_invoice": ("is", "not set")}, pluck="name")
+
+	def accrued(self, edition):
 		return frappe.get_all(
-			LEDGER,
-			filters={"edition": edition.name, "entry_type": "Unsold Copies Charge", "docstatus": ["<", 2]},
-			fields=["name", "docstatus", "approval_status", "period", "qty", "amount"],
+			LEDGER, filters={"edition": edition.name, "docstatus": 1}, fields=["period", "qty", "amount"], order_by="creation"
 		)
 
-	def test_closing_the_term_charges_the_doctor_s_unsold_copies_as_a_draft(self):
+	def test_closing_a_term_charges_the_doctor_nothing(self):
 		edition = self.edition()
 		self.sell(self.items[0], 30)
-		before = self.opening(), self.statement()[1][-1]["balance"]
+		balance = self.statement()[1][-1]["balance"]
 		self.close(self.term2)
-
-		[charge] = self.charges(edition)
-		self.assertEqual(
-			(charge.docstatus, charge.approval_status, charge.period, charge.qty, charge.amount),
-			(0, "Pending Approval", self.term2, 20, round(20 * get_copy_cost(edition), 2)),
-		)
-		# The accountant is told, as for an expense.
-		self.assertTrue(
-			frappe.db.exists("Notification Log", {"for_user": "accountant@imed.local", "document_name": charge.name})
-		)
-		# Waiting for approval: nothing is taken from the doctor yet.
-		self.assertEqual((self.opening(), self.statement()[1][-1]["balance"]), before)
-
-		# The accountant or the owner approves it by submitting it.
-		frappe.get_doc(LEDGER, charge.name).submit()
-		self.assertEqual(self.statement()[1][-1]["balance"], before[1] - charge.amount)
-
-	def test_the_library_s_extra_copies_are_not_charged(self):
-		# 10 for the doctor and 20 more for the library: 5 sold leaves 5 of his; 15 sold leaves none.
-		some = self.edition(doctor_qty=10, extra_qty=20)
-		self.sell(self.items[0], 5)
-		none = self.edition(item=self.items[1], doctor_qty=10, extra_qty=20)
-		self.sell(self.items[1], 15)
-		self.close(self.term2)
-		self.assertEqual([c.qty for c in self.charges(some)], [5])
-		self.assertEqual(self.charges(none), [])
-
-	def test_closing_again_charges_nothing_more(self):
-		edition = self.edition()
-		self.close(self.term2)
-		frappe.db.set_value("Academic Period", self.term2, "is_closed", 0)
-		self.close(self.term2)
-		self.assertEqual(len(self.charges(edition)), 1)
-
-	def test_a_module_ends_with_its_term(self):
-		round_ = frappe.get_doc(
-			{"doctype": "Academic Period", "period_name": "_Test Statement Round", "period_type": "Round",
-				"parent_period": self.term2, "start_date": "2026-07-01", "end_date": "2026-12-31"}
-		).insert().name
-		module = frappe.get_doc(
-			{"doctype": "Academic Period", "period_name": "_Test Statement Module", "period_type": "Module",
-				"parent_period": round_, "start_date": "2026-07-01", "end_date": "2026-12-31"}
-		).insert().name
-		edition = self.edition(period=module)
-		self.close(self.term2)
-		self.assertEqual([c.period for c in self.charges(edition)], [module])
-
-	def test_a_carried_forward_edition_ends_with_the_period_it_was_carried_to(self):
-		edition = self.edition(period=self.term1)
-		carry_forward(edition.name, self.term2)
-		self.close(self.term1)
 		self.assertEqual(self.charges(edition), [])
-		self.close(self.term2)
-		self.assertEqual([c.period for c in self.charges(edition)], [self.term2])
+		self.assertEqual(self.statement()[1][-1]["balance"], balance)
+		self.assertFalse(
+			frappe.db.exists("Notification Log", {"document_type": LEDGER, "subject": ("like", "%unsold copies%"), "creation": (">=", today())})
+		)
 
-	def test_qa03_copies_charged_before_a_carry_forward_are_not_charged_again(self):
-		# 50 for the doctor, 30 sold in the first term: 20 charged when it closes. Carried forward, 5 more sell in
-		# the second term. The doctor has now paid for 5 copies that sold: they are given back, nothing is charged
-		# again, and 15 copies are charged in all.
+	def test_qa03_unsold_copies_are_carried_forward_and_sold_next_year(self):
+		# 50 for the doctor; 30 sell in the first term, which closes. The 20 left stay in the store, are carried
+		# forward and 5 sell in the second term: the doctor earns his 80 on 35 copies and is charged nothing.
 		edition = self.edition(period=self.term1)
 		self.sell(self.items[0], 30)
 		self.close(self.term1)
-		[charge] = self.charges(edition)
-		self.assertEqual(charge.qty, 20)
-		frappe.get_doc(LEDGER, charge.name).approve()
-
 		carry_forward(edition.name, self.term2)
 		self.sell(self.items[0], 5)
 		self.close(self.term2)
-		self.assertEqual([c.qty for c in self.charges(edition)], [20])
-		[credit] = frappe.get_all(
-			LEDGER,
-			filters={"edition": edition.name, "entry_type": "Adjustment", "sales_invoice": ("is", "not set")},
-			fields=["name", "docstatus", "period", "qty", "amount"],
-		)
+		self.assertEqual(self.charges(edition), [])
 		self.assertEqual(
-			(credit.docstatus, credit.period, credit.qty, credit.amount),
-			(0, self.term2, 5, round(5 * get_copy_cost(edition), 2)),
+			[(e.period, e.qty, e.amount) for e in self.accrued(edition)], [(self.term1, 30, 2400), (self.term2, 5, 400)]
 		)
-		frappe.get_doc(LEDGER, credit.name).submit()
-		# Closing again adds nothing either way.
-		frappe.db.set_value("Academic Period", self.term2, "is_closed", 0)
-		self.close(self.term2)
-		self.assertEqual(len(frappe.get_all(LEDGER, filters={"edition": edition.name, "sales_invoice": ("is", "not set")})), 2)
-
-	def test_qa03_a_rejected_charge_does_not_count_as_charged(self):
-		edition = self.edition(period=self.term1)
-		self.sell(self.items[0], 30)
-		self.close(self.term1)
-		[charge] = self.charges(edition)
-		frappe.get_doc(LEDGER, charge.name).reject("_Test the doctor took his copies")
-		carry_forward(edition.name, self.term2)
-		self.close(self.term2)
-		self.assertEqual(sorted(c.qty for c in self.charges(edition)), [20, 20])
+		edition.reload()
+		self.assertEqual((edition.sold_qty, edition.disposed_qty, edition.remaining_qty, edition.status), (35, 0, 15, "Carried Forward"))
 
 	def test_closing_a_term_is_the_accounts_job(self):
-		# A branch manager neither closes the term nor approves a charge on a doctor.
+		# A branch manager neither closes the term nor approves a deduction from a doctor.
 		self.edition()
 		frappe.set_user(RAGHAD)
 		self.assertRaises(frappe.PermissionError, self.close, self.term2)
 		self.assertFalse(frappe.has_permission(LEDGER, "submit"))
 
 	def test_settling_a_closed_term(self):
-		# The charge is approved and the doctor paid after the term is closed; nothing else goes into it.
-		edition = self.edition()
+		# The doctor is paid after the term is closed; nothing else goes into it.
+		self.edition()
 		self.sell(self.items[0], 45)
 		self.close(self.term2)
-		[charge] = self.charges(edition)
-		frappe.get_doc(LEDGER, charge.name).submit()
 		self.entry("Payout", 100, period=self.term2)
 		self.assertRaisesRegex(frappe.ValidationError, "is closed", self.entry, "Adjustment", 10, period=self.term2)
 
@@ -358,29 +290,75 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 				"parent_period": round_, "start_date": "2026-07-01", "end_date": "2026-12-31"}
 		).insert().name
 
-	def test_cancelling_an_edition_charges_the_doctor_at_once_for_approval(self):
-		# DOC-18, DOC-22: when the curriculum changes, the cost of the doctor's unsold copies goes on his balance,
-		# once the owner or the accountant approves; the library's extra copies are not his. A branch manager may
-		# record the cancellation; the charge is raised for her, and only an approver applies it.
-		from imed_erp.imederp.doctype.book_edition.book_edition import cancel_for_curriculum_change
+	def test_qa03_a_curriculum_change_is_the_library_s_loss_and_sold_as_scrap(self):
+		# 40 for the doctor and 15 for the library; 25 sell. The curriculum changes: Raghad records it and disposes of
+		# the 30 left as scrap, which a buyer takes by weight. The doctor keeps what he earned on the 25 sold; the
+		# copies' cost is the library's loss, the scrap money its revenue.
+		from imed_erp.imederp.damaged_stock import SCRAP_BUYER
+		from imed_erp.imederp.doctype.book_edition.book_edition import cancel_for_curriculum_change, dispose_as_scrap
 
 		edition = self.edition(doctor_qty=40, extra_qty=15)
 		self.sell(self.items[0], 25)
-		before = self.statement()[1][-1]["balance"]
+		balance = self.statement()[1][-1]["balance"]
 		frappe.set_user(RAGHAD)
+		self.assertRaisesRegex(frappe.ValidationError, "curriculum changed", dispose_as_scrap, edition.name)
 		cancel_for_curriculum_change(edition.name, today())
+		self.assertEqual(self.charges(edition), [])
+
+		disposal = frappe.get_doc("Damaged Stock Entry", dispose_as_scrap(edition.name))
+		self.assertEqual((disposal.docstatus, disposal.book_edition, disposal.items[0].qty), (0, edition.name, 30))
+		disposal.submit()
 		frappe.set_user("Administrator")
-		[charge] = self.charges(edition)
-		self.assertEqual(
-			(charge.docstatus, charge.approval_status, charge.qty, charge.amount),
-			(0, "Pending Approval", 15, round(15 * get_copy_cost(edition), 2)),
+		disposal.reload()
+		edition.reload()
+		self.assertEqual((edition.sold_qty, edition.disposed_qty, edition.remaining_qty), (25, 30, 0))
+		loss = frappe.get_all(
+			"GL Entry",
+			filters={"voucher_no": disposal.loss_entry, "account": "الهالك والتالف - MMG", "is_cancelled": 0},
+			fields=["cost_center", "debit"],
 		)
-		self.assertEqual(self.statement()[1][-1]["balance"], before)
-		frappe.get_doc(LEDGER, charge.name).approve()
-		self.assertEqual(self.statement()[1][-1]["balance"], before - charge.amount)
-		# The term ending later charges nothing more for it.
-		self.close(self.term2)
-		self.assertEqual(len(self.charges(edition)), 1)
+		self.assertEqual([(g.cost_center, g.debit) for g in loss], [(MAWASAH, disposal.total_loss)])
+		self.assertGreater(disposal.total_loss, 0)
+		# The doctor's account is not touched, and the library cannot dispose of more than it has left.
+		self.assertEqual(self.charges(edition), [])
+		self.assertEqual(self.statement()[1][-1]["balance"], balance)
+		self.assertRaisesRegex(frappe.ValidationError, "copies left", dispose_as_scrap, edition.name, 1)
+
+		# Sold by weight: 12.5 kg at 3.40, the library's revenue.
+		sale = frappe.get_doc(
+			{
+				"doctype": "Damaged Stock Sale",
+				"posting_date": today(),
+				"damaged_store": disposal.damaged_store,
+				"customer": SCRAP_BUYER,
+				"weight": 12.5,
+				"rate": 3.4,
+				"paid_in_cash": 1,
+				"items": [{"item_code": self.items[0], "qty": 30, "damage_entry": disposal.name}],
+			}
+		).insert()
+		sale.submit()
+		self.assertEqual(flt(frappe.db.get_value("Sales Invoice", sale.sales_invoice, "grand_total")), 42.5)
+		self.assertEqual(self.statement()[1][-1]["balance"], balance)
+
+		# Cancelling the disposal puts the copies back on the edition (once its sale is cancelled).
+		self.assertRaisesRegex(frappe.ValidationError, "Cancel the sale first", frappe.get_doc("Damaged Stock Entry", disposal.name).cancel)
+		frappe.get_doc("Damaged Stock Sale", sale.name).cancel()
+		frappe.get_doc("Damaged Stock Entry", disposal.name).cancel()
+		edition.reload()
+		self.assertEqual((edition.disposed_qty, edition.remaining_qty), (0, 30))
+
+	def test_qa03_only_the_edition_s_own_copies_from_its_library_are_disposed(self):
+		from imed_erp.imederp.doctype.book_edition.book_edition import cancel_for_curriculum_change, dispose_as_scrap
+
+		edition = self.edition(doctor_qty=10)
+		cancel_for_curriculum_change(edition.name, today())
+		disposal = frappe.get_doc("Damaged Stock Entry", dispose_as_scrap(edition.name))
+		disposal.items[0].qty = 11
+		self.assertRaisesRegex(frappe.ValidationError, "copies left", disposal.save)
+		disposal.reload()
+		disposal.items[0].item_code = self.items[1]
+		self.assertRaisesRegex(frappe.ValidationError, "lists its item", disposal.save)
 
 	def test_a_term_s_statement_takes_in_its_modules(self):
 		# Books settle by module (DOC-05): an edition of a module sells under the module, and shows on both its
@@ -394,9 +372,9 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 				self.assertEqual([(row["sold_qty"], row["owed"]) for row in rows], [(2, 160)])
 
 	def test_a_whole_term(self):
-		"""One doctor's term from start to end, as the accountant would check it by hand (DOC-07..09, 13, 18, 20, 22):
+		"""One doctor's term from start to end, as the accountant would check it by hand (DOC-07..09, 13, 20):
 		50 copies for the doctor and 10 for the library at 80 each; 30 sold, 2 returned, 300 paid out; the term
-		closes, the 22 unsold of his are charged at cost and approved."""
+		closes and the copies left stay in the store, charged to nobody (owner, 21 Oct 2026)."""
 		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
 
 		before = self.statement()[1][-1]["balance"]
@@ -411,8 +389,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		credit.submit()
 		self.entry("Payout", 300, period=self.term2)
 		self.close(self.term2)
-		[charge] = self.charges(edition)
-		frappe.get_doc(LEDGER, charge.name).approve()
+		self.assertEqual(self.charges(edition), [])
 
 		_columns, data, summary = self.statement()
 		[sold] = [row for row in data if row.get("edition") == edition.name and row.get("selling_price")]
@@ -420,8 +397,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 			(sold["sold_qty"], sold["copy_cost"], sold["doctor_share"], sold["owed"]),
 			(28, cost, 80, 28 * 80),
 		)
-		self.assertEqual(charge.qty, 50 - 28)
-		expected = before + 28 * 80 - 300 - round(22 * cost, 2)
+		expected = before + 28 * 80 - 300
 		self.assertAlmostEqual(data[-1]["balance"], expected, places=2)
 		self.assertAlmostEqual(flt(frappe.db.get_value("Doctor Agreement", self.agreement, "balance")), expected, places=2)
 		# Below zero, it is a debt on the Doctor Debts report; above, nothing is listed there.

@@ -41,7 +41,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		# him is set against the charge, so 200 of it is still owed, since 1 Sep.
 		cls.negative = make_agreement("Books", 82)
 		cls.entry(cls.negative, "2026-08-01", "Accrual", 100)
-		cls.entry(cls.negative, "2026-09-01", "Unsold Copies Charge", 300)
+		# A deduction by hand (approved): the doctor is never charged for unsold copies (owner, 21 Oct 2026).
+		cls.entry(cls.negative, "2026-09-01", "Adjustment", -300)
 		# App: two students post 250 each to the doctor's account (APP-05), 300 collected on 1 Oct into the app's
 		# treasury (APP-06). An app agreement is in Doctor Debts, never in these receivables.
 		# A 2026 term for the 2026 subscriptions (QA-17: a subscription is dated inside its course's term), with

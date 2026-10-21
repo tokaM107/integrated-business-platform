@@ -60,7 +60,7 @@ class IntegrationTestDoctorDebts(IntegrationTestCase):
 	def test_a_negative_balance_is_a_debt_with_its_age(self):
 		books = self.agreement("Books")
 		self.entry(books, "Accrual", 200, "2026-09-05")
-		self.entry(books, "Unsold Copies Charge", 500, "2026-09-10")
+		self.entry(books, "Adjustment", -500, "2026-09-10")
 		row = self.debts()[books]
 		self.assertEqual(
 			(row["debt"], str(row["since"]), row["age"], row["age_31-60"], row.get("age_0-30")),
@@ -71,7 +71,7 @@ class IntegrationTestDoctorDebts(IntegrationTestCase):
 	def test_what_the_doctor_earns_next_pays_off_the_debt_first(self):
 		books = self.agreement("Books")
 		self.entry(books, "Accrual", 200, "2026-09-05")
-		self.entry(books, "Unsold Copies Charge", 500, "2026-09-10")
+		self.entry(books, "Adjustment", -500, "2026-09-10")
 		# 240 earned on copies sold: 60 of the debt is left, still owed since 10 September.
 		self.entry(books, "Accrual", 240, "2026-10-01")
 		row = self.debts()[books]
@@ -99,13 +99,13 @@ class IntegrationTestDoctorDebts(IntegrationTestCase):
 
 	def test_as_of_a_date_and_for_one_doctor(self):
 		books = self.agreement("Books")
-		self.entry(books, "Unsold Copies Charge", 70, "2026-09-10")
+		self.entry(books, "Adjustment", -70, "2026-09-10")
 		self.entry(books, "Accrual", 70, "2026-10-01")
 		self.assertEqual(self.debts(as_of="2026-09-30")[books]["debt"], 70)
 		self.assertNotIn(books, self.debts())
 
 		other = self.agreement("Books", doctor="_Test Other Debt Doctor")
-		self.entry(other, "Unsold Copies Charge", 20, "2026-09-10")
+		self.entry(other, "Adjustment", -20, "2026-09-10")
 		self.assertEqual(list(self.debts(doctor="_Test Other Debt Doctor")), [other])
 
 	def test_a_doctor_who_is_owed_is_not_listed(self):

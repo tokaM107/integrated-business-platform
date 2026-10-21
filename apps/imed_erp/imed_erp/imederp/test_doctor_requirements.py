@@ -120,7 +120,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 
 	def test_a_doctor_below_zero_shows_as_owing(self):
 		balance = flt(frappe.db.get_value("Doctor Agreement", self.agreement, "balance"))
-		self.entry("Unsold Copies Charge", balance + 50)
+		# A deduction by hand, approved: the only way a books doctor goes below zero (owner, 21 Oct 2026).
+		self.entry("Adjustment", -(balance + 50))
 		[row] = [row for row in get_doctor_summary(self.doctor) if row["agreement"] == self.agreement]
 		self.assertEqual((row["balance"], row["direction"], row["owed_by_doctor"]), (50, "Owed by Doctor", True))
 

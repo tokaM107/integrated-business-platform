@@ -85,11 +85,11 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.assertEqual((str(agreement.start_date), agreement.status, flt(agreement.balance)), (today(), "Active", 0))
 
 	def test_the_balance_comes_from_the_doctors_ledger(self):
-		# 800 owed for copies sold, 300 paid out, 50 charged for unsold copies, -20 adjusted: 430 left.
+		# 800 owed for copies sold, 300 paid out, -50 and -20 adjusted: 430 left.
 		agreement = self.agreement(make_doctor(), "_Test Balance").insert()
 		self.entry(agreement.name, "Accrual", 800)
 		payment = self.entry(agreement.name, "Payout", 300)
-		self.entry(agreement.name, "Unsold Copies Charge", 50)
+		self.entry(agreement.name, "Adjustment", -50)
 		self.entry(agreement.name, "Adjustment", -20)
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, "balance"), 430)
 
