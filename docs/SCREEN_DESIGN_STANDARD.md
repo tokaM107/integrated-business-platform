@@ -333,8 +333,9 @@ with the **ImedERP sidebar beside it**: every screen on the side, the money in t
   sidebar that links to the dashboard, ImedERP, is shown. Its *Financial Reports* group has the reports that sidebar
   had (profit per business, cash movements, who owes us, stock and paper) and the cash box balances.
 - The figures are the company's as a whole: only the owner and the accountant read them, checked on the server.
-- **No home screen for the owner** (owner, 21 Oct 2026): the logo, the home link or `/desk` take her back to the
-  dashboard (`imed_home.js`, `send_owner_to_dashboard`: a Super Admin who is not the Administrator). The others keep
-  the home screen.
+- **No home screen** (owner, 21 Oct 2026): whoever opens the system lands on a page with the ImedERP sidebar, and the
+  logo, the home link or `/desk` take them back there (`imed_home.js`, `leave_home_screen`). Whoever may open the
+  Owner Dashboard (the owner, the Administrator) lands on it; everyone else on the first screen of the ImedERP sidebar
+  they may open (a branch manager: Bookings). A user with nothing in that sidebar (HR) keeps the home screen.
 - **The AI assistant on every page** (`imed_assistant.js`): its button and panel are fixed to the window and mounted
   once on the page, not inside the home screen; shown only to the users the server allows (`assistant/api.py`).
