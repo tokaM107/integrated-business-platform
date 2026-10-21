@@ -1142,3 +1142,18 @@ Total Qty - Sold Qty - Disposed Qty.,إجمالي الكمية - المباع - 
 {0} cannot be dated after today: {1}. Record it on the day it happens.,{0} ماينفعش يكون تاريخه بعد النهارده: {1}. سجّله في يومه.
 {0} is not in a fiscal year of {1}. Choose a date in an open fiscal year.,{0} مش جوه سنة مالية بتاعة {1}. اختار تاريخ في سنة مالية مفتوحة.
 {0}: the curriculum changed (notice of {1}); sold as scrap by weight.,{0}: المنهج اتغيّر (إخطار يوم {1})؛ بيتباع خردة بالوزن.
+Treasury Close,إقفال الخزينة
+Cash Box Closes,إقفالات الخزائن
+The cash box or wallet counted.,الخزينة أو المحفظة اللي اتعدّت.
+The business whose cash box it is.,النشاط اللي الخزينة تبعه.
+The Day in the Books,اليوم في الدفاتر
+Expected Balance,الرصيد المفروض
+What the books show at the end of the day: start + in - out.,اللي الدفاتر بتقوله آخر اليوم: أول اليوم + الداخل - الخارج.
+Cash Counted,النقدية المعدودة
+What is actually in the cash box when it is counted.,اللي موجود فعلاً في الخزينة وقت العدّ.
+"Counted - expected: below zero a shortage, above zero a surplus. Recorded only: nothing is posted for it yet (docs/known-issues.md).",المعدود - المفروض: بالسالب عجز، وبالموجب زيادة. بيتسجّل بس: لسه مفيش قيد بيتعمل له.
+The cash counted cannot be below zero.,النقدية المعدودة ماينفعش تكون أقل من صفر.
+{0} is already closed for {1}: {2}.,{0} اتقفلت قبل كده يوم {1}: {2}.
+Already Closed,متقفلة قبل كده
+Short by {0}.,عجز {0}.
+Over by {0}.,زيادة {0}.

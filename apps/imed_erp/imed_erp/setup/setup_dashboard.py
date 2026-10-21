@@ -194,6 +194,7 @@ for dt, lbl, col in [("Sales Invoice", "Sales", "Green"),
                      ("Printer Reading", "Paper Counters", "Cyan"),
                      ("Booking", "Bookings", "Blue"),
                      ("App Subscription", "App Subscriptions", "Pink"),
+                     ("Treasury Close", "Cash Box Closes", "Green"),
                      ("Version", "All Changes", "Grey")]:
     if frappe.db.exists("DocType", dt):
         follow_up.append({"type": "DocType", "link_to": dt, "label": lbl, "color": col, "doc_view": "List"})
