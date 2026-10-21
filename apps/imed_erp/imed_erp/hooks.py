@@ -424,6 +424,10 @@ doc_events = {
 	"Treasury Close": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
+	# CORE-07: a user is disabled, never deleted (imederp/users.py).
+	"User": {
+		"on_trash": "imed_erp.imederp.users.block_user_delete",
+	},
 }
 # Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
 period_closing_doctypes = [
