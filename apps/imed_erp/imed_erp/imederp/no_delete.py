@@ -35,6 +35,7 @@ FINANCIAL_DOCTYPES = [
 	# SEC-12
 	"Material Request",
 	"Platform Fee Schedule",
+	"Treasury Close",
 ]
 
 # Never submitted, so kept by what they carry instead (SEC-12, INT-01): a booking imported from the booking system

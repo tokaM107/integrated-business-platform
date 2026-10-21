@@ -421,6 +421,9 @@ doc_events = {
 	"App Course": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_kept",
 	},
+	"Treasury Close": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
 }
 # Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
 period_closing_doctypes = [
