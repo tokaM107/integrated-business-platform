@@ -34,7 +34,7 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 				"doctype": "App Subscription",
 				"student": make_doctor("_Test Student"),
 				"course": course,
-				"subscription_date": "2031-09-15",
+				"subscription_date": "2026-09-15",
 				"cost_center": APP,
 			}
 		).insert()
@@ -91,7 +91,8 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 
 	def test_qa17_the_date_is_in_the_course_s_term(self):
 		course = make_course()
-		for date in ("2026-10-07", "2032-01-01"):
+		# The day before the tests' term (2 Sep 2026 to 30 Jun 2027) and the day after it.
+		for date in ("2026-09-01", "2027-07-01"):
 			with self.subTest(date):
 				doc = frappe.get_doc(
 					{"doctype": "App Subscription", "student": make_doctor("_Test Student"), "course": course,

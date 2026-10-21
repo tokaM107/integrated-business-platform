@@ -170,7 +170,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 				"student": make_doctor("_Test Suspended Student"),
 				"course": course,
 				"cost_center": frappe.get_all("Cost Center", filters={"is_group": 0}, pluck="name", limit=1)[0],
-				"subscription_date": "2031-09-15",
+				"subscription_date": "2026-09-15",
 				"platform_fee": 50,
 			}
 		)

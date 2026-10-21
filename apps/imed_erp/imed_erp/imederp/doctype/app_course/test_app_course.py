@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import today
 
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreement, make_doctor
 from imed_erp.imederp.doctype.platform_fee_schedule.test_platform_fee_schedule import VALID_FROM, make_schedule
@@ -31,7 +32,7 @@ def make_term(name="_Test Course Term"):
 	return (
 		frappe.get_doc(
 			# Starts when the tests' fee schedule does, so its fees are the owner's tiers whatever the site holds.
-			{"doctype": "Academic Period", "period_name": name, "period_type": "Term", "start_date": VALID_FROM, "end_date": "2031-12-31"}
+			{"doctype": "Academic Period", "period_name": name, "period_type": "Term", "start_date": VALID_FROM, "end_date": "2027-06-30"}
 		)
 		.insert()
 		.name
@@ -72,7 +73,7 @@ class IntegrationTestAppCourse(IntegrationTestCase):
 				"period_type": "Round",
 				"parent_period": term,
 				"start_date": VALID_FROM,
-				"end_date": "2031-10-31",
+				"end_date": "2026-12-31",
 			}
 		).insert()
 		self.assertRaises(frappe.ValidationError, make_course, "_Test Round Course", None, round_.name)
@@ -104,11 +105,11 @@ class IntegrationTestAppCourse(IntegrationTestCase):
 def subscribe(course, count):
 	# Each subscription is another student: a student counts once in a course.
 	start = frappe.db.count("App Subscription", {"course": course})
-	# Dated in the course's term (QA-17): 15 Sep 2031 in the tests' term, else the first day of the course's own.
+	# Dated in the course's term (QA-17): 15 Sep 2026 in the tests' term, else the first day of the course's own.
 	term = frappe.db.get_value(
 		"Academic Period", frappe.db.get_value("App Course", course, "period"), ["start_date", "end_date"], as_dict=True
 	)
-	date = "2031-09-15" if str(term.start_date) <= "2031-09-15" <= str(term.end_date) else term.start_date
+	date = "2026-09-15" if str(term.start_date) <= "2026-09-15" <= str(term.end_date) else term.start_date
 	subscriptions = []
 	for i in range(start, start + count):
 		doc = frappe.get_doc(
@@ -163,15 +164,15 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		self.assertEqual(self.fee(course), (501, 170, 85170))
 
 	def test_new_tiers_from_a_later_date_leave_an_earlier_term_alone(self):
-		# Prices from 1 Oct 2031 are for the terms that start from then; the term from 1 Sep 2031 keeps the
+		# Prices from 1 Oct 2026 are for the terms that start from then; the term from 2 Sep 2026 keeps the
 		# owner's tiers, and a term from 1 Oct takes the new ones.
 		old = make_course("_Test Earlier Term Course")
 		subscribe(old, 300)
-		make_schedule("2031-10-01", [(1, None, 400)])
+		make_schedule("2026-10-01", [(1, None, 400)])
 		self.assertEqual(self.fee(old), (300, 200, 60000))
 
 		term = frappe.get_doc(
-			{"doctype": "Academic Period", "period_name": "_Test Later Term", "period_type": "Term", "start_date": "2031-10-01", "end_date": "2031-12-31"}
+			{"doctype": "Academic Period", "period_name": "_Test Later Term", "period_type": "Term", "start_date": "2026-10-01", "end_date": "2026-12-31"}
 		).insert()
 		new = make_course("_Test Later Term Course", period=term.name)
 		subscribe(new, 300)
@@ -235,13 +236,13 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		course = make_course("_Test Draft Course")
 		subscribe(course, 2)
 		frappe.get_doc(
-			{"doctype": "App Subscription", "student": make_student(999), "course": course, "subscription_date": "2031-09-15", "cost_center": APP}
+			{"doctype": "App Subscription", "student": make_student(999), "course": course, "subscription_date": "2026-09-15", "cost_center": APP}
 		).insert()
 		self.assertEqual(self.fee(course), (2, 250, 500))
 
 	def test_nothing_changes_once_the_term_is_closed(self):
 		term = frappe.get_doc(
-			{"doctype": "Academic Period", "period_name": "_Test Closed Fee Term", "period_type": "Term", "start_date": VALID_FROM, "end_date": "2031-12-31"}
+			{"doctype": "Academic Period", "period_name": "_Test Closed Fee Term", "period_type": "Term", "start_date": VALID_FROM, "end_date": "2027-06-30"}
 		).insert()
 		course = make_course("_Test Closed Term Course", period=term.name)
 		subscription = subscribe(course, 3)[0]
@@ -250,21 +251,21 @@ class IntegrationTestPlatformFee(IntegrationTestCase):
 		self.assertEqual(self.fee(course), (3, 250, 750))
 
 	def test_new_tiers_charge_the_open_courses_again(self):
-		# Its own term and tiers: 100 a student from 15 Dec 2035, for a term from 1 Jan 2036.
-		make_schedule("2035-12-15", [(1, None, 100)])
+		# Its own term and tiers: 100 a student from 3 Sep 2026, for a term from 5 Sep 2026.
+		make_schedule("2026-09-03", [(1, None, 100)])
 		term = frappe.get_doc(
-			{"doctype": "Academic Period", "period_name": "_Test Repriced Term", "period_type": "Term", "start_date": "2036-01-01", "end_date": "2036-04-15"}
+			{"doctype": "Academic Period", "period_name": "_Test Repriced Term", "period_type": "Term", "start_date": "2026-09-05", "end_date": "2026-12-31"}
 		).insert()
 		course = make_course("_Test Repriced Course", period=term.name)
 		subscribe(course, 10)
 		self.assertEqual(self.fee(course), (10, 100, 1000))
 		# New prices from before the term starts charge it again; withdrawn, the old ones are back.
-		newer = make_schedule("2035-12-20", [(1, None, 120)])
+		newer = make_schedule("2026-09-04", [(1, None, 120)])
 		self.assertEqual(self.fee(course), (10, 120, 1200))
 		frappe.get_doc("Platform Fee Schedule", newer).cancel()
 		self.assertEqual(self.fee(course), (10, 100, 1000))
 		# Prices from after the term starts do not touch it.
-		make_schedule("2036-02-01", [(1, None, 500)])
+		make_schedule("2026-09-06", [(1, None, 500)])
 		self.assertEqual(self.fee(course), (10, 100, 1000))
 
 	def test_the_platform_fees_report(self):
@@ -357,7 +358,7 @@ class IntegrationTestPlatformFeePosting(IntegrationTestCase):
 
 		def collection(amount, **values):
 			return frappe.get_doc(
-				{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_type": "Collection", "amount": amount, "entry_date": "2031-12-31", **values}
+				{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_type": "Collection", "amount": amount, "entry_date": today(), **values}
 			).insert()
 
 		self.assertRaisesRegex(frappe.ValidationError, "goes into", collection, 300)
@@ -406,13 +407,13 @@ class IntegrationTestPlatformFeePosting(IntegrationTestCase):
 				"period": term,
 				"entry_type": "Collection",
 				"amount": 40000,
-				"entry_date": "2031-12-31",
+				"entry_date": today(),
 				"treasury": APP_TREASURY,
 			}
 		).insert()
 		collected.submit()
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement, "balance"), 20000)
-		self.assertEqual({r["agreement"]: r["debt"] for r in debts({"as_of": "2031-12-31"})[1]}.get(agreement), 20000)
+		self.assertEqual({r["agreement"]: r["debt"] for r in debts({"as_of": today()})[1]}.get(agreement), 20000)
 
 		columns, rows, _message, _chart, summary = statement({"agreement": agreement, "period": term})
 		self.assertIn("course_name", [c["fieldname"] for c in columns])
