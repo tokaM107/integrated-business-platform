@@ -203,7 +203,8 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 				{"item_code": item.name, "qty": 600, "t_warehouse": AZARITA_STORE, "basic_rate": 1},
 			],
 		)
-		self.assertEqual(get_reorder_alerts(), [])
+		# Other items may be below their levels on the site (a clean site holds no paper): this item's alerts only.
+		self.assertEqual([a for a in get_reorder_alerts() if a.item_code == item.name], [])
 
 		# Azarita drops to 450 (below its 500) while the total, 1,950, is far above both levels.
 		before = frappe.db.count("Notification Log", {"for_user": SARA})

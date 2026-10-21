@@ -21,6 +21,7 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_docto
 from imed_erp.imederp.report.owner_share_plan_vs_actual.owner_share_plan_vs_actual import execute as owner_share
 from imed_erp.imederp.report.unsold_editions.unsold_editions import execute as unsold
 from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH, RAGHAD
+from imed_erp.imederp.testing import fund_cash_boxes
 
 LEDGER = "Doctor Ledger Entry"
 TREASURY = "الخزينة الرئيسية - MMG"
@@ -31,6 +32,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		# A payout leaves a cash box: the box holds the cash first (cash_balance.py).
+		fund_cash_boxes()
 		helpers = test_edition_sales.IntegrationTestEditionSales
 		cls.items = [helpers.make_item(f"_Test Reports Book {n}") for n in (1, 2)]
 		receipt = frappe.get_doc(

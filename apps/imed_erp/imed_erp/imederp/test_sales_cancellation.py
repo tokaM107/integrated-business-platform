@@ -49,7 +49,8 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 				"doctype": "Stock Entry",
 				"stock_entry_type": "Material Receipt",
 				"company": COMPANY,
-				"items": [{"item_code": "BOOK", "qty": 10, "basic_rate": 40, "t_warehouse": EDITIONS}],
+				# Enough for every test's sale of 2: the store holds nothing else on a clean site.
+				"items": [{"item_code": "BOOK", "qty": 100, "basic_rate": 40, "t_warehouse": EDITIONS}],
 			}
 		).insert()
 		receipt.submit()
