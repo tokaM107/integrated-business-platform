@@ -71,6 +71,13 @@ Frappe locks an account after 10 failed logins for 60 seconds. In **System Setti
 These are per account. A limit per address is set in the proxy, e.g. Caddy's `rate_limit` module or nginx's
 `limit_req` on `/api/method/login`.
 
+Also in **System Settings** (the development site has these, found 21 Oct 2026; production must not):
+
+- Session Expiry: `12:00` (the development site keeps a session alive 170 hours).
+- Login with email link: off (passwordless login by email is on in development).
+- Enable Password Policy: on, Minimum Password Score: 3.
+- Deny Multiple Sessions: on for the accountant's and the owner's accounts if they never use two devices.
+
 ## 4. Backups off the server (SEC-05)
 
 `scripts/backup_offsite.sh` takes `bench backup --with-files`, copies the set out of the container, checks that each
