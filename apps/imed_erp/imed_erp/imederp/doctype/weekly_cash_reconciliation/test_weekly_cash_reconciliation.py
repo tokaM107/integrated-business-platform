@@ -10,7 +10,7 @@
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days, today
+from frappe.utils import add_days, getdate, today
 
 from imed_erp.imederp.doctype.treasury_close.test_treasury_close import (
 	ACCOUNTANT, AZARITA, AZARITA_BOX, HALLS, HALLS_BOX, SARA, close, move,
@@ -109,3 +109,40 @@ class IntegrationTestWeeklyCashReconciliation(IntegrationTestCase):
 		closes = [row.treasury_close for row in week.items]
 		self.assertIn(draft.name, closes)
 		self.assertNotIn(first.name, closes)
+
+	# 1. An open discrepancy is carried, not counted again: the next close starts from the cash counted, and a later
+	# week lists it apart from its own totals until it is settled.
+	def test_an_open_discrepancy_is_carried_not_counted_twice(self):
+		early = add_days(START, -7)
+		short = closed(early, -40)
+		nxt = close(0, add_days(START, 1))
+		self.assertEqual((nxt.opening, nxt.difference), (short.counted, -nxt.expected))
+		nxt.counted = nxt.expected
+		nxt.submit()
+		self.assertFalse(nxt.cash_discrepancy)
+		week = frappe.get_doc("Weekly Cash Reconciliation", review_week(START, AZARITA, submit=False))
+		self.assertEqual((week.total_shortage, week.unresolved, week.earlier_open), (0, 0, 1))
+		self.assertIn(short.cash_discrepancy, week.earlier_open_list)
+		self.assertRaisesRegex(frappe.ValidationError, "still open", week.submit)
+		# Settled: no longer carried.
+		from imed_erp.imederp.doctype.cash_discrepancy.cash_discrepancy import write_off
+
+		frappe.set_user(ACCOUNTANT)
+		write_off(short.cash_discrepancy, "Not found")
+		frappe.set_user("Administrator")
+		week.reload()
+		week.save()
+		self.assertEqual(week.earlier_open, 0)
+
+	# 5. The reporting week's first day, once confirmed.
+	def test_the_week_starts_on_the_day_set(self):
+		settings = frappe.get_single("Cash Close Settings")
+		settings.week_starts_on = None
+		settings.save()
+		review_week(START, AZARITA, submit=False)
+		saturday = next(add_days(today(), -i) for i in range(7, 14) if getdate(add_days(today(), -i)).weekday() == 5)
+		settings.week_starts_on = "Saturday"
+		settings.save()
+		self.assertRaisesRegex(frappe.ValidationError, "starts on Saturday", review_week, add_days(saturday, 1), HALLS, submit=False)
+		week = frappe.get_doc("Weekly Cash Reconciliation", review_week(saturday, HALLS, submit=False))
+		self.assertEqual(getdate(week.week_end).strftime("%A"), "Friday")
