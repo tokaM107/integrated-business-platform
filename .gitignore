@@ -33,3 +33,8 @@ node_modules/
 # The real opening count (quantities and costs): business data, never pushed to the repository, which is public.
 # Only the empty template is kept (apps/imed_erp/imed_erp/setup/data/opening_stock_template.csv).
 apps/imed_erp/imed_erp/setup/data/opening_stock.csv
+
+# The requirements document (Word) is the client's: kept outside git, registered in docs/requirements/README.md
+# with its version and checksum. Its approved changes are in docs/requirements/ as text.
+docs/*.docx
+docs/**/*.docx
