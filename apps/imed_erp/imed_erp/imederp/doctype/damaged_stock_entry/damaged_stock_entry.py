@@ -12,7 +12,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 from imed_erp.imederp.damaged_stock import (
 	LOSS_ACCOUNT,
@@ -44,7 +44,32 @@ class DamagedStockEntry(Document):
 		if not (self.reason or "").strip():
 			frappe.throw(_("Enter the reason for the damage."), title=_("Missing Reason"))
 		self.check_items()
+		self.check_obsolete_edition()
 		self.set_values()
+
+	def check_obsolete_edition(self):
+		"""An obsolete edition's disposal (book_edition.dispose_as_scrap): only its own copies, from its own library,
+		no more than it has left; the edition must be one whose curriculum changed."""
+		if not self.book_edition:
+			return
+		from imed_erp.imederp.doctype.book_edition.book_edition import CANCELLED, get_disposed_qty, get_sold_qty
+
+		edition = frappe.db.get_value(
+			"Book Edition",
+			self.book_edition,
+			["docstatus", "status", "item_code", "cost_center", "total_qty"],
+			as_dict=True,
+			for_update=True,
+		)
+		if not edition or edition.docstatus != 1 or edition.status != CANCELLED:
+			frappe.throw(_("Edition {0} is not obsolete (Cancel: Curriculum Changed).").format(self.book_edition))
+		if edition.cost_center != self.branch:
+			frappe.throw(_("Edition {0} is {1}'s; dispose of it from that library's store.").format(self.book_edition, edition.cost_center))
+		if [row.item_code for row in self.items] != [edition.item_code]:
+			frappe.throw(_("A disposal of edition {0} lists its item {1} only.").format(self.book_edition, edition.item_code))
+		left = cint(edition.total_qty) - cint(get_sold_qty(self.book_edition)) - cint(get_disposed_qty(self.book_edition, exclude=self.name))
+		if flt(self.items[0].qty) > left:
+			frappe.throw(_("Edition {0} has {1} copies left to dispose of.").format(self.book_edition, left), title=_("Too Many Copies"))
 
 	def check_items(self):
 		seen = set()
@@ -132,6 +157,13 @@ class DamagedStockEntry(Document):
 			}
 		)
 		self.db_set("damaged_store_entry", submit_new(damaged))
+		self.update_edition()
+
+	def update_edition(self):
+		if self.book_edition:
+			from imed_erp.imederp.doctype.book_edition.book_edition import update_sold_qty
+
+			update_sold_qty(self.book_edition)
 
 	def before_cancel(self):
 		sold = [row for row in self.items if flt(row.sold_qty)]
@@ -146,6 +178,7 @@ class DamagedStockEntry(Document):
 		# The damaged store first: if its stock was sold without this record, ERPNext refuses and nothing changes.
 		cancel_posted("Stock Entry", self.damaged_store_entry)
 		cancel_posted("Stock Entry", self.loss_entry)
+		self.update_edition()
 
 
 @frappe.whitelist()
