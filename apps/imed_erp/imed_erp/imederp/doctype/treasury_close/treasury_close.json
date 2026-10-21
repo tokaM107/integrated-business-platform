@@ -1,0 +1,192 @@
+{
+ "actions": [],
+ "autoname": "TCL-.YYYY.-.#####",
+ "creation": "2026-10-21 14:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "treasury",
+  "business",
+  "column_break_head",
+  "close_date",
+  "counted_by",
+  "figures_section",
+  "opening",
+  "money_in",
+  "money_out",
+  "column_break_figures",
+  "expected",
+  "counted",
+  "difference",
+  "note",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Treasury",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "The cash box or wallet counted."
+  },
+  {
+   "fieldname": "business",
+   "fieldtype": "Link",
+   "options": "Cost Center",
+   "label": "Business",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "description": "The business whose cash box it is."
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "close_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "counted_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Counted By",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "figures_section",
+   "fieldtype": "Section Break",
+   "label": "The Day in the Books"
+  },
+  {
+   "fieldname": "opening",
+   "fieldtype": "Currency",
+   "label": "At the Start of the Day",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "money_in",
+   "fieldtype": "Currency",
+   "label": "Money In",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "money_out",
+   "fieldtype": "Currency",
+   "label": "Money Out",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_figures",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "expected",
+   "fieldtype": "Currency",
+   "label": "Expected Balance",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 1,
+   "description": "What the books show at the end of the day: start + in - out."
+  },
+  {
+   "fieldname": "counted",
+   "fieldtype": "Currency",
+   "label": "Cash Counted",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "What is actually in the cash box when it is counted."
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Currency",
+   "label": "Difference",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_list_view": 1,
+   "description": "Counted - expected: below zero a shortage, above zero a surplus. Recorded only: nothing is posted for it yet (docs/known-issues.md)."
+  },
+  {
+   "fieldname": "note",
+   "fieldtype": "Small Text",
+   "label": "Note"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "Treasury Close",
+   "label": "Amended From",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  }
+ ],
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-10-21 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Treasury Close",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "create": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "delete": 1,
+   "export": 1,
+   "share": 1
+  },
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "create": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "export": 1,
+   "share": 1
+  },
+  {
+   "role": "Branch Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "create": 1,
+   "write": 1,
+   "submit": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "treasury",
+ "track_changes": 1
+}
