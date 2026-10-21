@@ -16,6 +16,7 @@ from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement, make_doctor
 from imed_erp.imederp.doctype.platform_fee_schedule.test_platform_fee_schedule import make_schedule
 from imed_erp.imederp.report.doctor_receivables import doctor_receivables
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # A test module outside a doctype folder builds no "_Test ..." records; keep it here, not under a doctype.
 MAWASAH = "مكتبة المواساة - MMG"
@@ -29,6 +30,7 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		fund_cash_boxes()
 		# Books, owed to the doctor: 1,000 (Mawasah's edition) + 500 accrued, 600 paid out, -50 adjusted = 850.
 		cls.owed = make_agreement("Books", 81)
 		cls.edition = cls.make_edition(cls.owed)

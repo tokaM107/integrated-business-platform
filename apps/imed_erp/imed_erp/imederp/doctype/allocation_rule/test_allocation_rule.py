@@ -14,6 +14,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, getdate
 
+from imed_erp.imederp.testing import fund_cash_boxes
+
 # Every doctype the rule links to already exists on the site. Without this Frappe builds ERPNext's
 # "_Test ..." records for them and commits them to the site.
 IGNORE_TEST_RECORD_DEPENDENCIES = [
@@ -37,6 +39,7 @@ class IntegrationTestAllocationRule(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		fund_cash_boxes()
 		if not frappe.db.exists("Cost Center", SHARED):
 			frappe.get_doc(
 				{

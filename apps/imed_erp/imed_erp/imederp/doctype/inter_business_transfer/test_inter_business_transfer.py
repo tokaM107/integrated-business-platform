@@ -13,6 +13,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import flt
 
 from imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer import CURRENT_ACCOUNT
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # The linked records already exist on the site; without this Frappe would generate its own
 # "_Test ..." records for every linked doctype and commit them.
@@ -59,6 +60,7 @@ class IntegrationTestInterBusinessTransfer(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		fund_cash_boxes()
 		cls.period = frappe.get_doc(
 			{
 				"doctype": "Academic Period",

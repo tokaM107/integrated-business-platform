@@ -17,6 +17,7 @@ from frappe.utils import flt, today
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
+from imed_erp.imederp.testing import fund_cash_boxes
 
 
 # On IntegrationTestCase, the doctype test records and all
@@ -35,6 +36,12 @@ IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "App Course", "Book Editio
 
 
 class IntegrationTestDoctorAgreement(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# A cash box never goes below zero: the money paid out here is put in first.
+		fund_cash_boxes()
+
 	def agreement(self, doctor, name="_Test Agreement"):
 		return frappe.get_doc(
 			{

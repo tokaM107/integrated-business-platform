@@ -18,6 +18,7 @@ from frappe.utils import flt, today
 
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreement, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_balance
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # Linked records already exist on the site or are made by the tests; without this list Frappe builds
 # ERPNext's "_Test ..." records and commits them to the site.
@@ -45,6 +46,12 @@ HR = "hr@imed.local"
 
 
 class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# A cash box never goes below zero: the money paid out here is put in first.
+		fund_cash_boxes()
+
 	def new_entry(self, entry_date, **values):
 		return frappe.get_doc(
 			{

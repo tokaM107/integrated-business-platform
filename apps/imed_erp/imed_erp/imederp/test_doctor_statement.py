@@ -20,6 +20,7 @@ from imed_erp.imederp.doctype.book_edition.book_edition import carry_forward, ge
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
 from imed_erp.imederp.report.doctor_statement.doctor_statement import execute
 from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH, RAGHAD
+from imed_erp.imederp.testing import fund_cash_boxes
 
 LEDGER = "Doctor Ledger Entry"
 TREASURY = "الخزينة الرئيسية - MMG"
@@ -29,6 +30,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		fund_cash_boxes()
 		helpers = test_edition_sales.IntegrationTestEditionSales
 		cls.items = [helpers.make_item(f"_Test Statement Book {n}") for n in (1, 2)]
 		receipt = frappe.get_doc(

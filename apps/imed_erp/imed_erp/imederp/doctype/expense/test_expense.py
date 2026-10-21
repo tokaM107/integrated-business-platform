@@ -16,6 +16,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_months, flt, getdate, today
 
+from imed_erp.imederp.testing import fund_cash_boxes
+
 # The linked records already exist on the site; without this Frappe would generate its own
 # "_Test ..." records for every linked doctype and commit them.
 IGNORE_TEST_RECORD_DEPENDENCIES = [
@@ -75,6 +77,8 @@ class ExpenseFixtures:
 
 	@classmethod
 	def make_fixtures(cls):
+		# A cash box never goes below zero: the money the expenses pay is put in first.
+		fund_cash_boxes()
 		company_cost_center = frappe.db.get_value("Company", COMPANY, "cost_center")
 		leaves = frappe.get_all(
 			"Cost Center",

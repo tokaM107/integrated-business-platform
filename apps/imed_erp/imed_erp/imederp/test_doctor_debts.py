@@ -13,6 +13,7 @@ from frappe.tests import IntegrationTestCase
 
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_doctor
 from imed_erp.imederp.report.doctor_debts.doctor_debts import execute
+from imed_erp.imederp.testing import fund_cash_boxes
 
 LEDGER = "Doctor Ledger Entry"
 AS_OF = "2026-10-15"
@@ -22,6 +23,12 @@ APP_TREASURY = "خزينة تطبيق BA Plus - MMG"
 
 
 class IntegrationTestDoctorDebts(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# A cash box never goes below zero: the money paid out here is put in first.
+		fund_cash_boxes()
+
 	def setUp(self):
 		frappe.db.savepoint("debts_test")
 
