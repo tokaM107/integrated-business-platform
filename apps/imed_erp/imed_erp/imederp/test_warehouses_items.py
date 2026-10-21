@@ -267,6 +267,14 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 		for warehouse in (MAWASAH, MAWASAH_STORE, MAWASAH_EDITIONS, DAMAGED, CENTER):
 			self.assertFalse(frappe.has_permission("Warehouse", "read", doc=warehouse, user=SARA), warehouse)
 
+	def test_library_managers_read_the_stock_settings(self):
+		# Seen in the browser (21 Oct 2026): ERPNext's Stock Entry form reads Stock Settings, whose Default Warehouse
+		# is not theirs; the settings stay readable, their stores stay their own.
+		for user in (RAGHAD, SARA):
+			with self.subTest(user):
+				self.assertTrue(frappe.has_permission("Stock Settings", "read", user=user))
+		self.assertFalse(frappe.has_permission("Warehouse", "read", doc=MAWASAH_STORE, user=SARA))
+
 	def test_sara_cannot_touch_mawasah_through_the_api(self):
 		item = make_item("TEST-WH-PERM")
 		stock_entry("Material Receipt", [{"item_code": item.name, "qty": 100, "t_warehouse": MAWASAH_STORE, "basic_rate": 1}])
