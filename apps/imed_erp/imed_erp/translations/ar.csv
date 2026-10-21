@@ -1166,3 +1166,154 @@ Rent,الإيجار
 Unpaid,غير المسدد
 A user is not deleted: disable the account instead (untick Enabled). Their history stays on record.,المستخدم مابيتمسحش: عطّل الحساب بدل كده (شيل علامة مفعّل). تاريخه بيفضل متسجّل.
 Disable Instead,عطّله بدل الحذف
+The cash box counted: the branch's own.,الخزينة اللي اتعدّت: خزينة الفرع نفسه.
+Closed On,اتقفلت في
+Closed By,قفلها
+The branch manager who closed the box: whoever submits it.,مدير الفرع اللي قفل الخزينة: اللي بيعمل الاعتماد.
+Shift,الشيفت
+"Morning, evening, or who was on the till, if the branch works in shifts.",صباحي، مسائي، أو مين كان على الخزينة، لو الفرع شغال شيفتات.
+Last Close,آخر تقفيل
+"The cash counted at the box's last close; for its first close, what the books held when the day began.",الفلوس اللي اتعدّت في آخر تقفيل للخزينة؛ ولو ده أول تقفيل، رصيد الدفاتر أول اليوم.
+Collections and transfers in since the last close.,التحصيلات والتحويلات الداخلة من آخر تقفيل.
+"Expenses, payouts, transfers out and other payments since the last close.",المصروفات والصرف والتحويلات الخارجة وأي مدفوعات تانية من آخر تقفيل.
+Collections,التحصيلات
+Transfers In,تحويلات داخلة
+Expenses and Payouts,مصروفات وصرف
+Transfers Out,تحويلات خارجة
+Refunds and Other Payments,مرتجعات ومدفوعات تانية
+Expected Closing,الرصيد المتوقع
+Opening + money in - money out.,رصيد البداية + الداخل - الخارج.
+Shortage (-) / Surplus (+),عجز (-) / زيادة (+)
+Cash counted - expected closing. Recorded: the books are not changed to match the cash.,الفلوس اللي اتعدّت - الرصيد المتوقع. بيتسجل بس: الدفاتر مش بتتغير عشان تطابق الفلوس.
+Balance in the Books,الرصيد في الدفاتر
+"What the ledger holds at the end of the day, with the earlier differences not adjusted yet.",رصيد الدفاتر آخر اليوم، ومعاه الفروقات اللي قبل كده ولسه متسوّتش.
+Evidence,إثبات
+"A photo of the count sheet, or anything that explains a difference.",صورة ورقة العد، أو أي حاجة بتوضح الفرق.
+Cash Discrepancy,فرق خزينة
+Reopening and Review,إعادة الفتح والمراجعة
+Needs Review,محتاجة مراجعة
+"Set when an earlier close of this box was reopened, or an entry was dated into a day this close covers.",بتتعلّم لما تقفيل قبلها للخزينة دي يتفتح تاني، أو قيد يتسجل بتاريخ يوم التقفيل ده بيغطيه.
+Review Note,ملاحظة المراجعة
+Reopening Reason,سبب إعادة الفتح
+Reopened By,فتحها تاني
+Reopened On,اتفتحت تاني في
+Pending Investigation,مستني تحقيق
+Responsibility Determined,المسؤول اتحدد
+Recovery Approved,الاسترداد اتوافق عليه
+Written Off,اتشطب على الشركة
+Pending Review,مستني مراجعة
+Explained,اتوضّح
+Withdrawn,اتسحب
+Kind,النوع
+Surplus,زيادة
+"Which shift handled the cash, if known.",أنهي شيفت كان مسؤول عن الفلوس، لو معروف.
+Investigation,التحقيق
+Employees,الموظفين
+Everyone who handled the cash that day. Mark responsible only those the investigation found responsible.,كل اللي اتعامل مع الفلوس اليوم ده. علّم مسؤول بس على اللي التحقيق أثبت إنه مسؤول.
+"What caused it, or the explanation of a surplus.",سبب الفرق، أو تفسير الزيادة.
+Investigation Notes,نتيجة التحقيق
+Review and Approval,المراجعة والموافقة
+Reviewed By,راجعها
+Reviewed On,اتراجعت في
+Recovery Checked Against the Contract and the Labour Law,الاسترداد متراجع على العقد وقانون العمل
+"The accountant confirms the recovery is allowed by the employment contract and within the labour law's limits on deductions, after the employee was told and heard. Required before a recovery is approved.",المحاسب بيأكد إن الاسترداد مسموح بيه في عقد العمل وفي حدود قانون العمل للخصم، بعد ما الموظف اتبلّغ واتسمع رده. لازم قبل الموافقة على أي استرداد.
+Payroll,المرتبات
+For the payroll review report. Nothing is deducted from a salary by the system.,لتقرير مراجعة المرتبات. السيستم مش بيخصم أي حاجة من المرتب.
+Ready for Payroll Review,جاهز لمراجعة المرتبات
+Adjustment Entry,قيد التسوية
+"The book adjustment to فروقات الخزينة, posted only after the review (Post Adjustment).",تسوية الدفاتر على فروقات الخزينة، بتتعمل بس بعد المراجعة (تسجيل التسوية).
+Cash Discrepancy Employee,موظف في فرق الخزينة
+"Determined by the accountant's investigation, never by having worked in the branch.",بيتحدد من تحقيق المحاسب، مش لمجرد إنه كان شغال في الفرع.
+Notified On,اتبلّغ في
+Employee's Response,رد الموظف
+Recovery Amount,مبلغ الاسترداد
+Typed by the accountant for each responsible employee; never split automatically.,المحاسب بيكتبه لكل موظف مسؤول؛ عمره ما بيتقسم لوحده.
+Weekly Cash Reconciliation,مراجعة الخزينة الأسبوعية
+Week Starting,بداية الأسبوع
+Week Ending,نهاية الأسبوع
+Leave empty for every branch.,سيبها فاضية لكل الفروع.
+Shortages,العجز
+Surpluses,الزيادات
+Unresolved Discrepancies,فروقات لسه مفتوحة
+Needs Review Again,محتاجة مراجعة تاني
+A close of this week was reopened after the week was reviewed.,تقفيل من الأسبوع ده اتفتح تاني بعد ما الأسبوع اتراجع.
+Daily Closes,التقفيلات اليومية
+Closes,التقفيلات
+Days Without a Close,أيام من غير تقفيل
+Accountant's Note,ملاحظة المحاسب
+Weekly Cash Reconciliation Item,بند مراجعة الخزينة الأسبوعية
+Transfers (In - Out),التحويلات (داخل - خارج)
+Discrepancy Status,حالة الفرق
+Reopening a close needs a reason.,إعادة فتح التقفيل محتاجة سبب.
+Reason Needed,محتاج سبب
+{0} of {1} was reopened by {2}: {3},{0} بتاع {1} اتفتح تاني بواسطة {2}: {3}
+{0} is not a cash box. Choose your branch's cash box.,{0} مش خزينة نقدية. اختار خزينة الفرع بتاعك.
+"{0} was already closed later, on {1} ({2}). A day before it can be closed only by reopening.",{0} اتقفلت بعد كده في {1} ({2}). يوم قبله مينفعش يتقفل غير بإعادة الفتح.
+The reason is too long: at most {0} characters.,السبب طويل: أقصى حاجة {0} حرف.
+Only a submitted close can be reopened.,التقفيل المعتمد بس هو اللي ينفع يتفتح تاني.
+"{0} is already closed for {1} ({2}). Date the entry today, or ask the accountant.",{0} متقفلة بالفعل ليوم {1} ({2}). سجّل القيد بتاريخ النهارده، أو كلّم المحاسب.
+Day Already Closed,اليوم متقفل
+"{0} {1} was entered by {2} on a closed day, {3}.",{0} {1} اتسجل بواسطة {2} في يوم متقفل، {3}.
+{0} is {1}: it can no longer be changed.,{0} حالته {1}: مينفعش يتغير تاني.
+An employee is listed twice.,في موظف متسجل مرتين.
+A recovery amount cannot be below zero.,مبلغ الاسترداد مينفعش يكون أقل من صفر.
+{0} is not found responsible: nothing can be recovered from them.,{0} مش متحدد إنه مسؤول: مينفعش يتسترد منه حاجة.
+Nothing is recovered on a surplus.,مفيش استرداد على الزيادة.
+A cash discrepancy is kept. A reopened close withdraws it.,فرق الخزينة بيفضل متسجل. إعادة فتح التقفيل هي اللي بتسحبه.
+{0} is already adjusted in the books ({1}). Cancel the adjustment first.,{0} اتسوّى في الدفاتر بالفعل ({1}). الغي التسوية الأول.
+Cannot Reopen,مينفعش يتفتح تاني
+{0} has an approved recovery. Withdraw the recovery first.,{0} عليه استرداد متوافق عليه. اسحب الاسترداد الأول.
+Withdrawn: {0} was reopened.,اتسحب: {0} اتفتح تاني.
+{0} is {1} ({2}): this cannot be done to it now.,{0} حالته {1} ({2}): مينفعش يتعمل فيه كده دلوقتي.
+Write what the investigation found first.,اكتب نتيجة التحقيق الأول.
+Investigation Notes Needed,محتاج نتيجة التحقيق
+"Mark who is responsible first. If nobody can be, write the shortage off.",علّم على المسؤول الأول. لو مفيش حد ممكن يتحدد، اشطب العجز على الشركة.
+Nobody Responsible,مفيش مسؤول
+"{0} has not been told yet. Record the day they were told, and their response.",{0} لسه متبلّغش. سجّل يوم ما اتبلّغ ورده.
+Employee Not Told,الموظف متبلّغش
+Confirm the recovery is allowed by the employment contract and the labour law first.,أكّد الأول إن الاسترداد مسموح بيه في عقد العمل وقانون العمل.
+Not Checked,متراجعش
+Type the amount to recover from each responsible employee. Nothing is split by itself.,اكتب المبلغ اللي هيتسترد من كل موظف مسؤول. مفيش حاجة بتتقسم لوحدها.
+No Amounts,مفيش مبالغ
+"The recovery, {0}, is more than the shortage, {1}.",الاسترداد، {0}، أكتر من العجز، {1}.
+Withdrawing a recovery needs a reason.,سحب الاسترداد محتاج سبب.
+Recovery withdrawn: {0},الاسترداد اتسحب: {0}
+Writing a shortage off needs a reason.,شطب العجز محتاج سبب.
+"Write where the extra cash came from, or that it is not known.",اكتب الفلوس الزيادة جت منين، أو إنه مش معروف.
+{0} is already adjusted in the books.,{0} اتسوّى في الدفاتر بالفعل.
+Already Adjusted,اتسوّى بالفعل
+"Cash {0} of {1} at {2}, {3}",{0} نقدية يوم {1} في {2}، {3}
+The week has not started yet.,الأسبوع لسه مبدأش.
+{0} discrepancies are still open. Write a note on them before marking the week reviewed.,في {0} فروقات لسه مفتوحة. اكتب ملاحظة عليها قبل ما تعلّم الأسبوع إنه اتراجع.
+Note Needed,محتاج ملاحظة
+This week is already reconciled: {0}.,الأسبوع ده اتراجع بالفعل: {0}.
+Already Reconciled,اتراجع بالفعل
+Told On,اتبلّغ في
+A close of this week was reopened after the review. Cancel and amend to review the week again.,تقفيل من الأسبوع ده اتفتح تاني بعد المراجعة. الغي وعدّل عشان تراجع الأسبوع تاني.
+{0} discrepancies are still open.,في {0} فروقات لسه مفتوحة.
+No close was submitted this week.,مفيش تقفيل اتعمد الأسبوع ده.
+Needs review: {0},محتاجة مراجعة: {0}
+Short by {0}. The accountant reviews it with the week.,عجز {0}. المحاسب هيراجعه مع الأسبوع.
+Over by {0}. The accountant reviews it with the week.,زيادة {0}. المحاسب هيراجعها مع الأسبوع.
+Reopened by {0}: {1},اتفتح تاني بواسطة {0}: {1}
+Reopen,افتح تاني
+Why is it reopened?,ليه بيتفتح تاني؟
+Reopen the Close,إعادة فتح التقفيل
+Nobody is charged until the investigation finds who is responsible. Nothing is split or deducted by itself.,محدش بيتحمّل حاجة لحد ما التحقيق يحدد المسؤول. مفيش حاجة بتتقسم أو بتتخصم لوحدها.
+Approved for the payroll review. The system deducts nothing from a salary.,متوافق عليه لمراجعة المرتبات. السيستم مش بيخصم أي حاجة من المرتب.
+Write Off,اشطب على الشركة
+Why does the company bear it?,ليه الشركة هتتحمّله؟
+Approve Recovery,وافق على الاسترداد
+Withdraw Recovery,اسحب الاسترداد
+Why is it withdrawn?,ليه بيتسحب؟
+Where did the extra cash come from?,الفلوس الزيادة جت منين؟
+Post Adjustment,سجّل التسوية
+"Bring the books to the cash counted, against Cash Differences?",نخلي الدفاتر زي الفلوس اللي اتعدّت، على حساب فروقات الخزينة؟
+Discrepancies,الفروقات
+Payroll Review,مراجعة المرتبات
+Still Open Only,المفتوح بس
+Cash Discrepancies,فروقات الخزينة
+Cash Shortages This Month,عجز الخزاين الشهر ده
+Open Cash Discrepancies,فروقات خزينة مفتوحة
+Cash Discrepancies to Review,فروقات خزينة مستنية مراجعة
+Weekly Cash Reviews,مراجعات الخزينة الأسبوعية
