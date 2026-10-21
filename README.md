@@ -523,11 +523,21 @@ Rules confirmed by the owner on 21 Oct 2026.
   week's totals: each difference counts once, in its own week, and stays visible until settled. The next close
   never repeats a difference: its opening is the cash counted. Submitting it marks the week reviewed (a note is
   required while any discrepancy is open). It moves no money: it does not assume the cash went to the accountant.
-  The week starts on the day set in Cash Close Settings (*Reporting Week Starts On*), on any day while it is empty.
+  The week runs Saturday to Thursday (owner, 21 Oct 2026; Cash Close Settings, *Reporting Week Starts On* and
+  *Ends On*): Friday is off, a close made on a Friday still shows in its week, and a Friday is never listed as a
+  day without a close.
 - **Opening cash** on a new site: `imederp/opening_cash.py` checks every treasury and prepares the counted cash as
   a draft opening entry (docs/production-hardening.md, section 7).
 - Owner's page: Cash Shortages This Month, Open Cash Discrepancies, and shortcuts to the closes, the discrepancies
   waiting, the weekly reviews and the report.
+
+### The demo site
+
+A separate site, **demo** (http://127.0.0.1:8081 on the development machine, container `imed-demo-web`), holds the
+demo transactions of 18 Oct restored from the backup of 21 Oct, plus sample cash closes, discrepancies and a
+weekly review made by `setup/seed_cash_demo.py` (it refuses any other site). Every sample record says (تجريبي).
+It is for looking at the screens; the development site and the tests do not depend on it, and production starts
+from a clean site. Its staff accounts have a demo-only password.
 
 ### Dates
 

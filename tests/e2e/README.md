@@ -25,6 +25,7 @@ node roles.js && node screens.js && node workflows.js && node close.js
 ```
 
 Screenshots go to `tests/e2e/shots/`. `workflows.js` makes new records on every run (an expense, a transfer, a
-booking, a subscription); its scrap step needs an obsolete edition with copies left. `close.js` reopens today's submitted close of
+booking, a subscription); its scrap step needs an obsolete edition with copies left. `demo_screens.js` (with `IMED_E2E_SITE=demo`) opens the demo site's cash screens and checks their sample
+records, read-only. `close.js` reopens today's submitted close of
 Azarita's cash box (as the accountant, after checking that Sara cannot), closes the day again 15 short, writes the
 shortage off and reviews the week; it needs one submitted close of that box today, and can run again on it.
