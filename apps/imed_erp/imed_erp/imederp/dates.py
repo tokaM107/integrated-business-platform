@@ -46,3 +46,28 @@ def refuse_future_date(doc, method=None):
 			),
 			title=_("Date in the Future"),
 		)
+	check_company_fiscal_year(doc, getdate(doc.get(field)))
+
+
+def check_company_fiscal_year(doc, date):
+	"""QA-37: the date is in one of the company's own fiscal years. ERPNext also accepts a fiscal year that names
+	no company, for every company; the test runs of October left 37 such "_Test Fiscal Year"s on the development
+	site (2011 to 2050), which would let the group post in years it never opened. A company with no fiscal year of
+	its own is left to ERPNext."""
+	company = doc.get("company")
+	if not company:
+		return
+	own = frappe.db.sql(
+		"""select fy.year_start_date, fy.year_end_date from `tabFiscal Year` fy
+		join `tabFiscal Year Company` fyc on fyc.parent = fy.name
+		where fyc.company = %s and fy.disabled = 0""",
+		company,
+		as_dict=True,
+	)
+	if own and not any(getdate(fy.year_start_date) <= date <= getdate(fy.year_end_date) for fy in own):
+		frappe.throw(
+			_("{0} is not in a fiscal year of {1}. Choose a date in an open fiscal year.").format(
+				frappe.format_value(date, {"fieldtype": "Date"}), company
+			),
+			title=_("No Fiscal Year"),
+		)
