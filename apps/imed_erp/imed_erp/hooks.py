@@ -40,6 +40,8 @@ app_include_js = [
 	"/assets/imed_erp/js/imed_home.js",
 	"/assets/imed_erp/js/imed_assistant.js",
 	"/assets/imed_erp/js/imed_theme_toggle.js",
+	# Fixes to Frappe's desk seen in the browser (a broken icon in the sidebar menu).
+	"/assets/imed_erp/js/imed_desk_fixes.js",
 ]
 
 # include js, css files in header of web template (the theme there only touches the login page)
