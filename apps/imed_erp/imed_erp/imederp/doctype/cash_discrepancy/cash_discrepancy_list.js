@@ -3,6 +3,7 @@ frappe.listview_settings["Cash Discrepancy"] = {
 		const colors = {
 			"Pending Investigation": "red",
 			"Responsibility Determined": "orange",
+			"Recovery Recommended": "purple",
 			"Pending Review": "orange",
 			"Recovery Approved": "blue",
 			"Written Off": "gray",

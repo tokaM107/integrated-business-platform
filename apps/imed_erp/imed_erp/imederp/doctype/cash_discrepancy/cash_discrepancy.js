@@ -14,7 +14,7 @@ function act(frm, method, prompt) {
 
 frappe.ui.form.on("Cash Discrepancy", {
 	refresh(frm) {
-		const open = ["Pending Investigation", "Responsibility Determined", "Pending Review"].includes(frm.doc.status);
+		const open = ["Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review"].includes(frm.doc.status);
 		if (frm.doc.status === "Pending Investigation") {
 			frm.set_intro(
 				__("Nobody is charged until the investigation finds who is responsible. Nothing is split or deducted by itself."),
@@ -24,13 +24,25 @@ frappe.ui.form.on("Cash Discrepancy", {
 		if (frm.doc.payroll_status) {
 			frm.set_intro(__("Approved for the payroll review. The system deducts nothing from a salary."), "blue");
 		}
+		if (frm.doc.status === "Recovery Recommended") {
+			frm.set_intro(__("Recommended by {0}. Waiting for the owner's approval.", [frm.doc.recommended_by]), "orange");
+			if (frappe.user.has_role("Super Admin")) {
+				frm.add_custom_button(__("Approve Recovery"), () => act(frm, "approve_recovery"), __("Owner"));
+				frm.add_custom_button(__("Return to the Accountant"), () => act(frm, "return_recommendation", __("Why is it returned?")), __("Owner"));
+			}
+		}
+		if (frm.doc.kind === "Surplus" && frm.doc.status === "Pending Review") {
+			frm.set_intro(__("Under review until the accountant finds where the extra cash came from. It is not revenue."), "orange");
+		}
 		if (!frappe.user.has_role("Accounts Manager")) return;
 		if (frm.doc.kind === "Shortage" && open) {
-			frm.add_custom_button(__("Responsibility Determined"), () => act(frm, "determine_responsibility"), __("Review"));
+			if (frm.doc.status !== "Recovery Recommended") {
+				frm.add_custom_button(__("Responsibility Determined"), () => act(frm, "determine_responsibility"), __("Review"));
+			}
 			frm.add_custom_button(__("Write Off"), () => act(frm, "write_off", __("Why does the company bear it?")), __("Review"));
 		}
 		if (frm.doc.status === "Responsibility Determined") {
-			frm.add_custom_button(__("Approve Recovery"), () => act(frm, "approve_recovery"), __("Review"));
+			frm.add_custom_button(__("Recommend Recovery"), () => act(frm, "recommend_recovery"), __("Review"));
 		}
 		if (frm.doc.status === "Recovery Approved" && !frm.doc.adjustment_entry) {
 			frm.add_custom_button(__("Withdraw Recovery"), () => act(frm, "withdraw_recovery", __("Why is it withdrawn?")), __("Review"));

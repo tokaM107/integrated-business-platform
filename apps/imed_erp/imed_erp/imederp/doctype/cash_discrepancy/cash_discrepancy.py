@@ -5,13 +5,16 @@
 # when it is submitted; investigated and settled by the accountant; the owner sees every one; a branch manager reads
 # her own branch's.
 #
-# Shortage: Pending Investigation -> Responsibility Determined -> Recovery Approved, or Written Off (the company bears
-#   it). Nobody is responsible until the investigation says so: the employees on shift are listed, not charged. An
-#   amount is recovered from an employee only when the accountant has named the employee responsible, told the
-#   employee and heard them, confirmed the recovery is allowed by the contract and the labour law, and typed each
-#   employee's amount; nothing is split by itself. An approved recovery is ready for the payroll review report; the
-#   system deducts nothing from a salary (there is no payroll here).
-# Surplus: Pending Review -> Explained. It is never revenue by itself.
+# Shortage: Pending Investigation -> Responsibility Determined -> Recovery Recommended -> Recovery Approved, or Written
+#   Off (the company bears it). Nobody is responsible until the investigation says so: the employees on shift are
+#   listed, not charged. Four eyes: the accountant recommends a recovery only once she has named the employee
+#   responsible, told the employee and heard them, confirmed the recovery is allowed by the contract and the labour
+#   law, and typed each employee's amount (nothing is split by itself); the owner approves it, or returns it. The owner
+#   cannot approve while the recovery policy is not approved (Cash Close Settings), nor approve a recovery they
+#   recommended themselves. An approved recovery is ready for the payroll review report; the system deducts nothing from
+#   a salary (there is no payroll here).
+# Surplus: Pending Review -> Explained, only with where the cash came from. Until then it stays under review, in the
+#   open count and in every later weekly review; it is never revenue by itself.
 # Either, once settled: Post Adjustment brings the books to the cash counted against فروقات الخزينة, by the accountant
 #   only, once.
 # Withdrawn: its close was reopened.
@@ -21,18 +24,19 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
+from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import OWNER_ROLE, recovery_allowed
 from imed_erp.imederp.sales_cancellation import clean_reason
 
 ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
 CASH_DIFFERENCES = "فروقات الخزينة"
-OPEN = ("Pending Investigation", "Responsibility Determined", "Pending Review")
+OPEN = ("Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review")
 SETTLED = ("Recovery Approved", "Written Off", "Explained")
 
 
 class CashDiscrepancy(Document):
 	def validate(self):
 		before = self.get_doc_before_save()
-		if before and before.status in SETTLED + ("Withdrawn",):
+		if before and before.status in SETTLED + ("Withdrawn", "Recovery Recommended"):
 			# Settled: what was decided stays as it was decided.
 			for field in ("employees", "reason", "investigation_notes", "legal_check", "shift"):
 				if decided(before, field) != decided(self, field) and not self.flags.by_action:
@@ -138,8 +142,8 @@ def determine_responsibility(name):
 
 
 @frappe.whitelist(methods=["POST"])
-def approve_recovery(name):
-	"""Approve recovering the amounts typed for each responsible employee."""
+def recommend_recovery(name):
+	"""The accountant recommends recovering the amounts typed for each responsible employee; the owner decides."""
 	doc = get_for_action(name, ("Shortage",), ("Responsibility Determined",))
 	responsible = [row for row in doc.employees if row.responsible]
 	for row in responsible:
@@ -161,11 +165,49 @@ def approve_recovery(name):
 		)
 	if total > flt(doc.amount) + 0.005:
 		frappe.throw(_("The recovery, {0}, is more than the shortage, {1}.").format(total, doc.amount))
-	doc.status = "Recovery Approved"
+	doc.status = "Recovery Recommended"
 	doc.recovery_total = total
+	doc.recommended_by = frappe.session.user
+	doc.recommended_on = now_datetime()
+	doc.save()
+	return doc.status
+
+
+@frappe.whitelist(methods=["POST"])
+def approve_recovery(name):
+	"""The owner approves the accountant's recommendation, once the recovery policy is approved."""
+	frappe.only_for(OWNER_ROLE)
+	doc = get_for_action(name, ("Shortage",), ("Recovery Recommended",))
+	if not recovery_allowed():
+		frappe.throw(
+			_("Recovering shortages from employees is blocked until the recovery policy is approved (Cash Close Settings)."),
+			title=_("Recovery Blocked"),
+		)
+	if doc.recommended_by == frappe.session.user:
+		frappe.throw(
+			_("You recommended this recovery: another person approves it."), frappe.PermissionError, title=_("Four Eyes")
+		)
+	doc.status = "Recovery Approved"
 	doc.payroll_status = "Ready for Payroll Review"
 	doc.approved_by = frappe.session.user
 	doc.approved_on = now_datetime()
+	doc.save()
+	return doc.status
+
+
+@frappe.whitelist(methods=["POST"])
+def return_recommendation(name, reason):
+	"""The owner sends the recommendation back to the accountant, with a reason."""
+	frappe.only_for(OWNER_ROLE)
+	reason = clean_reason(reason)
+	if not reason:
+		frappe.throw(_("Returning a recommendation needs a reason."), title=_("Reason Needed"))
+	doc = get_for_action(name, ("Shortage",), ("Recovery Recommended",))
+	doc.status = "Responsibility Determined"
+	doc.recovery_total = 0
+	doc.recommended_by = None
+	doc.recommended_on = None
+	doc.add_comment("Info", _("Recommendation returned: {0}").format(reason))
 	doc.save()
 	return doc.status
 
@@ -195,10 +237,11 @@ def write_off(name, reason):
 	reason = clean_reason(reason)
 	if not reason:
 		frappe.throw(_("Writing a shortage off needs a reason."), title=_("Reason Needed"))
-	doc = get_for_action(name, ("Shortage",), ("Pending Investigation", "Responsibility Determined"))
+	doc = get_for_action(name, ("Shortage",), ("Pending Investigation", "Responsibility Determined", "Recovery Recommended"))
 	doc.reason = reason
 	for row in doc.employees:
 		row.recovery_amount = 0
+	doc.recovery_total = 0
 	doc.status = "Written Off"
 	mark_reviewed(doc)
 	doc.approved_by = frappe.session.user
@@ -211,7 +254,7 @@ def write_off(name, reason):
 def explain_surplus(name, reason):
 	reason = clean_reason(reason)
 	if not reason:
-		frappe.throw(_("Write where the extra cash came from, or that it is not known."), title=_("Reason Needed"))
+		frappe.throw(_("Write where the extra cash came from. If it is not known yet, leave the surplus under review."), title=_("Reason Needed"))
 	doc = get_for_action(name, ("Surplus",), ("Pending Review",))
 	doc.reason = reason
 	doc.status = "Explained"

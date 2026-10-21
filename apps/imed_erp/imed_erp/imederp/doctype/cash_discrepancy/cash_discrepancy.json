@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 17:00:00.000000",
- "modified": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-21 18:00:00.000000",
  "engine": "InnoDB",
  "row_format": "Dynamic",
  "links": [],
@@ -56,7 +56,7 @@
    "read_only": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "options": "Pending Investigation\nResponsibility Determined\nRecovery Approved\nWritten Off\nPending Review\nExplained\nWithdrawn",
+   "options": "Pending Investigation\nResponsibility Determined\nRecovery Recommended\nRecovery Approved\nWritten Off\nPending Review\nExplained\nWithdrawn",
    "default": "Pending Investigation"
   },
   {
@@ -168,6 +168,19 @@
    "description": "The accountant confirms the recovery is allowed by the employment contract and within the labour law's limits on deductions, after the employee was told and heard. Required before a recovery is approved."
   },
   {
+   "fieldname": "recommended_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Recommended By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recommended_on",
+   "fieldtype": "Datetime",
+   "label": "Recommended On",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_review",
    "fieldtype": "Column Break"
   },
@@ -175,7 +188,7 @@
    "fieldname": "approved_by",
    "fieldtype": "Link",
    "options": "User",
-   "label": "Approved By",
+   "label": "Approved By (Owner)",
    "read_only": 1
   },
   {
@@ -226,6 +239,8 @@
   "reviewed_by",
   "reviewed_on",
   "legal_check",
+  "recommended_by",
+  "recommended_on",
   "column_break_review",
   "approved_by",
   "approved_on",
