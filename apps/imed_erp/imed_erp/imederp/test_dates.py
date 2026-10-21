@@ -118,3 +118,22 @@ class IntegrationTestDates(ExpenseFixtures, IntegrationTestCase):
 		for doctype in ("Booking", "Recurring Expense", "Allocation Rule", "Platform Fee Schedule", "Academic Period"):
 			with self.subTest(doctype):
 				self.assertNotIn(doctype, DATE_FIELD)
+
+	def test_qa37_a_date_outside_the_company_s_fiscal_years_is_refused(self):
+		# The development site holds "_Test Fiscal Year"s that name no company, which ERPNext would apply to the
+		# group too; the group posts only in its own (2026-2027 from 1 Sep 2026).
+		capital = frappe.get_all("Account", filters={"company": COMPANY, "root_type": "Equity", "is_group": 0}, pluck="name", limit=1)[0]
+		entry = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"company": COMPANY,
+				"posting_date": "2026-08-31",
+				"accounts": [
+					{"account": AZARITA_BOX, "debit_in_account_currency": 10, "cost_center": AZARITA},
+					{"account": capital, "credit_in_account_currency": 10, "cost_center": AZARITA},
+				],
+			}
+		)
+		self.assertRaisesRegex(frappe.ValidationError, "not in a fiscal year", entry.insert)
+		entry.posting_date = "2026-09-01"
+		entry.insert()
