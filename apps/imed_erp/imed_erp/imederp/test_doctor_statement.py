@@ -49,8 +49,9 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 			}
 		).insert().name
 		# Today falls in the second term.
-		cls.term1 = helpers.make_period("_Test Statement Term 1", "2026-01-01", "2026-06-30")
-		cls.term2 = helpers.make_period("_Test Statement Term 2", "2026-07-01", "2026-12-31")
+		# Inside the company's fiscal year (from 1 Sep 2026); nothing is posted outside it.
+		cls.term1 = helpers.make_period("_Test Statement Term 1", "2026-09-01", "2026-09-30")
+		cls.term2 = helpers.make_period("_Test Statement Term 2", "2026-10-01", "2026-12-31")
 		cls.agreement = make_agreement("Books", 80)
 
 	def setUp(self):
@@ -69,7 +70,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 				"agreement": self.agreement,
 				"item_code": item or self.items[0],
 				"cost_center": MAWASAH,
-				"edition_date": "2026-03-01",
+				"edition_date": "2026-09-01",
 				"period": period or self.term2,
 				"pages": 100,
 				"doctor_qty": 50,
@@ -121,7 +122,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 
 	def test_a_term_from_the_balance_brought_forward_to_the_end(self):
 		before = self.opening()
-		self.entry("Adjustment", 50, "2026-06-15", self.term1, "_Test from the first term")
+		self.entry("Adjustment", 50, "2026-09-15", self.term1, "_Test from the first term")
 		first, second = self.edition(), self.edition(item=self.items[1], selling_price=150)
 		self.sell(self.items[0], 3)
 		sale = self.sell(self.items[0], 2)
@@ -135,7 +136,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 		credit.submit()
 		# A payout entered with the period, and one entered without it but dated in the term.
 		self.entry("Payout", 200, period=self.term2)
-		self.entry("Payout", 30, "2026-09-02")
+		self.entry("Payout", 30, "2026-10-02")
 
 		_columns, data, summary = self.statement()
 		opening = before + 50
@@ -148,7 +149,7 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 				second.name: (1, 150, get_copy_cost(second), 80, 80),
 			},
 		)
-		# By date: the one of 2 September first.
+		# By date: the one of 2 October first.
 		self.assertEqual([row.get("paid") for row in data if row.get("paid")], [30, 200])
 		self.assertEqual(data[-1]["balance"], opening + 320 + 80 - 230)
 		self.assertEqual(
@@ -157,16 +158,16 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 
 		# The first term shows only its own entry, none of the second's.
 		_columns, data, _summary = self.statement(self.term1)
-		self.assertEqual([row["description"] for row in data[1:-1]], ["Adjustment — 15-06-2026 — _Test from the first term"])
+		self.assertEqual([row["description"] for row in data[1:-1]], ["Adjustment — 15-09-2026 — _Test from the first term"])
 
 	def test_qa01_a_settlement_of_the_last_term_recorded_in_this_one_is_brought_forward(self):
 		# QA-01: earned in the first term, then paid out and adjusted in the first term's name after the second
 		# had started. Both belong to the first term, so the second starts from what is left of it.
 		before = self.opening()
-		self.entry("Accrual", 1000, "2026-03-01", self.term1)
-		self.entry("Payout", 700, "2026-08-10", self.term1)
-		self.entry("Adjustment", -300, "2026-08-15", self.term1)
-		self.entry("Accrual", 500, "2026-09-01", self.term2)
+		self.entry("Accrual", 1000, "2026-09-10", self.term1)
+		self.entry("Payout", 700, "2026-10-10", self.term1)
+		self.entry("Adjustment", -300, "2026-10-15", self.term1)
+		self.entry("Accrual", 500, "2026-10-05", self.term2)
 
 		_columns, data, summary = self.statement()
 		self.assertEqual(summary["Balance Brought Forward"], before)
@@ -283,11 +284,11 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 	def make_module(self, name="_Test Statement Module"):
 		round_ = frappe.get_doc(
 			{"doctype": "Academic Period", "period_name": f"{name} Round", "period_type": "Round",
-				"parent_period": self.term2, "start_date": "2026-07-01", "end_date": "2026-12-31"}
+				"parent_period": self.term2, "start_date": "2026-10-01", "end_date": "2026-12-31"}
 		).insert().name
 		return frappe.get_doc(
 			{"doctype": "Academic Period", "period_name": name, "period_type": "Module",
-				"parent_period": round_, "start_date": "2026-07-01", "end_date": "2026-12-31"}
+				"parent_period": round_, "start_date": "2026-10-01", "end_date": "2026-12-31"}
 		).insert().name
 
 	def test_qa03_a_curriculum_change_is_the_library_s_loss_and_sold_as_scrap(self):

@@ -98,8 +98,8 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 			{
 				"doctype": "Accounting Period",
 				"period_name": "_Test Closed Month",
-				"start_date": "2026-08-01",
-				"end_date": "2026-08-31",
+				"start_date": "2026-09-01",
+				"end_date": "2026-09-30",
 				"company": frappe.defaults.get_global_default("company"),
 				"closed_documents": [{"document_type": "Doctor Ledger Entry", "closed": 1}],
 			}
@@ -108,13 +108,13 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 	def test_no_entry_saved_in_a_closed_month(self):
 		period = self.close_month()
 		try:
-			self.assertRaises(frappe.ValidationError, self.new_entry("2026-08-15").insert)
-			self.new_entry("2026-09-15").insert()
+			self.assertRaisesRegex(frappe.ValidationError, "closed accounting period", self.new_entry("2026-09-15").insert)
+			self.new_entry("2026-10-15").insert()
 		finally:
 			frappe.delete_doc("Accounting Period", period.name)
 
 	def test_no_entry_cancelled_in_a_closed_month(self):
-		entry = self.new_entry("2026-08-15").insert()
+		entry = self.new_entry("2026-09-15").insert()
 		entry.submit()
 		period = self.close_month()
 		try:
