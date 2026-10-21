@@ -27,16 +27,16 @@ M = "imed_erp.imederp.owner_dashboard."
 # journal entry (platform fees, the halls' revenue share). These are Custom cards: imederp/owner_dashboard.py works
 # them out. The document cards after them are counts and balances that are right as they stand.
 cards = [
-    dict(label="Revenue Yesterday", method=M + "revenue_yesterday", color=TEAL, full=1),
-    dict(label="Expenses Yesterday", method=M + "expenses_yesterday", color=AMBER, full=1),
-    dict(label="Revenue This Month", method=M + "revenue_this_month", color=TEAL, full=1),
-    dict(label="Platform Fees This Month", method=M + "platform_fees_this_month", color=TEAL, full=1),
-    dict(label="Collected from Doctors This Month", method=M + "app_collections_this_month", color=TEAL, full=1),
+    dict(label="Revenue Yesterday", money=1, method=M + "revenue_yesterday", color=TEAL, full=1),
+    dict(label="Expenses Yesterday", money=1, method=M + "expenses_yesterday", color=AMBER, full=1),
+    dict(label="Revenue This Month", money=1, method=M + "revenue_this_month", color=TEAL, full=1),
+    dict(label="Platform Fees This Month", money=1, method=M + "platform_fees_this_month", color=TEAL, full=1),
+    dict(label="Collected from Doctors This Month", money=1, method=M + "app_collections_this_month", color=TEAL, full=1),
     dict(label="Sheets Printed Yesterday", method=M + "sheets_printed_yesterday", color=SLATE),
     dict(label="Studio Bookings This Month", method=M + "studio_bookings_this_month", color=TEAL),
     dict(label="Studio Hours This Month", method=M + "studio_hours_this_month", color=TEAL),
     dict(label="Hall Bookings This Month", method=M + "hall_bookings_this_month", color=SLATE),
-    dict(label="Unpaid on Bookings", method=M + "unpaid_on_bookings_card", color=AMBER, full=1),
+    dict(label="Unpaid on Bookings", money=1, method=M + "unpaid_on_bookings_card", color=AMBER, full=1),
     dict(label="Outstanding from Customers", doc="Sales Invoice",
          func="Sum", field="outstanding_amount", color=AMBER, full=1,
          filters=[["Sales Invoice", "docstatus", "=", 1]]),
@@ -73,7 +73,10 @@ for c in cards:
             "show_full_number": c.get("full", 0),
         }
         if c.get("method"):
-            values.update({"type": "Custom", "method": c["method"], "module": "ImedERP"})
+            # Seen in the browser (21 Oct 2026): a card with a currency is always shown as money, and Frappe fills
+            # the system currency in when none is given, so counts read "EGP NaN". A count has none; and a full
+            # number, since a shortened 0 is shown as NaN.
+            values.update({"type": "Custom", "method": c["method"], "module": "ImedERP", "show_full_number": 1})
         else:
             values.update({
                 "type": "Document Type",
@@ -85,6 +88,8 @@ for c in cards:
                 "stats_time_interval": "Monthly",
             })
         doc = frappe.get_doc(values).insert()
+        if c.get("method") and not c.get("money"):
+            doc.db_set("currency", None)
         c["real"] = doc.name
         created_cards.append(c)
         print("card:", doc.name)
