@@ -1,0 +1,61 @@
+{
+ "doctype": "DocType",
+ "module": "ImedERP",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-21 17:00:00.000000",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "links": [],
+ "actions": [],
+ "states": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "name": "Cash Discrepancy Employee",
+ "istable": 1,
+ "editable_grid": 1,
+ "permissions": [],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Employee",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "responsible",
+   "fieldtype": "Check",
+   "label": "Responsible",
+   "in_list_view": 1,
+   "description": "Determined by the accountant's investigation, never by having worked in the branch."
+  },
+  {
+   "fieldname": "notified_on",
+   "fieldtype": "Date",
+   "label": "Notified On",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "employee_response",
+   "fieldtype": "Small Text",
+   "label": "Employee's Response"
+  },
+  {
+   "fieldname": "recovery_amount",
+   "fieldtype": "Currency",
+   "label": "Recovery Amount",
+   "in_list_view": 1,
+   "description": "Typed by the accountant for each responsible employee; never split automatically."
+  }
+ ],
+ "field_order": [
+  "user",
+  "responsible",
+  "notified_on",
+  "employee_response",
+  "recovery_amount"
+ ]
+}
