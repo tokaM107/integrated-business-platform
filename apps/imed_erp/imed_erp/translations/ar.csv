@@ -1355,3 +1355,6 @@ The cash counted in {0} cannot be below zero.,الفلوس المعدودة في
 {0} already has entries: its opening would count twice.,{0} عليها قيود بالفعل: رصيدها الافتتاحي هيتحسب مرتين.
 No cash to enter.,مفيش فلوس تتسجل.
 "Opening cash, counted in each branch",النقدية الافتتاحية، معدودة في كل فرع
+Recoveries to Approve,استردادات مستنية موافقتك
+Reporting Week Ends On,أسبوع التقارير بيخلص يوم
+"The last working day of the week (owner: Saturday to Thursday). The days after it, to the next week's start, are days off: a close made on one still shows in the week, and a day off without a close is not listed as missing.",آخر يوم شغل في الأسبوع (صاحب الشغل: من السبت للخميس). الأيام اللي بعده لحد بداية الأسبوع الجاي إجازة: التقفيل اللي يتعمل فيها بيظهر في الأسبوع، ويوم الإجازة من غير تقفيل مش بيتحسب ناقص.
