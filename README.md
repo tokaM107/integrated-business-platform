@@ -1215,6 +1215,150 @@ wkhtmltopdf cannot load the stylesheets (`network error: Connection refused`):
 docker exec frappe_docker-backend-1 bench --site frontend set-config host_name "http://frontend:8080"
 ```
 
+### Owner Dashboard: yesterday, and the financial reports (5.1, RPT-01, RPT-02, RPT-05)
+
+The owner logs in to the **Owner Dashboard** (`/desk/owner-dashboard`; first link of the ImedERP sidebar). Under
+the welcome band is **yesterday**: one screen with how every business did the day before. Under that come the
+approvals, this month's money cards and the charts, which were already there.
+
+**Yesterday** is the calendar day before today in the site's time zone (System Settings: Africa/Cairo), from
+00:00 yesterday to 00:00 today, excluded: on 1 Jan 2027 it is 31 Dec 2026, on 1 Mar 2028 it is 29 Feb. Each
+document is taken by its business date, never the day it was typed: the ledger's posting date, a counter
+reading's date, a booking's date (the day of the service), a doctor's ledger entry's date.
+
+| Card | Shows | Source and rule |
+|---|---|---|
+| Revenue and expenses by business | Each activity (every leaf cost center: the two libraries, halls, studio, the app, head office, the shared premises) with its revenue, expenses and net, and the total | GL Entry on Income / Expense accounts, `is_cancelled = 0`, not opening, not Period Closing Voucher. Only submitted documents post, so a draft or an expense not approved is not counted. A cancelled document and its reversal are both left out. Accrual basis: an invoice is revenue once; the payment of it moves cash, not revenue. The shared premises' row shows what no rule split, marked *not split* |
+| Halls and studio | Bookings **of yesterday's date**, halls and studio apart: held (not cancelled, not a no-show), completed, cancelled, no-show; studio hours booked (held) and delivered (Completed); bookings made yesterday for any date; those of yesterday still neither completed nor cancelled | Booking, by `booking_date` (made yesterday: `creation`) |
+| Platform fees | Charged yesterday (Accrual + Adjustment entries), collected (Collection entries: money received), still owed by doctors at the end of the day, new students | Doctor Ledger Entry of the app agreements, submitted; the balance of `مستحقات على الأطباء — رسوم المنصة`. A fee charged is not cash. With no app agreement: *No app agreement yet* |
+| Paper and counters | Per library: each machine's opening, closing and sheets, then sheets printed, sold and the difference, in sheets | Submitted Daily Counter Reading of the day. A warning (orange), never a zero, for: no reading, a reading saved but not submitted, a breakdown, a difference, a machine without a library. With no machine: *No printing machine is set up* |
+| Integrations and imports | Each one with Working / Needs attention / Failed / Unknown / Not configured, the last success and a one-line error | Booking import: *Not configured* (nothing runs `booking_import.py`, and it keeps no log). File imports: Frappe's Data Import records. The app's daily jobs: Scheduled Job Type and Scheduled Job Log (a failure after the last run, a job that has not run for 36 hours, the scheduler off). AI assistant: its provider's `connected`. E-mail: an outgoing Email Account. Nothing secret is shown: no settings, no file content, only the error's last line |
+
+Colours carry meaning only: green a profit or money in, red a loss or money owed, orange what needs
+attention, the rest neutral. The figures come from `imederp/owner_yesterday.py` (`get_yesterday`, one call, a few
+grouped queries) and are drawn by `public/js/imed_owner_dashboard.js` (styles: `imed_theme.css` §25). They load
+when the dashboard opens and again after five minutes away.
+
+**Who sees it.** The workspace is for **Super Admin** only (`setup_dashboard.py`; it was Super Admin and System
+Manager, and a developer account has System Manager). Hiding is not the protection; each figure is refused by
+its own endpoint:
+
+- `get_yesterday` answers Super Admin and Administrator only.
+- The money cards (`owner_figures.py`) answer the owner and the accountant.
+- The reports have their roles (Super Admin, Accounts Manager, Accountant), and each checks again on the server
+  (`owner_figures.check_reader`).
+
+A branch manager who types the address gets *Not permitted*. Tested in `test_owner_reports.py` and checked in
+the browser.
+
+**The desktop icon.** There is no home screen with tiles any more (owner's decision of 21 Oct 2026): `/desk`
+opens the Owner Dashboard. Its entry point is the first link of the ImedERP sidebar and of the ImedERP tile.
+
+A separate Owner Dashboard tile is not used, on purpose. Frappe shows a tile only with a Workspace Sidebar of
+the same name, and that sidebar would replace the ImedERP sidebar on the dashboard. It is hidden by
+`home_screen.tidy_home` on every migrate.
+
+To make the changes show on a site:
+
+```bash
+docker exec frappe_docker-backend-1 bench --site frontend migrate        # the reports and the sidebar links
+docker exec -i frappe_docker-backend-1 bash -c "cd /home/frappe/frappe-bench && bench --site frontend console" \
+  <<< 'exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_dashboard.py").read(), {"frappe": frappe})'
+docker exec frappe_docker-backend-1 bench --site frontend clear-cache
+docker restart frappe_docker-backend-1                                   # the new JS/CSS version in hooks.py
+```
+
+The console line recreates the dashboard workspace with its Super Admin role. Migrate alone takes the role
+from `imederp/workspace/owner_dashboard/owner_dashboard.json`, which already has it.
+
+#### Revenue by Period (RPT-01)
+
+ImedERP > Financial Reports > *Revenue by Period*. Each business's revenue by **Daily**, **Weekly** or
+**Monthly** period between two dates.
+
+- **What revenue is.** Income accounts, credit − debit, from submitted documents only. A cancelled document and
+  its reversal are left out, and a credit note takes revenue back. This is the accrual basis: revenue is what
+  was invoiced. Money collected is not revenue and is not in this report (see Cash Movements and Cash Box
+  Balances). An invoice and its payment are therefore one revenue, never two.
+- **Rows.** The business tree, from the cost centers: each activity, the group above it with the sum of its
+  branches (Libraries: Azarita + Mawasah; Center: halls + studio + shared premises), and the top row, which is
+  the total. **Business** filters one branch of the tree; a group stands for every business under it. The site
+  has no separate Branch dimension: the branches are these cost centers.
+- **Periods.** A week starts on System Settings' first day of the week (Saturday). The first and last periods
+  are cut to the dates chosen. There are at most 370 columns.
+- **Agrees with** the ledger: the top row's Total is the sum of revenue in GL Entry for the dates (tested).
+
+#### Profit Before and After Shared Costs (RPT-02)
+
+ImedERP > Financial Reports > *Profit Before and After Shared Costs*. Dates and Business, as above.
+
+The shared premises' expenses (`مصروفات المقر المشتركة`) are split when they are posted. The Allocation Rule
+makes a Cost Center Allocation, and ERPNext writes each business's share straight into the ledger, with no
+trace of the shared cost center. The Expense still names it, on its Journal Entry row, and so does a Purchase
+Invoice line. `business_figures.allocated()` reads those documents back. For each account and business, it
+takes what the ledger holds less what the document itself put there; what is left came from the shared line.
+Nothing is recalculated from percentages, and nothing is posted.
+
+| Column | |
+|---|---|
+| Revenue | the business's own |
+| Direct Expenses | the ledger's expenses less the share of the shared premises |
+| Shared Costs Before Allocation | on the shared premises' row only: everything they spent in the period, split or not |
+| **Profit Before Allocation** | Revenue − Direct Expenses (shared premises' row: − their expenses) |
+| Shared Costs Allocated | the business's share, as posted |
+| Shared Costs Not Allocated | on the shared premises' row: what is still on it in the ledger (no rule covered its date) |
+| **Profit After Allocation** | the ledger's profit: Revenue − Direct − Allocated (shared premises' row: − not allocated) |
+
+Each expense is in one column of one row, so both profit totals equal the ledger's profit for the period. The
+report checks this on every run (*Agrees with the Ledger*). With one business chosen, the two differ by
+exactly its share.
+
+If a shared expense was not split, the report says that profit after allocation is **incomplete** and by how
+much. The site's first rule starts on 1 Nov 2026, so earlier shared expenses stay unsplit. Nothing is made up
+for them.
+
+#### Outstanding Receivables (RPT-05)
+
+ImedERP > Financial Reports > *Outstanding Receivables*. What customers still owe, in three parts, each with its
+subtotal:
+
+| Part | What | Source |
+|---|---|---|
+| Invoiced | Each submitted Sales Invoice with something still owed: amount, paid, outstanding, Unpaid / Partly Paid, days overdue, and the booking it was made for | ERPNext's Outstanding Amount, which already takes off payments, advances applied (a booking's deposits) and credit notes against it. A paid invoice is not listed and a cancelled one does not count |
+| Customer Credit | Money a customer has with us, not yet set against an invoice: a payment or deposit not applied, a credit note not applied | Payment Entry `unallocated_amount`; a return's negative outstanding |
+| Not Invoiced | A booking, not cancelled or a no-show, with no invoice yet and something left to pay: price, deposits, remaining | The booking's own figures. Not a receivable in the accounts: listed apart, not added to what is owed |
+
+A booking and its invoice are one debt. Once invoiced, a booking appears only as its invoice row. Before that,
+its deposits are in its Amount Paid, not again under Customer Credit.
+
+Filters: Business, Customer, From / To Date (the document's date), Payment Status (Unpaid, Partly Paid,
+Overdue) and Show (one part). The Invoiced subtotal equals the customer's Payment Ledger for those invoices
+(tested).
+
+Doctors' platform fees and books debts are not here; they are on Platform Fees and Doctor Debts (RPT-10).
+
+#### Requirements and where they are
+
+| Requirement | Done by | Tested by (`test_owner_reports.py`) |
+|---|---|---|
+| 5.1 Owner Dashboard: yesterday by business | `owner_yesterday.money`, dashboard card | `test_each_business_with_approved_documents_only`, `test_yesterday_is_the_calendar_day_before` |
+| 5.1 paper and counters | `owner_yesterday.printing` | `test_printing_warns_instead_of_showing_zero`, `test_no_machine_is_not_configured` |
+| 5.1 halls and studio hours | `owner_yesterday.bookings` | `test_bookings_by_their_day_not_the_day_they_were_made` |
+| 5.1 platform fees | `owner_yesterday.app_fees` | `test_app_fees_without_agreements_are_not_configured` |
+| 5.1 integrations and last import | `owner_yesterday.systems` | `test_a_system_without_records_is_never_ok` |
+| 5.1 owner only | workspace role, `check_owner`, `check_reader`, report roles | `test_only_the_owner_sees_yesterday`, `test_the_money_endpoints_refuse_a_branch_manager`, `test_the_dashboard_is_the_owner_s_workspace` |
+| RPT-01 revenue by day / week / month, business, branch | `report/revenue_by_period` | `IntegrationTestRevenueByPeriod` (8 tests) |
+| RPT-02 profit before and after the shared costs | `report/profit_before_and_after_shared_costs`, `business_figures.allocated` | `IntegrationTestProfitBeforeAfterSharedCosts` (6 tests) |
+| RPT-05 outstanding receivables, unpaid bookings and sales | `report/outstanding_receivables` | `IntegrationTestOutstandingReceivables` (7 tests) |
+
+**Limits**
+
+- The split of a shared expense is read back from Journal Entries (every Expense) and Purchase Invoices. A
+  shared line on another document (a Payment Entry deduction, say) would show as the business's direct
+  expense.
+- A Journal Entry with two lines on the same account and business, one of them shared, is read as one.
+- The booking import keeps no log (known issues 17–19). Its card says *Not configured* until it does.
+
 ### Users and initial passwords
 
 `USERS` at the top of `setup_users.py` is the single source of truth for the users, their roles and
@@ -1278,6 +1422,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_daily_printing
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_owner_reports  # 5.1, RPT-01, RPT-02, RPT-05
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

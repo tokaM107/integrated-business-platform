@@ -234,8 +234,10 @@ ws = frappe.get_doc({
     "module": "ImedERP",
     "icon": "dashboard",
     "public": 1,
-    # Screen 2 of the requirements is the owner's alone.
-    "roles": [{"role": "Super Admin"}, {"role": "System Manager"}],
+    # Screen 2 of the requirements is the owner's alone (5.1): Super Admin, not System Manager, which a developer
+    # account also has. Administrator has every role. Yesterday's figures check the same role on the server
+    # (imederp/owner_yesterday.py); the money cards let the accountant read them too (owner_figures.READERS).
+    "roles": [{"role": "Super Admin"}],
     "sequence_id": 1,
     "content": frappe.as_json(content),
     "number_cards": [{"number_card_name": c["real"], "label": c["label"]} for c in created_cards],
