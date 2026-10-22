@@ -7,7 +7,8 @@
 #
 #   Opening   = the cash counted at the box's last close (the ledger's balance before the day, for its first close)
 #   Inflows   = collections and transfers in, since the last close
-#   Outflows  = expenses and payouts, transfers out, refunds and other payments, since the last close
+#   Outflows  = expenses and payouts, transfers out, cash handed over to the owner or the accountant (Cash Handover,
+#               pending or confirmed: the cash left the box that day), refunds and other payments, since the last close
 #   Expected  = Opening + Inflows - Outflows
 #   Variance  = Counted - Expected (below zero: a shortage; above: a surplus)
 #
@@ -149,8 +150,9 @@ class TreasuryClose(Document):
 		self.expenses_and_payouts = figures.expenses_and_payouts
 		self.transfers_out = figures.transfers_out
 		self.other_out = figures.other_out
+		self.handed_over = figures.handed_over
 		self.money_in = flt(self.collections + self.transfers_in, 2)
-		self.money_out = flt(self.expenses_and_payouts + self.transfers_out + self.other_out, 2)
+		self.money_out = flt(self.expenses_and_payouts + self.transfers_out + self.handed_over + self.other_out, 2)
 		self.expected = flt(self.opening + self.money_in - self.money_out, 2)
 		self.difference = flt(flt(self.counted) - self.expected, 2)
 		self.book_balance = balance_before(self.treasury, add_days(self.close_date, 1))
@@ -187,7 +189,15 @@ def movements(treasury, start, end):
 		+ frappe.get_all("Doctor Ledger Entry", filters={"entry_type": "Payout", "journal_entry": ("is", "set")}, pluck="journal_entry")
 	)
 	adjustments = set(frappe.get_all("Cash Discrepancy", filters={"adjustment_entry": ("is", "set")}, pluck="adjustment_entry"))
+	# A hand-over counts on its day, from the hand-over itself, pending or confirmed; its entry is left out here.
+	handovers = frappe.get_all(
+		"Cash Handover",
+		filters={"treasury": treasury, "docstatus": 1, "handover_date": ("between", (start, end))},
+		fields=["amount", "journal_entry"],
+	)
+	adjustments |= set(frappe.get_all("Cash Handover", filters={"treasury": treasury, "journal_entry": ("is", "set")}, pluck="journal_entry"))
 	figures = frappe._dict(collections=0, transfers_in=0, expenses_and_payouts=0, transfers_out=0, other_out=0)
+	figures.handed_over = sum(flt(h.amount) for h in handovers)
 	for row in frappe.db.sql(
 		"""select voucher_type, voucher_no, sum(debit) as debit, sum(credit) as credit from `tabGL Entry`
 		where account = %s and is_cancelled = 0 and posting_date between %s and %s
@@ -252,7 +262,8 @@ def reopen(name, reason):
 def check_closed_days(doc, method=None):
 	"""on_submit / on_cancel of every document (hooks.py): a cash entry dated on or before a box's last close changes a
 	closed day. Refused to a branch manager; the accountant's is accepted, and the closes it changes are marked."""
-	if doc.doctype == "Treasury Close" or doc.flags.cash_adjustment:
+	# A confirmed hand-over's entry: its day's close already counted it as handed over.
+	if doc.doctype == "Treasury Close" or doc.flags.cash_adjustment or doc.flags.from_cash_handover:
 		return
 	if doc.docstatus == 2:
 		rows = doc.flags.cash_moved or []

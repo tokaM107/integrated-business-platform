@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 17:00:00.000000",
- "modified": "2026-10-21 18:00:00.000000",
+ "modified": "2026-10-22 13:00:00.000000",
  "engine": "InnoDB",
  "row_format": "Dynamic",
  "links": [],
@@ -100,6 +100,24 @@
    "no_copy": 1
   },
   {
+   "fieldname": "total_handed_over",
+   "fieldtype": "Currency",
+   "label": "Handed Over",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pending_handovers",
+   "fieldtype": "Currency",
+   "label": "Handed Over, Not Yet Confirmed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "handovers_without_receipt",
+   "fieldtype": "Int",
+   "label": "Hand-overs Without a Signed Receipt",
+   "read_only": 1
+  },
+  {
    "fieldname": "needs_review",
    "fieldtype": "Check",
    "label": "Needs Review Again",
@@ -141,6 +159,18 @@
    "label": "Earlier Discrepancies Still Open",
    "read_only": 1,
    "no_copy": 1
+  },
+  {
+   "fieldname": "handovers_section",
+   "fieldtype": "Section Break",
+   "label": "Cash Handed Over"
+  },
+  {
+   "fieldname": "handovers",
+   "fieldtype": "Table",
+   "label": "Hand-overs",
+   "options": "Weekly Cash Reconciliation Handover",
+   "read_only": 1
   },
   {
    "fieldname": "review_section",
@@ -185,12 +215,17 @@
   "total_shortage",
   "total_surplus",
   "unresolved",
+  "total_handed_over",
+  "pending_handovers",
+  "handovers_without_receipt",
   "needs_review",
   "closes_section",
   "items",
   "missing_days",
   "earlier_open",
   "earlier_open_list",
+  "handovers_section",
+  "handovers",
   "review_section",
   "review_note",
   "reviewed_by",

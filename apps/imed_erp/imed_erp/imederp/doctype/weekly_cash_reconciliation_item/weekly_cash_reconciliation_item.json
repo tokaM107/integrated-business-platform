@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 17:00:00.000000",
- "modified": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-22 13:00:00.000000",
  "engine": "InnoDB",
  "row_format": "Dynamic",
  "links": [],
@@ -79,6 +79,13 @@
    "read_only": 1
   },
   {
+   "fieldname": "handed_over",
+   "fieldtype": "Currency",
+   "label": "Handed Over",
+   "read_only": 1,
+   "columns": 1
+  },
+  {
    "fieldname": "expected",
    "fieldtype": "Currency",
    "label": "Expected Closing",
@@ -130,6 +137,7 @@
   "collections",
   "expenses_and_payouts",
   "transfers",
+  "handed_over",
   "expected",
   "counted",
   "difference",

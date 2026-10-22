@@ -17,7 +17,7 @@ from imed_erp.imederp.doctype.treasury_close.test_treasury_close import (
 )
 from imed_erp.imederp.testing import fund_cash_boxes
 
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Account", "Cost Center", "Journal Entry", "User", "Treasury Close", "Cash Discrepancy", "Weekly Cash Reconciliation"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Account", "Cost Center", "Journal Entry", "User", "Treasury Close", "Cash Discrepancy", "Weekly Cash Reconciliation", "Cash Handover"]
 
 START = add_days(today(), -6)
 

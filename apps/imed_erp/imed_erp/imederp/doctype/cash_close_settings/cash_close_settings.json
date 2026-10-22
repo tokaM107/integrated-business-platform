@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 18:00:00.000000",
- "modified": "2026-10-21 19:00:00.000000",
+ "modified": "2026-10-22 13:00:00.000000",
  "name": "Cash Close Settings",
  "issingle": 1,
  "track_changes": 1,
@@ -75,6 +75,30 @@
    "fieldtype": "Datetime",
    "label": "Approved On",
    "read_only": 1
+  },
+  {
+   "fieldname": "handover_section",
+   "fieldtype": "Section Break",
+   "label": "Weekly Cash Hand-over"
+  },
+  {
+   "fieldname": "owner_custody_account",
+   "fieldtype": "Link",
+   "label": "Owner's Custody Account",
+   "options": "Account",
+   "description": "Where cash handed over to the owner is held: a cash account. Confirming a hand-over is refused while it is empty."
+  },
+  {
+   "fieldname": "column_break_handover",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "accountant_custody_account",
+   "fieldtype": "Link",
+   "label": "Accountant's Custody Account",
+   "options": "Account",
+   "description": "Where cash handed over to the accountant is held: a cash account."
   }
  ],
  "field_order": [
@@ -85,6 +109,10 @@
   "recovery_policy_reference",
   "column_break_recovery",
   "recovery_policy_approved_by",
-  "recovery_policy_approved_on"
+  "recovery_policy_approved_on",
+  "handover_section",
+  "owner_custody_account",
+  "column_break_handover",
+  "accountant_custody_account"
  ]
 }

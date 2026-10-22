@@ -13,6 +13,10 @@
 # Saturday to Thursday); any seven days while they are empty. The closes are read for all seven days, so a close made
 # on a day off is still in its week; a day off without a close is not listed as missing.
 #
+# The cash handed over to the owner or the accountant that week (Cash Handover, ACC-09) is listed with its receiver,
+# whether it is confirmed and whether its signed receipt is attached; it is cash moved, never income, and each close
+# already counts it as money out (Handed Over).
+#
 # One per week and business (or per week for every business). A close of the week reopened afterwards marks it
 # Needs Review Again (treasury_close.mark_for_review); cancel and amend it to review the week again.
 
@@ -92,7 +96,7 @@ class WeeklyCashReconciliation(Document):
 			filters=filters,
 			fields=[
 				"name", "close_date", "treasury", "business", "counted_by", "opening", "collections", "expenses_and_payouts",
-				"other_out", "transfers_in", "transfers_out", "expected", "counted", "difference", "cash_discrepancy",
+				"other_out", "transfers_in", "transfers_out", "handed_over", "expected", "counted", "difference", "cash_discrepancy",
 			],
 			order_by="business asc, treasury asc, close_date asc",
 		)
@@ -128,6 +132,7 @@ class WeeklyCashReconciliation(Document):
 					"collections": close.collections,
 					"expenses_and_payouts": flt(close.expenses_and_payouts) + flt(close.other_out),
 					"transfers": flt(close.transfers_in) - flt(close.transfers_out),
+					"handed_over": close.handed_over,
 					"expected": close.expected,
 					"counted": close.counted,
 					"difference": close.difference,
@@ -140,6 +145,40 @@ class WeeklyCashReconciliation(Document):
 		self.total_surplus = flt(self.total_surplus, 2)
 		self.missing_days = self.days_without_a_close(closes)
 		self.carry_earlier_open()
+		self.list_handovers()
+
+	def list_handovers(self):
+		filters = {"docstatus": 1, "handover_date": ("between", (self.week_start, add_days(self.week_start, 6)))}
+		if self.business:
+			filters["branch"] = self.business
+		self.handovers = []
+		self.total_handed_over = self.pending_handovers = 0
+		self.handovers_without_receipt = 0
+		for h in frappe.get_all(
+			"Cash Handover",
+			filters=filters,
+			fields=["name", "handover_date", "treasury", "amount", "receiver", "status", "signed_receipt"],
+			order_by="handover_date asc, name asc",
+		):
+			self.total_handed_over += flt(h.amount)
+			if h.status == "Pending Receipt":
+				self.pending_handovers += flt(h.amount)
+			if not h.signed_receipt:
+				self.handovers_without_receipt += 1
+			self.append(
+				"handovers",
+				{
+					"cash_handover": h.name,
+					"handover_date": h.handover_date,
+					"treasury": h.treasury,
+					"amount": h.amount,
+					"receiver": h.receiver,
+					"status": _(h.status),
+					"has_signed_receipt": 1 if h.signed_receipt else 0,
+				},
+			)
+		self.total_handed_over = flt(self.total_handed_over, 2)
+		self.pending_handovers = flt(self.pending_handovers, 2)
 
 	def carry_earlier_open(self):
 		filters = {"status": ("in", OPEN), "close_date": ("<", self.week_start)}

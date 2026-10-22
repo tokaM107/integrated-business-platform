@@ -1,0 +1,89 @@
+{
+ "actions": [],
+ "creation": "2026-10-22 10:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "cash_handover",
+  "handover_date",
+  "treasury",
+  "amount",
+  "receiver",
+  "status",
+  "has_signed_receipt"
+ ],
+ "fields": [
+  {
+   "fieldname": "cash_handover",
+   "fieldtype": "Link",
+   "label": "Hand-over",
+   "options": "Cash Handover",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "handover_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "label": "Cash Box",
+   "options": "Account",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "receiver",
+   "fieldtype": "Link",
+   "label": "Receiver",
+   "options": "User",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 2
+  },
+  {
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "label": "Status",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 1
+  },
+  {
+   "fieldname": "has_signed_receipt",
+   "fieldtype": "Check",
+   "label": "Signed Receipt Attached",
+   "in_list_view": 1,
+   "read_only": 1,
+   "columns": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-22 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Weekly Cash Reconciliation Handover",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "istable": 1
+}

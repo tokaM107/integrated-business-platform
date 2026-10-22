@@ -219,6 +219,7 @@ doc_events = {
 			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
 			"imed_erp.imederp.doctype.app_payment.app_payment.block_cancel_of_payment_entry",
+			"imed_erp.imederp.doctype.cash_handover.cash_handover.block_cancel_of_handover_entry",
 			# The doctor's amount posted by a sale goes only with the sale (imederp/doctor_accrual.py).
 			"imed_erp.imederp.doctor_accrual.block_cancel_of_accrual",
 		],
@@ -455,6 +456,10 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
 		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	# A confirmed hand-over's signed receipt is kept (cash_handover.py).
+	"File": {
+		"on_trash": "imed_erp.imederp.doctype.cash_handover.cash_handover.keep_signed_receipt",
 	},
 	# CORE-07: a user is disabled, never deleted (imederp/users.py).
 	"User": {
