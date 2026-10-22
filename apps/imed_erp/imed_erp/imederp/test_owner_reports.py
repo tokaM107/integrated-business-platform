@@ -813,6 +813,16 @@ class IntegrationTestOutstandingReceivables(OwnerReportsTestCase):
 		self.assertEqual(totals[frappe._("Total: {0}").format(rpt05.kind_label("Invoiced"))], 1000)
 		self.assertEqual(totals[frappe._("Total: {0}").format(rpt05.kind_label("Credit"))], -300)
 
+	def test_a_status_filter_leaves_credits_out(self):
+		invoice = self.invoice(HALLS, 1000, JAN_31)
+		entry = self.advance(300, JAN_31)
+		shown = set(self.by_reference(payment_status="Unpaid"))
+		self.assertIn(invoice.name, shown)
+		self.assertNotIn(entry.name, shown)
+
+	def test_a_wrong_date_is_refused(self):
+		self.assertRaises(frappe.ValidationError, rpt05.execute, {"from_date": "not a date"})
+
 	def test_a_booking_and_its_invoice_are_one_debt(self):
 		# Not invoiced yet: listed apart, with its deposit, and not as a receivable.
 		self.booking(

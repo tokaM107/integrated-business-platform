@@ -41,7 +41,10 @@ def execute(filters=None):
 		frappe.throw(_("Choose Unpaid, Partly Paid or Overdue."))
 	if filters.kind and filters.kind not in KINDS:
 		frappe.throw(_("Choose what to show."))
-	if filters.from_date and filters.to_date and getdate(filters.from_date) > getdate(filters.to_date):
+	for fieldname in ("from_date", "to_date"):
+		if filters.get(fieldname):
+			filters[fieldname] = getdate(filters[fieldname])
+	if filters.from_date and filters.to_date and filters.from_date > filters.to_date:
 		frappe.throw(_("From Date must be before To Date."))
 	rows = get_rows(filters)
 	return get_columns(), with_subtotals(rows), None, None, get_summary(rows)
@@ -82,7 +85,8 @@ def get_columns():
 		{"label": _("Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 110},
 		{"label": _("Due Date"), "fieldname": "due_date", "fieldtype": "Date", "width": 110},
 		{"label": _("Amount"), "fieldname": "amount", "fieldtype": "Currency", "width": 120},
-		{"label": _("Amount Paid"), "fieldname": "paid", "fieldtype": "Currency", "width": 120},
+		# On an invoice: its payments, the advances applied and the credit notes set against it.
+		{"label": _("Paid or Credited"), "fieldname": "paid", "fieldtype": "Currency", "width": 130},
 		{"label": _("Outstanding"), "fieldname": "outstanding", "fieldtype": "Currency", "width": 120},
 		{"label": _("Payment Status"), "fieldname": "payment_status", "fieldtype": "Data", "width": 120},
 		{"label": _("Days Overdue"), "fieldname": "age", "fieldtype": "Int", "width": 110},
@@ -176,7 +180,7 @@ def get_rows(filters):
 		]
 
 	if filters.payment_status:
-		rows = [row for row in rows if row["kind"] != CREDIT and matches(row, filters.payment_status)]
+		rows = [row for row in rows if row["kind_key"] != CREDIT and matches(row, filters.payment_status)]
 	order = {kind: index for index, kind in enumerate(KINDS)}
 	rows.sort(key=lambda row: order[row["kind_key"]])
 	return rows

@@ -45,6 +45,11 @@ NOT_HELD = ("Cancelled", "No Show")
 PLATFORM_RECEIVABLE = "مستحقات على الأطباء — رسوم المنصة"
 # A daily job that has not run for this long is a warning.
 JOB_LATE_HOURS = 36
+# The app's daily jobs (hooks.py scheduler_events) by what they do; another one shows its module's name.
+JOB_NAMES = {
+	"imed_erp.imederp.doctor_accrual.run_daily": "Doctors' share of sales",
+	"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily": "Monthly bills reminder",
+}
 
 
 def check_owner():
@@ -295,7 +300,9 @@ def daily_jobs():
 	scheduler_off = is_scheduler_disabled()
 	result = []
 	for job in jobs:
-		label = _("Daily job: {0}").format(job.method.rsplit(".", 2)[-2].replace("_", " "))
+		label = _("Daily job: {0}").format(
+			_(JOB_NAMES.get(job.method) or job.method.rsplit(".", 2)[-2].replace("_", " "))
+		)
 		failure = frappe.get_all(
 			"Scheduled Job Log",
 			filters={"scheduled_job_type": job.name, "status": "Failed"},

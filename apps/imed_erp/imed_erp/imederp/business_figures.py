@@ -144,8 +144,9 @@ def allocated(from_date, to_date):
 			from `tabJournal Entry Account` row join `tabJournal Entry` doc on doc.name = row.parent
 			where doc.docstatus = 1 and doc.company = %(company)s
 				and doc.posting_date between %(from_date)s and %(to_date)s
-				and row.parent in (
-					select parent from `tabJournal Entry Account` where cost_center in %(shared)s
+				and exists (
+					select 1 from `tabJournal Entry Account` shared_row
+					where shared_row.parent = doc.name and shared_row.cost_center in %(shared)s
 				)
 			group by row.parent, row.account, row.cost_center""",
 			values,
@@ -155,8 +156,9 @@ def allocated(from_date, to_date):
 			from `tabPurchase Invoice Item` row join `tabPurchase Invoice` doc on doc.name = row.parent
 			where doc.docstatus = 1 and doc.company = %(company)s
 				and doc.posting_date between %(from_date)s and %(to_date)s
-				and row.parent in (
-					select parent from `tabPurchase Invoice Item` where cost_center in %(shared)s
+				and exists (
+					select 1 from `tabPurchase Invoice Item` shared_row
+					where shared_row.parent = doc.name and shared_row.cost_center in %(shared)s
 				)
 			group by row.parent, row.expense_account, row.cost_center""",
 			values,
