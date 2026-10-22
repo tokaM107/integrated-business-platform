@@ -14,6 +14,7 @@ from frappe.tests import IntegrationTestCase
 
 from frappe.utils import flt, today
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
@@ -79,7 +80,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		if frappe.db.get_value("Doctor Agreement", agreement, "docstatus") == 0:
 			frappe.get_doc("Doctor Agreement", agreement).submit()
 		entry = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount}
+			ledger_entry({"agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount})
 		)
 		if entry_type == "Payout":
 			entry.treasury = TREASURY
@@ -134,6 +135,8 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		try:
 			added = self.entry(agreement.name, "Adjustment", 50)
 			self.entry(agreement.name, "Adjustment", -20)
+			# Reversed by the accountant, with its reason (22 Oct 2026).
+			added.cancel_reason = "_Test entered by mistake"
 			added.cancel()
 		finally:
 			frappe.set_user("Administrator")
@@ -445,7 +448,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 
 		def entry(agreement, entry_type, amount, **values):
 			return frappe.get_doc(
-				{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount, **values}
+				ledger_entry({"agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount, **values})
 			)
 
 		self.assertRaisesRegex(frappe.ValidationError, "greater than zero", entry(books.name, "Accrual", -50).insert)

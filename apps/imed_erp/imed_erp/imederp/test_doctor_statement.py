@@ -15,6 +15,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.doctype.book_edition.book_edition import carry_forward, get_copy_cost
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
@@ -100,16 +101,17 @@ class IntegrationTestDoctorStatement(IntegrationTestCase):
 
 	def entry(self, entry_type, amount, entry_date=None, period=None, remarks=None):
 		doc = frappe.get_doc(
-			{
-				"doctype": LEDGER,
-				"agreement": self.agreement,
-				"entry_type": entry_type,
-				"amount": amount,
-				"entry_date": entry_date or today(),
-				"period": period,
-				"remarks": remarks,
-				"treasury": TREASURY if entry_type == "Payout" else None,
-			}
+			ledger_entry(
+				{
+					"agreement": self.agreement,
+					"entry_type": entry_type,
+					"amount": amount,
+					"entry_date": entry_date or today(),
+					"period": period,
+					"remarks": remarks,
+					"treasury": TREASURY if entry_type == "Payout" else None,
+				}
+			)
 		).insert()
 		doc.submit()
 		return doc

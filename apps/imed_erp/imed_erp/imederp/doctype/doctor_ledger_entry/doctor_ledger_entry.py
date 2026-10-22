@@ -31,6 +31,9 @@ class DoctorLedgerEntry(Document):
 
 	def validate(self):
 		self.protect_approval()
+		if self.docstatus == 0 and self.approval_status not in (APPROVED, REJECTED):
+			# Waiting for the owner or the accountant: the form shows them Approve and Reject.
+			self.approval_status = PENDING if self.needs_approval() else None
 		check_submitted(self.agreement)
 		# The kind of entry gives the sign (doctor_agreement.BALANCE_SIGN); only an adjustment carries its own.
 		if self.entry_type != "Adjustment" and flt(self.amount) <= 0:
@@ -45,6 +48,7 @@ class DoctorLedgerEntry(Document):
 		if self.app_course and frappe.db.get_value("App Course", self.app_course, "agreement") != self.agreement:
 			frappe.throw(_("Course {0} belongs to another agreement.").format(self.app_course))
 		self.refuse_unsold_copies_charge()
+		self.check_adjustment_basis()
 		self.validate_source()
 		self.validate_payout()
 
@@ -61,6 +65,56 @@ class DoctorLedgerEntry(Document):
 			_("A doctor is never charged for unsold copies: the library bears them. A curriculum change is disposed of as scrap on the edition."),
 			title=_("Not Charged to the Doctor"),
 		)
+
+	def is_manual_adjustment(self):
+		return self.entry_type == "Adjustment" and not self.sales_invoice and not self.app_course
+
+	def check_adjustment_basis(self):
+		"""A manual adjustment of a doctor's balance (22 Oct 2026): unlike an employee's salary deduction and unlike the
+		loss on unsold or obsolete copies (the library's, never the doctor's), it states why, with its reason, and its
+		basis decides the account:
+		  Correct the Doctor's Share   books: حصة الأطباء, as the sale posted it
+		  Correct the Platform Fee     app: إيراد رسوم المنصة, as the course posted it
+		  Other                        the account the accountant names; nothing is posted without it
+		The doctor's side stays his ledger's account (books: مستحقات للأطباء — الكتب; app: his receivable)."""
+		if not self.is_manual_adjustment():
+			self.adjustment_basis = self.adjustment_account = None
+			return
+		agreement_type = frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type")
+		if self.adjustment_basis == SHARE and agreement_type != "Books":
+			frappe.throw(_("A doctor's share is corrected on a books agreement; this is an app agreement."))
+		if self.adjustment_basis == FEE and agreement_type != "App":
+			frappe.throw(_("A platform fee is corrected on an app agreement; this is a books agreement."))
+		if self.adjustment_basis != OTHER:
+			self.adjustment_account = None
+		elif self.adjustment_account:
+			company = frappe.defaults.get_global_default("company")
+			acc = frappe.db.get_value("Account", self.adjustment_account, ["company", "is_group", "account_type", "disabled"], as_dict=True)
+			if not acc or acc.company != company or acc.is_group or acc.disabled:
+				frappe.throw(_("{0} is not an account of {1} that takes entries.").format(self.adjustment_account, company))
+			if acc.account_type in ("Cash", "Bank", "Receivable", "Payable"):
+				frappe.throw(
+					_("{0} is a treasury or a party's account. Money paid or collected is a Payout or a Collection, not an adjustment.").format(self.adjustment_account)
+				)
+
+	def check_adjustment_ready(self):
+		"""Before it is posted: what it is for, and the account, are clear."""
+		if not self.is_manual_adjustment():
+			return
+		if not (self.remarks or "").strip():
+			frappe.throw(_("Write the reason for adjusting the doctor's balance (Remarks)."), title=_("Reason Needed"))
+		if self.adjustment_basis not in (SHARE, FEE, OTHER):
+			frappe.throw(
+				_("Choose the adjustment's basis. While it is unclear, the accountant clarifies it and nothing is posted."), title=_("Basis Needed")
+			)
+		if self.adjustment_basis == OTHER and not self.adjustment_account:
+			frappe.throw(
+				_("Name the account this adjustment belongs to. Nothing is posted until the accountant does."), title=_("Account Needed")
+			)
+
+	def needs_approval(self):
+		"""A deduction, and any adjustment of the balance by hand, either way (22 Oct 2026)."""
+		return self.is_deduction() or self.is_manual_adjustment()
 
 	def is_deduction(self):
 		"""A charge for unsold copies, or an adjustment taking money off the doctor by hand. A credit note's
@@ -105,11 +159,11 @@ class DoctorLedgerEntry(Document):
 		self.save()
 
 	def check_waiting(self):
-		if self.docstatus != 0 or not self.is_deduction() or self.approval_status == REJECTED:
+		if self.docstatus != 0 or not self.needs_approval() or self.approval_status == REJECTED:
 			frappe.throw(_("{0} is not a deduction waiting for approval.").format(self.name))
 
 	def validate_approved(self):
-		if not self.is_deduction() or self.approval_status == APPROVED:
+		if not self.needs_approval() or self.approval_status == APPROVED:
 			return
 		# An approver's own deduction is approved as he submits it, like an expense.
 		if is_approver():
@@ -183,6 +237,7 @@ class DoctorLedgerEntry(Document):
 			)
 
 	def before_submit(self):
+		self.check_adjustment_ready()
 		self.validate_approved()
 		if self.entry_type == "Payout":
 			self.journal_entry = self.post_payout()
@@ -218,6 +273,13 @@ class DoctorLedgerEntry(Document):
 			cost_center = self.books_cost_center()
 			debit, credit = {"account": EXPENSE_ACCOUNT}, {"account": PAYABLE_ACCOUNT}
 		company = frappe.db.get_value("Cost Center", cost_center, "company")
+		if self.is_manual_adjustment() and self.adjustment_basis == OTHER:
+			# The doctor's side stays his ledger's; the other side is the account the accountant named.
+			other = {"account": self.adjustment_account}
+			if agreement.agreement_type == "App":
+				credit = other
+			else:
+				debit = other
 		if not more:
 			debit, credit = credit, debit
 		journal_entry = frappe.get_doc(
@@ -227,8 +289,8 @@ class DoctorLedgerEntry(Document):
 				"company": company,
 				"posting_date": self.entry_date,
 				"accounts": [
-					{**debit, "account": account(company, debit["account"]), "cost_center": cost_center, "debit_in_account_currency": amount},
-					{**credit, "account": account(company, credit["account"]), "cost_center": cost_center, "credit_in_account_currency": amount},
+					{**debit, "account": full_account(company, debit["account"]), "cost_center": cost_center, "debit_in_account_currency": amount},
+					{**credit, "account": full_account(company, credit["account"]), "cost_center": cost_center, "credit_in_account_currency": amount},
 				],
 				"user_remark": _("{0} {1} for {2} under {3}. {4}").format(
 					_(self.entry_type), self.name, agreement.doctor, self.agreement, self.remarks or ""
@@ -314,6 +376,14 @@ class DoctorLedgerEntry(Document):
 		if period:
 			send_statement(self.agreement, period, _("{0} {1} of {2}").format(_(self.entry_type), self.name, abs(flt(self.amount))))
 
+	def before_cancel(self):
+		# A manual adjustment is reversed only by the owner or the accountant, with the reason kept.
+		if self.is_manual_adjustment():
+			if not is_approver():
+				frappe.throw(_("A manual adjustment is reversed by the owner or the accountant only."), frappe.PermissionError)
+			if not (self.cancel_reason or "").strip():
+				frappe.throw(_("Reversing an adjustment needs a reason."), title=_("Reason Needed"))
+
 	def on_cancel(self):
 		# A payout's or a collection's journal entry goes with it; a sale's goes with the sale
 		# (doctor_accrual.cancel_accruals). A course's entries are never cancelled (platform_fee_posting.py).
@@ -324,6 +394,32 @@ class DoctorLedgerEntry(Document):
 
 
 UNSOLD = "Unsold Copies Charge"
+SHARE, FEE, OTHER = "Correct the Doctor's Share", "Correct the Platform Fee", "Other"
+
+
+def full_account(company, name):
+	"""An account named without the company's abbreviation (the app's own accounts), or already in full (one the
+	accountant chose)."""
+	return name if frappe.db.exists("Account", name) else account(company, name)
+
+
+@frappe.whitelist(methods=["POST"])
+def reverse_adjustment(name, reason):
+	"""Reverse a submitted manual adjustment: the owner or the accountant, with a reason; its journal entry is reversed
+	and both stay on record."""
+	from imed_erp.imederp.sales_cancellation import clean_reason
+
+	frappe.only_for(APPROVER_ROLE)
+	reason = clean_reason(reason)
+	if not reason:
+		frappe.throw(_("Reversing an adjustment needs a reason."), title=_("Reason Needed"))
+	doc = frappe.get_doc("Doctor Ledger Entry", name)
+	if not doc.is_manual_adjustment() or doc.docstatus != 1:
+		frappe.throw(_("{0} is not a submitted manual adjustment.").format(name))
+	doc.cancel_reason = reason
+	doc.flags.ignore_permissions = True
+	doc.cancel()
+	return doc.name
 
 
 def lock_agreement(agreement):

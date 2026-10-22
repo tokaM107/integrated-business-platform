@@ -28,3 +28,14 @@ def fund_cash_boxes(amount=1000000, date=FIRST_DAY, company=COMPANY):
 	entry.insert()
 	entry.submit()
 	return entry.name
+
+
+def ledger_entry(values):
+	"""A Doctor Ledger Entry's values; a manual adjustment gets the reason and basis it needs (22 Oct 2026), unless the
+	test gives its own."""
+	values = dict(values)
+	if values.get("entry_type") == "Adjustment" and not values.get("sales_invoice") and not values.get("app_course"):
+		kind = frappe.db.get_value("Doctor Agreement", values.get("agreement"), "agreement_type")
+		values["remarks"] = values.get("remarks") or "_Test correction agreed with the doctor"
+		values["adjustment_basis"] = values.get("adjustment_basis") or ("Correct the Doctor's Share" if kind == "Books" else "Correct the Platform Fee")
+	return {"doctype": "Doctor Ledger Entry", **values}

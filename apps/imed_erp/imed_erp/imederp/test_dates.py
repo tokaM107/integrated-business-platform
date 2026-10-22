@@ -12,6 +12,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, today
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp.dates import DATE_FIELD
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course, make_student
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreement
@@ -93,7 +94,7 @@ class IntegrationTestDates(ExpenseFixtures, IntegrationTestCase):
 	def test_a_collection_from_a_doctor(self):
 		agreement = make_agreement("App")
 		frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_type": "Adjustment", "amount": 500, "entry_date": today()}
+			ledger_entry({"agreement": agreement, "entry_type": "Adjustment", "amount": 500, "entry_date": today()})
 		).insert().submit()
 
 		def make(date):

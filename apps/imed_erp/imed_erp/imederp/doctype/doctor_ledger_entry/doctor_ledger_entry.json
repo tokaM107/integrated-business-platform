@@ -18,6 +18,9 @@
   "amount",
   "treasury",
   "remarks",
+  "adjustment_basis",
+  "adjustment_account",
+  "cancel_reason",
   "source_section",
   "sales_invoice",
   "invoice_item",
@@ -90,6 +93,29 @@
    "fieldname": "remarks",
    "fieldtype": "Small Text",
    "label": "Remarks"
+  },
+  {
+   "fieldname": "adjustment_basis",
+   "fieldtype": "Select",
+   "label": "Adjustment Basis",
+   "options": "\nCorrect the Doctor's Share\nCorrect the Platform Fee\nOther",
+   "depends_on": "eval:doc.entry_type=='Adjustment' && !doc.sales_invoice && !doc.app_course",
+   "description": "Why the doctor's balance is changed by hand; it decides the account. A doctor is never charged for unsold or obsolete copies: the library bears them."
+  },
+  {
+   "fieldname": "adjustment_account",
+   "fieldtype": "Link",
+   "label": "Adjust Against",
+   "options": "Account",
+   "depends_on": "eval:doc.adjustment_basis=='Other'",
+   "description": "Other: the account the adjustment belongs to, named by the accountant. Without it, nothing is posted."
+  },
+  {
+   "fieldname": "cancel_reason",
+   "fieldtype": "Small Text",
+   "label": "Reversal Reason",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "source_section",
@@ -181,7 +207,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-19 20:00:00.000000",
+ "modified": "2026-10-22 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Ledger Entry",

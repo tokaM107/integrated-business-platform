@@ -15,6 +15,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_doctor_summary
@@ -102,7 +103,7 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 
 	def entry(self, entry_type, amount, **values):
 		doc = frappe.get_doc(
-			{"doctype": LEDGER, "agreement": self.agreement, "entry_type": entry_type, "amount": amount, "entry_date": today(), **values}
+			ledger_entry({"agreement": self.agreement, "entry_type": entry_type, "amount": amount, "entry_date": today(), **values})
 		).insert()
 		doc.submit()
 		return doc

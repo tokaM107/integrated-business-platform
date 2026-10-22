@@ -12,6 +12,7 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement, make_doctor
 from imed_erp.imederp.doctype.platform_fee_schedule.test_platform_fee_schedule import make_schedule
@@ -80,7 +81,7 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	@staticmethod
 	def entry(agreement, date, entry_type, amount, **values):
 		doc = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": date, "entry_type": entry_type, "amount": amount, **values}
+			ledger_entry({"agreement": agreement, "entry_date": date, "entry_type": entry_type, "amount": amount, **values})
 		).insert()
 		doc.submit()
 

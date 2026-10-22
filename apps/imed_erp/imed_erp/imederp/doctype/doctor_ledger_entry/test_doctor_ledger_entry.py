@@ -53,10 +53,15 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		fund_cash_boxes()
 
 	def new_entry(self, entry_date, **values):
+		values.setdefault("agreement", make_agreement("Books"))
+		if values.get("entry_type") == "Adjustment" and not values.get("sales_invoice") and not values.get("app_course"):
+			# A manual adjustment states its reason and basis (22 Oct 2026); a test of a missing one passes None.
+			kind = frappe.db.get_value("Doctor Agreement", values["agreement"], "agreement_type")
+			values.setdefault("remarks", "_Test correction agreed with the doctor")
+			values.setdefault("adjustment_basis", "Correct the Doctor's Share" if kind == "Books" else "Correct the Platform Fee")
 		return frappe.get_doc(
 			{
 				"doctype": "Doctor Ledger Entry",
-				"agreement": make_agreement("Books"),
 				"entry_date": entry_date,
 				"entry_type": "Accrual",
 				"amount": 100,
@@ -259,18 +264,18 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		entry = self.new_entry(today(), entry_type="Adjustment", amount=-30).insert()
 		entry.submit()
 		self.assertEqual((entry.approval_status, entry.approved_by), ("Approved", "Administrator"))
-		# Money owed to the doctor or paid to him is not a deduction.
-		for entry_type, amount in (("Adjustment", 30), ("Accrual", 30)):
+		# Money owed to the doctor is not a deduction; an adjustment by hand, either way, is still approved (22 Oct 2026).
+		for entry_type, amount, approval in (("Adjustment", 30, "Approved"), ("Accrual", 30, None)):
 			with self.subTest(entry_type):
 				other = self.new_entry(today(), entry_type=entry_type, amount=amount).insert()
 				other.submit()
-				self.assertIsNone(other.approval_status)
+				self.assertEqual(other.approval_status, approval)
 
 	def test_the_approval_is_not_set_through_the_api(self):
 		entry = self.new_entry(today(), entry_type="Adjustment", amount=-50)
 		entry.approval_status, entry.approved_by = "Approved", HR
 		entry.insert()
-		self.assertEqual((entry.approval_status, entry.approved_by), (None, None))
+		self.assertEqual((entry.approval_status, entry.approved_by), ("Pending Approval", None))
 		entry.approval_status = "Approved"
 		self.assertRaisesRegex(frappe.ValidationError, "only with Approve or Reject", entry.save)
 
@@ -303,6 +308,7 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		self.assertRaisesRegex(
 			frappe.ValidationError, "Cancel that entry instead", frappe.get_doc("Journal Entry", charge.journal_entry).cancel
 		)
+		charge.cancel_reason = "_Test entered twice"
 		charge.cancel()
 		self.assertEqual(frappe.db.get_value("Journal Entry", charge.journal_entry, "docstatus"), 2)
 		self.assertEqual(self.gl_rows(charge.journal_entry), [])
@@ -366,4 +372,65 @@ class IntegrationTestDoctorLedgerEntry(IntegrationTestCase):
 		before = get_balance(applied.agreement)
 		applied.cancel()
 		self.assertEqual(get_balance(applied.agreement), before + 40)
+
+	# ---------- Manual adjustments (22 Oct 2026) ----------
+
+	def test_a_manual_adjustment_states_its_reason_and_basis(self):
+		for values, message in (
+			({"remarks": None}, "reason"),
+			({"adjustment_basis": None}, "basis"),
+			({"adjustment_basis": "Other"}, "Name the account"),
+		):
+			with self.subTest(values):
+				entry = self.new_entry(today(), entry_type="Adjustment", amount=-40, **values).insert()
+				self.assertRaisesRegex(frappe.ValidationError, message, entry.submit)
+				self.assertFalse(entry.journal_entry)
+		# The basis fits the agreement.
+		self.assertRaises(
+			frappe.ValidationError, self.new_entry(today(), entry_type="Adjustment", amount=-40, adjustment_basis="Correct the Platform Fee").insert
+		)
+
+	def test_other_posts_against_the_account_the_accountant_names(self):
+		other = "الخصومات الممنوحة - MMG"
+		entry = self.new_entry(today(), entry_type="Adjustment", amount=-120, adjustment_basis="Other", adjustment_account=other).insert()
+		entry.submit()
+		# The doctor's side is his ledger's account; the other side is the one named, not the share and not revenue.
+		self.assertEqual(self.gl_rows(entry.journal_entry), sorted([(PAYABLE, None, 120, 0), (other, None, 0, 120)]))
+		# A treasury or a party's account is not an adjustment's.
+		self.assertRaises(
+			frappe.ValidationError,
+			self.new_entry(today(), entry_type="Adjustment", amount=-10, adjustment_basis="Other", adjustment_account="خزينة مكتبة الأزاريطة - MMG").insert,
+		)
+
+	def test_an_app_fee_correction_by_other_keeps_the_doctor_s_receivable(self):
+		agreement = make_agreement("App")
+		doctor = frappe.db.get_value("Doctor Agreement", agreement, "doctor")
+		other = "الخصومات الممنوحة - MMG"
+		entry = self.new_entry(today(), agreement=agreement, entry_type="Adjustment", amount=-75, adjustment_basis="Other", adjustment_account=other).insert()
+		entry.submit()
+		self.assertEqual(self.gl_rows(entry.journal_entry), sorted([(other, None, 75, 0), ("مستحقات على الأطباء — رسوم المنصة - MMG", doctor, 0, 75)]))
+
+	def test_any_manual_adjustment_waits_for_approval(self):
+		entry = self.new_entry(today(), entry_type="Adjustment", amount=200).insert()
+		self.assertEqual(entry.approval_status, "Pending Approval")
+		module = "imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry.is_approver"
+		with patch(module, return_value=False):
+			self.assertRaisesRegex(frappe.ValidationError, "approves it", frappe.get_doc(LEDGER, entry.name).submit)
+
+	def test_reversed_only_by_an_approver_with_a_reason(self):
+		from imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry import reverse_adjustment
+
+		entry = self.new_entry(today(), entry_type="Adjustment", amount=-60).insert()
+		entry.submit()
+		frappe.set_user(HR)
+		try:
+			self.assertRaises(frappe.PermissionError, reverse_adjustment, entry.name, "wrong")
+		finally:
+			frappe.set_user("Administrator")
+		self.assertRaises(frappe.ValidationError, reverse_adjustment, entry.name, " ")
+		self.assertRaises(frappe.ValidationError, frappe.get_doc(LEDGER, entry.name).cancel)
+		reverse_adjustment(entry.name, "_Test agreed in error")
+		entry.reload()
+		self.assertEqual((entry.docstatus, entry.cancel_reason), (2, "_Test agreed in error"))
+		self.assertEqual(frappe.db.get_value("Journal Entry", entry.journal_entry, "docstatus"), 2)
 

@@ -11,6 +11,7 @@
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_doctor
 from imed_erp.imederp.report.doctor_debts.doctor_debts import execute
 from imed_erp.imederp.testing import fund_cash_boxes
@@ -56,7 +57,7 @@ class IntegrationTestDoctorDebts(IntegrationTestCase):
 
 	def entry(self, agreement, entry_type, amount, entry_date, **values):
 		doc = frappe.get_doc(
-			{"doctype": LEDGER, "agreement": agreement, "entry_type": entry_type, "amount": amount, "entry_date": entry_date, **values}
+			ledger_entry({"agreement": agreement, "entry_type": entry_type, "amount": amount, "entry_date": entry_date, **values})
 		).insert()
 		doc.submit()
 		return doc
