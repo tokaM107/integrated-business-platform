@@ -7,6 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import flt
 
 from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_fee_per_student
+from imed_erp.imederp.import_source import check_source
 
 # ---------------------------------------------------------------------------------------------------------
 # The owner's answers on counting students for the platform fee tier (requirements v1.2 §4.10). Change them
@@ -32,6 +33,9 @@ class AppCourse(Document):
 	# APP-01 (requirements v1.2): a course on the BA+ app, of one doctor's app agreement, in one term. Its
 	# students' subscriptions (App Subscription) are what the platform fee tier is counted on.
 	def validate(self):
+		# INT-01: an imported course is changed in BA Plus; its status (open or closed to new students) and the
+		# counts the system keeps are the ERP's own.
+		check_source(self, ("status", "doctor", "subscriptions", "tier", "fee_per_student", "platform_fee_total"))
 		# DOC-02: a course belongs to an app agreement, not to a books one.
 		if frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type") != "App":
 			frappe.throw(_("Agreement {0} is not an app agreement.").format(self.agreement))
