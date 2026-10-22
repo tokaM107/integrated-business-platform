@@ -1617,3 +1617,62 @@ History,السجل
 Why,السبب
 By,بواسطة
 On,في
+An import log is kept: it cannot be deleted.,سجل الاستيراد بيتحفظ: مينفعش يتمسح.
+An import log is written only by the import.,سجل الاستيراد بيكتبه الاستيراد بس.
+An imported record needs its source system and its id there.,السجل المستورد لازم يكون عليه النظام اللي جه منه ورقمه هناك.
+BA Plus doctor id {0} is already on agreement {1}.,رقم الطبيب في BA Plus {0} موجود قبل كده على الاتفاقية {1}.
+Course {0} is named {1} in BA Plus and {2} here; not renamed.,الكورس {0} اسمه {1} في BA Plus و{2} هنا؛ ما اتغيرش اسمه.
+"Course {0} is {1}'s in the ERP, but the file gives doctor {2}. Not changed: check it in BA Plus.",الكورس {0} تبع {1} عندنا، بس الملف بيقول الطبيب {2}. ما اتغيرش: راجعه في BA Plus.
+"Customer group {0} is missing, so no new student can be added. Run setup_core.py.",مجموعة العملاء {0} مش موجودة، فمينفعش يتضاف طالب جديد. شغّل setup_core.py.
+Imported Record,سجل مستورد
+No submitted app agreement has BA Plus doctor id {0}. Write the id on the doctor's app agreement.,مفيش اتفاقية تطبيق معتمدة عليها رقم الطبيب في BA Plus {0}. اكتب الرقم على اتفاقية التطبيق بتاعة الطبيب.
+The app's cost center {0} is missing. Run setup_core.py.,مركز تكلفة التطبيق {0} مش موجود. شغّل setup_core.py.
+The file has no column {0}.,الملف مافيهوش عمود {0}.
+The import stopped at line {0}: the database dropped the run ({1}). Nothing was kept; run it again.,الاستيراد وقف عند السطر {0}: قاعدة البيانات لغت التشغيل ({1}). مفيش حاجة اتحفظت؛ شغّله تاني.
+"The row is from {0}, not BA Plus.",الصف ده من {0}، مش من BA Plus.
+Unknown source system {0}.,نظام مصدر مش معروف {0}.
+Wrong File,ملف غلط
+"You may not make an {0}, so you may not import them.",مش مسموحلك تعمل {0}، فمش مسموحلك تستوردها.
+"cancelled here, still in BA Plus",اتلغى هنا، ولسه موجود في BA Plus
+course {0},الكورس {0}
+date {0},التاريخ {0}
+student phone {0},تليفون الطالب {0}
+{0} differs from {1}: {2}.,{0} مختلف عن {1}: {2}.
+{0} terms hold {1}: {2}. The course's term must be one; check the academic periods.,{0} ترم فيهم يوم {1}: {2}. لازم يبقى ترم واحد للكورس؛ راجع الفترات الأكاديمية.
+{0} was imported from {1}. Change it there; the next import lists the change. Changed here: {2}.,{0} اتستورد من {1}. غيّره هناك؛ والاستيراد الجاي هيسجل التغيير. اللي اتغير هنا: {2}.
+Integration Import Log,سجل الاستيراد
+Integration Import Logs,سجلات الاستيراد
+Integration Import Log Error,صف في سجل الاستيراد
+Started At,بدأ
+Finished At,خلص
+Run By,اتشغل بواسطة
+File Name,اسم الملف
+File Hash,بصمة الملف
+Rows Read,الصفوف المقروءة
+Inserted,اتضاف
+Other Records Created,سجلات تانية اتعملت
+Skipped,اتخطّى
+Changed in Source,اتغير في المصدر
+Rows to Look At,صفوف محتاجة مراجعة
+Completed with Errors,خلص بأخطاء
+Row,الصف
+Import Log,سجل الاستيراد
+BA Plus Doctor ID,رقم الطبيب في BA Plus
+Import Logs,سجلات الاستيراد
+Completed with Errors: some rows failed or changed in the source; the rest were imported. Failed: nothing of the run was kept.,خلص بأخطاء: فيه صفوف فشلت أو اتغيرت في المصدر، والباقي اتستورد. فشل: مفيش حاجة من التشغيل اتحفظت.
+"The user the import ran as: the integration user, or whoever uploaded the file.",المستخدم اللي الاستيراد اشتغل بيه: مستخدم الربط، أو اللي رفع الملف.
+SHA-256 of the file: the same file sent twice has the same one.,بصمة الملف (SHA-256): نفس الملف لو اتبعت مرتين بيبقى ليه نفس البصمة.
+"Rows that became a new record (a subscription, a sale, a booking).",الصفوف اللي بقت سجل جديد (اشتراك، بيعة، حجز).
+"Other records made on the way, e.g. a course or a student seen for the first time.",سجلات تانية اتعملت في السكة، زي كورس أو طالب بيظهر لأول مرة.
+Already imported and unchanged: nothing done.,اتستورد قبل كده ومتغيرش: ما اتعملش حاجة.
+"Already imported, and the source now says something else: listed below, not overwritten.",اتستورد قبل كده، والمصدر دلوقتي بيقول حاجة تانية: متسجل تحت، وما اتكتبش فوقه.
+"Why the whole run failed, when it did.",سبب فشل التشغيل كله، لو فشل.
+"The row's line in the file, the header being line 1.",رقم السطر في الملف، وسطر العناوين هو السطر 1.
+"Failed: nothing of the row was kept. Changed in Source: already imported, and the source now says something else; not overwritten (INT-01).",فشل: مفيش حاجة من الصف اتحفظت. اتغير في المصدر: اتستورد قبل كده، والمصدر دلوقتي بيقول حاجة تانية؛ ما اتكتبش فوقه (INT-01).
+"The doctor's id in BA Plus, written once: the daily import finds this agreement by it. One active app agreement per id.",رقم الطبيب في BA Plus، بيتكتب مرة واحدة: الاستيراد اليومي بيلاقي الاتفاقية دي بيه. اتفاقية تطبيق واحدة لكل رقم.
+"Always BA Plus: the platform fee is the app's revenue, whoever subscribed the student.",دايمًا BA Plus: رسوم المنصة إيراد التطبيق، أيًا كان مين سجل الطالب.
+"Manual: entered here. Imported: from BA Plus, changed only there (INT-01).",يدوي: اتدخل هنا. مستورد: جه من BA Plus، وبيتغير هناك بس (INT-01).
+The subscription's id in BA Plus.,رقم الاشتراك في BA Plus.
+Source System and External ID together: an imported subscription is recorded once.,النظام المصدر والرقم فيه مع بعض: الاشتراك المستورد بيتسجل مرة واحدة.
+The course's id in BA Plus.,رقم الكورس في BA Plus.
+Source System and External ID together: an imported course is recorded once.,النظام المصدر والرقم فيه مع بعض: الكورس المستورد بيتسجل مرة واحدة.
