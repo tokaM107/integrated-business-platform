@@ -1,0 +1,208 @@
+{
+ "actions": [],
+ "autoname": "naming_series:",
+ "creation": "2026-10-22 14:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "source_system",
+  "status",
+  "column_break_run",
+  "started_at",
+  "finished_at",
+  "run_by",
+  "file_section",
+  "file_name",
+  "file_hash",
+  "counts_section",
+  "rows_read",
+  "inserted",
+  "records_created",
+  "column_break_counts",
+  "skipped",
+  "changed",
+  "failed",
+  "errors_section",
+  "message",
+  "errors"
+ ],
+ "fields": [
+  {
+   "default": "IMP-.YYYY.-.#####",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Series",
+   "options": "IMP-.YYYY.-.#####",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_system",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Source System",
+   "options": "ba_plus\nlibrary_pos\nbooking",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Completed with Errors: some rows failed or changed in the source; the rest were imported. Failed: nothing of the run was kept.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Completed\nCompleted with Errors\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_run",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "started_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Started At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "finished_at",
+   "fieldtype": "Datetime",
+   "label": "Finished At",
+   "read_only": 1
+  },
+  {
+   "description": "The user the import ran as: the integration user, or whoever uploaded the file.",
+   "fieldname": "run_by",
+   "fieldtype": "Link",
+   "label": "Run By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "file_section",
+   "fieldtype": "Section Break",
+   "label": "File"
+  },
+  {
+   "fieldname": "file_name",
+   "fieldtype": "Data",
+   "label": "File Name",
+   "read_only": 1
+  },
+  {
+   "description": "SHA-256 of the file: the same file sent twice has the same one.",
+   "fieldname": "file_hash",
+   "fieldtype": "Data",
+   "label": "File Hash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "counts_section",
+   "fieldtype": "Section Break",
+   "label": "Counts"
+  },
+  {
+   "fieldname": "rows_read",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Rows Read",
+   "read_only": 1
+  },
+  {
+   "description": "Rows that became a new record (a subscription, a sale, a booking).",
+   "fieldname": "inserted",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Inserted",
+   "read_only": 1
+  },
+  {
+   "description": "Other records made on the way, e.g. a course or a student seen for the first time.",
+   "fieldname": "records_created",
+   "fieldtype": "Int",
+   "label": "Other Records Created",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_counts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Already imported and unchanged: nothing done.",
+   "fieldname": "skipped",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Skipped",
+   "read_only": 1
+  },
+  {
+   "description": "Already imported, and the source now says something else: listed below, not overwritten.",
+   "fieldname": "changed",
+   "fieldtype": "Int",
+   "label": "Changed in Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "failed",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Failed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "errors_section",
+   "fieldtype": "Section Break",
+   "label": "Rows to Look At"
+  },
+  {
+   "description": "Why the whole run failed, when it did.",
+   "fieldname": "message",
+   "fieldtype": "Small Text",
+   "label": "Message",
+   "read_only": 1
+  },
+  {
+   "fieldname": "errors",
+   "fieldtype": "Table",
+   "label": "Rows",
+   "options": "Integration Import Log Error",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-10-22 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Integration Import Log",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager"
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "source_system",
+ "track_changes": 1
+}
