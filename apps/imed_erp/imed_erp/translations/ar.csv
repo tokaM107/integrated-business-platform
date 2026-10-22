@@ -1131,3 +1131,110 @@ Good evening,مساء الخير
 {0} waiting for your approval.,{0} مستني موافقتك.
 Nothing waits for your approval. Here is where the money stands.,مفيش حاجة مستنية موافقتك. ودي حالة الفلوس دلوقتي.
 ID,الرقم
+Only the owner sees yesterday's figures.,أرقام امبارح للمالك بس.
+No business on the entry,قيد من غير نشاط
+"{0} machine(s) have no library, so their counters are not read: {1}.",{0} ماكينة مش متحدد لها مكتبة، فعداداتها مش بتتقري: {1}.
+{0}: the counter reading was saved but not submitted.,{0}: قراءة العدادات اتحفظت بس متعتمدتش.
+{0}: no counter reading for the day.,{0}: مفيش قراءة عدادات لليوم ده.
+{0}: {1} broke down ({2}).,{0}: {1} عطلت ({2}).
+"{0}: the counters went up by {1} sheets, {2} were sold: a difference of {3}.",{0}: العدادات زادت {1} ورقة، والمباع {2}: فرق {3}.
+sheets,ورقة
+Booking system import,استيراد نظام الحجز
+"Nothing runs the import yet, and its runs are not logged.",مفيش حاجة بتشغل الاستيراد لسه، ومرات تشغيله مش بتتسجل.
+File imports,استيراد الملفات
+No file has been imported yet.,لسه مفيش ملف اتستورد.
+"{0} import(s) failed or partly failed, the last: {1} ({2}).",{0} استيراد فشل أو فشل جزء منه، آخرهم: {1} ({2}).
+{0} import(s) not run yet.,{0} استيراد لسه متشغلش.
+Daily job: {0},مهمة يومية: {0}
+The scheduler is off: the job does not run.,المُجدوِل مقفول: المهمة مش بتشتغل.
+The last run failed: {0},آخر تشغيل فشل: {0}
+Has not run in the last {0} hours.,مشتغلتش في آخر {0} ساعة.
+no details,من غير تفاصيل
+AI assistant,المساعد الذكي
+Connected to its model.,متوصل بالنموذج بتاعه.
+Not connected to a model yet.,لسه مش متوصل بنموذج.
+Outgoing e-mail,البريد الصادر
+Notifications are also sent by e-mail.,التنبيهات بتتبعت بالبريد كمان.
+No outgoing e-mail account: notifications stay in the system.,مفيش حساب بريد صادر: التنبيهات بتفضل جوه النظام.
+{0} is not a business of {1}.,{0} مش نشاط من أنشطة {1}.
+Choose the dates.,اختار التواريخ.
+"Choose Daily, Weekly or Monthly.",اختار يومي أو أسبوعي أو شهري.
+Too many periods: choose fewer dates or a longer period.,الفترات كتير: اختار تواريخ أقل أو فترة أطول.
+Week of {0},أسبوع {0}
+"Revenue invoiced (accrual basis), net of returns, from submitted documents only. Money collected is not revenue: see Cash Movements and Cash Box Balances.",الإيراد المفوتر (أساس الاستحقاق) بعد المرتجعات، من المستندات المعتمدة بس. الفلوس المحصلة مش إيراد: شوف حركة الخزائن ورصيد كل خزينة.
+Total Revenue,إجمالي الإيراد
+Best Period,أعلى فترة
+Top Business,أعلى نشاط
+Direct Expenses,المصروفات المباشرة
+Shared Costs Before Allocation,مصروفات المقر قبل التوزيع
+Profit Before Allocation,الربح قبل توزيع مصروفات المقر
+Shared Costs Allocated,نصيبه من مصروفات المقر
+Shared Costs Not Allocated,مصروفات مقر متوزعتش
+Profit After Allocation,الربح بعد توزيع مصروفات المقر
+"Profit before allocation keeps the shared premises' expenses on their own row; profit after allocation is the ledger's, with each business's share as ERPNext posted it.",الربح قبل التوزيع بيسيب مصروفات المقر المشتركة في سطرها لوحدها؛ والربح بعد التوزيع هو اللي في الدفاتر، بنصيب كل نشاط زي ما اتسجل.
+{0} of the shared premises' expenses in this period were not split (no Allocation Rule covered their dates): the profit after allocation is incomplete for the businesses.,{0} من مصروفات المقر المشتركة في الفترة دي متوزعتش (مفيش قاعدة توزيع بتغطي تواريخها): الربح بعد التوزيع ناقص للأنشطة.
+No shared premises' expenses in this period.,مفيش مصروفات مقر مشتركة في الفترة دي.
+The totals do not agree with the ledger. Tell the developer.,الإجماليات مش مطابقة للدفاتر. بلغ المطور.
+Agrees with the Ledger,مطابق للدفاتر
+"Choose Unpaid, Partly Paid or Overdue.",اختار غير مدفوع أو مدفوع جزئياً أو متأخر.
+Choose what to show.,اختار تعرض إيه.
+Kind,النوع
+Days Overdue,أيام التأخير
+Deposit Paid,مدفوع عربون
+Not Applied Yet,لسه متخصمش
+Total: {0},إجمالي: {0}
+Owed on Invoices,المستحق على الفواتير
+Of Which Overdue,منه متأخر
+Customers' Credit,رصيد العملاء عندنا
+Customer Credit,رصيد للعميل
+Bookings Not Invoiced Yet,حجوزات لسه متفوترتش
+A group stands for every business under it.,المجموعة بتشمل كل الأنشطة اللي تحتها.
+Not Invoiced,متفوترش
+Working,شغال
+Needs attention,محتاج متابعة
+Not configured,مش متظبط
+not split,متوزعش
+Revenue and expenses by business,الإيراد والمصروف لكل نشاط
+Invoiced revenue and approved expenses (submitted documents only). Money collected is not revenue.,الإيراد المفوتر والمصروفات المعتمدة (المستندات المعتمدة بس). الفلوس المحصلة مش إيراد.
+Held,اتعمل
+{0} h,{0} ساعة
+Halls and studio,القاعات والاستوديو
+Halls,القاعات
+Studio,الاستوديو
+Studio hours booked,ساعات الاستوديو المحجوزة
+Studio hours delivered,ساعات الاستوديو المنفذة
+Booked yesterday (any date),اتحجز امبارح (لأي يوم)
+{0} booking(s) of yesterday are neither completed nor cancelled.,{0} حجز من حجوزات امبارح لا اكتمل ولا اتلغى.
+Platform fees,رسوم المنصة
+No app agreement yet.,لسه مفيش اتفاق تطبيق.
+Charged yesterday,اتحسب امبارح
+Collected yesterday,اتحصل امبارح
+Still owed by doctors,لسه على الدكاترة
+New students,طلبة جداد
+Paper and counters,الورق والعدادات
+No printing machine is set up.,مفيش ماكينة طباعة متسجلة.
+breakdown,عطل
+Sheets,الورق
+Sheets printed,ورق اتطبع
+Sheets sold,ورق اتباع
+Last success: {0},آخر نجاح: {0}
+Integrations and imports,الربط والاستيراد
+Revenue by period,الإيراد حسب الفترة
+Profit before and after shared costs,الربح قبل وبعد مصروفات المقر
+Outstanding receivables,المستحقات اللي لسه متحصلتش
+"Yesterday, {0}",امبارح، {0}
+Revenue by Period,الإيراد حسب الفترة
+Profit Before and After Shared Costs,الربح قبل وبعد مصروفات المقر
+Outstanding Receivables,المستحقات اللي لسه متحصلتش
+From Date must be before To Date.,من تاريخ لازم يكون قبل إلى تاريخ.
+Revenue,الإيراد
+Due Date,تاريخ الاستحقاق
+Payment Status,حالة الدفع
+Invoiced,مفوتر
+Net,الصافي
+Daily,يومي
+Weekly,أسبوعي
+Monthly,شهري
+Overdue,متأخر
+Show,اعرض
+Expenses,المصروفات

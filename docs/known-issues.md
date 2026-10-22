@@ -10,6 +10,9 @@ Each item should have a GitHub issue; put its number in the last column once cre
 | Arabic text breaks in charts | Reported in the owner demo: Arabic labels in dashboard charts do not display correctly. Charts use frappe-charts (SVG). Needs a screenshot and exact steps. | Decision and fix in week 10 | — |
 | Missing / wrong Arabic translations | Parts of the interface stay in English or are mistranslated (e.g. "Amount", "Nos" on the invoice). The invoice is already fixed by the MMG Sales Invoice print format. | Full translation in week 11 | — |
 | Print formats | Only the sales invoice has an Arabic format so far. | Week 11 | — |
+| Expense numbers on the dev site | Found 22 Oct: the site has no counter for `EXP-2026-` (tabSeries) though `EXP-2026-00001` exists, so the next expense saved there fails with a duplicate name. The tests of Expense, Allocation Rule and Expense Report fail on it. | Set the counter to 1 on the dev site (the owner's go-ahead first) | — |
+| Printing machines without a library | Found 22 Oct: the two machines on the dev site (`ماكينة تجربة 1/2 — الأزاريطة`) have no Cost Center, so no counter reading can be made and the Daily Counter Reading and Daily Printing tests fail. The owner's dashboard shows it as a warning. | Give each its library | — |
+| Library revenue test | Found 22 Oct: `test_library_revenue` fails on the dev site: the printing service posts to `Printing Revenue`, not the library's own revenue account. Not changed by the dashboard work (fails on the code before it too). | Check the item's income account | — |
 
 ### Issue text: Arabic text breaking in charts
 
@@ -67,7 +70,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 7 | SEC-05 (Must) | No daily automatic backup kept off the server. | A failed server loses the data. | Set up with the production server (week C): scheduled `bench backup --with-files` and a copy off the server. |
 | 8 | HR-01, HR-02, HR-04, HR-06 (Must); HR-03, HR-05 (Should) | HR is not built and HRMS (Frappe's HR app) is not installed: no payroll, attendance or salary split between businesses. Salaries are recorded as expenses. | The owner may expect payroll from the Must list. | Confirm HR is after go-live, and when HRMS is installed (an install and migrate on a live site). Owner. |
 | 9 | LIB-07 (Must) | Supplier purchases (`setup_buying.py`, on branch `feature/buying`) are not merged, though the owner's dashboard refers to it. | Purchases use ERPNext's defaults (no Update Stock default). | Merge and test `feature/buying`. |
-| 10 | Owner's dashboard (5.1) | Done on 19 Oct: studio bookings and hours, hall bookings and what is unpaid on bookings are cards on the owner's dashboard, with the bookings list and the transfers report (RPT-03). | | |
+| 10 | Owner's dashboard (5.1) | Done on 22 Oct: yesterday's revenue, expenses and net by business, paper and counters, halls and studio, platform fees and the integrations, on the owner's dashboard, the owner's alone (README, *Owner Dashboard: yesterday*). | | |
 
 ### Halls and studio
 
@@ -86,13 +89,13 @@ sections of this file. Each row says what it needs before it can be built.
 |---|---|---|---|
 | 17 | INT-04, STU-06 (Must) | The booking import is written but nothing runs it (no job, no upload). | The file and its schedule (INT-02). |
 | 18 | INT-07 (Must) | Failed rows are returned, not kept: no log, no alert, no re-import of a period. | An import log doctype with each run's failed rows, and an alert. |
-| 19 | INT-09, RPT-12 (Must) | No screen showing each integration's last run and failures. | After 18. |
+| 19 | INT-09, RPT-12 (Must) | Partly done on 22 Oct: the owner's dashboard shows file imports (Data Import), the app's daily jobs, the assistant and e-mail, with last success and failures. The booking import shows *Not configured*: it keeps no log. | After 18. |
 | 20 | INT-06, INT-14 | Only bookings have a source id and a source; sales, stock and app subscriptions not yet. | With the daily import (IMPORT_DATA_STANDARD.md). |
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
 | 24 | APP-11 (Must) | Done on 20 Oct: the app statement has one row per course (students, tier, fee per student, fee), the collections and the balance carried into the next term. | |
-| 25 | RPT-01, RPT-02 (Must) | Revenue per business and period, and profit before and after the shared costs, are ERPNext's P&L by cost center; the README does not say how to read them. | A README section, or a report. |
+| 25 | RPT-01, RPT-02, RPT-05 (Must) | Done on 22 Oct: Revenue by Period, Profit Before and After Shared Costs and Outstanding Receivables (README). Profit after allocation is incomplete for shared expenses dated before the first Allocation Rule (1 Nov 2026): they were never split. | |
 | 26 | PRN-03 (Should) | Waste and losses are in three places (Daily Printing, damaged stock, Stock Count Variance), not one monthly report. | A report. |
 | 27 | PRN-04 (Must) | The paper balance is in sheets only, not in boxes and reams. | A column in boxes and reams. |
 | 28 | PRN-09 (Must) | A machine's "rate of use" is its share of the library's printing, not the time it ran. | Owner: which one is meant. |

@@ -1,0 +1,20 @@
+{
+ "add_total_row": 0,
+ "creation": "2026-10-22 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "modified": "2026-10-22 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Profit Before and After Shared Costs",
+ "owner": "Administrator",
+ "ref_doctype": "GL Entry",
+ "report_name": "Profit Before and After Shared Costs",
+ "report_type": "Script Report",
+ "roles": [
+  { "role": "Super Admin" },
+  { "role": "Accounts Manager" },
+  { "role": "Accountant" }
+ ]
+}

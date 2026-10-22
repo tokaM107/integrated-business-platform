@@ -2121,6 +2121,259 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 	stroke: var(--imed-teal-300) !important;
 }
 
+/* ------------------------------------------------------------------ */
+/* 25. Owner Dashboard: yesterday (requirements 5.1)                    */
+/* ------------------------------------------------------------------ */
+/* imed_owner_dashboard.js draws it under the welcome band. Colour carries meaning only: green a profit or money
+   in, red a loss or money owed, orange what needs attention (a missing reading, a difference, an import not
+   configured), the rest neutral. */
+.imed-yday {
+	margin: 0 0 22px;
+}
+.imed-yday-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px 16px;
+	margin-bottom: 12px;
+}
+.imed-yday-head h2 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	color: var(--heading-color);
+	font-size: 18px;
+	font-weight: 700;
+}
+.imed-yday-head h2 .icon {
+	stroke: var(--imed-teal-600);
+}
+.imed-yday-head nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.imed-yday-head nav a {
+	padding: 4px 12px;
+	border: 1px solid var(--imed-border);
+	border-radius: 999px;
+	background: var(--fg-color);
+	color: var(--imed-teal-700);
+	font-size: 12.5px;
+	font-weight: 600;
+	text-decoration: none;
+}
+.imed-yday-head nav a:hover {
+	background: var(--imed-teal-50);
+}
+.imed-yday-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 14px;
+}
+.imed-yday-card {
+	min-width: 0;
+	padding: 16px 18px;
+	border: 1px solid var(--imed-border);
+	border-radius: var(--imed-card-radius);
+	background: var(--fg-color);
+	box-shadow: var(--imed-card-shadow);
+}
+.imed-yday-card.is-wide {
+	grid-column: 1 / -1;
+}
+.imed-yday-card h3 {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 8px;
+	margin: 0 0 12px;
+	color: var(--heading-color);
+	font-size: 15px;
+	font-weight: 700;
+}
+.imed-yday-card h3 > * {
+	flex: none;
+	margin: 0;
+}
+.imed-yday-card h3 .icon {
+	stroke: var(--imed-teal-600);
+}
+.imed-yday-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+.imed-yday-table th {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--imed-border);
+	color: var(--text-muted);
+	font-weight: 600;
+	text-align: start;
+}
+.imed-yday-table td {
+	padding: 7px 8px;
+	border-bottom: 1px solid var(--imed-border);
+}
+.imed-yday-table .is-num {
+	text-align: end;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+.imed-yday-table tfoot td {
+	border-bottom: 0;
+	color: var(--heading-color);
+	font-weight: 700;
+}
+.imed-yday-table tr.is-quiet td {
+	color: var(--text-light);
+}
+.imed-yday-table.is-compact td,
+.imed-yday-table.is-compact th {
+	padding: 4px 6px;
+}
+.imed-yday .is-positive,
+.imed-yday-stat.is-positive b {
+	color: var(--text-on-green);
+}
+.imed-yday .is-negative,
+.imed-yday-stat.is-negative b {
+	color: var(--text-on-red);
+}
+.imed-yday-stat.is-warning b {
+	color: var(--text-on-orange);
+}
+.imed-yday-sub {
+	margin: 10px 0 6px;
+	color: var(--heading-color);
+	font-size: 13px;
+	font-weight: 700;
+}
+.imed-yday-sub:first-of-type {
+	margin-top: 0;
+}
+.imed-yday-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+	gap: 8px;
+	margin-bottom: 8px;
+}
+.imed-yday-stat {
+	padding: 8px 10px;
+	border-radius: 12px;
+	background: var(--subtle-fg);
+}
+.imed-yday-stat span {
+	display: block;
+	color: var(--text-muted);
+	font-size: 11.5px;
+}
+.imed-yday-stat b {
+	color: var(--heading-color);
+	font-size: 15px;
+	font-variant-numeric: tabular-nums;
+}
+.imed-yday-note {
+	margin: 10px 0 0;
+	color: var(--text-muted);
+	font-size: 12px;
+}
+.imed-yday-flag {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--bg-orange);
+	color: var(--text-on-orange);
+	font-size: 11px;
+	font-weight: 600;
+}
+.imed-yday-warn,
+.imed-yday-warnings li {
+	color: var(--text-on-orange);
+	font-size: 12.5px;
+}
+.imed-yday-warn {
+	margin: 8px 0 0;
+	padding: 8px 10px;
+	border-radius: 10px;
+	background: var(--bg-orange);
+}
+.imed-yday-warnings {
+	margin: 8px 0 0;
+	padding: 8px 10px 8px 26px;
+	border-radius: 10px;
+	background: var(--bg-orange);
+}
+[dir="rtl"] .imed-yday-warnings {
+	padding: 8px 26px 8px 10px;
+}
+.imed-yday-systems {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-yday-system {
+	display: flex;
+	gap: 10px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--imed-border);
+	font-size: 13px;
+}
+.imed-yday-system:last-child {
+	border-bottom: 0;
+}
+.imed-yday-dot {
+	flex: none;
+	width: 10px;
+	height: 10px;
+	margin-top: 5px;
+	border-radius: 50%;
+	background: var(--gray-400);
+}
+.imed-yday-system.is-ok .imed-yday-dot {
+	background: var(--green-500);
+}
+.imed-yday-system.is-error .imed-yday-dot {
+	background: var(--red-500);
+}
+.imed-yday-system.is-warning .imed-yday-dot,
+.imed-yday-system.is-unknown .imed-yday-dot,
+.imed-yday-system.is-not_configured .imed-yday-dot {
+	background: var(--orange-500);
+}
+.imed-yday-state {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+.imed-yday-system.is-error .imed-yday-state {
+	color: var(--text-on-red);
+}
+.imed-yday-system.is-warning .imed-yday-state,
+.imed-yday-system.is-unknown .imed-yday-state,
+.imed-yday-system.is-not_configured .imed-yday-state {
+	color: var(--text-on-orange);
+}
+.imed-yday-detail {
+	color: var(--text-muted);
+	font-size: 12px;
+}
+[data-theme="dark"] .imed-yday-head nav a:hover {
+	background: rgba(64, 174, 161, 0.12);
+}
+[data-theme="dark"] .imed-yday-head nav a {
+	color: var(--imed-teal-300);
+}
+@media (max-width: 767.98px) {
+	.imed-yday-card {
+		padding: 14px;
+	}
+	.imed-yday-card.is-wide {
+		overflow-x: auto;
+	}
+}
+
 @media (max-width: 767.98px) {
 	.std-form-layout .form-section.card-section {
 		padding: 14px;
