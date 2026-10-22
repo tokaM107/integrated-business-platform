@@ -284,3 +284,74 @@ class IntegrationTestAppImport(IntegrationTestCase):
 		books.ba_plus_doctor_id = "DR-BOOKS"
 		books.save()
 		self.assertIsNone(books.ba_plus_doctor_id)
+
+	# ---------- the integrations screen (INT-09) ----------
+
+	def csv(self, data):
+		return ("\n".join([",".join(app_import.COLUMNS), *(",".join(r[c] for c in app_import.COLUMNS) for r in data)]) + "\n").encode()
+
+	def status(self):
+		from imed_erp.imederp.report.integration_status.integration_status import execute
+
+		return {row["system"]: row for row in execute()[1]}
+
+	def test_the_screen_shows_each_systems_last_import(self):
+		good = app_import.import_content(self.csv(self.rows(3)), file_name="good.csv")
+		rows = self.status()
+		self.assertEqual(set(rows), {"ba_plus", "library_pos", "booking"})
+		ba_plus = rows["ba_plus"]
+		self.assertEqual((ba_plus["log"], ba_plus["inserted"], ba_plus["failed"]), (good.name, 3, 0))
+		self.assertIn("no import reads", rows["library_pos"]["note"].lower())
+
+		# A later run that failed as a whole does not hide the last one that went through.
+		with patch.object(app_import, "import_row", side_effect=Exception("boom")), patch.object(
+			frappe.db, "rollback", side_effect=lambda save_point=None, **kw: (_ for _ in ()).throw(Exception("Deadlock")) if save_point else None
+		), patch.object(frappe.db, "commit"):
+			failed = app_import.import_rows(self.rows(1, start=10), file_name="dropped.csv")
+		ba_plus = self.status()["ba_plus"]
+		self.assertEqual((ba_plus["log"], ba_plus["last_run_status"]), (good.name, "Failed"))
+		self.assertIn("failed", ba_plus["note"])
+		self.assertEqual(frappe.db.get_value("Integration Import Log", failed.name, "status"), "Failed")
+
+	def test_a_period_imported_again_brings_in_only_what_failed(self):
+		from imed_erp.imederp.report.integration_status.integration_status import reimport_period
+
+		# The file's 3rd row has a doctor id not yet written on any agreement: it fails.
+		data = self.rows(4)
+		data[2].update(doctor_id="DR-LATE", course_id=self.cid("C-LATE"), course_name="_Test Late Doctor's Course")
+		first = app_import.import_content(self.csv(data), file_name="day.csv")
+		self.assertEqual((first.inserted, first.failed), (3, 1))
+		self.assertEqual(frappe.db.get_value("Integration Import Log", first.name, "file_content"), self.csv(data).decode())
+		before = self.books()
+
+		# The accountant writes the id on the agreement, then imports the day again.
+		late = frappe.get_doc("Doctor Agreement", make_agreement("App", 98))
+		late.ba_plus_doctor_id = "DR-LATE"
+		late.save()
+		today = frappe.utils.today()
+		[run] = [r for r in reimport_period("ba_plus", today, today) if r["from"] == first.name]
+		self.assertEqual((run["inserted"], run["skipped"], run["failed"]), (1, 3, 0))
+		# The three already in were not posted again.
+		self.assertEqual(self.books(), before)
+		self.assertTrue(frappe.db.exists("App Subscription", {"import_key": f"ba_plus:{self.sid(3)}", "agreement": late.name}))
+
+	def test_a_period_imported_again_runs_each_file_once(self):
+		from imed_erp.imederp.report.integration_status.integration_status import reimport_period
+
+		content = self.csv(self.rows(2))
+		first = app_import.import_content(content, file_name="twice.csv")
+		app_import.import_content(content, file_name="twice-again.csv")
+		today = frappe.utils.today()
+		runs = [r for r in reimport_period("ba_plus", today, today)]
+		hashes = [frappe.db.get_value("Integration Import Log", r["from"], "file_hash") for r in runs]
+		self.assertEqual(len(hashes), len(set(hashes)))
+		self.assertEqual(hashes.count(frappe.db.get_value("Integration Import Log", first.name, "file_hash")), 1)
+
+	def test_who_may_import_a_period_again(self):
+		from imed_erp.imederp.report.integration_status.integration_status import reimport_period
+
+		today = frappe.utils.today()
+		self.assertRaisesRegex(frappe.ValidationError, "No import reads", reimport_period, "library_pos", today, today)
+		self.assertRaisesRegex(frappe.ValidationError, "No file", reimport_period, "ba_plus", "1990-01-01", "1990-01-02")
+		frappe.set_user("sara@imed.local")
+		self.assertRaises(frappe.PermissionError, reimport_period, "ba_plus", today, today)
