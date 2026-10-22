@@ -1,2 +1,2 @@
-source_system,source_id,subscription_date,doctor_agreement,course,student_phone,student_name,platform_fee
-ba_plus,EXAMPLE-S-0001,2026-10-15,EXAMPLE-AGREEMENT,EXAMPLE-COURSE,01112345678,EXAMPLE,0
+subscription_id,subscription_date,course_id,course_name,doctor_id,student_phone,student_name
+EXAMPLE-S-0001,2026-10-15,EXAMPLE-C-01,EXAMPLE course,EXAMPLE-DR-01,01112345678,EXAMPLE
