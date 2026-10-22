@@ -218,6 +218,7 @@ doc_events = {
 		"before_cancel": [
 			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
+			"imed_erp.imederp.doctype.app_payment.app_payment.block_cancel_of_payment_entry",
 			# The doctor's amount posted by a sale goes only with the sale (imederp/doctor_accrual.py).
 			"imed_erp.imederp.doctor_accrual.block_cancel_of_accrual",
 		],
@@ -438,6 +439,23 @@ doc_events = {
 	"Weekly Cash Reconciliation": {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
+	# What students pay BA Plus (App Payment), the weekly cash hand-over (Cash Handover, ACC-09) and the studio's
+	# prepaid hours (Studio Hour Package), 22 Oct 2026.
+	"App Payment": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Cash Handover": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Studio Hour Package": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
 	# CORE-07: a user is disabled, never deleted (imederp/users.py).
 	"User": {
 		"on_trash": "imed_erp.imederp.users.block_user_delete",
@@ -454,6 +472,9 @@ period_closing_doctypes = [
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",
+	"App Payment",
+	"Cash Handover",
+	"Studio Hour Package",
 ]
 
 # The custom fields the app's code relies on: made when the app is installed (install-app does not run

@@ -8,8 +8,8 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_act
 
 class AppSubscription(Document):
     # APP-04/05 (requirements v1.2): a student's subscription is the basis of the platform fee the group
-    # earns from the doctor. The course itself is paid by the student to the doctor directly, so no course
-    # money is recorded here.
+    # earns from the doctor. No course money is recorded here: since 22 Oct 2026 a student may pay BA Plus, in cash
+    # at a branch or electronically, and each payment is an App Payment, held for the doctor (app_payment.py).
     def validate(self):
         # APP-01/04: the agreement, the doctor and the term are the course's, whatever an import or an old draft says.
         if not self.course:

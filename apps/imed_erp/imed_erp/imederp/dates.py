@@ -22,6 +22,9 @@ DATE_FIELD = {
 	"Damaged Stock Sale": "posting_date",
 	"App Subscription": "subscription_date",
 	"Treasury Close": "close_date",
+	"App Payment": "posting_date",
+	"Cash Handover": "handover_date",
+	"Studio Hour Package": "purchase_date",
 	# ERPNext
 	"Sales Invoice": "posting_date",
 	"POS Invoice": "posting_date",

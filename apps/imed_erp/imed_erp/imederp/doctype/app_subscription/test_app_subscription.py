@@ -1,7 +1,8 @@
 # Copyright (c) 2026, toka mohamed and Contributors
 # See license.txt
 
-# App subscriptions (APP-04/05, requirements v1.2): no course money is recorded, and a subscription belongs
+# App subscriptions (APP-04/05, requirements v1.2): no course money is recorded on the subscription (what a student
+# pays is an App Payment, held for the doctor: app_payment.py), and a subscription belongs
 # to a course of an app agreement, which gives its agreement and term. Rolled back afterwards.
 #
 # Run:

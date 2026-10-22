@@ -21,9 +21,12 @@ LOCKED_DOCTYPES = [
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",
+	"App Payment",
+	"Cash Handover",
+	"Studio Hour Package",
 ]
 
-DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date")
+DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date", "handover_date", "purchase_date")
 COST_CENTER_FIELDS = ("activity", "from_business", "cost_center", "branch")
 
 
