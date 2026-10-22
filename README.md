@@ -1338,6 +1338,14 @@ records made, skipped, changed in the source and failed, and each row to look at
 import writes one; nobody edits or deletes it. A run the database drops as a whole keeps nothing and is logged as
 Failed.
 
+**Integration Status** (INT-09; report, sidebar; owner and accountant) shows one row per system (the libraries'
+point of sale, the studio's bookings, BA Plus): the last import that went through, its log, what it imported,
+skipped, found changed and failed, and the last run with its status when it came after (a failed run does not hide
+the last good one). A system no import reads says *not connected yet*. **Import a Period Again** runs again the
+files that came in the days chosen (each log keeps its file), oldest first, each distinct file once: what is already
+in is skipped, so only what failed (e.g. a doctor whose BA Plus id was written since) or is new goes in, and each run
+writes its own log. BA Plus only for now; the libraries and the booking system get it with their imports.
+
 **The app statement (APP-11).** The *Doctor Statement* of an app agreement shows one row per course: its
 students, tier, fee per student and the fee posted in the term, then the collections, and the balance. A fee not
 collected stays the doctor's debt (Doctor Debts, APP-08) and is the next term's balance brought forward (APP-12):
