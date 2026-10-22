@@ -1317,6 +1317,27 @@ becomes 20,200). Each has its journal entry: Dr مستحقات على الأطب
 Cr إيراد رسوم المنصة, on the app's cost center. They need no approval, send no statement, and are cancelled only
 by changing the course's subscriptions. The doctor's balance, Doctor Debts and Accounts Receivable show the fees.
 
+**BA Plus's daily file (INT-05, APP-13).** `imederp/app_import.py` takes BA Plus's courses and subscriptions,
+each by its id in BA Plus (`import_key` = `ba_plus:<id>`, unique), into *App Course* and submitted *App
+Subscription*: the doctor's app agreement is found by his BA Plus id (Doctor Agreement › BA Plus Doctor ID), the
+course is made the first time its id comes (in the one term the date falls in), the student is found by phone or
+made in the group `طالب`, and the fee is counted and posted as for a subscription entered by hand. The same file
+again adds nothing; a known record that changed in BA Plus is listed, not overwritten; a row that fails keeps
+nothing and the others go on. An imported course or subscription is changed only in BA Plus (`import_source.py`),
+except a course's status. A subscription is always on `تطبيق BA Plus`'s cost center, whoever made it. The columns
+and what still needs a real BA Plus export: docs/IMPORT_DATA_STANDARD.md, part 3.
+
+```bash
+docker exec frappe_docker-backend-1 bench --site frontend execute imed_erp.imederp.app_import.import_file \
+  --kwargs '{"path": "/home/frappe/frappe-bench/sites/app_2026-10-22.csv"}'
+```
+
+Each run writes an **Integration Import Log** (INT-07; sidebar: Import Logs; owner and accountant): the system
+(`ba_plus`, `library_pos`, `booking`), the file and its SHA-256, when and by whom, rows read, inserted, other
+records made, skipped, changed in the source and failed, and each row to look at with its line and reason. Only an
+import writes one; nobody edits or deletes it. A run the database drops as a whole keeps nothing and is logged as
+Failed.
+
 **The app statement (APP-11).** The *Doctor Statement* of an app agreement shows one row per course: its
 students, tier, fee per student and the fee posted in the term, then the collections, and the balance. A fee not
 collected stays the doctor's debt (Doctor Debts, APP-08) and is the next term's balance brought forward (APP-12):
@@ -1413,6 +1434,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_sales_cancellation
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_app_import
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking_pricing
