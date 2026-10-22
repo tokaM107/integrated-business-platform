@@ -14,6 +14,7 @@
   "start_date",
   "settlement_cycle",
   "status",
+  "ba_plus_doctor_id",
   "summary_section",
   "balance_direction",
   "balance",
@@ -75,6 +76,16 @@
    "label": "Status",
    "options": "Active\nSuspended",
    "reqd": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "depends_on": "eval:doc.agreement_type=='App'",
+   "description": "The doctor's id in BA Plus, written once: the daily import finds this agreement by it. One active app agreement per id.",
+   "fieldname": "ba_plus_doctor_id",
+   "fieldtype": "Data",
+   "label": "BA Plus Doctor ID",
+   "no_copy": 1,
+   "search_index": 1
   },
   {
    "fieldname": "summary_section",
@@ -168,7 +179,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-12 12:00:00.000000",
+ "modified": "2026-10-22 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Doctor Agreement",
