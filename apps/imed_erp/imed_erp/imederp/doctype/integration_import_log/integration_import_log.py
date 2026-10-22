@@ -47,7 +47,10 @@ class ImportRun:
 			frappe.throw(_("Unknown source system {0}.").format(source_system))
 		self.source_system = source_system
 		self.file_name = file_name
-		self.file_hash = hashlib.sha256(content if isinstance(content, bytes) else cstr(content).encode()).hexdigest() if content else None
+		raw = content if isinstance(content, bytes) else cstr(content).encode() if content else None
+		self.file_hash = hashlib.sha256(raw).hexdigest() if raw else None
+		# Kept with the log, so the file can be imported again for its period (INT-09).
+		self.file_content = raw.decode("utf-8-sig") if raw else None
 		self.started_at = now_datetime()
 		self.counts = dict(rows_read=0, inserted=0, records_created=0, skipped=0, changed=0, failed=0)
 		self.rows = []
@@ -94,6 +97,7 @@ class ImportRun:
 				"run_by": frappe.session.user,
 				"file_name": self.file_name,
 				"file_hash": self.file_hash,
+				"file_content": self.file_content,
 				"message": message,
 				"errors": self.rows,
 				**self.counts,

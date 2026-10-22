@@ -15,6 +15,7 @@
   "file_section",
   "file_name",
   "file_hash",
+  "file_content",
   "counts_section",
   "rows_read",
   "inserted",
@@ -101,6 +102,14 @@
    "read_only": 1
   },
   {
+   "description": "The file as it came, kept so a period can be imported again (INT-09). Holds students' names and phones: the owner and the accountant read it.",
+   "fieldname": "file_content",
+   "fieldtype": "Long Text",
+   "hidden": 1,
+   "label": "File Content",
+   "read_only": 1
+  },
+  {
    "fieldname": "counts_section",
    "fieldtype": "Section Break",
    "label": "Counts"
@@ -175,7 +184,7 @@
  ],
  "in_create": 1,
  "links": [],
- "modified": "2026-10-22 14:00:00.000000",
+ "modified": "2026-10-22 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Integration Import Log",
