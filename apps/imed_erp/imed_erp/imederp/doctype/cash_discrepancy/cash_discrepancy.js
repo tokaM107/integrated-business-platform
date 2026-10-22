@@ -12,6 +12,42 @@ function act(frm, method, prompt) {
 	frappe.prompt({ fieldname: "reason", fieldtype: "Small Text", label: prompt, reqd: 1 }, run, prompt);
 }
 
+// A surplus is explained with its verified cause, which decides the account its adjustment credits; nothing is assumed.
+function explain_surplus(frm) {
+	frappe.prompt(
+		[
+			{ fieldname: "reason", fieldtype: "Small Text", label: __("Where did the extra cash come from?"), reqd: 1 },
+			{
+				fieldname: "cause",
+				fieldtype: "Select",
+				label: __("Cause"),
+				reqd: 1,
+				options: ["", "Omitted Customer Payment", "Money Held for a Customer", "Recording Error", "Other Identified Adjustment"].map((v) => ({ value: v, label: __(v) })),
+			},
+			{
+				fieldname: "customer",
+				fieldtype: "Link",
+				options: "Customer",
+				label: __("Customer"),
+				depends_on: "eval:['Omitted Customer Payment','Money Held for a Customer'].includes(doc.cause)",
+			},
+			{
+				fieldname: "account",
+				fieldtype: "Link",
+				options: "Account",
+				label: __("Adjust Against"),
+				depends_on: "eval:doc.cause && doc.cause !== 'Omitted Customer Payment'",
+				get_query: () => ({ filters: { is_group: 0, account_type: ["not in", ["Cash", "Bank"]] } }),
+			},
+		],
+		(values) =>
+			frappe
+				.call({ method: DISCREPANCY + "explain_surplus", args: { name: frm.doc.name, ...values }, freeze: true })
+				.then(() => frm.reload_doc()),
+		__("Surplus Explained")
+	);
+}
+
 frappe.ui.form.on("Cash Discrepancy", {
 	refresh(frm) {
 		const open = ["Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review"].includes(frm.doc.status);
@@ -48,11 +84,13 @@ frappe.ui.form.on("Cash Discrepancy", {
 			frm.add_custom_button(__("Withdraw Recovery"), () => act(frm, "withdraw_recovery", __("Why is it withdrawn?")), __("Review"));
 		}
 		if (frm.doc.kind === "Surplus" && open) {
-			frm.add_custom_button(__("Explained"), () => act(frm, "explain_surplus", __("Where did the extra cash come from?")), __("Review"));
+			frm.add_custom_button(__("Explained"), () => explain_surplus(frm), __("Review"));
 		}
 		if (["Recovery Approved", "Written Off", "Explained"].includes(frm.doc.status) && !frm.doc.adjustment_entry) {
 			frm.add_custom_button(__("Post Adjustment"), () =>
-				frappe.confirm(__("Bring the books to the cash counted, against Cash Differences?"), () => act(frm, "post_adjustment"))
+				frappe.confirm(frm.doc.kind === "Surplus"
+						? __("Bring the books to the cash counted, against {0}?", [frm.doc.surplus_account || __("the customer's account")])
+						: __("Bring the books to the cash counted, against Cash Differences?"), () => act(frm, "post_adjustment"))
 			);
 		}
 	},

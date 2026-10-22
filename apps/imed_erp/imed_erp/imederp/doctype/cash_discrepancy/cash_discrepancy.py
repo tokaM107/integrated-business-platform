@@ -13,10 +13,15 @@
 #   cannot approve while the recovery policy is not approved (Cash Close Settings), nor approve a recovery they
 #   recommended themselves. An approved recovery is ready for the payroll review report; the system deducts nothing from
 #   a salary (there is no payroll here).
-# Surplus: Pending Review -> Explained, only with where the cash came from. Until then it stays under review, in the
-#   open count and in every later weekly review; it is never revenue by itself.
-# Either, once settled: Post Adjustment brings the books to the cash counted against فروقات الخزينة, by the accountant
-#   only, once.
+# Surplus: Pending Review -> Explained, only with where the cash came from and its cause (22 Oct 2026). Until then it
+#   stays under review, in the open count and in every later weekly review; it is never revenue by itself, and no
+#   account is assumed for it. The cause decides the account its adjustment credits:
+#     Omitted Customer Payment     the customer's own receivable account (the payment that was not recorded)
+#     Money Held for a Customer    a liability account the accountant names (the cash is the customer's)
+#     Recording Error              the account the error was made in, named by the accountant
+#     Other Identified Adjustment  the account the verified source belongs to, named by the accountant
+# Either, once settled: Post Adjustment brings the books to the cash counted, by the accountant only, once: a shortage
+#   against فروقات الخزينة (written off, or recovered through payroll), a surplus against its cause's account.
 # Withdrawn: its close was reopened.
 
 import frappe
@@ -38,7 +43,7 @@ class CashDiscrepancy(Document):
 		before = self.get_doc_before_save()
 		if before and before.status in SETTLED + ("Withdrawn", "Recovery Recommended"):
 			# Settled: what was decided stays as it was decided.
-			for field in ("employees", "reason", "investigation_notes", "legal_check", "shift"):
+			for field in ("employees", "reason", "investigation_notes", "legal_check", "shift", "surplus_cause", "surplus_customer", "surplus_account"):
 				if decided(before, field) != decided(self, field) and not self.flags.by_action:
 					frappe.throw(_("{0} is {1}: it can no longer be changed.").format(self.name, _(before.status)))
 		users = [row.user for row in self.employees]
@@ -250,12 +255,43 @@ def write_off(name, reason):
 	return doc.status
 
 
+SURPLUS_CAUSES = ("Omitted Customer Payment", "Money Held for a Customer", "Recording Error", "Other Identified Adjustment")
+OMITTED, HELD = SURPLUS_CAUSES[0], SURPLUS_CAUSES[1]
+
+
+def check_surplus_source(doc, cause, customer, account):
+	"""The cause and what it names: a customer for a customer's money, an account for anything else."""
+	if cause not in SURPLUS_CAUSES:
+		frappe.throw(
+			_("Choose the surplus's verified cause. If it is not known yet, leave the surplus under review."), title=_("Cause Needed")
+		)
+	if cause in (OMITTED, HELD) and not (customer and frappe.db.exists("Customer", customer)):
+		frappe.throw(_("Name the customer the cash belongs to."), title=_("Customer Needed"))
+	if cause == OMITTED:
+		return None
+	if not account:
+		frappe.throw(_("Name the account the verified source belongs to."), title=_("Account Needed"))
+	company = frappe.db.get_value("Account", doc.treasury, "company")
+	acc = frappe.db.get_value("Account", account, ["company", "is_group", "account_type", "root_type", "disabled"], as_dict=True)
+	if not acc or acc.company != company or acc.is_group or acc.disabled:
+		frappe.throw(_("{0} is not an account of {1} that takes entries.").format(account, company))
+	if acc.account_type in ("Cash", "Bank"):
+		frappe.throw(_("{0} is a treasury: the surplus is already in the cash box.").format(account))
+	if cause == HELD and acc.root_type != "Liability":
+		frappe.throw(_("Money held for a customer is owed to them: choose a liability account."), title=_("Wrong Account"))
+	if acc.account_type in ("Receivable", "Payable") and not customer:
+		frappe.throw(_("{0} is kept per customer: name the customer.").format(account), title=_("Customer Needed"))
+	return account
+
+
 @frappe.whitelist(methods=["POST"])
-def explain_surplus(name, reason):
+def explain_surplus(name, reason, cause=None, customer=None, account=None):
 	reason = clean_reason(reason)
 	if not reason:
 		frappe.throw(_("Write where the extra cash came from. If it is not known yet, leave the surplus under review."), title=_("Reason Needed"))
 	doc = get_for_action(name, ("Surplus",), ("Pending Review",))
+	doc.surplus_account = check_surplus_source(doc, cause, customer, account)
+	doc.surplus_cause, doc.surplus_customer = cause, customer or None
 	doc.reason = reason
 	doc.status = "Explained"
 	mark_reviewed(doc)
@@ -274,9 +310,11 @@ def post_adjustment(name):
 		frappe.throw(_("{0} is already adjusted in the books.").format(doc.name), title=_("Already Adjusted"))
 	company = frappe.db.get_value("Account", doc.treasury, "company")
 	abbr = frappe.get_cached_value("Company", company, "abbr")
-	differences = f"{CASH_DIFFERENCES} - {abbr}"
 	amount = flt(doc.amount, 2)
 	into_box = doc.kind == "Surplus"
+	other = {"account": f"{CASH_DIFFERENCES} - {abbr}"}
+	if into_box:
+		other = surplus_counter_line(doc, company)
 	entry = frappe.get_doc(
 		{
 			"doctype": "Journal Entry",
@@ -293,7 +331,7 @@ def post_adjustment(name):
 					"cost_center": doc.business,
 				},
 				{
-					"account": differences,
+					**other,
 					"debit_in_account_currency": 0 if into_box else amount,
 					"credit_in_account_currency": amount if into_box else 0,
 					"cost_center": doc.business,
@@ -307,6 +345,24 @@ def post_adjustment(name):
 	doc.adjustment_entry = entry.name
 	doc.save()
 	return entry.name
+
+
+def surplus_counter_line(doc, company):
+	"""The account a surplus's adjustment credits, from its verified cause; refused when none was given (a surplus
+	explained before 22 Oct 2026 is classified first)."""
+	if doc.surplus_cause not in SURPLUS_CAUSES:
+		frappe.throw(
+			_("{0} has no verified cause. Classify it (Explained, with its cause) before adjusting the books.").format(doc.name),
+			title=_("Cause Needed"),
+		)
+	if doc.surplus_cause == OMITTED:
+		from erpnext.accounts.party import get_party_account
+
+		return {"account": get_party_account("Customer", doc.surplus_customer, company), "party_type": "Customer", "party": doc.surplus_customer}
+	line = {"account": check_surplus_source(doc, doc.surplus_cause, doc.surplus_customer, doc.surplus_account)}
+	if frappe.db.get_value("Account", line["account"], "account_type") in ("Receivable", "Payable"):
+		line.update(party_type="Customer", party=doc.surplus_customer)
+	return line
 
 
 @frappe.whitelist()

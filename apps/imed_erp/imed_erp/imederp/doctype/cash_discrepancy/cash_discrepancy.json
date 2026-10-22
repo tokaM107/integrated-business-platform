@@ -4,7 +4,7 @@
  "owner": "Administrator",
  "modified_by": "Administrator",
  "creation": "2026-10-21 17:00:00.000000",
- "modified": "2026-10-21 18:00:00.000000",
+ "modified": "2026-10-22 14:00:00.000000",
  "engine": "InnoDB",
  "row_format": "Dynamic",
  "links": [],
@@ -144,6 +144,40 @@
    "label": "Evidence"
   },
   {
+   "fieldname": "surplus_section",
+   "fieldtype": "Section Break",
+   "label": "Where the Surplus Came From",
+   "depends_on": "eval:doc.kind=='Surplus'"
+  },
+  {
+   "fieldname": "surplus_cause",
+   "fieldtype": "Select",
+   "label": "Cause",
+   "options": "\nOmitted Customer Payment\nMoney Held for a Customer\nRecording Error\nOther Identified Adjustment",
+   "read_only": 1,
+   "description": "Set by the accountant with Explained, once the source is verified. Unknown: the surplus stays under review."
+  },
+  {
+   "fieldname": "surplus_customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_surplus",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "surplus_account",
+   "fieldtype": "Link",
+   "label": "Adjust Against",
+   "options": "Account",
+   "read_only": 1,
+   "description": "The account the verified source belongs to; the customer's own account for an omitted payment."
+  },
+  {
    "fieldname": "review_section",
    "fieldtype": "Section Break",
    "label": "Review and Approval"
@@ -235,6 +269,11 @@
   "reason",
   "investigation_notes",
   "evidence",
+  "surplus_section",
+  "surplus_cause",
+  "surplus_customer",
+  "column_break_surplus",
+  "surplus_account",
   "review_section",
   "reviewed_by",
   "reviewed_on",

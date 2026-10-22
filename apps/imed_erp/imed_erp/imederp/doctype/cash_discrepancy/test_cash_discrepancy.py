@@ -21,7 +21,7 @@ from imed_erp.imederp.doctype.weekly_cash_reconciliation.test_weekly_cash_reconc
 from imed_erp.imederp.report.cash_discrepancies.cash_discrepancies import execute as report
 from imed_erp.imederp.testing import fund_cash_boxes
 
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Account", "Cost Center", "Journal Entry", "User", "Treasury Close", "Cash Discrepancy", "Weekly Cash Reconciliation"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Account", "Cost Center", "Journal Entry", "User", "Treasury Close", "Cash Discrepancy", "Weekly Cash Reconciliation", "Customer"]
 
 RAGHAD = "raghad@imed.local"
 OWNER = "owner@imed.local"
@@ -170,14 +170,58 @@ class IntegrationTestCashDiscrepancy(IntegrationTestCase):
 		self.assertEqual((nxt.last_close, nxt.opening, nxt.other_out), (doc.treasury_close, closed_counted(doc), 0))
 		self.assertEqual(nxt.book_balance, nxt.expected)
 
-	def test_a_surplus_is_explained_then_adjusted_never_revenue_by_itself(self):
+	def lines(self, entry):
+		return {
+			(r.account, r.party): (r.debit, r.credit)
+			for r in frappe.get_all("GL Entry", filters={"voucher_no": entry}, fields=["account", "party", "debit", "credit"])
+		}
+
+	def test_a_surplus_stays_under_review_until_its_cause_is_verified(self):
 		doc = frappe.get_doc("Cash Discrepancy", closed(DAY1, 25).cash_discrepancy)
 		self.refused(frappe.ValidationError, "cannot be done", OWNER, cd.approve_recovery, doc.name)
 		self.refused(frappe.ValidationError, "Reason Needed|Write where", ACCOUNTANT, cd.explain_surplus, doc.name, " ")
-		self.as_user(ACCOUNTANT, cd.explain_surplus, doc.name, "A customer paid twice; to be returned")
+		# Without a verified cause no account is invented: it stays open, and in the week's open count.
+		self.refused(frappe.ValidationError, "Cause Needed|verified cause", ACCOUNTANT, cd.explain_surplus, doc.name, "not sure yet")
+		self.assertEqual(frappe.db.get_value("Cash Discrepancy", doc.name, "status"), "Pending Review")
+		self.assertIn(doc.name, frappe.get_all("Cash Discrepancy", filters={"status": ("in", cd.OPEN)}, pluck="name"))
+		self.refused(frappe.ValidationError, "cannot be done", ACCOUNTANT, cd.post_adjustment, doc.name)
+
+	def test_an_omitted_customer_payment_goes_to_the_customer_s_account(self):
+		doc = frappe.get_doc("Cash Discrepancy", closed(DAY1, 25).cash_discrepancy)
+		customer = frappe.get_all("Customer", filters={"customer_group": ("!=", "طبيب")}, pluck="name", limit=1)[0]
+		self.refused(frappe.ValidationError, "Customer Needed|Name the customer", ACCOUNTANT, cd.explain_surplus, doc.name, "paid, not recorded", "Omitted Customer Payment")
+		self.as_user(ACCOUNTANT, cd.explain_surplus, doc.name, "Paid his invoice at the counter; not recorded", "Omitted Customer Payment", customer)
 		entry = self.as_user(ACCOUNTANT, cd.post_adjustment, doc.name)
-		lines = {r.account: (r.debit, r.credit) for r in frappe.get_all("GL Entry", filters={"voucher_no": entry}, fields=["account", "debit", "credit"])}
-		self.assertEqual(lines, {AZARITA_BOX: (25, 0), DIFFERENCES: (0, 25)})
+		from erpnext.accounts.party import get_party_account
+
+		receivable = get_party_account("Customer", customer, "Mohamed Mamdouh group")
+		self.assertEqual(self.lines(entry), {(AZARITA_BOX, None): (25, 0), (receivable, customer): (0, 25)})
+
+	def test_money_held_for_a_customer_is_a_liability(self):
+		doc = frappe.get_doc("Cash Discrepancy", closed(DAY1, 40).cash_discrepancy)
+		customer = frappe.get_all("Customer", filters={"customer_group": ("!=", "طبيب")}, pluck="name", limit=1)[0]
+		held = "العرابين المقبوضة - MMG"
+		self.refused(frappe.ValidationError, "liability", ACCOUNTANT, cd.explain_surplus, doc.name, "left for him", "Money Held for a Customer", customer, "إيراد مكتبة الأزاريطة - MMG")
+		self.refused(frappe.ValidationError, "already in the cash box", ACCOUNTANT, cd.explain_surplus, doc.name, "left for him", "Money Held for a Customer", customer, AZARITA_BOX)
+		self.as_user(ACCOUNTANT, cd.explain_surplus, doc.name, "A customer left it to collect his order", "Money Held for a Customer", customer, held)
+		entry = self.as_user(ACCOUNTANT, cd.post_adjustment, doc.name)
+		self.assertEqual(self.lines(entry), {(AZARITA_BOX, None): (40, 0), (held, None): (0, 40)})
+		# Settled, the cause and account stay as decided.
+		doc.reload()
+		doc.surplus_account = DIFFERENCES
+		self.assertRaises(frappe.ValidationError, doc.save)
+
+	def test_a_recording_error_goes_where_the_error_was(self):
+		doc = frappe.get_doc("Cash Discrepancy", closed(DAY1, 15).cash_discrepancy)
+		self.refused(frappe.ValidationError, "Account Needed|Name the account", ACCOUNTANT, cd.explain_surplus, doc.name, "typo", "Recording Error")
+		self.as_user(ACCOUNTANT, cd.explain_surplus, doc.name, "An expense of 15 recorded that was never paid", "Recording Error", None, DIFFERENCES)
+		entry = self.as_user(ACCOUNTANT, cd.post_adjustment, doc.name)
+		self.assertEqual(self.lines(entry), {(AZARITA_BOX, None): (15, 0), (DIFFERENCES, None): (0, 15)})
+
+	def test_a_surplus_explained_before_the_causes_is_classified_first(self):
+		doc = frappe.get_doc("Cash Discrepancy", closed(DAY1, 10).cash_discrepancy)
+		frappe.db.set_value("Cash Discrepancy", doc.name, {"status": "Explained", "reason": "explained on 21 Oct"})
+		self.refused(frappe.ValidationError, "no verified cause", ACCOUNTANT, cd.post_adjustment, doc.name)
 
 	def test_kept_and_listed(self):
 		doc = self.shortage(10)
