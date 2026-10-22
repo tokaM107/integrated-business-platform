@@ -64,7 +64,9 @@ smoke tests, **G** go/no-go. Do not skip ahead: each step relies on the one befo
 
 4. `developer_mode 0` and `allow_tests 0` (section 1).
 5. **Check:** `setup/verify_setup.py` and `setup/verify_users.py` pass; the owner's page shows its cards without
-   "NaN"; Cash Close Settings shows *Reporting Week* Saturday to Thursday and *Recovery Policy Approved* **off**.
+   "NaN"; Cash Close Settings shows *Reporting Week* Saturday to Thursday, *Recovery Policy Approved* **off**, and the
+   owner's and the accountant's custody accounts (عهدة المالك النقدية, عهدة المحاسب النقدية: setup_coa.py makes them)
+   set; without them a hand-over cannot be confirmed.
 
 Every later version: section 6 of the hardening guide (backup copied off first; migrate; restart; clear cache; the
 checks above; restore the backup if anything is wrong).
@@ -107,7 +109,12 @@ is cancelled afterwards with the reason "smoke test" (cancelled, not deleted: it
 | Accountant | A journal entry; confirm a transfer; a weekly cash review; investigate a discrepancy, write one off; reopen a close with a reason | Approving a recovery; changing Cash Close Settings |
 | Library manager (Sara, Raghad) | A sale at the point of sale and its receipt in Arabic; an expense with a receipt photo; a transfer; the evening's cash close of her own box | Another branch's records, boxes and reports; reopening or cancelling a close; a payment larger than the box holds; a date after today |
 | Studio and halls managers | A booking (no double booking of one hour); its invoice; their cash close | Another business's records |
-| App manager | A subscription and its platform fee | Cash closes of the libraries |
+| App manager | A subscription and its platform fee; an electronic App Payment with its reference | Cash closes of the libraries; the same reference twice |
+| Library manager, BA Plus | A student's cash App Payment into her own box, seen in her evening close | Cash into another branch's box or the app's bank account |
+| Branch manager, hand-over | Record a hand-over, print its Arabic receipt | Confirming it herself; more than the box holds |
+| Owner / accountant, hand-over | Attach the signed scan and confirm; see it in the week's review | Confirming without the scan, or one named for the other |
+| Library manager, counters | Morning readings saved, evening readings submitted | Changing the morning readings; a reading below last night's |
+| Studio manager | A prepaid package, its invoice, sessions drawing hours | A session longer than the hours left (without the accountant) |
 
 Also: two people confirm one transfer at the same moment (one succeeds); the browser console shows no blocked
 requests under the security headers (section 2).
@@ -119,7 +126,8 @@ Go only when all of these hold; any "no" is a no-go:
 - [ ] A to F done and checked, with the results kept.
 - [ ] A backup copied off the server and restored once (B).
 - [ ] Opening cash entered for every box (E).
-- [ ] The owner has decided whether خزينة تطبيق BA Plus takes cash.
+- [ ] The accountant has decided how money held for doctors from BA Plus payments reaches them (paid out, or set
+      against their platform fees); until then it is only held and listed.
 - [ ] The owner signs off launching without HR and payroll, tasks, the integrations and ACC-09.
 - [ ] Recovery Policy Approved is off (until a written policy is approved).
 

@@ -531,11 +531,54 @@ Rules confirmed by the owner on 21 Oct 2026.
 - Owner's page: Cash Shortages This Month, Open Cash Discrepancies, and shortcuts to the closes, the discrepancies
   waiting, the weekly reviews and the report.
 
+### The weekly cash hand-over (ACC-09)
+
+**Cash Handover**: at the end of the week (or whenever cash is needed) the branch manager records the cash she hands
+to the owner or the accountant and submits it (Pending Receipt): never more than the box holds less what is already
+pending, under a lock on the box; part of the cash may be handed over. She prints **Cash Handover Receipt** (Arabic,
+the amount in figures and in words, a space to sign). The receiver signs the paper by hand (no electronic
+signature), attaches its scan or photo to the hand-over (Signed Receipt: a private PDF or photo of this hand-over,
+not used for another) and clicks **Confirm Receipt** with the cash counted. Only the receiver named confirms. Then
+one entry: Dr the receiver's custody account (Cash Close Settings: عهدة المالك النقدية / عهدة المحاسب النقدية) / Cr
+the branch's box, dated the hand-over day. The day's close counts it as Handed Over, pending or confirmed, and the
+week's review lists every hand-over with its receiver, status and whether the signed receipt is there. Cancel with
+Reason keeps the record (a pending one: whoever recorded it or the accountant; a confirmed one: the accountant or
+the owner, reversing its entry). Set the custody accounts in Cash Close Settings before the first confirmation.
+
+### BA Plus payments (App Payment)
+
+What a student pays BA Plus for a course: **Cash** into the collecting branch's own box (it is then one of the box's
+collections, in its daily close), or **electronically** (bank transfer, InstaPay, Vodafone Cash) into the app's bank
+account or a wallet, with the transfer's reference number (once per account). Each payment posts Dr the box or
+account / Cr مقبوضات الطلبة لحساب الأطباء — التطبيق: the course is the doctor's (APP-05), never the group's revenue,
+and the platform fee is unchanged. **App Payments** lists them, with what is not yet matched with the statement
+(ERPNext's Bank Clearance dates an electronic payment's entry). `app_payment.import_payment` takes a payment from
+BA Plus once per its id there, for the integration to come. Cancelling is the accountant's, with a reason.
+
+### Printer counters read twice a day (PRN-01)
+
+The day's counters (Daily Counter Reading) are read in the **morning** (type each machine's counter, Save: who and
+when is kept; a branch manager cannot change them afterwards) and in the **evening** (type each closing, Submit).
+Each machine's last closing is shown beside the morning reading; a morning reading above it is a **gap** (sheets
+printed while nobody read the counter) and needs its reason, one below it is refused (a reset is the accountant's
+Counter Reset). A day waiting for its evening readings blocks the next. The screen and **Daily Printing** show
+printed, sold, paper issued for sales, damaged sheets and the gap apart; the counters move no stock.
+
+### Prepaid studio hours (Studio Hour Package)
+
+A teacher buys hours of a studio service (30 hours for a price); **Make Invoice** bills the package once. A booking
+names the package (Prepaid Hours): its exact length comes off it while it holds its time, and its own price is 0, so
+the session is never billed again. Moved, shortened or cancelled, the difference is given back; each change is a row
+of the package's history. Never below zero: a session longer than the hours left is refused unless the accountant
+or the owner ticks Bill the Hours Beyond the Package, which bills only those hours at the hourly price. There are no
+fixed studio hours; two bookings of one resource still never overlap.
+
 ### The demo site
 
 A separate site, **demo** (http://127.0.0.1:8081 on the development machine, container `imed-demo-web`), holds the
 demo transactions of 18 Oct restored from the backup of 21 Oct, plus sample cash closes, discrepancies and a
-weekly review made by `setup/seed_cash_demo.py` (it refuses any other site). Every sample record says (تجريبي).
+weekly review made by `setup/seed_cash_demo.py`, and on 22 Oct BA Plus payments, counters read twice, a prepaid
+studio package and hand-overs by `setup/seed_demo_22oct.py` (both refuse any other site). Every sample record says (تجريبي).
 It is for looking at the screens; the development site and the tests do not depend on it, and production starts
 from a clean site. Its staff accounts have a demo-only password.
 

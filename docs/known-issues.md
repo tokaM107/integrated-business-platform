@@ -57,7 +57,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 2 | ACC-03 (Must) | Done on 21 Oct 2026 to the owner's confirmed rules: the daily close by the branch manager, the Cash Discrepancy investigated by the accountant, the weekly review, reopening by the owner and the accountant, cash boxes never below zero (README, *Cash boxes*). | - | Legal and accounting points still to confirm: *ACC-03, what is still to confirm* below. |
 | 3 | ACC-05 (Must) | Revenue is recorded when the invoice is submitted (ERPNext's accrual basis), not when it is collected; the rest shows as receivables. | The P&L can show revenue not collected yet. | Keep accrual (usual accounting, receivables report shows what is owed) or follow the text. Accountant. |
 | 4 | ACC-04 (Must) | Done on 20 Oct for bookings: a deposit is a Payment Entry into the business's cash box, named with its booking, and is taken off the invoice when the booking is completed (README, *Price and money*). It is the customer's advance in العملاء: the account العرابين المقبوضة is still not used (ERPNext uses it only if the company books every advance in a separate account, a company-wide switch). | | Accountant: use العرابين المقبوضة (the company's "Book advance payments in separate party account"), or keep advances on the customer. |
-| 5 | ACC-09 (Must) | The weekly hand-over to the owner is an *Inter Business Transfer* to the main treasury; there is no owner or bank account to hand over to, and it mixes with transfers between businesses. | The owner's receipts cannot be listed on their own. | An account for the owner's custody (and a bank account if cash goes to the bank). Owner. |
+| 5 | ACC-09 (Must) | **Done 22 Oct 2026**: Cash Handover to the owner or the accountant, a paper receipt signed by hand and scanned back, confirmed by the receiver; posted to عهدة المالك النقدية / عهدة المحاسب النقدية (Cash Close Settings). | - | Still open: handing cash to the bank (no bank account in the chart yet). Owner. |
 | 6 | ACC-10 (Should) | Wallets (InstaPay, Vodafone Cash) are not reconciled with their statements. | Wallet differences go unseen. | After go-live. |
 
 ### Before go-live
@@ -75,7 +75,7 @@ sections of this file. Each row says what it needs before it can be built.
 |---|---|---|---|
 | 11 | HAL-12 (Must), open question 1 | Done on 20 Oct: each hall booking names its model (Fixed Rent or Revenue Share); a revenue-share booking posts what was collected, the center's share to إيراد القاعات and the lecturer's to مستحقات للمحاضرين. The share % is agreed per booking until the owner sets one (bookings question 11). | |
 | 12 | HAL-08 (Must) | Done on 20 Oct: attendees, admission price, expected revenue and what was collected, on a revenue-share hall booking. | Nour: the attendees and admission price of a fixed-rent booking are not recorded (no use found for them there). |
-| 13 | HAL-06 (Must), STU-15 (Should) | HAL-06 done on 21 Oct: **Hall Bookings** (by day and hall: attendees, admission price, rent, collected, cancelled, unpaid). No studio occupancy report yet (STU-15 is Assumed: hours available is not defined). | Owner: the studio's opening hours, for occupancy. |
+| 13 | HAL-06 (Must), STU-15 (Should) | HAL-06 done on 21 Oct: **Hall Bookings**. The studio has no fixed opening hours (owner, 22 Oct 2026), so occupancy against hours open does not apply; prepaid hour packages are built (Studio Hour Package). | A studio report of hours booked and package hours used, if wanted. Owner. |
 | 14 | HAL-10, STU-02 (Must) | Done on 19 Oct: the bookings calendar, by day and by week (Bookings > Calendar, `booking_calendar.js`). Frappe's calendar view, with each booking's start and end made from its date and times on the server (`booking.get_events`). | |
 | 15 | STU-04 (Must), HAL-11 (Should) | Done on 20 Oct: Booking Extra (priced by its item) and the booking's extras, each with its pieces. Microphone and lights for the studio are made by setup_booking_prices.py at 50 a piece an hour; the halls' extras have no price yet. | Nour: the halls' extras and their prices. |
 | 16 | Permissions matrix, bookings | The accountant may create and edit bookings (matrix: none), and a branch manager edits and cancels without approval (matrix: with approval). | Who approves a branch manager's change or cancellation. Owner. |
@@ -96,7 +96,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 26 | PRN-03 (Should) | Waste and losses are in three places (Daily Printing, damaged stock, Stock Count Variance), not one monthly report. | A report. |
 | 27 | PRN-04 (Must) | Done on 21 Oct: **Paper Balance** shows each store's paper in sheets and as boxes, reams and loose sheets. | |
 | 28 | PRN-09 (Must) | A machine's "rate of use" is its share of the library's printing, not the time it ran. | Owner: which one is meant. |
-| 29 | PRN-01 (Must) | The day's opening reading is the last closing one; nothing reads the counter at the start of the day. | Owner: is the closing reading enough. |
+| 29 | PRN-01 (Must) | **Done 22 Oct 2026**: read morning and evening; a morning reading above the last closing is a gap with its reason. | - |
 | 30 | CORE-06 (Must) | One selling price list; old prices and their dates are kept only in the change log. | A price list per business if prices differ. |
 | 31 | CORE-07 (Must) | Done on 21 Oct: a user is disabled, never deleted, except by the developers' account (`imederp/users.py`). | |
 | 32 | CORE-08 (Must) | Customers, doctors, suppliers and employees are separate records, not one party. | Decided by ERPNext's design; written here as a deviation. |
@@ -226,13 +226,17 @@ Still open from the audit (updated 21 Oct 2026):
     labour law and the contracts, how and when the employee is told and heard, appeals, and how a recovery reaches
     payroll (there is no HR or payroll module: HR-01..07). The four-eyes flow is built: the accountant recommends,
     the owner approves or returns; nobody approves their own recommendation. The system deducts nothing.
-  - The adjustment account: Post Adjustment uses فروقات الخزينة (an expense account) both ways, and only after a
-    surplus is explained; whether an explained surplus should instead be held as owed to a customer is the
-    accountant's call.
+  - The adjustment account (decided 22 Oct 2026): a shortage, written off, against فروقات الخزينة; a surplus by its
+    verified cause (an omitted customer payment: the customer's account; money held for a customer: a liability the
+    accountant names; a recording error or other: the account the accountant names). No cause, no adjustment: it stays
+    under review. A surplus marked Explained before 22 Oct is classified before it is adjusted.
   - The reporting week: Saturday to Thursday, Friday off (owner, 21 Oct 2026), set in Cash Close Settings on the
     development and demo sites; a close made on a Friday still shows in its week.
-  - خزينة تطبيق BA Plus is a bank account: no daily close and no check below zero. Whether the app takes cash at
-    all (Owner) decides whether it becomes a cash box.
+  - BA Plus (decided 22 Oct 2026) takes cash at the branches, into each branch's own box (in its daily close), and
+    electronic payments into its bank account or the wallets (App Payment); خزينة تطبيق BA Plus stays a bank account.
+    The money is the doctor's (APP-05): held in مقبوضات الطلبة لحساب الأطباء — التطبيق. **Open (accountant and owner):**
+    how it reaches the doctor: paid out, or set against his platform fees; until then it is held and listed (App
+    Payments report).
   - Opening cash on production: counted, signed and entered before the first sale (docs/production-hardening.md,
     section 7); Mawasah's -936.50 on the development site came from the demo transactions of 18 Oct entered with no
     opening cash (two sales 1,800 + 605 in; a doctor payout 400, an expense 450 and two transfers 1,500 + 1,000
@@ -246,8 +250,20 @@ Still open from the audit (updated 21 Oct 2026):
   http://127.0.0.1:8081 (container `imed-demo-web`): every count matched the pre-erase figures. Sample cash
   closes, discrepancies and a weekly review were added there by `setup/seed_cash_demo.py` (refuses any other
   site). The development site stays without the group's transactions; the tests do not need them.
-- **ACC-09 hand-over, HR, tasks (TSK), integrations (INT-02..13)**: not built; the decisions or files they wait for are
-  in the tables above.
+- **Built 22 Oct 2026, decisions still open** (docs/requirements/v1.3-amendments.md):
+  - The custody accounts are cash accounts in the group's books (the cash is still the group's, in the owner's or the
+    accountant's hands). Profit taken out by the owner is a separate entry (توزيعات الأرباح), not a hand-over.
+  - Prepaid studio hours are invoiced in full when the package is billed (income at once). Deferred revenue, earned
+    as hours are used, is the accountant's choice. A No Show gives its hours back, like a cancellation; whether a
+    no-show should use them up is the owner's call.
+  - A session's extra hours, beyond its package, are billed at the hourly price only on the accountant's or the
+    owner's decision on that booking.
+  - Manual doctor adjustments: basis Other needs the account the accountant names. Every manual adjustment, either
+    sign, now needs the owner's or accountant's approval.
+  - The demo's subscriptions of 18 Oct predate App Course and point to a course that does not exist; they were left
+    as they are (new demo payments use a course of their own).
+- **HR, tasks (TSK), integrations (INT-02..13)**: not built; the decisions or files they wait for are in the tables
+  above. BA Plus imports have their entry point (app_payment.import_payment, once per BA Plus id) but no connection.
 - **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on
   the copy site: the daily jobs are idempotent (a bill due today makes one draft; a second run makes none).
 - **Production (SEC-04..06)**: the settings and steps are in docs/production-hardening.md; nothing is deployed.

@@ -1,68 +1,84 @@
-# Production readiness, 21 Oct 2026
+# Production readiness, 21 Oct 2026 (updated 22 Oct)
 
 Follows the audit fixes of 20 Oct (docs/audit-fixes-2026-10-20.md) on branch `fix/audit-2026-10-20` (158 commits,
 not pushed, not merged, nothing deployed). Today: the owner's confirmed policies on unsold books and dates, real
 concurrency tests, browser tests by role, a restore test, the scheduler, four Must requirements, and (afternoon)
 the owner's rules for cash: boxes never below zero, the daily close, discrepancies and the weekly review. Decisions still open are in docs/known-issues.md, section *QA and security audit*.
 
-## Decision
+## Decision (updated 22 Oct 2026)
 
-**Not production-ready yet.** The code for the limited launch is built and tested, but a launch also needs a server,
-off-server backups, opening cash and the owner's decisions, none of which exists yet. Passing tests prove the code,
-not the server, its backups, its data or its users' access.
+**Not production-ready yet. Limited launch: NO-GO today; GO once every action under "Before a limited launch" is
+done.** The code for it is built and tested, including the owner's rules of 22 Oct (BA Plus payments, counters read
+twice, prepaid studio hours, the weekly cash hand-over, surplus causes, manual doctor adjustments). What is missing
+is outside the code: a server, off-server backups, opening cash, a few accounting decisions. Passing tests prove the
+code, not the server, its backups, its data or its users' access.
 
-- **Limited launch** (libraries, expenses, doctors' accounts, bookings, app subscriptions, the daily cash close, data
-  typed by hand): **GO only when every action under "Before a limited launch" is done.**
-- **Full requirements coverage: NO-GO.** See *Missing features*.
+**Full requirements coverage: NO-GO.** See *Missing features*.
 
 ### 1. Completed and verified
 
 - Every audit defect (QA-01..37, SEC-01..13) fixed or partly fixed as listed under *Every audit issue*.
-- The owner's confirmed rules: unsold books (DOC-18/22), dates, free lectures, demo data apart; the daily cash
-  close, discrepancies with the accountant's investigation, four-eyes recovery (blocked by policy), surpluses under
-  review, reopening, the weekly review Saturday to Thursday, cash boxes never below zero.
-- Tests on the development site, with none of the group's demo transactions on it: **545 passed, 0 failed** (21 Oct,
-  evening, after a backup); the two-session races; browser
-  checks by role; a restore of a real backup into a separate site, every count matching.
-- The demo site with the demo transactions and sample cash records, checked in the browser (8 of 8).
+- The owner's rules of 21 Oct: unsold books (DOC-18/22), dates, free lectures, demo data apart; the daily cash close,
+  discrepancies, four-eyes recovery (blocked by policy), reopening, the weekly review Saturday to Thursday, cash boxes
+  never below zero.
+- The owner's rules of 22 Oct (docs/requirements/v1.3-amendments.md; README):
+  - BA Plus payments in cash (into the collecting branch's box, in its close) or electronically (bank or wallet, with
+    its reference, matched with the statement), held for the doctor, never revenue, never twice (App Payment).
+  - Counters read morning and evening, the gap since the last closing with its reason; printed, sold, paper issued
+    and damaged shown apart; counters move no stock.
+  - Prepaid studio hours: exact hours drawn per session, given back when moved or cancelled, with a history; never
+    below zero; extra hours only on the accountant's or owner's decision; the package billed once.
+  - ACC-09 weekly hand-over: recorded by the branch, printed Arabic receipt signed on paper, confirmed only by the named
+    receiver with the scan attached; posted once to their custody account; in the day's close and the week's review;
+    cancelled only with a reason and kept.
+  - Surpluses settled by their verified cause, never assumed revenue; unknown ones stay open.
+  - Manual doctor adjustments: reason, basis and account, approval either way, reversal by an approver with a reason.
+- Tests (development site, 22 Oct, after a backup): **600 passed, 0 failed, 0 skipped**. The 545 of 21 Oct, all
+  still passing (some updated where the owner's new rules changed what they expected), plus 55 new.
+- Two-session races (restore-test site, committed): **11 of 11 passed**, 4 of them new (two hand-overs from one
+  box, one hand-over confirmed twice, two sessions on a package's last hours, one transfer reference twice).
+- Browser, demo site, by role: **22 of 22 passed** (14 new: payments, counters, prepaid hours, the hand-over, its
+  receipt and its private scan; 8 from 21 Oct).
+- The demo site keeps its data, with labelled sample records of every new feature (setup/seed_demo_22oct.py).
 
 ### 2. Remaining operational setup (docs/production-deployment-plan.md)
 
 A server configured (passwords, TLS, firewall, login rules); off-server backups with one restore checked there;
-a clean site with migrations, worker restart and cache clear; the scheduler on and its jobs checked after the first
-night; opening cash counted, signed and entered for every box; smoke tests by role kept on record.
+a clean site with migrations, worker restart and cache clear; Cash Close Settings with the week and the custody
+accounts; the scheduler on and its jobs checked after the first night; opening cash counted, signed and entered for
+every box; smoke tests by role kept on record.
 
 ### 3. Outstanding business decisions
 
-| Decision | Who |
-|---|---|
-| Where off-server backups go (a private cloud drive or an office disk) | Owner |
-| Does the BA Plus app take cash? (its treasury is a bank account: no close, no check below zero) | Owner |
-| The recovery policy for cash shortages (deduction limits, notice, appeal, payroll route); until then recovery stays blocked | Lawyer or HR, then Owner |
-| An explained surplus: to فروقات الخزينة, or held to return to a customer | Accountant |
-| A minus adjustment of a books doctor by hand: which account | Accountant |
-| ACC-09, the owner's custody account and the bank | Owner |
-| PRN-01, a counter reading at the start of the day too? | Owner |
-| The studio's opening hours (STU-15) | Owner |
-| Committing the requirements document to git, or keeping it outside (docs/requirements/README.md) | Owner |
+| Decision | Who | Until then |
+|---|---|---|
+| Where off-server backups go (a private cloud drive or an office disk) | Owner | blocks launch |
+| How money held for doctors from BA Plus payments reaches them: paid out, or set against platform fees | Accountant, Owner | held and listed (App Payments) |
+| The recovery policy for cash shortages | Lawyer or HR, then Owner | recovery blocked |
+| Prepaid studio hours: income when sold (as built) or deferred as used | Accountant | income when invoiced |
+| A no-show on prepaid hours: hours used, or given back (as built) | Owner | given back |
+| A liability account for money held for a customer (surplus) | Accountant | named case by case |
+| Handing cash to the bank (no bank account in the chart) | Owner | hand-overs go to the owner or the accountant only |
+| Committing the requirements document to git, or keeping it outside | Owner | kept outside |
 
 ### 4. Missing features (not started; each needs an agreed scope)
 
 HR and payroll (HR-01..07), tasks (TSK-01..05), the integrations with the library sales system, the studio booking
-system and the BA+ app (INT-02..13), the owner's cash hand-over (ACC-09), the AI assistant's model (AI-01..10), the
-call log (CRM-03). No payroll deduction of any kind exists, by design.
+system and the BA+ app (INT-02..13; BA Plus payments have an idempotent import entry point, not connected), the AI
+assistant's model (AI-01..10), the call log (CRM-03). No payroll deduction of any kind exists, by design.
 
 ### 5. Before a limited launch: exact actions
 
 1. Production server set up and checked: plan, section A.
 2. Off-server backup destination chosen; nightly job running; one backup restored on the server and compared:
    plan, section B.
-3. Clean site, setup scripts, migrate, restart, clear cache, developer mode and tests off: plan, section C.
-4. Scheduler enabled; jobs checked after the first night; e-mail account tested: plan, section D.
-5. The owner decides on the BA Plus treasury.
+3. Clean site, setup scripts (setup_coa.py makes the custody and held-for-doctors accounts), migrate, restart, clear
+   cache, developer mode and tests off: plan, section C.
+4. Cash Close Settings: week Saturday to Thursday; Recovery Policy Approved **off**; both custody accounts set.
+5. Scheduler enabled; jobs checked after the first night; e-mail account tested: plan, section D.
 6. Opening cash counted, signed and entered for every box before the first sale: plan, section E.
-7. Smoke tests by role, results kept: plan, section F.
-8. Cash Close Settings: week Saturday to Thursday; Recovery Policy Approved **off**.
+7. Smoke tests by role, including a hand-over printed, signed, scanned and confirmed, results kept: plan, section F.
+8. The accountant decides how money held for doctors reaches them (or the owner accepts it is only held at first).
 9. The owner signs off launching without the missing features.
 
 ## Business rules
