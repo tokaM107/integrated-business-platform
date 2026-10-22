@@ -1676,3 +1676,26 @@ The subscription's id in BA Plus.,رقم الاشتراك في BA Plus.
 Source System and External ID together: an imported subscription is recorded once.,النظام المصدر والرقم فيه مع بعض: الاشتراك المستورد بيتسجل مرة واحدة.
 The course's id in BA Plus.,رقم الكورس في BA Plus.
 Source System and External ID together: an imported course is recorded once.,النظام المصدر والرقم فيه مع بعض: الكورس المستورد بيتسجل مرة واحدة.
+Integration Status,متابعة الربط
+Last Successful Import,آخر استيراد ناجح
+Last Run,آخر تشغيل
+Last Run Status,حالة آخر تشغيل
+Libraries (point of sale),المكتبات (نقطة البيع)
+Studio (bookings),الاستوديو (الحجوزات)
+BA Plus app,تطبيق BA Plus
+No import has run yet.,لسه مفيش استيراد اشتغل.
+Not connected yet: no import reads this system.,لسه مش متربط: مفيش استيراد بيقرا من النظام ده.
+The last run failed: {0},آخر تشغيل فشل: {0}
+Open the log for the rows to look at.,افتح السجل علشان تشوف الصفوف اللي محتاجة مراجعة.
+"No import reads {0} yet, so there is nothing to run again.",لسه مفيش استيراد بيقرا من {0}، فمفيش حاجة تتعاد.
+The period ends before it starts.,الفترة بتخلص قبل ما تبدأ.
+No file of {0} came in from {1} to {2}.,مفيش ملف من {0} وصل من {1} لـ {2}.
+Import a Period Again,إعادة الاستيراد لفترة
+Import Again,استورد تاني
+Importing...,جاري الاستيراد...
+Imported Again,اتستورد تاني
+Nothing was run.,ما اتشغلش حاجة.
+Only BA Plus's import reads files so far.,استيراد BA Plus بس اللي بيقرا ملفات لحد دلوقتي.
+"{0}: {1} imported, {2} skipped, {3} failed ({4})",{0}: {1} اتستورد، {2} اتخطّى، {3} فشل ({4})
+File Content,محتوى الملف
+"The file as it came, kept so a period can be imported again (INT-09). Holds students' names and phones: the owner and the accountant read it.",الملف زي ما وصل، محفوظ علشان الفترة تتستورد تاني (INT-09). فيه أسماء الطلبة وتليفوناتهم: المالك والمحاسب بس اللي بيقروه.
