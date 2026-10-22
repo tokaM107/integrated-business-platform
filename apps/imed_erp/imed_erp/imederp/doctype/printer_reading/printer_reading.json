@@ -16,6 +16,7 @@
   "counter_reset",
   "reset_note",
   "consumed",
+  "gap",
   "sold_sheets",
   "variance",
   "daily_counter_reading",
@@ -84,8 +85,15 @@
    "fieldname": "consumed",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Consumed Sheets",
+   "label": "Printed Sheets",
    "read_only": 1
+  },
+  {
+   "fieldname": "gap",
+   "fieldtype": "Int",
+   "label": "Gap Since Last Closing",
+   "read_only": 1,
+   "description": "This reading's opening minus the machine's last closing: sheets printed while no reading was taken."
   },
   {
    "fieldname": "sold_sheets",
@@ -125,7 +133,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-20 20:00:00.000000",
+ "modified": "2026-10-22 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printer Reading",

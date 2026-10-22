@@ -79,6 +79,7 @@ class PrinterReading(Document):
         # The machine's last submitted reading gives the opening: read again on submit, in case another reading
         # of the same machine was submitted in between.
         last = last_reading(self.machine, exclude=self.name)
+        self.gap = 0
         if not last or self.counter_reset:
             # The machine's first reading, or a counter reset: the opening is typed, the counter as it showed.
             # QA-30: 0 on a first reading would count the machine's whole life as one day's sheets.
@@ -100,6 +101,18 @@ class PrinterReading(Document):
                     self.machine, frappe.format_value(last.reading_date, {"fieldtype": "Date"})
                 )
             )
+        if self.daily_counter_reading or self.flags.from_daily_counter_reading:
+            # Read in the morning on the day's screen (22 Oct 2026): kept as read; above the last closing is a gap.
+            self.gap = cint(self.opening_reading) - cint(last.closing_reading)
+            if self.gap < 0:
+                frappe.throw(
+                    _("The opening reading {0} is below the last closing {1}. A counter only goes up.").format(
+                        self.opening_reading, last.closing_reading
+                    ),
+                    title=_("Reading Too Low"),
+                )
+            return
+        self.gap = 0
         self.opening_reading = last.closing_reading
 
     def before_cancel(self):
