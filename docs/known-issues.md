@@ -86,7 +86,7 @@ sections of this file. Each row says what it needs before it can be built.
 |---|---|---|---|
 | 17 | INT-04, STU-06 (Must) | The booking import is written but nothing runs it (no job, no upload). | The file and its schedule (INT-02). |
 | 18 | INT-07 (Must) | Partly done on 22 Oct: *Integration Import Log* keeps each run and its failed and changed rows; the BA Plus import writes it. Not yet: the booking import writing it, an alert on a failed run, re-importing a period. | The alert's recipients; the booking import's runner. |
-| 19 | INT-09, RPT-12 (Must) | No screen showing each integration's last run and failures. | After 18. |
+| 19 | INT-09, RPT-12 (Must) | Done for BA Plus on 22 Oct: *Integration Status* shows each system's last good import, its counts and the last run, and imports a period again from the kept files. The libraries and the booking system show *not connected* until their imports write logs. | Their imports. |
 | 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (IMPORT_DATA_STANDARD.md). |
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
