@@ -331,7 +331,10 @@ def invoice_lines(doc):
 	by_hours = lambda item, qty, amount: line(item, qty, rate_for(amount, qty))
 	lines = []
 	if flt(doc.base_amount):
-		if doc.package:
+		if doc.get("hour_package"):
+			# Only the hours beyond the prepaid package: the package's own invoice billed the rest.
+			lines.append(by_hours(frappe.db.get_value("Booking Resource", doc.resource, "item"), flt(doc.extra_hours, 2), flt(doc.base_amount)))
+		elif doc.package:
 			package = frappe.get_doc("Booking Package", doc.package)
 			lines.append(
 				line(package.item, 1, flt(doc.base_amount))

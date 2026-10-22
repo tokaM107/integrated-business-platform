@@ -76,17 +76,18 @@ def price_of(item, lists, on_date, what):
 
 def pricing_key(doc):
 	"""What the price depends on: when it changes, the booking is priced again."""
-	return json.dumps(
-		[
-			doc.resource,
-			doc.customer,
-			flt(doc.hours, 2),
-			doc.package or "",
-			doc.rental_model or "",
-			[[row.extra, cint(row.quantity)] for row in doc.extras],
-		],
-		ensure_ascii=False,
-	)
+	key = [
+		doc.resource,
+		doc.customer,
+		flt(doc.hours, 2),
+		doc.package or "",
+		doc.rental_model or "",
+		[[row.extra, cint(row.quantity)] for row in doc.extras],
+	]
+	# Only a session on prepaid hours adds these, so the bookings priced before keep their key (and their prices).
+	if doc.get("hour_package"):
+		key.append([doc.hour_package, flt(doc.extra_hours, 4)])
+	return json.dumps(key, ensure_ascii=False)
 
 
 def price_booking(doc):
@@ -111,6 +112,24 @@ def set_base(doc, lists, reprice):
 		return
 
 	hours = exact_hours(doc)
+	if doc.get("hour_package"):
+		# Prepaid hours (studio_hour_package.py): the hours the package covers are paid by its own invoice; only the
+		# hours beyond it, once that is decided, are priced, at the hourly price.
+		extra = flt(doc.extra_hours, 4)
+		if not extra:
+			doc.rate, doc.base_amount = 0, 0
+			doc.price_list = doc.price_list or (lists[0] if lists else None)
+			doc.pricing_note = _("Prepaid hours {0}: {1} hours from the package.").format(doc.hour_package, flt(doc.package_hours, 2))
+			return
+		if not resource.item:
+			frappe.throw(_("{0} has no price by the hour for the hours beyond the package.").format(doc.resource), title=_("No Price"))
+		if reprice or not flt(doc.rate):
+			doc.rate, doc.price_list = price_of(resource.item, lists, today(), doc.resource)
+		doc.base_amount = flt(flt(doc.rate) * extra, 2)
+		doc.pricing_note = _("Prepaid hours {0}: {1} hours from the package; {2} hours beyond it x {3} ({4}), approved by {5}.").format(
+			doc.hour_package, flt(doc.package_hours, 2), flt(extra, 2), money(doc.rate), doc.price_list, doc.extra_hours_approved_by
+		)
+		return
 	if doc.package:
 		package = frappe.get_doc("Booking Package", doc.package)
 		if package.resource != doc.resource:

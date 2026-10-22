@@ -69,6 +69,7 @@ class Booking(Document):
 		self.check_resource()
 		self.check_times()
 		self.check_hall_details()
+		self.check_hour_package()
 		if self.source == MANUAL:
 			self.check_rental_model()
 			self.check_posted()
@@ -80,8 +81,45 @@ class Booking(Document):
 		self.check_overlap()
 
 	def on_update(self):
+		# Prepaid hours: what the booking holds of its package follows it (studio_hour_package.py).
+		if self.hour_package or (self.get_doc_before_save() and self.get_doc_before_save().hour_package):
+			from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import draw
+
+			draw(self)
 		# Completed: the invoice (or the revenue-share entry), once (booking_accounts.py).
 		complete(self)
+
+	def check_hour_package(self):
+		"""A session on a teacher's prepaid hours (22 Oct 2026): its exact length comes off the package while it holds
+		its time; hours beyond what is left only once the accountant or the owner decides they are billed."""
+		if not self.hour_package:
+			self.package_hours = self.extra_hours = 0
+			self.bill_extra_hours, self.extra_hours_approved_by = 0, None
+			return
+		from imed_erp.imederp.booking_pricing import exact_hours
+		from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import ACCOUNTS_ROLES, plan
+
+		if self.source != MANUAL:
+			frappe.throw(_("An imported booking is priced by the booking system; it draws on no prepaid hours."))
+		if self.package:
+			frappe.throw(_("A session on prepaid hours takes no price package."), title=_("Two Packages"))
+		before = self.get_doc_before_save()
+		authorised = bool(set(ACCOUNTS_ROLES) & set(frappe.get_roles()))
+		decided_before = bool(before and before.bill_extra_hours)
+		if before and decided_before and not authorised and (
+			flt(before.hours) != flt(self.hours) or before.hour_package != self.hour_package
+		):
+			# The decision was for the session as it was; a longer or moved one is decided again.
+			self.bill_extra_hours = 0
+		if self.bill_extra_hours and not (decided_before and before.bill_extra_hours == self.bill_extra_hours and self.extra_hours_approved_by):
+			if not authorised:
+				frappe.throw(
+					_("Only the accountant or the owner decides to bill hours beyond the package."), frappe.PermissionError, title=_("Decision Needed")
+				)
+			self.extra_hours_approved_by = frappe.session.user
+		if not self.bill_extra_hours:
+			self.extra_hours_approved_by = None
+		self.package_hours, self.extra_hours = plan(self, exact_hours(self), self.status in HOLDING)
 
 	def check_source(self):
 		"""Only the import makes an imported booking, and only the import changes it (INT-01: what comes from the

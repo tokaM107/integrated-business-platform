@@ -33,6 +33,11 @@
   "lecturer_share",
   "center_share",
   "price_section",
+  "hour_package",
+  "package_hours",
+  "extra_hours",
+  "bill_extra_hours",
+  "extra_hours_approved_by",
   "package",
   "price_list",
   "pricing_note",
@@ -248,6 +253,48 @@
    "description": "Worked out when the booking is saved, from the price list; the prices are kept on the booking."
   },
   {
+   "fieldname": "hour_package",
+   "fieldtype": "Link",
+   "label": "Prepaid Hours",
+   "options": "Studio Hour Package",
+   "description": "The teacher's prepaid hours this session draws on: its exact length comes off the package, and only hours beyond what is left are billed, once approved."
+  },
+  {
+   "fieldname": "package_hours",
+   "fieldtype": "Float",
+   "label": "Hours From the Package",
+   "read_only": 1,
+   "precision": "4",
+   "no_copy": 1,
+   "depends_on": "hour_package"
+  },
+  {
+   "fieldname": "extra_hours",
+   "fieldtype": "Float",
+   "label": "Hours Beyond the Package",
+   "read_only": 1,
+   "precision": "4",
+   "no_copy": 1,
+   "depends_on": "hour_package"
+  },
+  {
+   "fieldname": "bill_extra_hours",
+   "fieldtype": "Check",
+   "label": "Bill the Hours Beyond the Package",
+   "no_copy": 1,
+   "depends_on": "hour_package",
+   "description": "The accountant's or the owner's decision: the session is longer than the hours left, and the rest is billed at the hourly price."
+  },
+  {
+   "fieldname": "extra_hours_approved_by",
+   "fieldtype": "Link",
+   "label": "Approved By",
+   "options": "User",
+   "read_only": 1,
+   "no_copy": 1,
+   "depends_on": "bill_extra_hours"
+  },
+  {
    "fieldname": "package",
    "fieldtype": "Link",
    "label": "Package",
@@ -446,7 +493,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-20 10:00:00.000000",
+ "modified": "2026-10-22 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",
