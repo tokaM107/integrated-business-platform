@@ -38,7 +38,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Built: *Printing Machine*, *Daily Counter Reading*, *Printer Reading* (machine linked), the *Daily Printing* report |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
 | BA+ app subscriptions and platform fees | APP | Courses, tiers, the fee per course, posted to the doctor's account, collected into a treasury, and the report (APP-01 to 07) |
-| Integrations with the library system, studio booking system and BA+ app | INT | Not started (open questions ★ 10, 27, 28) |
+| Integrations with the library system, studio booking system and BA+ app | INT | BA Plus's courses and subscriptions (INT-05, `app_import.py`) and the shared run log (*Integration Import Log*, INT-07) built and tested on synthetic rows, waiting for a real BA Plus export; the booking import written, not run; the libraries' sales and stock not started (open questions ★ 10, 27, 28) |
 | Mobile application | — | Not started |
 | AI assistant (owner only, read only) | AI | Chat window, voice and permissions done; model not connected yet (`imed_erp/assistant/providers.py`) |
 | Unified notifications (WhatsApp / SMS / in-app) | CORE-10 | Skeleton: `imed_erp/notification_service.py` |
@@ -85,9 +85,9 @@ sections of this file. Each row says what it needs before it can be built.
 | # | Requirement | Gap | Needs |
 |---|---|---|---|
 | 17 | INT-04, STU-06 (Must) | The booking import is written but nothing runs it (no job, no upload). | The file and its schedule (INT-02). |
-| 18 | INT-07 (Must) | Failed rows are returned, not kept: no log, no alert, no re-import of a period. | An import log doctype with each run's failed rows, and an alert. |
+| 18 | INT-07 (Must) | Partly done on 22 Oct: *Integration Import Log* keeps each run and its failed and changed rows; the BA Plus import writes it. Not yet: the booking import writing it, an alert on a failed run, re-importing a period. | The alert's recipients; the booking import's runner. |
 | 19 | INT-09, RPT-12 (Must) | No screen showing each integration's last run and failures. | After 18. |
-| 20 | INT-06, INT-14 | Only bookings have a source id and a source; sales, stock and app subscriptions not yet. | With the daily import (IMPORT_DATA_STANDARD.md). |
+| 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (IMPORT_DATA_STANDARD.md). |
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
@@ -104,6 +104,21 @@ sections of this file. Each row says what it needs before it can be built.
 | 34 | AI-09 (Should), SEC-09 | The assistant keeps no log of questions; the external systems' keys are in `site_config.json`, not encrypted. | After the model is connected. |
 | 35 | CRM-03 (Should) | No call or follow-up log. | After go-live. |
 | 36 | TSK, open question 1 | Answered: only the owner assigns tasks. TSK is after go-live; keep this when it is built. | |
+
+## Open questions: BA Plus import (INT-05, APP-13), 22 Oct 2026
+
+Built on synthetic rows (`imederp/test_app_import.py`); nothing has been imported on the site. Before the first real
+file, from the BA Plus team:
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **A real export**: the columns, the date format, and whether subscription and course ids are stable and unique. | The columns of IMPORT_DATA_STANDARD.md part 3. | BA Plus team |
+| 2 | **Each doctor's id in BA Plus**, written on his app agreement (BA Plus Doctor ID). | A row whose doctor has no agreement with that id fails. | BA Plus team / Accountant |
+| 3 | **A cancelled subscription or a withdrawn student**: how does the file show it? (INT question 6) | Not read: a row that disappears from the file changes nothing here; a known one that changed is listed. | BA Plus team, owner (COUNT_WITHDRAWN) |
+| 4 | **The day's rows or the whole term** each time? | Either works: known ids are skipped. | BA Plus team |
+| 5 | **Students without a phone.** | The row fails: a student is found or made only by phone (CRM-04). | BA Plus team |
+| 6 | **The customer group `طالب`** is missing on the development site (setup_core.py makes it). | A row with a new student fails until it exists. | Run setup_core.py |
+| 7 | **The development site's two terms overlap** (year2026 and الترم الأول 2026/2027 both hold Sep 2026). | A new course dated in both fails: the term must be one. | Accountant (academic periods) |
 
 ## Open questions: point of sale, customers and cancelling a sale (LIB-01, CRM, ACC-06, SEC-06)
 
