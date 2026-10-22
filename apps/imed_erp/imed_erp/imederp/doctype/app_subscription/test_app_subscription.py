@@ -16,7 +16,15 @@ from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreeme
 
 # Every doctype these tests link to is made here or already exists on the site. Without this Frappe builds
 # ERPNext's "_Test ..." records for them and commits them to the site.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "App Course", "App Subscription", "Cost Center", "Customer", "Doctor Agreement"]
+IGNORE_TEST_RECORD_DEPENDENCIES = [
+	"Academic Period",
+	"App Course",
+	"App Subscription",
+	"Cost Center",
+	"Customer",
+	"Doctor Agreement",
+	"Integration Import Log",
+]
 
 APP = "تطبيق BA Plus - MMG"
 
