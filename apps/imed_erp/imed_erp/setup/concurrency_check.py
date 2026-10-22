@@ -1,5 +1,6 @@
 # Two sessions at once, for real (audit QA-10, QA-11, QA-12, QA-26, bookings of one resource, and on 21 Oct 2026
-# two payments out of one cash box and two closes of one cash box).
+# two payments out of one cash box and two closes of one cash box; on 22 Oct 2026 two hand-overs of one box, one
+# hand-over confirmed twice, two sessions on a package's last hours, one transfer reference recorded twice).
 #
 # Each scenario opens two database connections in two threads, holds them at a barrier, then runs the same
 # operation in both at the same moment and commits each. Then it reads what the database holds: one receipt, one
@@ -250,6 +251,12 @@ def check_two_day_screens():
 	"""QA-26: two people save a library's counters for the same day at once: one screen a day."""
 	from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
 
+	# This scenario saves drafts (it never submits them); an earlier run's draft would now block the day (a day waits
+	# for its evening readings), so its leftovers are removed first (on this throwaway site only).
+	for name in frappe.get_all("Daily Counter Reading", filters={"docstatus": 0, "reading_date": ("<", today())}, pluck="name"):
+		frappe.delete_doc("Daily Counter Reading", name, force=True)
+	frappe.db.commit()
+
 	libraries = [
 		branch
 		for branch in (AZARITA, "مكتبة المواساة - MMG")
@@ -265,7 +272,8 @@ def check_two_day_screens():
 		doc = frappe.new_doc("Daily Counter Reading")
 		doc.update({"branch": library, "reading_date": today()})
 		for row in get_machines(library):
-			opening = row["opening_reading"] if row["opening_reading"] is not None else 1000
+			# Read in the morning where the machine closed last.
+			opening = row["previous_closing"] if row["previous_closing"] is not None else 1000
 			row.update({"opening_reading": opening, "closing_reading": opening + 10})
 			doc.append("machines", row)
 		doc.insert()
@@ -343,13 +351,136 @@ def check_two_closes():
 	report("Two closes of one box at once", saved == 1 and sum(o[0] == "done" for o in outcome) == 1, f"{outcome}; closes saved: {saved}")
 
 
+STUDIO_BOX = "خزينة X Studio - MMG"
+OWNER = "owner@imed.local"
+
+
+def set_box(box, business, amount):
+	held = box_balance(box)
+	if held != amount:
+		cash_entry(box, business, amount - held)
+		frappe.db.commit()
+
+
+def new_handover(amount, submit=True):
+	doc = frappe.get_doc(
+		{
+			"doctype": "Cash Handover", "branch": STUDIO, "treasury": STUDIO_BOX, "amount": amount, "handover_date": today(),
+			"handover_time": "21:00:00", "receiver_kind": "Owner", "receiver": OWNER, "notes": "_Conc",
+		}
+	).insert()
+	if submit:
+		doc.submit()
+	return doc
+
+
+def pending_from(box):
+	return flt(frappe.db.sql("select sum(amount) from `tabCash Handover` where treasury = %s and docstatus = 1 and status = 'Pending Receipt'", box)[0][0])
+
+
+def check_two_handovers():
+	"""Two hand-overs of 300 at once from a box holding 500 that nothing else is being handed over from: one is
+	recorded, the other refused (cash_handover.check_available)."""
+	for name in frappe.get_all("Cash Handover", filters={"treasury": STUDIO_BOX, "docstatus": 1, "status": "Pending Receipt"}, pluck="name"):
+		doc = frappe.get_doc("Cash Handover", name)
+		doc.cancel_reason = "_Conc clean-up"
+		doc.cancel()
+	frappe.db.commit()
+	set_box(STUDIO_BOX, STUDIO, 500)
+	first, second = new_handover(300, submit=False).name, new_handover(300, submit=False).name
+	frappe.db.commit()
+	outcome = at_once(lambda: frappe.get_doc("Cash Handover", first).submit(), lambda: frappe.get_doc("Cash Handover", second).submit())
+	pending = pending_from(STUDIO_BOX)
+	report("Two hand-overs at once from a box holding 500", sum(o[0] == "done" for o in outcome) == 1 and pending == 300, f"{outcome}; pending now {pending}")
+
+
+def check_two_confirmations():
+	"""The owner confirms one hand-over twice at once (two tabs): one entry."""
+	import io
+
+	from pypdf import PdfWriter
+
+	set_box(STUDIO_BOX, STUDIO, max(box_balance(STUDIO_BOX), 0) + 200)
+	doc = new_handover(150)
+	writer, out = PdfWriter(), io.BytesIO()
+	writer.add_blank_page(width=420, height=595)
+	writer.add_metadata({"/Title": f"_Conc {doc.name} {suffix()}"})
+	writer.write(out)
+	scan = frappe.get_doc(
+		{"doctype": "File", "file_name": f"conc-{doc.name}.pdf", "is_private": 1, "content": out.getvalue(), "attached_to_doctype": "Cash Handover",
+		 "attached_to_name": doc.name, "attached_to_field": "signed_receipt"}
+	).insert(ignore_permissions=True)
+	frappe.db.set_value("Cash Handover", doc.name, "signed_receipt", scan.file_url)
+	frappe.db.commit()
+
+	def confirm():
+		from imed_erp.imederp.doctype.cash_handover.cash_handover import confirm_receipt
+
+		frappe.set_user(OWNER)
+		return confirm_receipt(doc.name, 150)
+
+	outcome = at_once(confirm, confirm)
+	entries = frappe.db.count("Journal Entry", {"user_remark": ("like", f"{doc.name}:%"), "docstatus": 1})
+	report("One hand-over confirmed twice at once", entries == 1 and sum(o[0] == "done" for o in outcome) == 1, f"{outcome}; entries: {entries}")
+
+
+def check_two_package_sessions():
+	"""Two sessions of 1.5 hours at once on a package with 2 hours left: one is saved; the package never goes below zero."""
+	tag = suffix()
+	item = f"_CONC-PKG-{tag}"
+	frappe.get_doc({"doctype": "Item", "item_code": item, "item_name": item, "item_group": "الخدمات", "stock_uom": "ساعة", "is_stock_item": 0}).insert()
+	frappe.get_doc({"doctype": "Item Price", "item_code": item, "price_list": "Standard Selling", "price_list_rate": 100}).insert()
+	resource = frappe.get_doc(
+		{"doctype": "Booking Resource", "resource_name": f"_Conc Package Room {tag}", "resource_type": "Studio Service", "cost_center": STUDIO, "item": item}
+	).insert().name
+	teacher = customer(f"_Conc Teacher {tag}")
+	package = frappe.get_doc(
+		{"doctype": "Studio Hour Package", "customer": teacher, "resource": resource, "purchase_date": today(), "hours_purchased": 2, "price": 200}
+	).insert()
+	package.submit()
+	frappe.db.commit()
+
+	def session(start, end):
+		# Named apart, so the two sessions meet at the package's lock, not at the naming series.
+		return lambda: frappe.get_doc(
+			{"doctype": "Booking", "resource": resource, "customer": teacher, "booking_date": add_days(today(), 2), "from_time": start, "to_time": end, "hour_package": package.name}
+		).insert(set_name=f"_Conc BOOK {suffix()}").name
+
+	outcome = at_once(session("09:00", "10:30"), session("13:00", "14:30"))
+	left = flt(frappe.db.get_value("Studio Hour Package", package.name, "hours_remaining"), 4)
+	saved = frappe.db.count("Booking", {"hour_package": package.name})
+	report("Two sessions at once on a package's last 2 hours", saved == 1 and left == 0.5, f"{outcome}; sessions saved: {saved}; hours left: {left}")
+
+
+def check_two_app_payments():
+	"""The same transfer reference recorded twice at once: one payment."""
+	sub = frappe.get_all("App Subscription", filters={"docstatus": 1}, pluck="name", limit=1)
+	if not sub:
+		report("One transfer reference recorded twice at once", False, "no submitted subscription on this site")
+		return
+	reference = f"CONC-{suffix()}"
+
+	def pay():
+		doc = frappe.get_doc(
+			{"doctype": "App Payment", "subscription": sub[0], "posting_date": today(), "branch": APP, "payment_method": "Bank Transfer",
+			 "treasury": "خزينة تطبيق BA Plus - MMG", "amount": 100, "reference_no": reference}
+		).insert(set_name=f"_Conc APY {suffix()}")
+		doc.submit()
+		return doc.name
+
+	outcome = at_once(pay, pay)
+	saved = frappe.db.count("App Payment", {"reference_no": reference, "docstatus": 1})
+	report("One transfer reference recorded twice at once", saved == 1, f"{outcome}; payments: {saved}")
+
+
 def run():
 	if frappe.local.site == MAIN_SITE:
 		print(f"REFUSED: concurrency_check commits records; run it on a throwaway copy of the site, not {MAIN_SITE}.")
 		return
 	for check in (
 		check_transfer_receipt, check_two_payouts, check_two_subscriptions, check_two_day_screens, check_two_bookings,
-		check_two_cash_payments, check_two_closes,
+		check_two_cash_payments, check_two_closes, check_two_handovers, check_two_confirmations, check_two_package_sessions,
+		check_two_app_payments,
 	):
 		try:
 			check()
