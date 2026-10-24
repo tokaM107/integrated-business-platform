@@ -305,6 +305,7 @@ exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_core.py"
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_regional.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_users.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_library.py").read(), {"frappe": frappe})
+exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_buying.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_recurring_expenses.py").read(), {"frappe": frappe})
 exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/setup_allocation_rules.py").read(), {"frappe": frappe})
@@ -341,9 +342,10 @@ without changing anything if they do not (so a user is never created without the
 | `setup_allocation_rules.py` | Submits the first allocation rule (EXP-03/04): expenses on the shared premises are split 60% halls / 40% studio from 1 Nov 2026, as agreed with the owner. Later changes are new rules from the Allocation Rule screen. A submitted rule for the same cost center and date is left as is. Idempotent. |
 | `setup_platform_fees.py` | Submits the platform fee tiers approved by the owner (APP-02) from 1 Sep 2026: 1–100 students 250, 101–500 200, more than 500 170 a student of a course in a term. Later prices are new schedules from the Platform Fee Schedule screen. A schedule already in force from that date is left as is. Idempotent. |
 | `setup_booking_prices.py` | The studio's price list from the requirements (v1.2, 4.8): service items and their Item Prices (Standard Selling), the resources (smart boards, reels, podcast, location), the packages and the extras (microphone, lights: 50 a piece an hour). A price already set is never changed. |
+| `setup_buying.py` | Buying (LIB-07, ACC-12): the supplier group `موردي الورق والخامات` and the payment terms a purchase invoice is made on, each a Payment Term and a Payment Terms Template of the same name: `نقدي` (due the same day) and `آجل 30 يوم` (due in 30 days). Buying Settings: no purchase order or purchase receipt required first, since the library buys directly; one purchase invoice with **Update Stock** ticked receives the paper and records what is owed. The purchase invoice screen (`public/js/purchase_invoice.js`) shows only what a purchase needs; Update Stock is ticked on a new invoice and the unit is a column of the items table (Property Setters). What exists is left as is. Idempotent. |
 | `close_period.py` | Month-end close (CORE-09). Creates an Accounting Period for a finished month with ERPNext's posting document types and the app's own (Expense, Inter Business Transfer, Doctor Ledger Entry, App Subscription, Printer Reading, Stock Count, listed in `period_closing_doctypes` in `hooks.py` and checked by `imederp/period_lock.py`, on save and on cancel; a doctor's ledger has no company and uses the default one) closed, so nothing dated in that month can be posted, edited or cancelled. Set `MONTH = "YYYY-MM"` at the top, or leave it empty for last month. Run it only at month end: it changes the books. |
 
-`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `setup_platform_fees.py`, `setup_booking_prices.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
+`setup_core.py`, `setup_regional.py`, `setup_arabic_names.py`, `setup_coa.py`, `setup_users.py`, `setup_buying.py`, `setup_expenses.py`, `setup_recurring_expenses.py`, `setup_allocation_rules.py`, `setup_platform_fees.py`, `setup_booking_prices.py`, `verify_setup.py` and `verify_users.py` are idempotent, so they can be re-run
 safely. They only ever touch the company `Mohamed Mamdouh group` (abbreviation `MMG`), which is
 hardcoded; the demo company `Mohamed Mamdouh group (Demo)` is left alone.
 
@@ -621,6 +623,38 @@ uses a factor of 1 and a box comes in as one sheet. ERPNext also **empties the i
 its stock UOM changes**, so `setup_core.py` puts the factors back on every run (`ensure_conversions`), and
 `verify_setup.py` reports a missing or wrong one. ERPNext refuses to change the stock UOM or the
 valuation method once stock has moved; the script then only warns.
+
+### Buying from suppliers (LIB-07, ACC-12)
+
+The accountant buys paper and materials from suppliers, paid on the spot or on credit, with ERPNext's
+own Supplier, Purchase Invoice, Payment Entry and payables reports; `setup_buying.py` sets them up.
+
+1. **Supplier**, in the group `موردي الورق والخامات`.
+2. **Purchase Invoice**, with no purchase order or receipt before it: the library buys directly.
+   **Update Stock** is ticked on a new invoice, so the one invoice brings the paper into the store and
+   records what is owed. Purchases go into the main store, `خامات المواساة`; paper reaches a branch by a
+   transfer from it, never by a purchase of its own. Paper is bought by the box (see below). The screen
+   (`public/js/purchase_invoice.js`) shows only what a purchase needs: supplier and date, Update Stock
+   and the warehouse, the items with their unit, the totals, and the payment terms; the supplier's
+   invoice is attached from the sidebar.
+3. **Paid on the spot or on credit.** For a purchase paid at once, tick **Is Paid** and choose the
+   payment method; the screen fills in its treasury. Otherwise pick the payment terms, `نقدي` (due the same day) or `آجل 30 يوم` (due in
+   30 days), and pay later with a **Payment Entry** of type Pay against the invoice. Two boxes at 650 on
+   credit leave the supplier owed 1,300; paying 650 from the main treasury leaves 650.
+4. **Who pays.** Money paid out is an Expense the accountant approves (owner's decision of 12 Oct 2026,
+   `treasuries.block_spending_without_approval`): only the accountant and the owner pay a supplier, on the
+   spot (Is Paid) or with a Payment Entry, from any treasury. A branch manager pays no supplier, from her own
+   cash box neither. A cash box never goes below zero (`cash_balance.py`).
+
+Shipping is part of what the paper cost. It is added after the purchase with a **Landed Cost Voucher**
+on the purchase invoice (or receipt), charged to `مصروفات الشحن والنقل`: two boxes at 650 with 100 for
+shipping make every sheet 0.28 instead of 0.26. The voucher credits the shipping account and the
+shipping bill, when paid, debits it, so the account nets to zero and the cost sits in the paper.
+
+What is owed to each supplier is ERPNext's **Accounts Payable** (invoice by invoice, with its age) and
+**Accounts Payable Summary** (one line per supplier). Both need the company, which they fill in from the
+user's default (`Mohamed Mamdouh group`). ERPNext's Arabic for two of their columns is wrong
+(`Due Date`, `Age (Days)`); `translations/ar.csv` corrects it.
 
 ### Stock counts (LIB-03, PRN-06)
 
@@ -1586,6 +1620,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_use
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_treasuries
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_buying
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue
