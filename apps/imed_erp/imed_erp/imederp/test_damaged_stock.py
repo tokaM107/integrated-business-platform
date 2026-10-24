@@ -265,10 +265,14 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 
 	def test_amount_is_weight_times_price_to_the_piastre(self):
 		self.damage()
-		# A price is kept in piastres, as the invoice keeps it: 3.333 is 3.33, and 2.345 Kg x 3.33 = 7.80885 -> 7.81.
+		# A price is kept in piastres, as the invoice keeps it: 3.333 is 3.33. The weight is kept as the invoice
+		# keeps a quantity (System Settings > Float Precision: 3 after setup_regional.py, 2.345 Kg; 2 on a site
+		# left at 2, 2.34 Kg), so the sale and its invoice agree to the piastre either way.
 		sale = self.sale(weight=2.345, rate=3.333)
-		self.assertEqual((flt(sale.rate), flt(sale.amount)), (3.33, 7.81))
-		self.assertEqual(flt(frappe.db.get_value("Sales Invoice", sale.sales_invoice, "grand_total")), 7.81)
+		weight = flt(2.345, frappe.get_precision("Sales Invoice Item", "qty"))
+		amount = flt(weight * 3.33, 2)
+		self.assertEqual((flt(sale.weight), flt(sale.rate), flt(sale.amount)), (weight, 3.33, amount))
+		self.assertEqual(flt(frappe.db.get_value("Sales Invoice", sale.sales_invoice, "grand_total")), amount)
 
 	def test_sale_on_credit_leaves_the_invoice_to_pay(self):
 		self.damage()

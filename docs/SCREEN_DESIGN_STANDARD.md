@@ -255,6 +255,25 @@ Items → Totals → Advanced (collapsed)**.
 - **Preserved:** saving, totals, and the server-side library income-account logic all still run
   (exercised by the save test). UI hiding never touches server validation.
 
+## Worked example — Purchase Invoice (buying paper and materials)
+
+Standard ERPNext doctype, attached via `hooks.py` `doctype_js` → `public/js/purchase_invoice.js`, which
+reuses `imed.screen.apply`. The library buys directly (no purchase order or receipt first): one invoice
+with **Update Stock** receives the paper into the store and records what is owed (`setup/setup_buying.py`).
+
+- **On screen:** supplier and date → Update Stock and the warehouse → items (item, quantity, unit, rate)
+  → totals; **Is Paid** for a purchase paid on the spot (payment method and treasury on the Payments
+  tab); the payment terms (`نقدي` / `آجل 30 يوم`) alone on the Terms tab; the supplier's invoice attached
+  from the sidebar.
+- **Hidden:** the `tax`, `zatca` and `international` groups; currency and price list
+  (`currency_and_price_list`); the tax sections (`taxes_section`, `section_break_51`, `totals`,
+  `sec_tax_breakup`, `section_tax_withholding_entry`); company-currency duplicates; subcontracting and
+  rejected goods (`is_subcontracted`, `supplier_warehouse`, `rejected_warehouse`,
+  `raw_materials_supplied`); pricing rules; the Address & Contact tab; Terms and Conditions text.
+- **Collapsed:** `accounting_dimensions_section` (Cost Center / Project) and the additional discount.
+- **Definition-time (Property Setters in `setup_buying.py`):** Update Stock is ticked on a new invoice,
+  and the unit (`uom`) is a column of the items table next to the quantity.
+
 ## Worked example — Expense (`imederp/doctype/expense`)
 
 A lean custom doctype with no tax/currency noise, so here the standard is about **progressive
