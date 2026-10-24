@@ -26,6 +26,7 @@ SELLABLE = (ACTIVE, CARRIED_FORWARD)
 HISTORY_FIELDS = (
     "status",
     "sold_qty",
+    "disposed_qty",
     "remaining_qty",
     "carried_to_period",
     "carried_forward_on",
@@ -34,7 +35,7 @@ HISTORY_FIELDS = (
     "notice_received_by",
     "cancellation_recorded_on",
 )
-COUNTED_FIELDS = ("sold_qty", "remaining_qty")
+COUNTED_FIELDS = ("sold_qty", "disposed_qty", "remaining_qty")
 
 # Rate on the edition <- rate in Printing Cost Settings, filled in when left empty.
 DEFAULT_RATES = {
@@ -104,10 +105,10 @@ class BookEdition(Document):
             if cint(self.get(field)) < 0:
                 frappe.throw(_("{0} cannot be negative.").format(_(self.meta.get_label(field))))
         if self.docstatus == 0:
-            # Sold copies come only from submitted invoices, which name a submitted edition.
-            self.sold_qty = 0
+            # Sold and disposed copies come only from submitted invoices and disposals of a submitted edition.
+            self.sold_qty = self.disposed_qty = 0
         self.total_qty = cint(self.doctor_qty) + cint(self.extra_qty)
-        self.remaining_qty = self.total_qty - cint(self.sold_qty)
+        self.remaining_qty = self.total_qty - cint(self.sold_qty) - cint(self.disposed_qty)
 
     def validate_agreement(self):
         # DOC-02: an edition belongs to a books agreement, not to an app one.
@@ -171,10 +172,11 @@ def get_copy_cost(edition):
 	return flt(per_sheet * cint(edition.get("pages")) + flt(edition.get("binding_cost")), 2)
 
 
-def get_paper_cost(cost_center, waste_per_sheet=None):
+def get_paper_cost(cost_center, waste_per_sheet=None, as_of=None):
     """Moving average price of a sheet of A4 paper in the library's store, plus waste.
 
-    0 when the library has no paper price yet (nothing received).
+    0 when the library has no paper price yet (nothing received). as_of: the price at the end of that day, not now
+    (QA-28: a day's counters entered late are valued at that day's cost).
     """
     if waste_per_sheet is None:
         waste_per_sheet = get_rates().waste_per_sheet
@@ -182,7 +184,14 @@ def get_paper_cost(cost_center, waste_per_sheet=None):
     abbr = frappe.get_cached_value("Company", company, "abbr")
     library = cost_center[: -len(f" - {abbr}")] if cost_center.endswith(f" - {abbr}") else cost_center
     store = LIBRARY_PAPER_STORE.get(library)
-    rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": f"{store} - {abbr}"}, "valuation_rate")) if store else 0
+    if not store:
+        rate = 0
+    elif as_of:
+        from erpnext.stock.utils import get_stock_balance
+
+        rate = flt(get_stock_balance(PAPER, f"{store} - {abbr}", as_of, "23:59:59", with_valuation_rate=True)[1])
+    else:
+        rate = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": f"{store} - {abbr}"}, "valuation_rate"))
     return flt(rate + flt(waste_per_sheet), 4) if rate else 0
 
 
@@ -205,10 +214,27 @@ def get_sold_qty(edition, exclude_invoice=None, for_update=False):
     )
 
 
+def get_disposed_qty(edition, exclude=None):
+    """Copies of an obsolete edition disposed of as scrap: its submitted Damaged Stock Entries."""
+    return flt(
+        frappe.db.sql(
+            """select sum(dsi.qty) from `tabDamaged Stock Item` dsi
+            join `tabDamaged Stock Entry` dse on dse.name = dsi.parent
+            where dse.book_edition = %s and dse.docstatus = 1 and dse.name != %s""",
+            (edition, exclude or ""),
+        )[0][0]
+    )
+
+
 def update_sold_qty(edition):
-    sold = cint(get_sold_qty(edition))
+    sold, disposed = cint(get_sold_qty(edition)), cint(get_disposed_qty(edition))
     total = cint(frappe.db.get_value("Book Edition", edition, "total_qty"))
-    frappe.db.set_value("Book Edition", edition, {"sold_qty": sold, "remaining_qty": total - sold}, update_modified=False)
+    frappe.db.set_value(
+        "Book Edition",
+        edition,
+        {"sold_qty": sold, "disposed_qty": disposed, "remaining_qty": total - sold - disposed},
+        update_modified=False,
+    )
 
 
 def edition_for_action(name):
@@ -265,11 +291,13 @@ def carry_forward(edition, period):
 
 @frappe.whitelist(methods=["POST"])
 def cancel_for_curriculum_change(edition, notice_date):
-    """DOC-17: the doctor said, by word of mouth, that the curriculum changed. The edition is marked Cancelled with
-    the day of the notice, the employee who received it (the one recording it, from the login, never a typed
-    name) and when it was recorded. Nothing posted changes: its sales, stock and approved costs stay as they are;
-    no more copies are sold (imederp/edition_sales.py). The doctor's unsold copies are charged to him as a draft for
-    approval (DOC-18, DOC-22; doctor_ledger_entry.charge_edition)."""
+    """DOC-17: the doctor said, by word of mouth, that the curriculum changed. The edition is marked Cancelled
+    (obsolete) with the day of the notice, the employee who received it (the one recording it, from the login, never
+    a typed name) and when it was recorded. Nothing posted changes: its sales, stock and approved costs stay as they
+    are; no more copies are sold (imederp/edition_sales.py).
+
+    Owner, 21 Oct 2026: the doctor bears nothing for unsold copies. Nothing is charged to him; the copies left are
+    disposed of as scrap (dispose_as_scrap), a loss on the library."""
     doc = edition_for_action(edition)
     if doc.status not in SELLABLE:
         frappe.throw(_("Edition {0} is already cancelled.").format(doc.name))
@@ -290,8 +318,57 @@ def cancel_for_curriculum_change(edition, notice_date):
     doc.notice_received_by = frappe.session.user
     doc.cancellation_recorded_on = now_datetime()
     save_action(doc)
-    # DOC-18/22: the doctor's unsold copies are charged to him now, as a draft the owner or the accountant approves.
-    from imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry import charge_edition
-
-    charge_edition(doc.name, _("cancelled on {0}: the curriculum changed").format(frappe.format_value(notice_date, {"fieldtype": "Date"})))
     return doc.name
+
+
+@frappe.whitelist(methods=["POST"])
+def dispose_as_scrap(edition, qty=None):
+    """An obsolete edition's unsold copies leave the store as scrap (owner, 21 Oct 2026): a draft Damaged Stock Entry
+    naming the edition, for the branch manager to check and submit. Submitted, the copies' cost is the library's loss
+    (الهالك والتالف on its cost center) and they wait in the damaged store to be sold by weight (Damaged Stock Sale),
+    whose proceeds are the library's revenue. The doctor's account is not touched. Returns the draft's name."""
+    from imed_erp.imederp.damaged_stock import default_damaged_store
+
+    doc = edition_for_action(edition)
+    if doc.status != CANCELLED:
+        frappe.throw(
+            _("Only an edition whose curriculum changed is disposed of as scrap. Record Cancel: Curriculum Changed first."),
+            title=_("Not Obsolete"),
+        )
+    qty = cint(qty) if qty else cint(doc.remaining_qty)
+    if qty <= 0 or qty > cint(doc.remaining_qty):
+        frappe.throw(_("Edition {0} has {1} copies left to dispose of.").format(doc.name, cint(doc.remaining_qty)))
+    store = edition_store(doc)
+    damage = frappe.get_doc(
+        {
+            "doctype": "Damaged Stock Entry",
+            "posting_date": today(),
+            "source_store": store,
+            "damaged_store": default_damaged_store(frappe.db.get_value("Warehouse", store, "company")),
+            "book_edition": doc.name,
+            "reason": _("{0}: the curriculum changed (notice of {1}); sold as scrap by weight.").format(
+                doc.edition_name, frappe.format_value(doc.notice_date, {"fieldtype": "Date"})
+            ),
+            "items": [{"item_code": doc.item_code, "qty": qty}],
+        }
+    )
+    damage.insert()
+    return damage.name
+
+
+def edition_store(doc):
+    """The store of the edition's library that holds its copies: the one with the most of its item."""
+    from imed_erp.imederp.stock_count import branch_of
+
+    if not doc.item_code:
+        frappe.throw(_("Edition {0} names no item, so its copies are not in stock.").format(doc.name))
+    stores = [
+        b
+        for b in frappe.get_all(
+            "Bin", filters={"item_code": doc.item_code, "actual_qty": (">", 0)}, fields=["warehouse", "actual_qty"], order_by="actual_qty desc"
+        )
+        if branch_of(b.warehouse) == doc.cost_center and not frappe.db.get_value("Warehouse", b.warehouse, "custom_is_damaged_store")
+    ]
+    if not stores:
+        frappe.throw(_("No store of {0} holds copies of {1}.").format(doc.cost_center, doc.item_code))
+    return stores[0].warehouse

@@ -221,3 +221,24 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		self.assertNotIn("Stock Entry", [d["doctype"] for d in linked.get("docs", [])])
 		self.cancel(invoice)
 		self.assertEqual(self.sheets(), before)
+
+	def test_qa05_a_count_while_paper_waits_as_a_draft_does_not_take_it_twice(self):
+		# The store shows fewer sheets than the sale: its paper issue waits as a draft. Sara counts the store
+		# empty, then 500 sheets arrive and the accountant submits the draft: the store holds the 500.
+		before = self.sheets(AZARITA_STORE)
+		invoice = self.sell([("PRINT-SVC", before + 300)], library=AZARITA)
+		[issue] = self.issues(invoice)
+		self.assertEqual(issue.docstatus, 0)
+
+		frappe.set_user("sara@imed.local")
+		count = frappe.get_doc(
+			{"doctype": "Stock Count", "store": AZARITA_STORE, "items": [{"item_code": PAPER, "counted_qty": 0}]}
+		).insert()
+		# Expected on the shelf: what the store shows less the sheets sold and still waiting.
+		self.assertEqual((count.items[0].recorded_qty, count.items[0].difference_qty), (-300, 300))
+		count.submit()
+		frappe.set_user("Administrator")
+
+		self.receive(500, AZARITA_STORE)
+		frappe.get_doc("Stock Entry", issue.name).submit()
+		self.assertEqual(self.sheets(AZARITA_STORE), 500)

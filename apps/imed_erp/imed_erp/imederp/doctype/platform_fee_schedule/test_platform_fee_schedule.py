@@ -14,9 +14,11 @@ from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import
 
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Platform Fee Schedule"]
 
-# The owner's tiers. Tests use dates far ahead, so the site's own schedules are never the latest.
+# The owner's tiers. From the day after the site's own schedule (1 Sep 2026, setup_platform_fees.py), so a term
+# from then takes these whatever the site holds. Inside the company's fiscal year (from 1 Sep 2026) and not ahead
+# of today: a subscription is never dated ahead (QA-24) or outside a fiscal year.
 TIERS = [(1, 100, 250), (101, 500, 200), (501, None, 170)]
-VALID_FROM = "2031-09-01"
+VALID_FROM = "2026-09-02"
 
 
 def make_schedule(valid_from=VALID_FROM, tiers=TIERS, submit=True):

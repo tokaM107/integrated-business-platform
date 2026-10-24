@@ -60,6 +60,12 @@ class IntegrationTestCustomers(IntegrationTestCase):
 		self.assertEqual(normalize_phone("+20 3 4567890"), "+2034567890")
 		self.assertEqual(normalize_phone("+966 50 123 4567"), "+966501234567")
 		self.assertEqual(normalize_phone("00966501234567"), "+966501234567")
+		# QA-31: the country code typed without its plus, on a landline, or with a 0 before or after it.
+		self.assertEqual(normalize_phone("2034567890"), "+2034567890")
+		self.assertEqual(normalize_phone("2001012345678"), "+201012345678")
+		self.assertEqual(normalize_phone("0201012345678"), "+201012345678")
+		# A Cairo landline typed without its 0 stays as it is.
+		self.assertEqual(normalize_phone("212345678"), "+20212345678")
 
 	def test_blank_is_no_number(self):
 		for blank in (None, "", "   "):

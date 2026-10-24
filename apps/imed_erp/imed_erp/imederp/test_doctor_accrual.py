@@ -240,6 +240,7 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		before = self.balance(edition.agreement)
 		sale = self.sell([(self.items[0], 3)])
 		credit = make_sales_return(sale.name)
+		credit.return_reason = "_Test returned by the accountant"
 		credit.items[0].qty = -1
 		credit.insert()
 		credit.submit()
@@ -327,6 +328,23 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		self.assertEqual([e.name for e in self.entries(sale.name)], [entry.name])
 		self.assertEqual(self.balance(edition.agreement) - before, 240)
 		self.assertNotIn(sale.name, missed_sales())
+
+	def test_qa33_a_sale_in_a_closed_period_is_reported_once(self):
+		edition = self.edition()
+		with patch.object(doctor_accrual, "accrue"):
+			sale = self.sell([(self.items[0], 3)])
+		frappe.db.set_value("Academic Period", self.term, "is_closed", 1)
+		title = f"Sales Invoice {sale.name}: the doctor's amount was not counted; its period is closed"
+		try:
+			self.assertNotIn(sale.name, missed_sales())
+			run_daily()
+			run_daily()
+			self.assertEqual(frappe.db.count("Error Log", {"method": title}), 1)
+			self.assertEqual(self.entries(sale.name), [])
+		finally:
+			frappe.db.set_value("Academic Period", self.term, "is_closed", 0)
+			frappe.db.delete("Error Log", {"method": title})
+		self.assertTrue(edition)
 
 	def test_the_daily_job_cancels_what_a_cancelled_sale_left(self):
 		edition = self.edition()

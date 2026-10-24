@@ -12,10 +12,12 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement, make_doctor
 from imed_erp.imederp.doctype.platform_fee_schedule.test_platform_fee_schedule import make_schedule
 from imed_erp.imederp.report.doctor_receivables import doctor_receivables
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # A test module outside a doctype folder builds no "_Test ..." records; keep it here, not under a doctype.
 MAWASAH = "مكتبة المواساة - MMG"
@@ -29,6 +31,7 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		fund_cash_boxes()
 		# Books, owed to the doctor: 1,000 (Mawasah's edition) + 500 accrued, 600 paid out, -50 adjusted = 850.
 		cls.owed = make_agreement("Books", 81)
 		cls.edition = cls.make_edition(cls.owed)
@@ -37,16 +40,23 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 		# A payout comes out of a treasury and posts its journal entry (doctor_ledger_entry.post_payout).
 		cls.entry(cls.owed, "2026-10-01", "Payout", 600, treasury=CASH_BOX)
 		cls.entry(cls.owed, "2026-10-05", "Adjustment", -50)
-		# Books, below zero (DOC-20): 100 accrued on 1 Aug, 300 charged for unsold copies on 1 Sep. The 100 owed to
-		# him is set against the charge, so 200 of it is still owed, since 1 Sep.
+		# Books, below zero (DOC-20): 100 accrued on 2 Sep, 300 deducted by hand (approved) on 5 Sep; the doctor is never
+		# charged for unsold copies (owner, 21 Oct 2026). The 100 owed to him is set against the deduction, so 200 of
+		# it is still owed, since 5 Sep. Everything inside the company's fiscal year, from 1 Sep 2026.
 		cls.negative = make_agreement("Books", 82)
-		cls.entry(cls.negative, "2026-08-01", "Accrual", 100)
-		cls.entry(cls.negative, "2026-09-01", "Unsold Copies Charge", 300)
+		cls.entry(cls.negative, "2026-09-02", "Accrual", 100)
+		cls.entry(cls.negative, "2026-09-05", "Adjustment", -300)
 		# App: two students post 250 each to the doctor's account (APP-05), 300 collected on 1 Oct into the app's
 		# treasury (APP-06). An app agreement is in Doctor Debts, never in these receivables.
-		make_schedule()
+		# A 2026 term for the 2026 subscriptions (QA-17: a subscription is dated inside its course's term), with
+		# the tests' tiers in force from its start, whatever schedule the site holds.
+		make_schedule("2026-09-03")
+		cls.term = frappe.get_doc(
+			{"doctype": "Academic Period", "period_name": "_Test Report Term", "period_type": "Term",
+				"start_date": "2026-09-03", "end_date": "2026-12-31"}
+		).insert().name
 		cls.app = make_agreement("App", 83)
-		cls.subscription(cls.app, "2026-07-01")
+		cls.subscription(cls.app, "2026-09-03")
 		cls.subscription(cls.app, "2026-09-20")
 		cls.entry(cls.app, "2026-10-01", "Collection", 300, treasury=APP_TREASURY)
 
@@ -71,18 +81,18 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	@staticmethod
 	def entry(agreement, date, entry_type, amount, **values):
 		doc = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": date, "entry_type": entry_type, "amount": amount, **values}
+			ledger_entry({"agreement": agreement, "entry_date": date, "entry_type": entry_type, "amount": amount, **values})
 		).insert()
 		doc.submit()
 
-	@staticmethod
-	def subscription(agreement, date):
+	@classmethod
+	def subscription(cls, agreement, date):
 		doc = frappe.get_doc(
 			{
 				"doctype": "App Subscription",
 				# A student counts once in a course.
 				"student": make_doctor(f"_Test Report Student {date}"),
-				"course": make_course(agreement=agreement),
+				"course": make_course(agreement=agreement, period=cls.term),
 				"subscription_date": date,
 				"cost_center": APP,
 			}

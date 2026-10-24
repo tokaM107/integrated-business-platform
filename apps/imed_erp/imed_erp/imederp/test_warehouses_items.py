@@ -203,7 +203,8 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 				{"item_code": item.name, "qty": 600, "t_warehouse": AZARITA_STORE, "basic_rate": 1},
 			],
 		)
-		self.assertEqual(get_reorder_alerts(), [])
+		# Other items may be below their levels on the site (a clean site holds no paper): this item's alerts only.
+		self.assertEqual([a for a in get_reorder_alerts() if a.item_code == item.name], [])
 
 		# Azarita drops to 450 (below its 500) while the total, 1,950, is far above both levels.
 		before = frappe.db.count("Notification Log", {"for_user": SARA})
@@ -228,6 +229,36 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 		self.assertEqual({a.warehouse for a in get_reorder_alerts()}, {AZARITA_STORE})
 		self.assertRaises(frappe.PermissionError, get_reorder_alerts, MAWASAH)
 
+	def test_qa27_a_back_dated_entry_or_a_cancelled_receipt(self):
+		item = self.paper_with_levels()
+		subjects = lambda: frappe.db.count("Notification Log", {"for_user": SARA, "subject": ["like", f"%{item.name}%"]})
+		first = frappe.get_doc(
+			{
+				"doctype": "Stock Entry", "company": COMPANY, "stock_entry_type": "Material Receipt", "purpose": "Material Receipt",
+				"set_posting_time": 1, "posting_date": frappe.utils.add_days(frappe.utils.today(), -10),
+				"items": [{"item_code": item.name, "qty": 600, "t_warehouse": AZARITA_STORE, "basic_rate": 1}],
+			}
+		).insert()
+		first.submit()
+		stock_entry("Material Issue", [{"item_code": item.name, "qty": 200, "s_warehouse": AZARITA_STORE}])
+		self.assertEqual(subjects(), 1)
+		# A receipt keeps it above the level; an issue entered for last week (stock was 600 then) does not alert
+		# again: the stock now goes from 900 to 850, still above 500.
+		top_up = stock_entry("Material Receipt", [{"item_code": item.name, "qty": 500, "t_warehouse": AZARITA_STORE, "basic_rate": 1}])
+		late = frappe.get_doc(
+			{
+				"doctype": "Stock Entry", "company": COMPANY, "stock_entry_type": "Material Issue", "purpose": "Material Issue",
+				"set_posting_time": 1, "posting_date": frappe.utils.add_days(frappe.utils.today(), -7),
+				"items": [{"item_code": item.name, "qty": 50, "s_warehouse": AZARITA_STORE}],
+			}
+		)
+		late.insert()
+		late.submit()
+		self.assertEqual((qty(item.name, AZARITA_STORE), subjects()), (850, 1))
+		# Cancelling the receipt takes it back to 350, below 500: that alerts.
+		top_up.cancel()
+		self.assertEqual((qty(item.name, AZARITA_STORE), subjects()), (350, 2))
+
 	# ---------- Permissions ----------
 	def test_raghad_and_sara_warehouses(self):
 		for warehouse in (MAWASAH, MAWASAH_STORE, DAMAGED, AZARITA_STORE):
@@ -236,6 +267,14 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 			self.assertTrue(frappe.has_permission("Warehouse", "read", doc=warehouse, user=SARA), warehouse)
 		for warehouse in (MAWASAH, MAWASAH_STORE, MAWASAH_EDITIONS, DAMAGED, CENTER):
 			self.assertFalse(frappe.has_permission("Warehouse", "read", doc=warehouse, user=SARA), warehouse)
+
+	def test_library_managers_read_the_stock_settings(self):
+		# Seen in the browser (21 Oct 2026): ERPNext's Stock Entry form reads Stock Settings, whose Default Warehouse
+		# is not theirs; the settings stay readable, their stores stay their own.
+		for user in (RAGHAD, SARA):
+			with self.subTest(user):
+				self.assertTrue(frappe.has_permission("Stock Settings", "read", user=user))
+		self.assertFalse(frappe.has_permission("Warehouse", "read", doc=MAWASAH_STORE, user=SARA))
 
 	def test_sara_cannot_touch_mawasah_through_the_api(self):
 		item = make_item("TEST-WH-PERM")
@@ -259,7 +298,7 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 
 	# ---------- Transfer Mawasah -> Azarita (LIB-08) ----------
 	def test_transfer_moves_stock_without_creating_any(self):
-		item = make_item("TEST-WH-MOVE")
+		item = make_item("TEST-WH-MOVE", group="مستهلكات")
 		stock_entry(
 			"Material Receipt",
 			[
@@ -268,11 +307,20 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 			],
 		)
 
-		# Raghad sends 100 to Azarita.
+		rows = [{"item_code": item.name, "qty": 100, "s_warehouse": MAWASAH_STORE, "t_warehouse": AZARITA_STORE}]
+		# QA-22: Raghad sends to Azarita through Azarita's approved request (test_material_issue.py), not by hand.
 		frappe.set_user(RAGHAD)
-		transfer = stock_entry(
-			"Material Transfer", [{"item_code": item.name, "qty": 100, "s_warehouse": MAWASAH_STORE, "t_warehouse": AZARITA_STORE}]
-		)
+		frappe.db.savepoint("refused")
+		self.assertRaisesRegex(frappe.ValidationError, "through its request", stock_entry, "Material Transfer", rows)
+		frappe.db.rollback(save_point="refused")
+		self.assertEqual(qty(item.name, AZARITA_STORE), 200)
+		# The accountant may, correcting a mistake, with who received it.
+		frappe.set_user("accountant@imed.local")
+		transfer = frappe.get_doc(
+			{"doctype": "Stock Entry", "company": COMPANY, "stock_entry_type": "Material Transfer", "purpose": "Material Transfer",
+				"custom_received_by": "Ahmed (Azarita)", "items": rows}
+		).insert()
+		transfer.submit()
 		frappe.set_user("Administrator")
 
 		self.assertEqual(qty(item.name, MAWASAH_STORE), 900)
@@ -287,7 +335,7 @@ class IntegrationTestWarehousesItems(IntegrationTestCase):
 		)
 		self.assertEqual(sorted((m.warehouse, m.actual_qty) for m in moves), sorted([(MAWASAH_STORE, -100), (AZARITA_STORE, 100)]))
 		self.assertEqual(transfer.purpose, "Material Transfer")
-		self.assertEqual(transfer.owner, RAGHAD)
+		self.assertEqual(transfer.owner, "accountant@imed.local")
 		# Not a purchase: no supplier document, and the stock value only moves between the two stock accounts.
 		gl = frappe.get_all("GL Entry", filters={"voucher_no": transfer.name, "is_cancelled": 0}, fields=["account", "debit", "credit"])
 		self.assertEqual(sum(g.debit - g.credit for g in gl), 0)

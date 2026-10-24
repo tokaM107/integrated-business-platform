@@ -39,20 +39,26 @@ def get_data(filters):
 	for course in frappe.get_list(
 		"App Course",
 		filters=conditions,
-		fields=["name", "course_name", "doctor", "agreement", "period", "subscriptions", "fee_per_student", "platform_fee_total"],
+		fields=["name", "course_name", "doctor", "agreement", "period", "subscriptions", "fee_per_student", "platform_fee_total", "tier"],
 		order_by="period desc, doctor, course_name",
 	):
-		start = frappe.db.get_value("Academic Period", course.period, "start_date")
-		tier = get_tier(course.subscriptions, start)
 		rows.append(
 			{
 				**course,
-				"tier": tier_label(tier),
+				"tier": course_tier(course),
 				"fee_per_student": flt(course.fee_per_student),
 				"platform_fee_total": flt(course.platform_fee_total),
 			}
 		)
 	return rows
+
+
+def course_tier(course):
+	"""QA-34: the tier the course was counted in; a course counted before the tier was kept works it out."""
+	if course.get("tier"):
+		return course.tier
+	start = frappe.db.get_value("Academic Period", course.period, "start_date")
+	return tier_label(get_tier(course.subscriptions, start))
 
 
 def tier_label(tier):

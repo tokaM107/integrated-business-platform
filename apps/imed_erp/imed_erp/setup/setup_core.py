@@ -23,6 +23,7 @@ SHEET = "ورقة"
 REAM = "رزمة"
 BOX = "كرتونة"
 HOUR = "ساعة"
+STUDENT_GROUP = "طالب"
 
 # Paper sits in ورق, one of the inventory groups of setup_library.py (LIB-06). Every item in it is valued at
 # moving average and bought by the box (ensure_paper_items), including paper added later.
@@ -395,16 +396,18 @@ def run():
 	ensure_paper_items()
 
 	# ---------- 6) Customer groups ----------
-	# A doctor is a Customer in the doctor group (CRM-01); a Doctor Agreement accepts only those.
+	# A customer's category is student or doctor (CRM-01): the customer group. A Doctor Agreement accepts only the
+	# doctor group. Whether every customer must have one is still the owner's to say (docs/known-issues.md).
 	from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
 
-	if frappe.db.exists("Customer Group", DOCTOR_GROUP):
-		print(f"exists Customer Group {DOCTOR_GROUP}")
-	else:
-		frappe.get_doc(
-			{"doctype": "Customer Group", "customer_group_name": DOCTOR_GROUP, "parent_customer_group": "All Customer Groups"}
-		).insert()
-		print(f"create Customer Group {DOCTOR_GROUP}")
+	for group in (DOCTOR_GROUP, STUDENT_GROUP):
+		if frappe.db.exists("Customer Group", group):
+			print(f"exists Customer Group {group}")
+		else:
+			frappe.get_doc(
+				{"doctype": "Customer Group", "customer_group_name": group, "parent_customer_group": "All Customer Groups"}
+			).insert()
+			print(f"create Customer Group {group}")
 
 	frappe.db.commit()
 	print(f"DONE   Core setup finished for {COMPANY} ({ABBR}).")

@@ -4,12 +4,12 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, flt, today
+from frappe.utils import cint, flt
 
-from imed_erp.imederp.doctor_accrual import PAYABLE_ACCOUNT, account, cancel
-from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT
+from imed_erp.imederp.doctor_accrual import EXPENSE_ACCOUNT, PAYABLE_ACCOUNT, account, cancel
+from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT, REVENUE_ACCOUNT, app_cost_center
 from imed_erp.imederp.doctype.book_edition.book_edition import get_copy_cost, get_sold_qty
-from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import check_submitted, get_balance, update_balance
+from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_SIGN, check_submitted, get_balance, update_balance
 from imed_erp.imederp.doctype.expense.expense import APPROVER_ROLE, get_approvers, is_approver
 from imed_erp.imederp.expense_reminders import notify
 
@@ -31,6 +31,9 @@ class DoctorLedgerEntry(Document):
 
 	def validate(self):
 		self.protect_approval()
+		if self.docstatus == 0 and self.approval_status not in (APPROVED, REJECTED):
+			# Waiting for the owner or the accountant: the form shows them Approve and Reject.
+			self.approval_status = PENDING if self.needs_approval() else None
 		check_submitted(self.agreement)
 		# The kind of entry gives the sign (doctor_agreement.BALANCE_SIGN); only an adjustment carries its own.
 		if self.entry_type != "Adjustment" and flt(self.amount) <= 0:
@@ -44,8 +47,74 @@ class DoctorLedgerEntry(Document):
 			frappe.throw(_("Edition {0} belongs to another agreement.").format(self.edition))
 		if self.app_course and frappe.db.get_value("App Course", self.app_course, "agreement") != self.agreement:
 			frappe.throw(_("Course {0} belongs to another agreement.").format(self.app_course))
+		self.refuse_unsold_copies_charge()
+		self.check_adjustment_basis()
 		self.validate_source()
 		self.validate_payout()
+
+	def refuse_unsold_copies_charge(self):
+		"""Owner, 21 Oct 2026: the doctor bears nothing for copies left unsold, carried forward or made obsolete by a
+		change of curriculum; the library bears the loss (book_edition.dispose_as_scrap). No charge is saved or
+		submitted any more. One recorded before stays on record: a draft can only be rejected, a submitted one
+		cancelled (docs/known-issues.md lists them)."""
+		if self.entry_type != UNSOLD:
+			return
+		if self.flags.approval_action and self.approval_status == REJECTED:
+			return
+		frappe.throw(
+			_("A doctor is never charged for unsold copies: the library bears them. A curriculum change is disposed of as scrap on the edition."),
+			title=_("Not Charged to the Doctor"),
+		)
+
+	def is_manual_adjustment(self):
+		return self.entry_type == "Adjustment" and not self.sales_invoice and not self.app_course
+
+	def check_adjustment_basis(self):
+		"""A manual adjustment of a doctor's balance (22 Oct 2026): unlike an employee's salary deduction and unlike the
+		loss on unsold or obsolete copies (the library's, never the doctor's), it states why, with its reason, and its
+		basis decides the account:
+		  Correct the Doctor's Share   books: حصة الأطباء, as the sale posted it
+		  Correct the Platform Fee     app: إيراد رسوم المنصة, as the course posted it
+		  Other                        the account the accountant names; nothing is posted without it
+		The doctor's side stays his ledger's account (books: مستحقات للأطباء — الكتب; app: his receivable)."""
+		if not self.is_manual_adjustment():
+			self.adjustment_basis = self.adjustment_account = None
+			return
+		agreement_type = frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type")
+		if self.adjustment_basis == SHARE and agreement_type != "Books":
+			frappe.throw(_("A doctor's share is corrected on a books agreement; this is an app agreement."))
+		if self.adjustment_basis == FEE and agreement_type != "App":
+			frappe.throw(_("A platform fee is corrected on an app agreement; this is a books agreement."))
+		if self.adjustment_basis != OTHER:
+			self.adjustment_account = None
+		elif self.adjustment_account:
+			company = frappe.defaults.get_global_default("company")
+			acc = frappe.db.get_value("Account", self.adjustment_account, ["company", "is_group", "account_type", "disabled"], as_dict=True)
+			if not acc or acc.company != company or acc.is_group or acc.disabled:
+				frappe.throw(_("{0} is not an account of {1} that takes entries.").format(self.adjustment_account, company))
+			if acc.account_type in ("Cash", "Bank", "Receivable", "Payable"):
+				frappe.throw(
+					_("{0} is a treasury or a party's account. Money paid or collected is a Payout or a Collection, not an adjustment.").format(self.adjustment_account)
+				)
+
+	def check_adjustment_ready(self):
+		"""Before it is posted: what it is for, and the account, are clear."""
+		if not self.is_manual_adjustment():
+			return
+		if not (self.remarks or "").strip():
+			frappe.throw(_("Write the reason for adjusting the doctor's balance (Remarks)."), title=_("Reason Needed"))
+		if self.adjustment_basis not in (SHARE, FEE, OTHER):
+			frappe.throw(
+				_("Choose the adjustment's basis. While it is unclear, the accountant clarifies it and nothing is posted."), title=_("Basis Needed")
+			)
+		if self.adjustment_basis == OTHER and not self.adjustment_account:
+			frappe.throw(
+				_("Name the account this adjustment belongs to. Nothing is posted until the accountant does."), title=_("Account Needed")
+			)
+
+	def needs_approval(self):
+		"""A deduction, and any adjustment of the balance by hand, either way (22 Oct 2026)."""
+		return self.is_deduction() or self.is_manual_adjustment()
 
 	def is_deduction(self):
 		"""A charge for unsold copies, or an adjustment taking money off the doctor by hand. A credit note's
@@ -90,11 +159,11 @@ class DoctorLedgerEntry(Document):
 		self.save()
 
 	def check_waiting(self):
-		if self.docstatus != 0 or not self.is_deduction() or self.approval_status == REJECTED:
+		if self.docstatus != 0 or not self.needs_approval() or self.approval_status == REJECTED:
 			frappe.throw(_("{0} is not a deduction waiting for approval.").format(self.name))
 
 	def validate_approved(self):
-		if not self.is_deduction() or self.approval_status == APPROVED:
+		if not self.needs_approval() or self.approval_status == APPROVED:
 			return
 		# An approver's own deduction is approved as he submits it, like an expense.
 		if is_approver():
@@ -122,6 +191,9 @@ class DoctorLedgerEntry(Document):
 		treasury = frappe.db.get_value("Account", self.treasury, ["account_type", "is_group"], as_dict=True)
 		if not treasury or treasury.is_group or treasury.account_type not in ("Cash", "Bank"):
 			frappe.throw(_("{0} is not a treasury. Choose a cash box or a wallet.").format(self.treasury), title=_("Wrong Treasury"))
+		# QA-11: the agreement's row is locked first, so two payouts or collections submitted together wait for each
+		# other and the second sees the balance the first left.
+		lock_agreement(self.agreement)
 		owed = flt(get_balance(self.agreement), 2)
 		if self.entry_type == "Collection":
 			if flt(self.amount) > owed:
@@ -165,11 +237,79 @@ class DoctorLedgerEntry(Document):
 			)
 
 	def before_submit(self):
+		self.check_adjustment_ready()
 		self.validate_approved()
 		if self.entry_type == "Payout":
 			self.journal_entry = self.post_payout()
 		elif self.entry_type == "Collection":
 			self.journal_entry = self.post_collection()
+		elif self.is_entered_by_hand():
+			self.journal_entry = self.post_by_hand()
+
+	def is_entered_by_hand(self):
+		"""An accrual, an adjustment, or a charge for unsold copies recorded before 21 Oct 2026, that no sale and no
+		course posted."""
+		return self.entry_type in ("Accrual", "Adjustment", UNSOLD) and not self.sales_invoice and not self.app_course
+
+	def post_by_hand(self):
+		"""QA-02: the accounts follow the doctor's ledger for what is entered by hand too, or the two drift apart.
+		  Books, more for the doctor (an accrual, a plus adjustment):
+		    Dr حصة الأطباء / Cr مستحقات للأطباء — الكتب, as a sale posts it (doctor_accrual.py)
+		  Books, less (a charge for unsold copies, a minus adjustment): the other way round. The charge takes back
+		    what the copies cost from the doctors' share, so the payable stays equal to the ledger (accountant to
+		    confirm; known-issues.md).
+		  App, more (a plus adjustment, an accrual): Dr مستحقات على الأطباء — رسوم المنصة (party: the doctor) /
+		    Cr إيراد رسوم المنصة, as a course posts it (platform_fee_posting.py); less: the other way round.
+		Every line on the business's cost center: the edition's library for books, the app for app fees."""
+		amount = abs(flt(self.amount))
+		more = BALANCE_SIGN.get(self.entry_type, 0) * flt(self.amount) > 0
+		agreement = frappe.db.get_value("Doctor Agreement", self.agreement, ["doctor", "agreement_type"], as_dict=True)
+		if agreement.agreement_type == "App":
+			# The doctor owes the group: more on his account is more owed by him.
+			cost_center = app_cost_center()
+			debit = {"account": RECEIVABLE_ACCOUNT, "party_type": "Customer", "party": agreement.doctor}
+			credit = {"account": REVENUE_ACCOUNT}
+		else:
+			cost_center = self.books_cost_center()
+			debit, credit = {"account": EXPENSE_ACCOUNT}, {"account": PAYABLE_ACCOUNT}
+		company = frappe.db.get_value("Cost Center", cost_center, "company")
+		if self.is_manual_adjustment() and self.adjustment_basis == OTHER:
+			# The doctor's side stays his ledger's; the other side is the account the accountant named.
+			other = {"account": self.adjustment_account}
+			if agreement.agreement_type == "App":
+				credit = other
+			else:
+				debit = other
+		if not more:
+			debit, credit = credit, debit
+		journal_entry = frappe.get_doc(
+			{
+				"doctype": "Journal Entry",
+				"voucher_type": "Journal Entry",
+				"company": company,
+				"posting_date": self.entry_date,
+				"accounts": [
+					{**debit, "account": full_account(company, debit["account"]), "cost_center": cost_center, "debit_in_account_currency": amount},
+					{**credit, "account": full_account(company, credit["account"]), "cost_center": cost_center, "credit_in_account_currency": amount},
+				],
+				"user_remark": _("{0} {1} for {2} under {3}. {4}").format(
+					_(self.entry_type), self.name, agreement.doctor, self.agreement, self.remarks or ""
+				).strip(),
+			}
+		)
+		# The entry was approved where it needed to be (DOC-22); the journal entry is its posting, not a new decision.
+		journal_entry.flags.ignore_permissions = True
+		journal_entry.insert()
+		journal_entry.submit()
+		return journal_entry.name
+
+	def books_cost_center(self):
+		"""The library of the edition, else of the agreement's latest edition, else the company's default."""
+		edition = self.edition or frappe.db.get_value(
+			"Book Edition", {"agreement": self.agreement, "docstatus": 1}, "name", order_by="creation desc"
+		)
+		cost_center = edition and frappe.db.get_value("Book Edition", edition, "cost_center")
+		return cost_center or frappe.get_cached_value("Company", frappe.defaults.get_global_default("company"), "cost_center")
 
 	def post_payout(self):
 		"""Dr مستحقات للأطباء — الكتب / Cr the treasury. The journal entry runs its own checks, among them the
@@ -236,88 +376,57 @@ class DoctorLedgerEntry(Document):
 		if period:
 			send_statement(self.agreement, period, _("{0} {1} of {2}").format(_(self.entry_type), self.name, abs(flt(self.amount))))
 
+	def before_cancel(self):
+		# A manual adjustment is reversed only by the owner or the accountant, with the reason kept.
+		if self.is_manual_adjustment():
+			if not is_approver():
+				frappe.throw(_("A manual adjustment is reversed by the owner or the accountant only."), frappe.PermissionError)
+			if not (self.cancel_reason or "").strip():
+				frappe.throw(_("Reversing an adjustment needs a reason."), title=_("Reason Needed"))
+
 	def on_cancel(self):
 		# A payout's or a collection's journal entry goes with it; a sale's goes with the sale
 		# (doctor_accrual.cancel_accruals). A course's entries are never cancelled (platform_fee_posting.py).
-		if self.entry_type in ("Payout", "Collection") and self.journal_entry:
+		if (self.entry_type in ("Payout", "Collection") or self.is_entered_by_hand()) and self.journal_entry:
 			if frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
 				cancel("Journal Entry", self.journal_entry)
 		update_balance(self.agreement, self)
 
 
 UNSOLD = "Unsold Copies Charge"
+SHARE, FEE, OTHER = "Correct the Doctor's Share", "Correct the Platform Fee", "Other"
+
+
+def full_account(company, name):
+	"""An account named without the company's abbreviation (the app's own accounts), or already in full (one the
+	accountant chose)."""
+	return name if frappe.db.exists("Account", name) else account(company, name)
+
+
+@frappe.whitelist(methods=["POST"])
+def reverse_adjustment(name, reason):
+	"""Reverse a submitted manual adjustment: the owner or the accountant, with a reason; its journal entry is reversed
+	and both stay on record."""
+	from imed_erp.imederp.sales_cancellation import clean_reason
+
+	frappe.only_for(APPROVER_ROLE)
+	reason = clean_reason(reason)
+	if not reason:
+		frappe.throw(_("Reversing an adjustment needs a reason."), title=_("Reason Needed"))
+	doc = frappe.get_doc("Doctor Ledger Entry", name)
+	if not doc.is_manual_adjustment() or doc.docstatus != 1:
+		frappe.throw(_("{0} is not a submitted manual adjustment.").format(name))
+	doc.cancel_reason = reason
+	doc.flags.ignore_permissions = True
+	doc.cancel()
+	return doc.name
+
+
+def lock_agreement(agreement):
+	frappe.db.get_value("Doctor Agreement", agreement, "name", for_update=True)
 
 
 EDITION_COST_FIELDS = ["paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"]
-
-
-def charge_unsold_copies(period):
-	"""When a term or a module ends (its Academic Period is closed), the copies the doctor asked for and did not
-	sell are charged to him at what they cost to make (owner, 10 Oct 2026; DOC-18). An edition carried forward
-	ends with the period it was carried to. Returns the drafts made."""
-	periods = [period, *descendants(period)]
-	drafts = []
-	for edition in frappe.get_all(
-		"Book Edition",
-		filters={"docstatus": 1},
-		fields=["name", "agreement", "period", "carried_to_period", "doctor_qty", "edition_name", *EDITION_COST_FIELDS],
-	):
-		if (edition.carried_to_period or edition.period) in periods:
-			drafts.append(charge_edition(edition, _("when {0} ended").format(period)))
-	return [d for d in drafts if d]
-
-
-def charge_edition(edition, reason):
-	"""The draft charge for the doctor's unsold copies of one edition, in its current period, or None when there is
-	nothing to charge or it is charged already (closing again, or a period closing after the edition was cancelled,
-	adds nothing). Copies the library added are its own, so sales count against the doctor's copies first. The
-	charge is applied only when the accountant or the owner approves it (DOC-22), and the accountant is told."""
-	if isinstance(edition, str):
-		edition = frappe.db.get_value(
-			"Book Edition",
-			edition,
-			["name", "agreement", "period", "carried_to_period", "doctor_qty", "edition_name", *EDITION_COST_FIELDS],
-			as_dict=True,
-		)
-	current = edition.carried_to_period or edition.period
-	unsold = cint(edition.doctor_qty) - cint(get_sold_qty(edition.name))
-	cost = get_copy_cost(edition)
-	amount = flt(max(unsold, 0) * cost, 2)
-	if amount <= 0 or frappe.db.exists(
-		"Doctor Ledger Entry", {"edition": edition.name, "period": current, "entry_type": UNSOLD, "docstatus": ["<", 2]}
-	):
-		return None
-	entry = frappe.get_doc(
-		{
-			"doctype": "Doctor Ledger Entry",
-			"agreement": edition.agreement,
-			"period": current,
-			"entry_date": today(),
-			"entry_type": UNSOLD,
-			"edition": edition.name,
-			"qty": unsold,
-			"amount": amount,
-			"remarks": _("{0}: {1} of the doctor's {2} copies unsold x {3} a copy, {4}.").format(
-				edition.edition_name, unsold, cint(edition.doctor_qty), cost, reason
-			),
-		}
-	)
-	entry.approval_status = PENDING
-	entry.flags.approval_action = True
-	# Raised by the system for whoever closed the period or recorded the cancellation (a branch manager may);
-	# only an approver applies it.
-	entry.flags.ignore_permissions = True
-	entry.insert()
-	notify(
-		get_approvers(),
-		_("Charge {0} of {1} on {2} for unsold copies of {3} is waiting for your approval.").format(
-			entry.name, frappe.format_value(amount, {"fieldtype": "Currency"}), edition.agreement, edition.edition_name
-		),
-		"Doctor Ledger Entry",
-		entry.name,
-		event="expense_approval",
-	)
-	return entry.name
 
 
 def descendants(period):

@@ -306,7 +306,15 @@ def approve(name):
 
 @frappe.whitelist()
 def reject(name, reason=None):
+	# SEC-01: kept as plain text; db_set skips Frappe's cleaning, and the form shows it. QA-25: and it is required.
+	from imed_erp.imederp.sales_cancellation import MAX_REASON_LENGTH, clean_reason
+
 	doc = get_pending(name)
+	reason = clean_reason(reason)
+	if not reason:
+		frappe.throw(_("Give the reason for rejecting the request."), title=_("Rejection Reason Required"))
+	if len(reason) > MAX_REASON_LENGTH:
+		frappe.throw(_("The rejection reason is too long: at most {0} characters.").format(MAX_REASON_LENGTH))
 	doc.flags.imed_approval = True
 	# db_set: from now on validate refuses every save.
 	doc.db_set(
@@ -317,8 +325,8 @@ def reject(name, reason=None):
 			"custom_rejection_reason": reason,
 		}
 	)
-	doc.add_comment("Comment", _("Rejected: {0}").format(reason or _("no reason given")))
-	notify_requester(doc, _("Material Request {0} was rejected.") + (f" {reason}" if reason else ""))
+	doc.add_comment("Comment", _("Rejected: {0}").format(reason))
+	notify_requester(doc, _("Material Request {0} was rejected.") + f" {reason}")
 
 
 def get_pending(name):
@@ -418,6 +426,7 @@ def validate_stock_entry(doc, method=None):
 def before_submit_stock_entry(doc, method=None):
 	rows = request_rows_of(doc)
 	if not rows:
+		check_transfer_between_branches(doc)
 		return
 	if not (doc.custom_received_by or "").strip():
 		frappe.throw(_("Enter who received the materials (Received By)."), title=_("Missing Recipient"))
@@ -429,6 +438,34 @@ def before_submit_stock_entry(doc, method=None):
 			)
 	check_not_over_issued(doc, rows)
 	doc.custom_issued_by = frappe.session.user
+
+
+def check_transfer_between_branches(doc):
+	"""QA-22: stock moved from one branch's store to another's goes out through a branch request, approved, with who
+	received it and, for paper, the machine (LIB-08, PRN-05). The owner and the accountant may move it by hand, to
+	correct a mistake, still with who received it and the machine."""
+	from imed_erp.imederp.stock_count import branch_of
+
+	if doc.purpose != "Material Transfer" or doc.flags.from_damaged_stock:
+		return
+	between = [
+		row for row in doc.items if row.s_warehouse and row.t_warehouse and branch_of(row.s_warehouse) != branch_of(row.t_warehouse)
+	]
+	if not between:
+		return
+	if not {"Accounts Manager", "System Manager"} & set(frappe.get_roles()):
+		frappe.throw(
+			_("Materials go to another branch through its request, once approved: issue them from the request."),
+			title=_("Request Needed"),
+		)
+	if not (doc.custom_received_by or "").strip():
+		frappe.throw(_("Enter who received the materials (Received By)."), title=_("Missing Recipient"))
+	for row in between:
+		if needs_machine(row.item_code) and not row.get("custom_printing_machine"):
+			frappe.throw(
+				_("Row #{0}: {1} is issued to a printing machine. Choose the machine.").format(row.idx, row.item_code),
+				title=_("Missing Printing Machine"),
+			)
 
 
 def check_not_over_issued(doc, rows):

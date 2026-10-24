@@ -34,6 +34,10 @@ ACCOUNTS = [
 	("خزينة مكتبة المواساة", "النقدية بالخزائن", "Cash", 0),
 	("خزينة سنتر Imed", "النقدية بالخزائن", "Cash", 0),
 	("خزينة X Studio", "النقدية بالخزائن", "Cash", 0),
+	# The cash a branch hands over each week (ACC-09, Cash Handover): still the group's cash, now in the hands of the
+	# owner or the accountant who signed for it. Cash boxes, so they too never go below zero (cash_balance.py).
+	("عهدة المالك النقدية", "النقدية بالخزائن", "Cash", 0),
+	("عهدة المحاسب النقدية", "النقدية بالخزائن", "Cash", 0),
 	# The app is paid and pays online, so its treasury is a bank-type account, not a cash box.
 	("خزينة تطبيق BA Plus", "الحسابات البنكية", "Bank", 0),
 	("محفظة InstaPay", "الحسابات البنكية", "Bank", 0),
@@ -62,6 +66,10 @@ ACCOUNTS = [
 	# is a Customer (CRM-01), which ERPNext does not allow as the party of a payable account, so each doctor's
 	# share is kept in the doctor's ledger (Doctor Ledger Entry) instead (14 Oct 2026).
 	("مستحقات للأطباء — الكتب", "الذمم الدائنة", None, 0),
+	# What students pay BA Plus for a course, in cash at a branch or electronically (App Payment, 22 Oct 2026): the
+	# course is the doctor's (APP-05), so the money is held for the doctor, never the group's revenue. A plain
+	# liability for the same reason as the books one above; each doctor's part is in the App Payments report.
+	("مقبوضات الطلبة لحساب الأطباء — التطبيق", "الذمم الدائنة", None, 0),
 	# Lecturers' share under the hall revenue-share model (HAL-12).
 	("مستحقات للمحاضرين", "الذمم الدائنة", "Payable", 0),
 	# ---- Income: one account per business ----

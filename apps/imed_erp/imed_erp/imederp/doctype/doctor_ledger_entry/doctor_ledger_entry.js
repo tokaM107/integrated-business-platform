@@ -20,6 +20,22 @@ frappe.ui.form.on("Doctor Ledger Entry", {
 		} else {
 			frm.set_intro("");
 		}
+		// A manual adjustment is reversed by the owner or the accountant, with a reason (its entry goes with it).
+		const manual = doc.entry_type === "Adjustment" && !doc.sales_invoice && !doc.app_course;
+		if (doc.docstatus === 2 && doc.cancel_reason) frm.set_intro(__("Reversed: {0}", [doc.cancel_reason]), "red");
+		if (doc.docstatus === 1 && manual && (doc.__onload || {}).is_approver) {
+			frm.page.clear_secondary_action();
+			frm.add_custom_button(__("Reverse with Reason"), () =>
+				frappe.prompt(
+					{ fieldname: "reason", fieldtype: "Small Text", label: __("Why is it reversed?"), reqd: 1 },
+					({ reason }) =>
+						frappe
+							.call("imed_erp.imederp.doctype.doctor_ledger_entry.doctor_ledger_entry.reverse_adjustment", { name: doc.name, reason })
+							.then(() => frm.reload_doc()),
+					__("Reverse Adjustment")
+				)
+			);
+		}
 		if (doc.docstatus !== 0 || frm.is_new() || frm.is_dirty()) return;
 		if (doc.approval_status === "Rejected") {
 			frm.page.clear_primary_action();

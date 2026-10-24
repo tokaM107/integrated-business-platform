@@ -22,39 +22,35 @@ TEAL, TEAL_LIGHT, AMBER, SLATE = "#0f766e", "#1d9386", "#b7791f", "#48565f"
 # "EGP NaN" for a sum of zero (shorten_number(0) returns an empty string).
 #
 # The owner's request of 21 Oct 2026: the sidebar has every screen, the dashboard the money. First the money,
-# worked out from the ledger (imederp/owner_figures.py, "Custom" cards), then the bookings' own figures.
+# worked out from the ledger (imederp/owner_figures.py, "Custom" cards). Then, QA-06: what is counted over a stretch
+# of time is this month to today (imederp/owner_dashboard.py), never all time, future or tentative bookings; the
+# yesterday band (owner_yesterday.py) has yesterday's.
+F = "imed_erp.imederp.owner_figures."
+M = "imed_erp.imederp.owner_dashboard."
 money_cards = [
-    dict(label="Cash in the Cash Boxes", method="cash_in_boxes", color=TEAL),
-    dict(label="Revenue This Month", method="revenue_this_month", color=TEAL),
-    dict(label="Expenses This Month", method="expenses_this_month", color=AMBER),
-    dict(label="Net This Month", method="net_this_month", color=TEAL),
-    dict(label="Owed to Us", method="owed_to_us", color=AMBER),
-    dict(label="We Owe", method="we_owe", color=SLATE),
+    dict(label="Cash in the Cash Boxes", money=1, method=F + "cash_in_boxes", color=TEAL),
+    dict(label="Revenue This Month", money=1, method=F + "revenue_this_month", color=TEAL),
+    dict(label="Expenses This Month", money=1, method=F + "expenses_this_month", color=AMBER),
+    dict(label="Net This Month", money=1, method=F + "net_this_month", color=TEAL),
+    dict(label="Owed to Us", money=1, method=F + "owed_to_us", color=AMBER),
+    dict(label="We Owe", money=1, method=F + "we_owe", color=SLATE),
+    dict(label="Platform Fees This Month", money=1, method=M + "platform_fees_this_month", color=TEAL),
+    dict(label="Collected from Doctors This Month", money=1, method=M + "app_collections_this_month", color=TEAL),
+    dict(label="Cash Shortages This Month", money=1, method=M + "cash_shortages_this_month", color=AMBER),
+    dict(label="Open Cash Discrepancies", method=M + "cash_discrepancies_open", color=AMBER),
 ]
-# The owner's own figures (5.1): the studio's bookings and hours and the halls' bookings. A booking is not
-# submitted; a cancelled one or a no-show is left out.
 booking_cards = [
-    dict(label="Studio Bookings", doc="Booking",
-         func="Count", field="", color=TEAL,
-         filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
-                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
-    # Hours, not money: no currency, and the full number (a zero would otherwise show as NaN).
-    dict(label="Studio Hours", doc="Booking",
-         func="Sum", field="hours", color=TEAL, full=1, plain=1,
-         filters=[["Booking", "cost_center", "=", "استوديو X - MMG"],
-                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
-    dict(label="Hall Bookings", doc="Booking",
-         func="Count", field="", color=SLATE,
-         filters=[["Booking", "cost_center", "=", "قاعات Imed - MMG"],
-                  ["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
-    dict(label="Unpaid on Bookings", doc="Booking",
-         func="Sum", field="outstanding_amount", color=AMBER, full=1,
-         filters=[["Booking", "status", "not in", ["Cancelled", "No Show"]]]),
+    dict(label="Studio Bookings This Month", method=M + "studio_bookings_this_month", color=TEAL),
+    dict(label="Studio Hours This Month", method=M + "studio_hours_this_month", color=TEAL),
+    dict(label="Hall Bookings This Month", method=M + "hall_bookings_this_month", color=SLATE),
+    dict(label="Unpaid on Bookings", money=1, method=M + "unpaid_on_bookings_card", color=AMBER),
 ]
 cards = money_cards + booking_cards
-# Cards the dashboard showed before 21 Oct 2026: counts and all-time sums, not the owner's money.
+# Cards of earlier runs: counts and all-time sums, not the owner's money, and yesterday's figures now in the
+# yesterday band.
 RETIRED_CARDS = ["Total Sales", "Invoices Count", "Outstanding from Customers", "Total Purchases", "Customers",
-                 "Doctor Agreements"]
+                 "Doctor Agreements", "Studio Bookings", "Studio Hours", "Hall Bookings", "Revenue Yesterday",
+                 "Expenses Yesterday", "Sheets Printed Yesterday"]
 for label in RETIRED_CARDS:
     if frappe.db.exists("Number Card", label):
         frappe.delete_doc("Number Card", label, force=1)
@@ -73,10 +69,14 @@ for c in cards:
             "show_full_number": c.get("full", 0),
         }
         if c.get("method"):
+            # Seen in the browser (21 Oct 2026): a card with a currency is always shown as money, and Frappe fills
+            # the system currency in when none is given, so counts read "EGP NaN". A count has none; and a full
+            # number, since a shortened 0 is shown as NaN.
             values.update({
                 "type": "Custom",
-                "method": f"imed_erp.imederp.owner_figures.{c['method']}",
-                "currency": frappe.get_cached_value("Company", COMPANY, "default_currency"),
+                "method": c["method"],
+                "module": "ImedERP",
+                "currency": frappe.get_cached_value("Company", COMPANY, "default_currency") if c.get("money") else None,
                 "show_full_number": 1,
                 "show_percentage_stats": 0,
             })
@@ -91,7 +91,7 @@ for c in cards:
                 "stats_time_interval": "Monthly",
             })
         doc = frappe.get_doc(values).insert()
-        if c.get("plain"):
+        if c.get("method") and not c.get("money"):
             # Frappe fills an empty currency with the user's default on insert.
             frappe.db.set_value("Number Card", doc.name, "currency", None)
         c["real"] = doc.name
@@ -107,14 +107,13 @@ frappe.db.commit()
 charts = [
     # What is in each cash box now: the Cash Box Balances report's own chart.
     dict(label="Cash by Cash Box", report="Cash Box Balances", ctype="Bar", color=TEAL),
-    dict(label="Revenue by Business", doc="Sales Invoice Item",
-         based_on="cost_center", value_field="base_net_amount",
-         ctype="Bar", color=TEAL_LIGHT, timespan=None, time_interval=None,
-         parent_doc="Sales Invoice", filters=[["Sales Invoice Item", "docstatus", "=", 1]]),
     dict(label="Sales Trend", doc="Sales Invoice",
          based_on="posting_date", value_field="grand_total",
          ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
          parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
+    # QA-06: from the ledger's income accounts, this month to today, so revenue posted by journal entry is in.
+    dict(label="Revenue by Business", source="Revenue by Business (Ledger)",
+         ctype="Bar", color=TEAL_LIGHT),
     dict(label="Stock Value by Warehouse", doc="Bin",
          based_on="warehouse", value_field="stock_value",
          ctype="Donut", color=TEAL, timespan=None, time_interval=None,
@@ -129,12 +128,21 @@ for ch in charts:
         d = {
             "doctype": "Dashboard Chart",
             "chart_name": ch["label"],
+            "document_type": ch.get("doc"),
             "type": ch["ctype"],
             "color": ch["color"],
             "is_public": 1,
         }
         if ch.get("report"):
             d.update({"chart_type": "Report", "report_name": ch["report"], "use_report_chart": 1, "filters_json": "{}"})
+        elif ch.get("source"):
+            if not frappe.db.exists("Dashboard Chart Source", ch["source"]):
+                from frappe.modules.import_file import import_file_by_path
+
+                import_file_by_path(frappe.get_app_path(
+                    "imed_erp", "imederp", "dashboard_chart_source", "revenue_by_business_ledger", "revenue_by_business_ledger.json"
+                ))
+            d.update({"chart_type": "Custom", "source": ch["source"], "module": "ImedERP", "filters_json": "{}"})
         elif ch["ctype"] in ("Bar", "Donut"):
             d.update({
                 "document_type": ch["doc"],
@@ -185,6 +193,10 @@ approvals = [
     waiting("Inter Business Transfer", "Transfers to Confirm", [["status", "=", "Sent"]]),
     # DOC-22: a charge on a doctor is applied only once the owner or the accountant approves (submits) it.
     waiting("Doctor Ledger Entry", "Doctor Charges to Approve", [["approval_status", "=", "Pending Approval"], ["docstatus", "=", 0]]),
+    # A shortage or surplus at a daily close still open (Cash Discrepancy, OPEN), and the recoveries the accountant
+    # recommended, which only the owner approves.
+    waiting("Cash Discrepancy", "Cash Discrepancies to Review", [["status", "in", ["Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review"]]]),
+    waiting("Cash Discrepancy", "Recoveries to Approve", [["status", "=", "Recovery Recommended"]]),
 ]
 shortcuts = approvals
 

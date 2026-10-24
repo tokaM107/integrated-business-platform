@@ -110,3 +110,15 @@ class IntegrationTestExpenseReport(ExpenseFixtures, IntegrationTestCase):
 		self.assertEqual(totals, {"2026-09": 11600, "2026-10": 800})
 		chart = result[3]
 		self.assertEqual(chart["data"]["labels"], ["2026-09", "2026-10"])
+
+	def test_qa32_shared_premises_expenses_are_explained(self):
+		self.assertIsNone(execute({"expense_category": self.root})[2])
+		# The other tests share the fixtures: this expense is undone after it.
+		frappe.db.savepoint("shared_premises")
+		try:
+			self.submit_expense(posting_date="2026-09-05", amount=600, activity="مصروفات المقر المشتركة - MMG", treasury="الخزينة الرئيسية - MMG")
+			message = execute({"expense_category": self.root})[2]
+			self.assertIn("shared premises", message)
+			self.assertIn("1 of these expenses", message)
+		finally:
+			frappe.db.rollback(save_point="shared_premises")

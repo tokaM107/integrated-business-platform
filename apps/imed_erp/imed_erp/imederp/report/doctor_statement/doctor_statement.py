@@ -83,9 +83,24 @@ def get_data(filters):
 	def signed(entry):
 		return BALANCE_SIGN.get(entry.entry_type, 0) * flt(entry.amount)
 
+	# QA-01: an entry belongs before this period by the period it names, not by its date. A payout, a charge or a
+	# collection for a closed term is often recorded after the next term has started; it is still that term's,
+	# so it is part of what is brought forward. A period that overlaps this one (the term above a module) falls
+	# back to the date.
+	ends = dict(frappe.get_all("Academic Period", fields=["name", "end_date"], as_list=True))
+	starts = dict(frappe.get_all("Academic Period", fields=["name", "start_date"], as_list=True))
+
+	def before_period(entry):
+		if entry.period and entry.period in ends:
+			if getdate(ends[entry.period]) < start:
+				return True
+			if getdate(starts[entry.period]) >= start:
+				return False
+		return getdate(entry.entry_date) < start
+
 	entries = get_entries(filters.agreement)
 	movements = [e for e in entries if in_period(e)]
-	opening = sum(signed(e) for e in entries if not in_period(e) and getdate(e.entry_date) < start)
+	opening = sum(signed(e) for e in entries if not in_period(e) and before_period(e))
 
 	rows = [{"description": _("Balance Brought Forward"), "balance": opening, "is_total": 1}]
 	balance, owed_total, paid_total = opening, 0, 0
@@ -121,8 +136,7 @@ def get_data(filters):
 
 	# APP-11: the platform fees, one row per course: what its entries add up to in the period (every student,
 	# and the tier changes, platform_fee_posting.py), with the course as it was last counted.
-	from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_tier
-	from imed_erp.imederp.report.platform_fees.platform_fees import tier_label
+	from imed_erp.imederp.report.platform_fees.platform_fees import course_tier
 
 	fees = {}
 	for entry in movements:
@@ -130,9 +144,8 @@ def get_data(filters):
 			fees[entry.app_course] = fees.get(entry.app_course, 0) + signed(entry)
 	for name, amount in fees.items():
 		course = frappe.db.get_value(
-			"App Course", name, ["course_name", "period", "subscriptions", "fee_per_student"], as_dict=True
+			"App Course", name, ["course_name", "period", "subscriptions", "fee_per_student", "tier"], as_dict=True
 		)
-		start = frappe.db.get_value("Academic Period", course.period, "start_date")
 		balance += amount
 		owed_total += amount
 		rows.append(
@@ -140,7 +153,7 @@ def get_data(filters):
 				"description": _("Platform Fee"),
 				"course_name": course.course_name,
 				"students": course.subscriptions,
-				"tier": tier_label(get_tier(course.subscriptions, start)),
+				"tier": course_tier(course),
 				"fee_per_student": course.fee_per_student,
 				"owed": amount,
 				"balance": balance,

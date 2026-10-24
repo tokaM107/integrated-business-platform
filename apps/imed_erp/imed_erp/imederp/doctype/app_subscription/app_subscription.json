@@ -17,6 +17,13 @@
   "subscription_date",
   "platform_fee",
   "withdrawn",
+  "source_section",
+  "source",
+  "source_system",
+  "column_break_source",
+  "external_id",
+  "import_key",
+  "import_log",
   "amended_from"
  ],
  "fields": [
@@ -64,14 +71,14 @@
    "read_only": 1
   },
   {
-   "description": "The business this record belongs to. Branch managers only see their own.",
+   "description": "Always BA Plus: the platform fee is the app's revenue, whoever subscribed the student.",
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Cost Center",
    "link_filters": "[[\"Cost Center\", \"is_group\", \"=\", 0]]",
    "options": "Cost Center",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "subscription_date",
@@ -108,13 +115,68 @@
    "print_hide": 1,
    "read_only": 1,
    "search_index": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source"
+  },
+  {
+   "default": "Manual",
+   "description": "Manual: entered here. Imported: from BA Plus, changed only there (INT-01).",
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Source",
+   "no_copy": 1,
+   "options": "Manual\nImported",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_system",
+   "fieldtype": "Data",
+   "label": "Source System",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_source",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The subscription's id in BA Plus.",
+   "fieldname": "external_id",
+   "fieldtype": "Data",
+   "label": "External ID",
+   "no_copy": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Source System and External ID together: an imported subscription is recorded once.",
+   "fieldname": "import_key",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Import Key",
+   "no_copy": 1,
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "import_log",
+   "fieldtype": "Link",
+   "label": "Import Log",
+   "no_copy": 1,
+   "options": "Integration Import Log",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-19 13:00:00.000000",
+ "modified": "2026-10-22 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "App Subscription",

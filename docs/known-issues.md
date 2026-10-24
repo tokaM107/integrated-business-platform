@@ -41,7 +41,7 @@ Each item should have a GitHub issue; put its number in the last column once cre
 | Paper counters (printer readings, sheets consumed vs sold) | PRN | Built: *Printing Machine*, *Daily Counter Reading*, *Printer Reading* (machine linked), the *Daily Printing* report |
 | Doctor agreements, editions and settlements | DOC | Started: *Doctor Agreement*, *Book Edition*, *Doctor Ledger Entry* |
 | BA+ app subscriptions and platform fees | APP | Courses, tiers, the fee per course, posted to the doctor's account, collected into a treasury, and the report (APP-01 to 07) |
-| Integrations with the library system, studio booking system and BA+ app | INT | Not started (open questions ★ 10, 27, 28) |
+| Integrations with the library system, studio booking system and BA+ app | INT | BA Plus's courses and subscriptions (INT-05, `app_import.py`) and the shared run log (*Integration Import Log*, INT-07) built and tested on synthetic rows, waiting for a real BA Plus export; the booking import written, not run; the libraries' sales and stock not started (open questions ★ 10, 27, 28) |
 | Mobile application | — | Not started |
 | AI assistant (owner only, read only) | AI | Chat window, voice and permissions done; model not connected yet (`imed_erp/assistant/providers.py`) |
 | Unified notifications (WhatsApp / SMS / in-app) | CORE-10 | Skeleton: `imed_erp/notification_service.py` |
@@ -57,20 +57,20 @@ sections of this file. Each row says what it needs before it can be built.
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
 | 1 | APP-05, APP-06, ACC-13 (Must) | Done on 19 Oct: the fee is posted to the doctor's account with every student (decided that day), and a Collection goes into the treasury it names. Open: what a withdrawal does (`COUNT_WITHDRAWN`). | | |
-| 2 | ACC-03 (Must) | No daily close: nothing compares the cash counted in a box with its balance. | A shortage at a branch is found only at the weekly hand-over, if at all. | How the close is made (ERPNext POS Closing Entry per library, or a daily count per treasury) and who approves it. Accountant. |
+| 2 | ACC-03 (Must) | Done on 21 Oct 2026 to the owner's confirmed rules: the daily close by the branch manager, the Cash Discrepancy investigated by the accountant, the weekly review, reopening by the owner and the accountant, cash boxes never below zero (README, *Cash boxes*). | - | Legal and accounting points still to confirm: *ACC-03, what is still to confirm* below. |
 | 3 | ACC-05 (Must) | Revenue is recorded when the invoice is submitted (ERPNext's accrual basis), not when it is collected; the rest shows as receivables. | The P&L can show revenue not collected yet. | Keep accrual (usual accounting, receivables report shows what is owed) or follow the text. Accountant. |
 | 4 | ACC-04 (Must) | Done on 20 Oct for bookings: a deposit is a Payment Entry into the business's cash box, named with its booking, and is taken off the invoice when the booking is completed (README, *Price and money*). It is the customer's advance in العملاء: the account العرابين المقبوضة is still not used (ERPNext uses it only if the company books every advance in a separate account, a company-wide switch). | | Accountant: use العرابين المقبوضة (the company's "Book advance payments in separate party account"), or keep advances on the customer. |
-| 5 | ACC-09 (Must) | The weekly hand-over to the owner is an *Inter Business Transfer* to the main treasury; there is no owner or bank account to hand over to, and it mixes with transfers between businesses. | The owner's receipts cannot be listed on their own. | An account for the owner's custody (and a bank account if cash goes to the bank). Owner. |
+| 5 | ACC-09 (Must) | **Done 22 Oct 2026**: Cash Handover to the owner or the accountant, a paper receipt signed by hand and scanned back, confirmed by the receiver; posted to عهدة المالك النقدية / عهدة المحاسب النقدية (Cash Close Settings). | - | Still open: handing cash to the bank (no bank account in the chart yet). Owner. |
 | 6 | ACC-10 (Should) | Wallets (InstaPay, Vodafone Cash) are not reconciled with their statements. | Wallet differences go unseen. | After go-live. |
 
 ### Before go-live
 
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
-| 7 | SEC-05 (Must) | No daily automatic backup kept off the server. | A failed server loses the data. | Set up with the production server (week C): scheduled `bench backup --with-files` and a copy off the server. |
+| 7 | SEC-05 (Must) | Script ready on 20 Oct (`scripts/backup_offsite.sh`, docs/production-hardening.md): a nightly checked backup with files, copied out of the container and, with an rclone remote, off the server. Not scheduled yet, and no remote chosen. | Until the remote is set, a failed server loses the data. | Where the copy goes (cloud drive or a disk at the office), with the hosting decision. Owner. Then cron it and restore one backup once. |
 | 8 | HR-01, HR-02, HR-04, HR-06 (Must); HR-03, HR-05 (Should) | HR is not built and HRMS (Frappe's HR app) is not installed: no payroll, attendance or salary split between businesses. Salaries are recorded as expenses. | The owner may expect payroll from the Must list. | Confirm HR is after go-live, and when HRMS is installed (an install and migrate on a live site). Owner. |
 | 9 | LIB-07 (Must) | Supplier purchases (`setup_buying.py`, on branch `feature/buying`) are not merged, though the owner's dashboard refers to it. | Purchases use ERPNext's defaults (no Update Stock default). | Merge and test `feature/buying`. |
-| 10 | Owner's dashboard (5.1) | Done on 22 Oct: yesterday's revenue, expenses and net by business, paper and counters, halls and studio, platform fees and the integrations, on the owner's dashboard, the owner's alone (README, *Owner Dashboard: yesterday*). | | |
+| 10 | Owner's dashboard (5.1) | Done on 22 Oct: yesterday's revenue, expenses and net by business, paper and counters, halls and studio, platform fees and the integrations, on the owner's dashboard, the owner's alone (README, *Owner Dashboard: yesterday*). The cards (merged 24 Oct): the money from the ledger (cash in the boxes, revenue, expenses and net this month, owed to us, we owe), and, after audit QA-06, what is counted over time is this month to today, never all time, future or tentative bookings: platform fees and collected from doctors, studio and hall bookings and hours, unpaid on bookings, cash shortages and open discrepancies; revenue by business from the ledger's income accounts. | | |
 
 ### Halls and studio
 
@@ -78,7 +78,7 @@ sections of this file. Each row says what it needs before it can be built.
 |---|---|---|---|
 | 11 | HAL-12 (Must), open question 1 | Done on 20 Oct: each hall booking names its model (Fixed Rent or Revenue Share); a revenue-share booking posts what was collected, the center's share to إيراد القاعات and the lecturer's to مستحقات للمحاضرين. The share % is agreed per booking until the owner sets one (bookings question 11). | |
 | 12 | HAL-08 (Must) | Done on 20 Oct: attendees, admission price, expected revenue and what was collected, on a revenue-share hall booking. | Nour: the attendees and admission price of a fixed-rent booking are not recorded (no use found for them there). |
-| 13 | HAL-06 (Must), STU-15 (Should) | No hall report (by day and hall: bookings, attendees, rent, collected, cancelled, unpaid) and no studio occupancy report. | After 11 and 12. |
+| 13 | HAL-06 (Must), STU-15 (Should) | HAL-06 done on 21 Oct: **Hall Bookings**. The studio has no fixed opening hours (owner, 22 Oct 2026), so occupancy against hours open does not apply; prepaid hour packages are built (Studio Hour Package). | A studio report of hours booked and package hours used, if wanted. Owner. |
 | 14 | HAL-10, STU-02 (Must) | Done on 19 Oct: the bookings calendar, by day and by week (Bookings > Calendar, `booking_calendar.js`). Frappe's calendar view, with each booking's start and end made from its date and times on the server (`booking.get_events`). | |
 | 15 | STU-04 (Must), HAL-11 (Should) | Done on 20 Oct: Booking Extra (priced by its item) and the booking's extras, each with its pieces. Microphone and lights for the studio are made by setup_booking_prices.py at 50 a piece an hour; the halls' extras have no price yet. | Nour: the halls' extras and their prices. |
 | 16 | Permissions matrix, bookings | The accountant may create and edit bookings (matrix: none), and a branch manager edits and cancels without approval (matrix: with approval). | Who approves a branch manager's change or cancellation. Owner. |
@@ -88,25 +88,40 @@ sections of this file. Each row says what it needs before it can be built.
 | # | Requirement | Gap | Needs |
 |---|---|---|---|
 | 17 | INT-04, STU-06 (Must) | The booking import is written but nothing runs it (no job, no upload). | The file and its schedule (INT-02). |
-| 18 | INT-07 (Must) | Failed rows are returned, not kept: no log, no alert, no re-import of a period. | An import log doctype with each run's failed rows, and an alert. |
-| 19 | INT-09, RPT-12 (Must) | Partly done on 22 Oct: the owner's dashboard shows file imports (Data Import), the app's daily jobs, the assistant and e-mail, with last success and failures. The booking import shows *Not configured*: it keeps no log. | After 18. |
-| 20 | INT-06, INT-14 | Only bookings have a source id and a source; sales, stock and app subscriptions not yet. | With the daily import (IMPORT_DATA_STANDARD.md). |
+| 18 | INT-07 (Must) | Partly done on 22 Oct: *Integration Import Log* keeps each run and its failed and changed rows; the BA Plus import writes it. Not yet: the booking import writing it, an alert on a failed run, re-importing a period. | The alert's recipients; the booking import's runner. |
+| 19 | INT-09, RPT-12 (Must) | Done for BA Plus on 22 Oct: *Integration Status* shows each system's last good import, its counts and the last run, and imports a period again from the kept files; the libraries and the booking system show *not connected* until their imports write logs. The owner's dashboard's yesterday band shows file imports (Data Import), the app's daily jobs, the assistant and e-mail, with last success and failures; it does not read Integration Import Log yet. | Their imports; the band reading Integration Import Log. |
+| 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (IMPORT_DATA_STANDARD.md). |
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
 | 24 | APP-11 (Must) | Done on 20 Oct: the app statement has one row per course (students, tier, fee per student, fee), the collections and the balance carried into the next term. | |
 | 25 | RPT-01, RPT-02, RPT-05 (Must) | Done on 22 Oct: Revenue by Period, Profit Before and After Shared Costs and Outstanding Receivables (README). Profit after allocation is incomplete for shared expenses dated before the first Allocation Rule (1 Nov 2026): they were never split. | |
 | 26 | PRN-03 (Should) | Waste and losses are in three places (Daily Printing, damaged stock, Stock Count Variance), not one monthly report. | A report. |
-| 27 | PRN-04 (Must) | The paper balance is in sheets only, not in boxes and reams. | A column in boxes and reams. |
+| 27 | PRN-04 (Must) | Done on 21 Oct: **Paper Balance** shows each store's paper in sheets and as boxes, reams and loose sheets. | |
 | 28 | PRN-09 (Must) | A machine's "rate of use" is its share of the library's printing, not the time it ran. | Owner: which one is meant. |
-| 29 | PRN-01 (Must) | The day's opening reading is the last closing one; nothing reads the counter at the start of the day. | Owner: is the closing reading enough. |
+| 29 | PRN-01 (Must) | **Done 22 Oct 2026**: read morning and evening; a morning reading above the last closing is a gap with its reason. | - |
 | 30 | CORE-06 (Must) | One selling price list; old prices and their dates are kept only in the change log. | A price list per business if prices differ. |
-| 31 | CORE-07 (Must) | Users can be deleted, not only disabled. | Remove delete on User from System Manager users other than the developers. |
+| 31 | CORE-07 (Must) | Done on 21 Oct: a user is disabled, never deleted, except by the developers' account (`imederp/users.py`). | |
 | 32 | CORE-08 (Must) | Customers, doctors, suppliers and employees are separate records, not one party. | Decided by ERPNext's design; written here as a deviation. |
 | 33 | EXP-04 (Must) | Shared costs are split by fixed percentages only (60 / 40), not by revenue or area. | The owner chose fixed percentages (README); a new rule changes them. |
 | 34 | AI-09 (Should), SEC-09 | The assistant keeps no log of questions; the external systems' keys are in `site_config.json`, not encrypted. | After the model is connected. |
 | 35 | CRM-03 (Should) | No call or follow-up log. | After go-live. |
 | 36 | TSK, open question 1 | Answered: only the owner assigns tasks. TSK is after go-live; keep this when it is built. | |
+
+## Open questions: BA Plus import (INT-05, APP-13), 22 Oct 2026
+
+Built on synthetic rows (`imederp/test_app_import.py`); nothing has been imported on the site. Before the first real
+file, from the BA Plus team:
+
+| # | Question | Until decided | Ask |
+|---|---|---|---|
+| 1 | **A real export**: the columns, the date format, and whether subscription and course ids are stable and unique. | The columns of IMPORT_DATA_STANDARD.md part 3. | BA Plus team |
+| 2 | **Each doctor's id in BA Plus**, written on his app agreement (BA Plus Doctor ID). | A row whose doctor has no agreement with that id fails. | BA Plus team / Accountant |
+| 3 | **A cancelled subscription or a withdrawn student**: how does the file show it? (INT question 6) | Not read: a row that disappears from the file changes nothing here; a known one that changed is listed. | BA Plus team, owner (COUNT_WITHDRAWN) |
+| 4 | **The day's rows or the whole term** each time? | Either works: known ids are skipped. | BA Plus team |
+| 5 | **Students without a phone.** | The row fails: a student is found or made only by phone (CRM-04). | BA Plus team |
+| 6 | **The customer group `طالب`** is missing on the development site (setup_core.py makes it). | A row with a new student fails until it exists. | Run setup_core.py |
+| 7 | **The development site's two terms overlap** (year2026 and الترم الأول 2026/2027 both hold Sep 2026). | A new course dated in both fails: the term must be one. | Accountant (academic periods) |
 
 ## Open questions: point of sale, customers and cancelling a sale (LIB-01, CRM, ACC-06, SEC-06)
 
@@ -191,3 +206,82 @@ The two counting rules are constants at the top of `imederp/doctype/app_course/a
 | 18 | **Students' money in the revenue-share model**: collected in cash into the halls' cash box, or also by wallet? And who pays the lecturer, when? | All of it into خزينة سنتر Imed when the booking is completed; the lecturer's share stays owed under مستحقات للمحاضرين until the accountant pays it (an Expense / payment, as any payment out). | Nour / Accountant |
 | 19 | **The lecturer as a supplier**: what is owed to a lecturer is kept on a Supplier (ERPNext refuses a Customer on a payable account). | The lecturer is chosen as a Supplier on the booking; the accountant makes the supplier (it can be linked to the lecturer's customer record with ERPNext's Party Link). | Accountant |
 | 20 | **Prices of the past**: a booking is priced at the prices in force on the day it is priced (when its price is agreed), not on the day of the booking. | As said; a booking already priced keeps its prices. | Owner |
+
+## QA and security audit (20 Oct 2026): decisions taken in the fixes, to confirm
+
+The fixes are on branch `fix/audit-2026-10-20`; each commit names its audit ID. These choices were needed to fix a
+defect and are not written in the requirements. Each is one place in the code to change.
+
+| # | Where | What the code does now | Why | Who confirms |
+|---|---|---|---|---|
+| 1 | QA-02, `doctor_ledger_entry.post_by_hand` | An accrual or adjustment entered by hand posts like a sale (books: Dr حصة الأطباء / Cr مستحقات للأطباء — الكتب, a minus one the other way round) or a platform fee (app: Dr مستحقات على الأطباء — رسوم المنصة, party the doctor / Cr إيراد رسوم المنصة). Cancelling the entry cancels its journal entry. | The ledger and the general ledger agreed only for sales, payouts and collections. | Accountant: the account a minus books adjustment credits (now the doctors' share). |
+| 2 | QA-03, owner's decision of 21 Oct 2026 (confirmed policy, replaces the 20 Oct fix) | The doctor is never charged for unsold copies. Closing a term charges nothing; carried copies sell next year and earn the doctor his amount as they sell. A curriculum change: the edition is obsolete and its copies left are disposed of as scrap (Dispose as Scrap → Damaged Stock Entry naming the edition), their cost a loss on the library (الهالك والتالف), then sold by weight (إيراد بيع التالف بالوزن). No Unsold Copies Charge is saved or submitted any more. | Requirements v1.2 DOC-18 charged the doctor his share; the owner confirmed the library bears 100%. DOC-22's approval of such charges no longer applies. | Done. Requirements v1.3 should replace DOC-18's text. |
+| 3 | QA-04 | A return (credit note) needs the Accounts Manager role (the owner and the accountant) and a reason, as a cancellation. | Libraries take no returns; a branch manager could reverse a sale and pay cash out. | Owner |
+| 4 | QA-05 | A count treats paper sold but still waiting as a draft issue as gone, and the reconciliation leaves room for the draft, so the store ends at what was counted. | The paper was taken off twice. | Accountant |
+| 5 | QA-14 | A revenue-share booking is completed with 0 attendees, free admission or a 0% share once its lecturer is named; without a lecturer, a 0% share is still missing. | 0 was refused as missing, and the database cannot tell 0 from empty. | Owner (the share rule, question 33) |
+| 6 | QA-16 | The platform fee posts on تطبيق BA Plus whoever subscribed the student. The subscription's own cost center is still who recorded it (a library manager may), and is not used in the accounts. | The fee went to the first subscription's business. | Owner |
+| 7 | QA-20, QA-21 | Branch staff record counters on the day's screen only, one reading a machine a day. The owner and the accountant may add a reading by hand and record a counter reset (with a note) after a repair. | Readings outside the screen were in no waste figure; a reset blocked the branch. | Owner / Accountant |
+| 8 | QA-22 | Stock moved from one branch's store to another's goes through the approved request; only the accounts move it by hand, with Received By and the machine for paper. | The request and its approval could be skipped. | Raghad / Owner |
+| 9 | QA-24, owner's decision of 21 Oct 2026 | No completed transaction is dated after today, for anyone (`imederp/dates.py`: the app's documents and ERPNext's invoices, payments, journal and stock entries); plans keep their future dates. A date must also be in one of the company's own fiscal years. The tests that used 2031 now use dates in the fiscal year. | Staff never record completed transactions ahead. | Done. A cash box going below zero is refused since 21 Oct (owner's rule; `cash_balance.py`). |
+| 10 | QA-31 | A number typed with the country code and no plus (also on a landline, or with an extra 0) is read as Egyptian. Numbers valid before keep the same key. | Valid spellings were refused. | |
+| 11 | SEC-07 | A user with the Branch Manager role and no branch is refused on damaged stock, counts and bookings. | They were let into every branch. | Owner: give each branch manager their branch. |
+| 12 | SEC-12 | Kept from deletion: a submitted or cancelled branch request or fee schedule, an imported booking or one with money or a posting, a course with students or fees. Frappe's own link check already kept bookings with payments and courses with subscriptions. | | |
+
+Still open from the audit (updated 21 Oct 2026):
+
+- **Historical records to review (no change made).** `setup/check_doctor_accounts.py` on the development site lists
+  one draft Unsold Copies Charge (3,040 for 38 copies of a demo edition, waiting for approval, never applied: an
+  approver should reject it) and three demo entries of 18 Oct with no journal entry (an adjustment of -1,000, an
+  accrual of 500, a collection of 250), entered before QA-02: each needs a journal entry by hand, or cancelling and
+  entering again, by the accountant.
+- **QA-37, leftover test data.** Kept on the development site on purpose, for looking at the screens (owner, 21 Oct
+  2026). They do not reach the group's figures: reorder alerts, the dashboard, Treasury Balances and the reports
+  read the group's company only, and the 37 `_Test Fiscal Year`s that name no company are not used for the group's
+  dates (`dates.py`). The tests no longer depend on them. Production is built from a clean site.
+- **ACC-03, what is still to confirm** (built to the owner's rules of 21 Oct 2026; README, *Cash boxes*):
+  - **Recovering a shortage from an employee is blocked** (Cash Close Settings, *Recovery Policy Approved* off)
+    until the owner approves a written policy that a lawyer or HR has checked: the limits on deductions under the
+    labour law and the contracts, how and when the employee is told and heard, appeals, and how a recovery reaches
+    payroll (there is no HR or payroll module: HR-01..07). The four-eyes flow is built: the accountant recommends,
+    the owner approves or returns; nobody approves their own recommendation. The system deducts nothing.
+  - The adjustment account (decided 22 Oct 2026): a shortage, written off, against فروقات الخزينة; a surplus by its
+    verified cause (an omitted customer payment: the customer's account; money held for a customer: a liability the
+    accountant names; a recording error or other: the account the accountant names). No cause, no adjustment: it stays
+    under review. A surplus marked Explained before 22 Oct is classified before it is adjusted.
+  - The reporting week: Saturday to Thursday, Friday off (owner, 21 Oct 2026), set in Cash Close Settings on the
+    development and demo sites; a close made on a Friday still shows in its week.
+  - BA Plus (decided 22 Oct 2026) takes cash at the branches, into each branch's own box (in its daily close), and
+    electronic payments into its bank account or the wallets (App Payment); خزينة تطبيق BA Plus stays a bank account.
+    The money is the doctor's (APP-05): held in مقبوضات الطلبة لحساب الأطباء — التطبيق. **Open (accountant and owner):**
+    how it reaches the doctor: paid out, or set against his platform fees; until then it is held and listed (App
+    Payments report).
+  - Opening cash on production: counted, signed and entered before the first sale (docs/production-hardening.md,
+    section 7); Mawasah's -936.50 on the development site came from the demo transactions of 18 Oct entered with no
+    opening cash (two sales 1,800 + 605 in; a doctor payout 400, an expense 450 and two transfers 1,500 + 1,000
+    out; a scrap payment 8.50 in). Those transactions were erased on 21 Oct at the owner's request (below).
+- **Development data erased, 21 Oct 2026, and the demo site.** After a full backup
+  (`~/imed-backups/sets/20261021_165852-before-demo-erase/`), every transaction of Mohamed Mamdouh group was
+  erased from the development site (ERPNext's Transaction Deletion Record TDL0003, and the app's transfers,
+  doctors' ledger entries, subscriptions, counter readings, day counters and stock counts). The owner then said the
+  demo transactions were wanted for previewing the system. The development site was **not** restored over (it
+  holds newer changes); instead the backup was restored into a separate site, **demo**, served at
+  http://127.0.0.1:8081 (container `imed-demo-web`): every count matched the pre-erase figures. Sample cash
+  closes, discrepancies and a weekly review were added there by `setup/seed_cash_demo.py` (refuses any other
+  site). The development site stays without the group's transactions; the tests do not need them.
+- **Built 22 Oct 2026, decisions still open** (docs/requirements/v1.3-amendments.md):
+  - The custody accounts are cash accounts in the group's books (the cash is still the group's, in the owner's or the
+    accountant's hands). Profit taken out by the owner is a separate entry (توزيعات الأرباح), not a hand-over.
+  - Prepaid studio hours are invoiced in full when the package is billed (income at once). Deferred revenue, earned
+    as hours are used, is the accountant's choice. A No Show gives its hours back, like a cancellation; whether a
+    no-show should use them up is the owner's call.
+  - A session's extra hours, beyond its package, are billed at the hourly price only on the accountant's or the
+    owner's decision on that booking.
+  - Manual doctor adjustments: basis Other needs the account the accountant names. Every manual adjustment, either
+    sign, now needs the owner's or accountant's approval.
+  - The demo's subscriptions of 18 Oct predate App Course and point to a course that does not exist; they were left
+    as they are (new demo payments use a course of their own).
+- **HR, tasks (TSK), integrations (INT-02..13)**: not built; the decisions or files they wait for are in the tables
+  above. BA Plus imports have their entry point (app_payment.import_payment, once per BA Plus id) but no connection.
+- **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on
+  the copy site: the daily jobs are idempotent (a bill due today makes one draft; a second run makes none).
+- **Production (SEC-04..06)**: the settings and steps are in docs/production-hardening.md; nothing is deployed.

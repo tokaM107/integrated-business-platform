@@ -1,8 +1,9 @@
 // Copyright (c) 2026, toka mohamed and contributors
 // For license information, please see license.txt
 
-// The day's counters of one library on one screen (PRN-01): pick the library (filled in for a branch manager) and
-// type each machine's closing reading; the openings come from each machine's last reading.
+// The day's counters of one library on one screen (PRN-01), read twice: in the morning type each machine's counter
+// and save; in the evening type each closing and submit. The machine's last closing is shown beside the morning
+// reading; a difference needs its reason.
 frappe.ui.form.on("Daily Counter Reading", {
 	setup(frm) {
 		frm.set_query("branch", () => ({ filters: { is_group: 0, parent_cost_center: ["like", "مكتبات 2Be Doctor%"] } }));
@@ -28,8 +29,13 @@ frappe.ui.form.on("Daily Counter Reading", {
 		imed.screen.apply(frm, {
 			restrict: [{ unless: imed.screen.ROLE_GROUPS.accounting_manager, hide: ["money_section"] }],
 		});
-		if (frm.is_new() && !frm.doc.machines.length) {
-			frm.set_intro(__("Type each machine's closing reading; tick Broke Down for a machine that stopped today."), "blue");
+		if (frm.is_new()) {
+			frm.set_intro(__("Morning: type each machine's counter as it shows now, then Save."), "blue");
+		} else if (frm.doc.docstatus === 0) {
+			frm.set_intro(__("Evening: type each machine's closing reading, then Submit. Tick Broke Down for a machine that stopped today."), "blue");
+		}
+		if (frm.doc.total_gap) {
+			frm.dashboard.set_headline_alert(__("{0} sheets were printed while no reading was taken (Gap Since Last Closing).", [frm.doc.total_gap]), "orange");
 		}
 	},
 
@@ -46,8 +52,12 @@ frappe.ui.form.on("Daily Counter Reading", {
 });
 
 frappe.ui.form.on("Daily Counter Reading Item", {
+	opening_reading(frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		if (row.previous_closing != null) frappe.model.set_value(cdt, cdn, "gap", (row.opening_reading || 0) - row.previous_closing);
+	},
 	closing_reading(frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
-		frappe.model.set_value(cdt, cdn, "consumed", (row.closing_reading || 0) - (row.opening_reading || 0));
+		frappe.model.set_value(cdt, cdn, "consumed", row.closing_reading ? row.closing_reading - (row.opening_reading || 0) : 0);
 	},
 });

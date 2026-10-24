@@ -48,6 +48,9 @@ service in one commit, then run `bench --site frontend migrate`.
 
 ## Setup from scratch
 
+This is the **development** setup: `admin` passwords, the site open on every interface, developer mode and tests on.
+For the production server, follow [docs/production-hardening.md](docs/production-hardening.md) instead.
+
 Prerequisites: Docker Desktop (with WSL 2 on Windows) and Git. Nothing else is needed on the host;
 Python and bench live inside the containers.
 
@@ -331,6 +334,7 @@ without changing anything if they do not (so a user is never created without the
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
 | `verify_users.py` | Read-only. For every `@imed.local` user: their restrictions, the cost centers they can see, and yes/no for each right in the permissions matrix, marked PASS/FAIL against the matrix. |
 | `check_financial.py` | Test, rolled back afterwards. Checks EGP on the company and Global Defaults, the fiscal year, `dd-mm-yyyy` dates, number format, that a printed invoice (HTML and PDF) shows `EGP` and not `£`, and that a closed accounting period blocks invoices and journal entries (CORE-09). |
+| `check_doctor_accounts.py` | Read-only. Every submitted doctor ledger entry has its posted journal entry for its own amount, each agreement's Balance equals its entries, and no charge for unsold copies is waiting or applied (owner, 21 Oct 2026). Lists what differs; changes nothing. |
 | `check_library.py` | Test, rolled back afterwards. Creates a test book and memo, receives them in Mawasah's store, issues books to Azarita, then sells through each library's POS Profile and through a plain sales invoice, and checks that the revenue account (Azarita's sales moved to `إيراد مكتبة الأزاريطة` by `imederp/library_revenue.py`), cost center and warehouse were filled in without being typed. |
 | `setup_expenses.py` | Expense categories (EXP-07): the tree `كل المصروفات` with `الإيجار`, `المرافق`, `الرواتب والأجور`, `الخامات والمستهلكات`, `الصيانة`, `التسويق`, `الهالك والتالف` and `الاشتراكات والسيرفرات` under it, each linked to the expense account of the same name (or the English name ERPNext ships it with, before `setup_arabic_names.py`). The monthly bills sit in two groups: `المرافق` (electricity, water, internet, gas, and rent, which keeps its own account) and `الاشتراكات والسيرفرات` (the app's server and AI subscriptions). Creates no account: a missing one is printed as `WAIT`, and re-running links it once it exists. Idempotent. |
 | `setup_recurring_expenses.py` | The first monthly bills (EXP-05): rent, electricity, internet and gas of the center premises with their expected amounts; rent, electricity and internet of each library, and the app's server and AI subscriptions, without amounts. Run after `setup_expenses.py`. Fills the list once; from then on it is kept from the Recurring Expense screen. A bill already listed for the same business is left as is. Idempotent. |
@@ -469,9 +473,134 @@ Shares are fixed percentages. Shares worked out from each business's area or rev
 task, were left out on purpose: the owner chose a fixed 60/40 (8 halls, 4 of which also serve as the
 studio part of the time), and the rule's Notes record what the shares are based on.
 
+### Cash boxes: balances, the daily close and the weekly review (ACC-03)
+
+Rules confirmed by the owner on 21 Oct 2026.
+
+- **A cash box never goes below zero** (`imederp/cash_balance.py`, every document that posts to the ledger): an
+  expense, a transfer, a payout, a cash refund or any payment of more than the box holds is refused, on any day from
+  its date to today; cancelling cash that came in is checked too. The box's account is locked and its ledger read
+  with locking reads, so two payments at once cannot spend the same money. Wallets (bank accounts) are not checked.
+  Balances already below zero are not changed; the next payment out of such a box is refused until the money that
+  came in is recorded. A POS Invoice posts to the ledger only when it is consolidated, so it is checked then.
+- **Treasury Balances** (report): each cash box and wallet on a date, from the ledger.
+- **Treasury Close** (`doctype/treasury_close`): the branch manager closes her own branch's cash box at the end of
+  the day; no daily approval.
+  - Opening = the cash counted at the box's last close (the ledger's balance before the day for its first close).
+  - Since the last close, from the ledger: Collections, Transfers In, Expenses and Payouts (expenses and doctors'
+    payouts), Transfers Out, Refunds and Other Payments. Expected Closing = Opening + in - out.
+  - Shortage (-) / Surplus (+) = Cash Counted - Expected Closing. Balance in the Books shows the ledger beside it.
+  - Once a day per box, and in order (no close for a day before the box's last one). Closed By, Closed On, Shift,
+    Note and Evidence are kept.
+  - It posts nothing and changes no ledger line. A difference opens a **Cash Discrepancy**.
+  - A cash entry dated into a closed day is refused to a branch manager; the accountant's is accepted, and the
+    closes it changes are marked Needs Review.
+  - **Reopen** (owner and accountant only, with a reason): the close is cancelled and kept with its figures, who
+    reopened it, when and why; a new draft amends it. Its discrepancy is withdrawn; later closes of the box and any
+    reviewed week holding it are marked for review. Refused once its discrepancy is adjusted in the books or has an
+    approved recovery (undo those first). Branch managers cannot reopen or cancel.
+- **Cash Discrepancy** (`doctype/cash_discrepancy`): the accountant investigates; the owner sees all; a branch
+  manager reads her branch's and decides nothing.
+  - Shortage: Pending Investigation -> Responsibility Determined (notes written, responsible employees marked) ->
+    Recovery Recommended by the accountant (each responsible employee told and heard, the recovery checked against
+    the contract and the labour law, an amount typed for each; not more than the shortage) -> Recovery Approved by
+    the owner (four eyes: never by whoever recommended it; the owner may return it with a reason), or Written Off
+    (the company bears it). Nothing is split between employees by itself; nobody is responsible for having been on
+    shift.
+  - **Recovery is blocked** until the owner ticks *Recovery Policy Approved* in **Cash Close Settings**, naming the
+    written policy checked by a lawyer or HR; until then nothing can be approved.
+  - Surplus: Pending Review -> Explained, only with where the cash came from. Until then it stays under review: in
+    the open count, the report's Still Open Only and every later weekly review. Never revenue by itself.
+  - Post Adjustment (accountant, once, after it is settled): a journal entry dated today between the box and
+    فروقات الخزينة, so the books match the cash counted. The next close leaves it out (its opening is already the
+    count).
+  - **No salary is deducted by the system** (there is no payroll). An approved recovery is listed in the report
+    **Cash Discrepancies -> Payroll Review** for the accountant to take to payroll by hand.
+- **Weekly Cash Reconciliation** (`doctype/weekly_cash_reconciliation`, accountant and owner): one per week and
+  business (or all businesses). Lists every close of the week with its figures, the discrepancy's status and who
+  was found responsible; the week's shortages and surpluses; open discrepancies; days a box was not closed.
+  Discrepancies of earlier weeks still open are listed apart (Still Open from Earlier Weeks), not added to this
+  week's totals: each difference counts once, in its own week, and stays visible until settled. The next close
+  never repeats a difference: its opening is the cash counted. Submitting it marks the week reviewed (a note is
+  required while any discrepancy is open). It moves no money: it does not assume the cash went to the accountant.
+  The week runs Saturday to Thursday (owner, 21 Oct 2026; Cash Close Settings, *Reporting Week Starts On* and
+  *Ends On*): Friday is off, a close made on a Friday still shows in its week, and a Friday is never listed as a
+  day without a close.
+- **Opening cash** on a new site: `imederp/opening_cash.py` checks every treasury and prepares the counted cash as
+  a draft opening entry (docs/production-hardening.md, section 7).
+- Owner's page: Cash Shortages This Month, Open Cash Discrepancies, and shortcuts to the closes, the discrepancies
+  waiting, the weekly reviews and the report.
+
+### The weekly cash hand-over (ACC-09)
+
+**Cash Handover**: at the end of the week (or whenever cash is needed) the branch manager records the cash she hands
+to the owner or the accountant and submits it (Pending Receipt): never more than the box holds less what is already
+pending, under a lock on the box; part of the cash may be handed over. She prints **Cash Handover Receipt** (Arabic,
+the amount in figures and in words, a space to sign). The receiver signs the paper by hand (no electronic
+signature), attaches its scan or photo to the hand-over (Signed Receipt: a private PDF or photo of this hand-over,
+not used for another) and clicks **Confirm Receipt** with the cash counted. Only the receiver named confirms. Then
+one entry: Dr the receiver's custody account (Cash Close Settings: عهدة المالك النقدية / عهدة المحاسب النقدية) / Cr
+the branch's box, dated the hand-over day. The day's close counts it as Handed Over, pending or confirmed, and the
+week's review lists every hand-over with its receiver, status and whether the signed receipt is there. Cancel with
+Reason keeps the record (a pending one: whoever recorded it or the accountant; a confirmed one: the accountant or
+the owner, reversing its entry). Set the custody accounts in Cash Close Settings before the first confirmation.
+
+### BA Plus payments (App Payment)
+
+What a student pays BA Plus for a course: **Cash** into the collecting branch's own box (it is then one of the box's
+collections, in its daily close), or **electronically** (bank transfer, InstaPay, Vodafone Cash) into the app's bank
+account or a wallet, with the transfer's reference number (once per account). Each payment posts Dr the box or
+account / Cr مقبوضات الطلبة لحساب الأطباء — التطبيق: the course is the doctor's (APP-05), never the group's revenue,
+and the platform fee is unchanged. **App Payments** lists them, with what is not yet matched with the statement
+(ERPNext's Bank Clearance dates an electronic payment's entry). `app_payment.import_payment` takes a payment from
+BA Plus once per its id there, for the integration to come. Cancelling is the accountant's, with a reason.
+
+### Printer counters read twice a day (PRN-01)
+
+The day's counters (Daily Counter Reading) are read in the **morning** (type each machine's counter, Save: who and
+when is kept; a branch manager cannot change them afterwards) and in the **evening** (type each closing, Submit).
+Each machine's last closing is shown beside the morning reading; a morning reading above it is a **gap** (sheets
+printed while nobody read the counter) and needs its reason, one below it is refused (a reset is the accountant's
+Counter Reset). A day waiting for its evening readings blocks the next. The screen and **Daily Printing** show
+printed, sold, paper issued for sales, damaged sheets and the gap apart; the counters move no stock.
+
+### Prepaid studio hours (Studio Hour Package)
+
+A teacher buys hours of a studio service (30 hours for a price); **Make Invoice** bills the package once. A booking
+names the package (Prepaid Hours): its exact length comes off it while it holds its time, and its own price is 0, so
+the session is never billed again. Moved, shortened or cancelled, the difference is given back; each change is a row
+of the package's history. Never below zero: a session longer than the hours left is refused unless the accountant
+or the owner ticks Bill the Hours Beyond the Package, which bills only those hours at the hourly price. There are no
+fixed studio hours; two bookings of one resource still never overlap.
+
+### The demo site
+
+A separate site, **demo** (http://127.0.0.1:8081 on the development machine, container `imed-demo-web`), holds the
+demo transactions of 18 Oct restored from the backup of 21 Oct, plus sample cash closes, discrepancies and a
+weekly review made by `setup/seed_cash_demo.py`, and on 22 Oct BA Plus payments, counters read twice, a prepaid
+studio package and hand-overs by `setup/seed_demo_22oct.py` (both refuse any other site). Every sample record says (تجريبي).
+It is for looking at the screens; the development site and the tests do not depend on it, and production starts
+from a clean site. Its staff accounts have a demo-only password.
+
+### Dates
+
+No completed transaction is dated after today, for anyone, through the form or the API (`imederp/dates.py`, owner
+21 Oct 2026): expenses, transfers, doctor ledger entries (payouts, collections, adjustments), counter readings, stock
+counts, damaged stock and its sale, app subscriptions, treasury closes, and ERPNext's invoices, payments, journal and
+stock entries. What is planned keeps its future date: bookings, a monthly bill's next date, an allocation rule's or
+a fee schedule's Valid From, academic periods. A date must also fall in one of the company's own fiscal years
+(2026-2027 from 1 Sep 2026); the `_Test Fiscal Year`s the October test runs left on the development site name no
+company and are not used for the group.
+
+### Users
+
+A user is disabled (untick Enabled), never deleted (CORE-07; `imederp/users.py`): their name stays on what they
+recorded. Only the developers' account, Administrator, may remove an account made by mistake.
+
 ### Paper units and cost
 
-Paper is bought by the box, used by the sheet and stocked in sheets:
+Paper is bought by the box, used by the sheet and stocked in sheets. **Paper Balance** (report, PRN-04) shows each
+store's paper in sheets and as boxes + reams + loose sheets (11,030 = 4 boxes, 2 reams, 30 sheets):
 
 | UOM | Sheets |
 |---|---|
@@ -595,7 +724,12 @@ it is refused, and a damage record partly sold cannot be cancelled before its sa
 - **Setup:** `setup_core.py` ticks Damaged Store on `التالف — المواساة`; `setup_library.py` makes the
   non-stock item `DAMAGED-BY-WEIGHT` (Kg, revenue `إيراد بيع التالف بالوزن`) and the buyer `مشتري التالف`.
 
-### Bookings: halls and the studio (HAL-01..04, HAL-08, HAL-10..12, STU-01..05, STU-08, STU-14, ACC-04)
+### Bookings: halls and the studio (HAL-01..04, HAL-06, HAL-08, HAL-10..12, STU-01..05, STU-08, STU-14, ACC-04)
+
+**Hall Bookings** (report, HAL-06): the halls' bookings between two dates, one hall or all: day, hall, activity,
+rental model, status, attendees, admission price, rent, collected (a fixed rent: what the customer paid; a revenue
+share: what was collected at the door), unpaid (a completed booking's invoice outstanding) and cancellations, with
+a total. The halls manager sees her own halls.
 
 **Booking Resource** (ImedERP > Business Operations): what can be booked (HAL-01). A **Hall**, with its Capacity
 (required) and Equipment, or a **Studio Service** (smart board, reels, podcast, filming, location). Each belongs to
@@ -1035,31 +1169,33 @@ figures and in words (`فقط ألف و مئتان و خمسون جنيه مصر
 accountant's signatures. Arabic when printed in Arabic, like the invoice. A simple version; the final design comes
 in week C. Any other ledger entry prints the same way under the title حركة حساب طبيب.
 
-**The doctor's unsold copies** (DOC-18, DOC-22) are charged to him when the edition is cancelled because the
-curriculum changed (whoever records the cancellation, a branch manager too; the charge is raised by the system and
-only an approver applies it), or at the end of its term or module, whichever comes first.
+**The doctor's unsold copies are never his to pay** (owner, 21 Oct 2026; this replaces DOC-18 of requirements v1.2
+and the decision of 10 Oct 2026, and with it DOC-22's approval of such charges):
 
-**The end of a term or module** (DOC-18, DOC-22). When the accountant or the owner closes an Academic Period, every
-approved edition whose period is that one or one under it (its rounds and modules) gets a **draft Unsold Copies
-Charge**: the copies the doctor asked for and did not sell × the cost of a copy (owner's decision of 10 Oct 2026).
-Sales count against the doctor's copies first, so the library's extra copies are never charged to him. An edition
-carried forward ends with the period it was carried to. The charge is applied only when the accountant or the
-owner submits it; until then it is listed on the owner's page under «خصومات أطباء مستنية الاعتماد» and does not
-touch the balance. An edition already charged for the period is skipped, so closing again adds nothing.
+- *Curriculum unchanged:* the copies left stay in the store. The edition is carried forward to the next period and
+  they are sold there; the doctor earns his amount on each copy as it sells, in the period it sells in. Closing a
+  term or module charges nobody and posts nothing.
+- *Curriculum changed:* **Cancel: Curriculum Changed** marks the edition obsolete and charges nothing. Its copies
+  left are disposed of with **Dispose as Scrap** (on the edition, menu Edition): a draft **Damaged Stock Entry**
+  naming the edition, for its copies left, from its library's store. Submitted, the copies leave the store at their
+  cost, posted to الهالك والتالف on the library's cost center (the library bears 100% of it), and wait in the
+  damaged store; the edition shows them as **Disposed Qty**. They are then sold by weight with a **Damaged Stock
+  Sale** naming that damage record: the kilograms, the price a kilogram and the money, to إيراد بيع التالف بالوزن.
+  Cancelling the sale, then the disposal, puts the copies back on the edition.
+- No **Unsold Copies Charge** is saved or submitted any more. One recorded before can only be rejected (a draft) or
+  cancelled (a submitted one); `setup/check_doctor_accounts.py` lists them.
 
-A closed academic period takes no new entries (`period_lock.py`), except the ones that settle it after it ends:
-the Unsold Copies Charge and the Payout. A sale of an edition whose period is closed is refused until the edition
-is carried forward.
+A closed academic period takes no new entries (`period_lock.py`), except the payout that settles it after it ends.
+A sale of an edition whose period is closed is refused until the edition is carried forward.
 
-**Approving a deduction** (DOC-22). A deduction from the doctor, a charge for unsold copies or an adjustment
-taking money off him by hand, is applied only once the owner or the accountant approves it, the same way as an
-expense (role Expense Approver). A charge raised when a period closes is a draft **Pending Approval** and the
-accountant is notified; the form shows **Approve** (which submits it) and **Reject** (with a reason; a rejected
-one is closed for good). An approver's own deduction is approved as he submits it. Approval Status, Approved /
+**Approving a deduction** (DOC-22). A deduction from the doctor, an adjustment taking money off him by hand, is
+applied only once the owner or the accountant approves it, the same way as an expense (role Expense Approver). The
+form shows **Approve** (which submits it) and **Reject** (with a reason; a rejected one is closed for good). An approver's own deduction is approved as he submits it. Approval Status, Approved /
 Rejected By and Rejection Reason are set only by the system, Approve and Reject, never by editing or the API. The
 owner's page counts the deductions waiting. A credit note's adjustment is not a deduction: the copies came back.
 
-**A negative balance stays a debt** (DOC-20). A books doctor charged more than he earned owes the group. The
+**A negative balance stays a debt** (DOC-20). A books doctor whose approved deductions are more than he earned owes
+the group. The
 balance stays below zero and is never closed on its own: what he earns next pays it off first, and nothing is paid
 out to him while he owes (a payout is never more than the balance). The report **Doctor Debts** lists, as of a
 date, every agreement under which the doctor owes the group: a books agreement below zero and an app agreement's
@@ -1153,9 +1289,9 @@ change only by Cancel and Amend.
   edition is marked Cancelled with the **Notice Date** (not in the future, not before the edition) and the
   employee who received the notice and records it, taken from the login, never typed; the time it was
   recorded is kept too. The edition stays approved with its sales, stock and costs; no more copies are sold.
-  The doctor's unsold copies are charged to him as a draft for approval (DOC-18, DOC-22; see the doctors'
-  accounts below). What the library's extra copies cost it is not posted yet.
-- Status and these fields change only through the two buttons (the server refuses them otherwise), and the
+  Nothing is charged to the doctor (owner, 21 Oct 2026): the copies left are disposed of as scrap at the library's
+  loss with **Dispose as Scrap** (see the doctors' accounts below).
+- Status and these fields change only through these buttons (the server refuses them otherwise), and the
   edition's history shows each change. Branch managers act on their own library's editions; the owner and the
   accountant on any.
 - An item with no edition sells as before. Open questions (which copies sell first, an Item per edition, how
@@ -1188,6 +1324,35 @@ and an Adjustment when it shrinks (a cancelled student, or the 101st moving the 
 becomes 20,200). Each has its journal entry: Dr مستحقات على الأطباء — رسوم المنصة (the doctor as the party) /
 Cr إيراد رسوم المنصة, on the app's cost center. They need no approval, send no statement, and are cancelled only
 by changing the course's subscriptions. The doctor's balance, Doctor Debts and Accounts Receivable show the fees.
+
+**BA Plus's daily file (INT-05, APP-13).** `imederp/app_import.py` takes BA Plus's courses and subscriptions,
+each by its id in BA Plus (`import_key` = `ba_plus:<id>`, unique), into *App Course* and submitted *App
+Subscription*: the doctor's app agreement is found by his BA Plus id (Doctor Agreement › BA Plus Doctor ID), the
+course is made the first time its id comes (in the one term the date falls in), the student is found by phone or
+made in the group `طالب`, and the fee is counted and posted as for a subscription entered by hand. The same file
+again adds nothing; a known record that changed in BA Plus is listed, not overwritten; a row that fails keeps
+nothing and the others go on. An imported course or subscription is changed only in BA Plus (`import_source.py`),
+except a course's status. A subscription is always on `تطبيق BA Plus`'s cost center, whoever made it. The columns
+and what still needs a real BA Plus export: docs/IMPORT_DATA_STANDARD.md, part 3.
+
+```bash
+docker exec frappe_docker-backend-1 bench --site frontend execute imed_erp.imederp.app_import.import_file \
+  --kwargs '{"path": "/home/frappe/frappe-bench/sites/app_2026-10-22.csv"}'
+```
+
+Each run writes an **Integration Import Log** (INT-07; sidebar: Import Logs; owner and accountant): the system
+(`ba_plus`, `library_pos`, `booking`), the file and its SHA-256, when and by whom, rows read, inserted, other
+records made, skipped, changed in the source and failed, and each row to look at with its line and reason. Only an
+import writes one; nobody edits or deletes it. A run the database drops as a whole keeps nothing and is logged as
+Failed.
+
+**Integration Status** (INT-09; report, sidebar; owner and accountant) shows one row per system (the libraries'
+point of sale, the studio's bookings, BA Plus): the last import that went through, its log, what it imported,
+skipped, found changed and failed, and the last run with its status when it came after (a failed run does not hide
+the last good one). A system no import reads says *not connected yet*. **Import a Period Again** runs again the
+files that came in the days chosen (each log keeps its file), oldest first, each distinct file once: what is already
+in is skipped, so only what failed (e.g. a doctor whose BA Plus id was written since) or is new goes in, and each run
+writes its own log. BA Plus only for now; the libraries and the booking system get it with their imports.
 
 **The app statement (APP-11).** The *Doctor Statement* of an app agreement shows one row per course: its
 students, tier, fee per student and the fee posted in the term, then the collections, and the balance. A fee not
@@ -1385,11 +1550,24 @@ they are executed, so they must never be imported as a Python module.
 
 ## Tests
 
+Three kinds:
+
+- **Integration tests** (below): each doctype's and module's, rolled back; 507 on 21 Oct 2026. Run them behind the
+  leak guard (`scripts/run_tests.sh`).
+- **Two sessions at once** (`setup/concurrency_check.py`): a transfer confirmed twice, two payouts, two subscriptions,
+  two day screens, two bookings of one hour, each from two database connections at the same moment. It commits its
+  records, so it runs only on a throwaway copy of the site (it refuses `frontend`):
+  `docker exec frappe_docker-backend-1 bench --site restore-test execute imed_erp.setup.concurrency_check.run`.
+- **Browser tests** (`tests/e2e/`, Playwright): each role's logins, pages, refused calls, branch isolation, Arabic,
+  phone width and the main workflows, on a throwaway copy too; see `tests/e2e/README.md`.
+
 Each doctype has integration tests next to it; the expense reminders have their own module:
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests true
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_test_records  # first: catches a missing IGNORE entry before it commits _Test records
+# or, the guard first and the rest only if it passes:
+scripts/run_tests.sh --app imed_erp
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Recurring Expense"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Allocation Rule"
@@ -1416,6 +1594,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_sales_cancellation
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_app_import
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking_pricing

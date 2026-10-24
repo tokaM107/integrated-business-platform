@@ -196,24 +196,39 @@ def block_cancel_of_accrual(doc, method=None):
 
 def run_daily():
 	"""Run by the scheduler (hooks.py). Returns (invoices counted, invoices whose entries were cancelled)."""
+	report_sales_in_closed_periods()
 	return (
 		catch_up(missed_sales(), accrue, _("Sales Invoice {0}: the doctor's amount could not be counted")),
 		catch_up(cancelled_sales(), cancel_accruals, _("Sales Invoice {0}: the doctor's amount could not be cancelled")),
 	)
 
 
-def missed_sales():
+def missed_sales(closed=False):
 	"""Submitted invoices with an edition line not in the doctor's ledger. Editions with no amount per copy are
-	left out: they never make an entry, so they would be picked up every day."""
+	left out: they never make an entry, so they would be picked up every day.
+
+	QA-33: a sale whose edition's period is closed cannot be counted any more (the period is locked); it is listed
+	apart (closed=True) and reported once, not tried and logged again every day."""
 	return frappe.db.sql_list(
 		f"""select distinct sii.parent from `tabSales Invoice Item` sii
 		join `tabSales Invoice` si on si.name = sii.parent
 		join `tabBook Edition` be on be.name = sii.{FIELD}
-		where si.docstatus = 1 and be.doctor_share != 0 and not exists (
+		left join `tabAcademic Period` ap on ap.name = coalesce(nullif(be.carried_to_period, ''), be.period)
+		where si.docstatus = 1 and be.doctor_share != 0 and ifnull(ap.is_closed, 0) = %s and not exists (
 			select 1 from `tabDoctor Ledger Entry` dle where dle.invoice_item = sii.name and dle.docstatus < 2
 		)
-		order by si.posting_date, si.name"""
+		order by si.posting_date, si.name""",
+		(1 if closed else 0,),
 	)
+
+
+def report_sales_in_closed_periods():
+	"""One Error Log per sale the daily job cannot count because its period is closed: the accountant decides (open
+	the period, or settle the doctor by hand)."""
+	for invoice in missed_sales(closed=True):
+		title = _("Sales Invoice {0}: the doctor's amount was not counted; its period is closed").format(invoice)
+		if not frappe.db.exists("Error Log", {"method": title}):
+			frappe.log_error(title=title, message=title)
 
 
 def cancelled_sales():

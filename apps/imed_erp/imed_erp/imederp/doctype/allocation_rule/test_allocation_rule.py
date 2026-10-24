@@ -2,15 +2,19 @@
 # See license.txt
 
 # Allocation rules (EXP-03/04): the shared premises' expenses are split between the halls and the studio.
-# Uses the real cost centers, treasury and categories (setup_core.py, setup_expenses.py); everything made
-# here is rolled back afterwards.
+# Uses the real businesses, treasury and categories (setup_core.py, setup_expenses.py), and a shared cost center
+# of its own beside the real one: the real one has its own rule and expenses (the site's 60/40 from 1 Nov 2026),
+# and a new rule must start after them. With its own, a rule starts in the company's fiscal year and its expenses
+# are dated no later than today, as real ones are (QA-24). Everything made here is rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --doctype "Allocation Rule"
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days, getdate, today
+from frappe.utils import add_days, getdate
+
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # Every doctype the rule links to already exists on the site. Without this Frappe builds ERPNext's
 # "_Test ..." records for them and commits them to the site.
@@ -22,19 +26,37 @@ IGNORE_TEST_RECORD_DEPENDENCIES = [
 ]
 
 ABBR = "MMG"
-SHARED = f"مصروفات المقر المشتركة - {ABBR}"
+CENTER = f"سنتر Imed - {ABBR}"
+SHARED = f"_Test مصروفات مشتركة - {ABBR}"
+# The first day of the company's fiscal year (2026-2027): the rules start from here.
+FIRST_DAY = "2026-09-02"
 HALLS = f"قاعات Imed - {ABBR}"
 STUDIO = f"استوديو X - {ABBR}"
 TREASURY = f"الخزينة الرئيسية - {ABBR}"
-RECEIPT = "/files/_test_allocation_receipt.png"
 
 
 class IntegrationTestAllocationRule(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		# Only the File record is needed: the expense checks that the receipt was uploaded, not its content.
-		frappe.get_doc({"doctype": "File", "file_name": "receipt.png", "file_url": RECEIPT}).db_insert()
+		fund_cash_boxes()
+		if not frappe.db.exists("Cost Center", SHARED):
+			frappe.get_doc(
+				{
+					"doctype": "Cost Center",
+					"cost_center_name": SHARED.removesuffix(f" - {ABBR}"),
+					"parent_cost_center": CENTER,
+					"company": frappe.db.get_value("Cost Center", CENTER, "company"),
+				}
+			).insert()
+
+	@staticmethod
+	def receipt():
+		"""Only a File record is needed, one per expense (SEC-03): the expense checks that its receipt is its own
+		private upload, not its content."""
+		url = f"/private/files/_test_allocation_receipt_{frappe.generate_hash(length=8)}.png"
+		frappe.get_doc({"doctype": "File", "file_name": "receipt.png", "file_url": url, "is_private": 1}).db_insert()
+		return url
 
 	def free_date(self):
 		"""A day after every expense and rule already on the shared cost center, so a new rule is accepted."""
@@ -44,7 +66,7 @@ class IntegrationTestAllocationRule(IntegrationTestCase):
 		last_rule = frappe.db.get_value(
 			"Allocation Rule", {"main_cost_center": SHARED, "docstatus": 1}, "valid_from", order_by="valid_from desc"
 		)
-		dates = [getdate(today())] + [getdate(add_days(d, 1)) for d in (last_expense, last_rule) if d]
+		dates = [getdate(FIRST_DAY)] + [getdate(add_days(d, 1)) for d in (last_expense, last_rule) if d]
 		return max(dates)
 
 	def make_rule(self, shares, valid_from=None, submit=True):
@@ -72,7 +94,7 @@ class IntegrationTestAllocationRule(IntegrationTestCase):
 				"expense_category": "الكهرباء",
 				"amount": amount,
 				"treasury": TREASURY,
-				"receipt": RECEIPT,
+				"receipt": self.receipt(),
 			}
 		).insert()
 		expense.submit()

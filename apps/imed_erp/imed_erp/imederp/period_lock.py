@@ -21,9 +21,12 @@ LOCKED_DOCTYPES = [
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",
+	"App Payment",
+	"Cash Handover",
+	"Studio Hour Package",
 ]
 
-DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date")
+DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date", "handover_date", "purchase_date")
 COST_CENTER_FIELDS = ("activity", "from_business", "cost_center", "branch")
 
 
@@ -66,13 +69,17 @@ def validate_closed_period(doc, method=None):
 		)
 
 
-# Settling a term or module comes after it ends (DOC-09, DOC-18): the charge for the doctor's unsold copies, raised
-# when the period is closed and approved later, and the payout to the doctor. They name the closed period on purpose.
+# Settling a term or module comes after it ends (DOC-09): the payout to the doctor names the closed period on purpose.
+# A charge for unsold copies recorded before 21 Oct 2026 may still be cancelled in it.
 SETTLEMENT_ENTRIES = ("Unsold Copies Charge", "Payout")
 
 
+def is_settlement(doc):
+	return doc.get("entry_type") in SETTLEMENT_ENTRIES
+
+
 def validate_academic_period(doc):
-	if doc.doctype == "Doctor Ledger Entry" and doc.get("entry_type") in SETTLEMENT_ENTRIES:
+	if doc.doctype == "Doctor Ledger Entry" and is_settlement(doc):
 		return
 	period = doc.get("period")
 	if period and frappe.db.get_value("Academic Period", period, "is_closed"):

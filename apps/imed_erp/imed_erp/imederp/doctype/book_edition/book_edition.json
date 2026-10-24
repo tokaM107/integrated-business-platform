@@ -20,6 +20,7 @@
   "total_qty",
   "column_break_qty",
   "sold_qty",
+  "disposed_qty",
   "remaining_qty",
   "pricing_section",
   "paper_cost",
@@ -128,13 +129,22 @@
    "description": "From the submitted sales invoices that name this edition."
   },
   {
+   "fieldname": "disposed_qty",
+   "fieldtype": "Int",
+   "label": "Disposed Qty",
+   "read_only": 1,
+   "allow_on_submit": 1,
+   "no_copy": 1,
+   "description": "Copies of an obsolete edition (the curriculum changed) disposed of as scrap, from its submitted Damaged Stock Entries. The library's loss, never the doctor's."
+  },
+  {
    "fieldname": "remaining_qty",
    "fieldtype": "Int",
    "label": "Remaining Qty",
    "read_only": 1,
    "allow_on_submit": 1,
    "no_copy": 1,
-   "description": "Total Qty - Sold Qty."
+   "description": "Total Qty - Sold Qty - Disposed Qty."
   },
   {
    "fieldname": "pricing_section",
@@ -324,7 +334,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 21:00:00.000000",
+ "modified": "2026-10-21 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Book Edition",

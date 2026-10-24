@@ -62,6 +62,8 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 			"_TEST-FLAT": [(STANDARD, 120)],
 			"_TEST-NO-PRICE": [],
 		}
+		# Counted in whole units (Nos), the harder case: a part of an hour still bills the booking's amount
+		# (test_part_of_an_hour_is_invoiced_whatever_the_items_unit; a booking of 40 minutes is 0.67 of an hour).
 		for item, rates in prices.items():
 			if not frappe.db.exists("Item", item):
 				frappe.get_doc(
@@ -690,3 +692,95 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		booking = frappe.get_doc("Booking", imported["inserted"][0])
 		self.assertEqual((booking.total_amount, booking.price_list, booking.treasury), (400, None, None))
 		self.assertRaisesRegex(frappe.ValidationError, "imported", record_payment, booking.name, 100)
+
+	# ---------- Audit 20 Oct 2026 ----------
+
+	def test_qa13_a_part_hour_is_priced_from_its_minutes(self):
+		# 40 minutes of the podcast with two cameras at 1,750 an hour: 1,166.67, not 0.67 x 1,750 = 1,172.50.
+		booking = self.book(self.podcast, start="10:00", end="10:40", date=PAST, package=self.two_cameras, extras=[(self.mic, 3)])
+		self.assertEqual(booking.hours, 0.67)
+		self.assertEqual((booking.base_amount, booking.extras_amount), (1166.67, 100))
+		# The invoice bills the same.
+		booking = self.complete(booking)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", booking.sales_invoice, "grand_total"), 1266.67)
+
+	def test_qa14_a_free_lecture_with_no_share_is_completed(self):
+		share = dict(rental_model="Revenue Share", attendees=0, admission_price=0, collected_amount=0)
+		booking = self.book(start="10:00", end="12:00", date=PAST, **share)
+		# Without a lecturer, a 0% share is not an answer yet.
+		self.assertRaisesRegex(frappe.ValidationError, "Lecturer", self.complete, booking)
+		booking = self.complete(booking, lecturer_share_percent=0, lecturer=self.lecturer)
+		self.assertEqual((booking.status, booking.lecturer_share, booking.center_share), ("Completed", 0, 0))
+
+	def test_qa15_an_invoiced_booking_is_not_moved(self):
+		booking = self.complete(self.book(self.sb75, start="10:00", end="11:00", date=PAST))
+		self.assertTrue(booking.sales_invoice)
+		for change in ({"booking_date": add_days(PAST, -1)}, {"from_time": "09:00:00"}, {"to_time": "10:30:00"}):
+			with self.subTest(change):
+				moved = frappe.get_doc("Booking", booking.name)
+				moved.update(change)
+				self.assertRaisesRegex(frappe.ValidationError, "Cancel it first", moved.save)
+
+	def test_sec12_a_booking_with_money_or_imported_is_not_deleted(self):
+		paid = self.book(self.sb75, start="10:00", end="11:00")
+		record_payment(paid.name, 50, mode_of_payment=STUDIO_CASH)
+		# Frappe's own link check already keeps one with a payment; the app's guard says why.
+		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "Booking", paid.name)
+		imported = import_bookings(
+			"studio_booking",
+			[{"external_id": "D1", "resource": self.sb75, "customer_phone": PHONE, "booking_date": DAY, "from_time": "14:00", "to_time": "15:00", "total_amount": 200}],
+		)["inserted"][0]
+		self.assertRaisesRegex(frappe.ValidationError, "imported", frappe.delete_doc, "Booking", imported)
+		# A booking with nothing on it is still deleted as a mistake.
+		frappe.delete_doc("Booking", self.book(self.sb75, start="16:00", end="17:00").name)
+
+	def test_sec13_a_payment_names_a_booking_only_through_record_payment(self):
+		booking = self.book(self.sb75, start="10:00", end="11:00", status="Cancelled", cancellation_reason="_Test cancelled")
+		from erpnext.accounts.party import get_party_account
+
+		company = frappe.db.get_value("Cost Center", STUDIO, "company")
+		payment = frappe.get_doc(
+			{
+				"doctype": "Payment Entry", "payment_type": "Receive", "company": company,
+				"party_type": "Customer", "party": self.customer,
+				"paid_from": get_party_account("Customer", self.customer, company),
+				"paid_to": STUDIO_BOX, "paid_amount": 999, "received_amount": 999, "cost_center": STUDIO,
+				"custom_booking": booking.name,
+			}
+		)
+		payment.setup_party_account_field()
+		payment.set_missing_values()
+		self.assertRaisesRegex(frappe.ValidationError, "Record Payment", payment.insert)
+
+	# ---------- HAL-06: the halls' report ----------
+
+	def test_hal06_the_halls_report(self):
+		from imed_erp.imederp.report.hall_bookings.hall_bookings import execute as halls
+
+		fixed = self.complete(self.book(start="10:00", end="12:00", date=PAST))  # 2 h at 300: rent 600, not paid yet
+		share = self.book(
+			start="13:00", end="15:00", date=PAST,
+			rental_model="Revenue Share", attendees=30, admission_price=100, collected_amount=2500,
+		)
+		share = self.complete(share, lecturer_share_percent=40, lecturer=self.lecturer)
+		gone = self.book(start="16:00", end="17:00", date=PAST)
+		gone.reload()
+		gone.update({"status": "Cancelled", "cancellation_reason": "_Test cancelled"})
+		gone.save()
+
+		rows = {r["name"]: r for r in halls({"from_date": PAST, "to_date": PAST, "hall": self.hall})[1]}
+		self.assertEqual(
+			(rows[fixed.name]["rent"], rows[fixed.name]["collected"], rows[fixed.name]["unpaid"], rows[fixed.name]["cancelled"]),
+			(600, 0, 600, 0),
+		)
+		self.assertEqual(
+			(rows[share.name]["attendees"], rows[share.name]["admission_price"], rows[share.name]["collected"], rows[share.name]["rent"]),
+			(30, 100, 2500, 0),
+		)
+		self.assertEqual((rows[gone.name]["cancelled"], rows[gone.name]["unpaid"], rows[gone.name]["rent"]), (1, 0, 0))
+		# Nour runs the halls; Gilan (the studio) sees none of them.
+		frappe.set_user(GILAN)
+		try:
+			self.assertEqual(halls({"from_date": PAST, "to_date": PAST})[1], [])
+		finally:
+			frappe.set_user("Administrator")

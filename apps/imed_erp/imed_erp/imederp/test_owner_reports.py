@@ -26,7 +26,7 @@ from imed_erp.imederp.report.profit_before_and_after_shared_costs import (
 	profit_before_and_after_shared_costs as rpt02,
 )
 from imed_erp.imederp.report.revenue_by_period import revenue_by_period as rpt01
-from imed_erp.imederp.sales_cancellation import REASON_FIELD
+from imed_erp.imederp.sales_cancellation import REASON_FIELD, RETURN_REASON_FIELD
 
 COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
@@ -51,11 +51,24 @@ class OwnerReportsTestCase(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		# No completed transaction is dated after today (dates.py, QA-24). These tests work in 2028, far from the
+		# site's own documents, so for them today is the end of that year; the rule has its own tests.
+		cls.today_2028 = patch("imed_erp.imederp.dates.today", return_value="2028-12-31")
+		cls.today_2028.start()
 		frappe.set_user("Administrator")
 		# Only the File record is needed: an expense checks that its receipt was uploaded, not its content.
 		if not frappe.db.exists("File", {"file_url": RECEIPT}):
 			frappe.get_doc({"doctype": "File", "file_name": "receipt.png", "file_url": RECEIPT}).db_insert()
 		cls.customer = cls.make_customer("Test Owner Reports Customer")
+		# A cash box never goes below zero (cash_balance.py): the expenses here are paid from money put in first.
+		from imed_erp.imederp.testing import fund_cash_boxes
+
+		fund_cash_boxes()
+
+	@classmethod
+	def tearDownClass(cls):
+		cls.today_2028.stop()
+		super().tearDownClass()
 
 	@staticmethod
 	def make_customer(name):
@@ -163,6 +176,14 @@ class OwnerReportsTestCase(IntegrationTestCase):
 		entry.submit()
 		return entry
 
+	@staticmethod
+	def private_receipt():
+		"""SEC-03: each expense files its own private receipt. Only the File record is needed (no file on disk): an
+		expense checks the receipt was uploaded by whoever files it, not its content."""
+		url = f"/private/files/_test_owner_reports_receipt_{frappe.generate_hash(length=10)}.png"
+		frappe.get_doc({"doctype": "File", "file_name": url.rsplit("/", 1)[-1], "file_url": url, "is_private": 1}).db_insert()
+		return url
+
 	def expense(self, cost_center, amount, date, submit=True):
 		# ERPNext caches the cost center allocation per request; each expense here stands for a request of its own.
 		getattr(frappe.local, "request_cache", {}).clear()
@@ -174,7 +195,7 @@ class OwnerReportsTestCase(IntegrationTestCase):
 				"expense_category": "الكهرباء",
 				"amount": amount,
 				"treasury": TREASURY,
-				"receipt": RECEIPT,
+				"receipt": self.private_receipt(),
 			}
 		).insert()
 		if submit:
@@ -386,7 +407,8 @@ class IntegrationTestOwnerYesterday(OwnerReportsTestCase):
 		doc = frappe.new_doc("Daily Counter Reading")
 		doc.update({"branch": AZARITA, "reading_date": day})
 		for row in get_machines(AZARITA):
-			opening = row["opening_reading"] if row["opening_reading"] is not None else 1000
+			# Read in the morning where the machine closed last (no gap).
+			opening = row["previous_closing"] if row["previous_closing"] is not None else 1000
 			row.update({"opening_reading": opening, "closing_reading": opening})
 			doc.append("machines", row)
 		doc.machines[0].closing_reading = doc.machines[0].opening_reading + 40
@@ -553,6 +575,8 @@ class IntegrationTestRevenueByPeriod(OwnerReportsTestCase):
 			credit.set_posting_time = 1
 			credit.items[0].qty = -1
 			credit.items[0].rate = 120
+			# A return is made only with its reason (sales_cancellation.py).
+			credit.set(RETURN_REASON_FIELD, "Test")
 			credit.insert()
 			credit.submit()
 
@@ -796,6 +820,7 @@ class IntegrationTestOutstandingReceivables(OwnerReportsTestCase):
 		credit.items[0].rate = 200
 		if credit.meta.has_field("update_outstanding_for_self"):
 			credit.update_outstanding_for_self = 0  # set against the invoice, as a return of part of it
+		credit.set(RETURN_REASON_FIELD, "Test")
 		credit.insert()
 		credit.submit()
 		rows = self.by_reference()

@@ -7,6 +7,7 @@ from frappe.model.document import Document
 from frappe.utils import flt
 
 from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_fee_per_student
+from imed_erp.imederp.import_source import check_source
 
 # ---------------------------------------------------------------------------------------------------------
 # The owner's answers on counting students for the platform fee tier (requirements v1.2 §4.10). Change them
@@ -32,6 +33,9 @@ class AppCourse(Document):
 	# APP-01 (requirements v1.2): a course on the BA+ app, of one doctor's app agreement, in one term. Its
 	# students' subscriptions (App Subscription) are what the platform fee tier is counted on.
 	def validate(self):
+		# INT-01: an imported course is changed in BA Plus; its status (open or closed to new students) and the
+		# counts the system keeps are the ERP's own.
+		check_source(self, ("status", "doctor", "subscriptions", "tier", "fee_per_student", "platform_fee_total"))
 		# DOC-02: a course belongs to an app agreement, not to a books one.
 		if frappe.db.get_value("Doctor Agreement", self.agreement, "agreement_type") != "App":
 			frappe.throw(_("Agreement {0} is not an app agreement.").format(self.agreement))
@@ -56,8 +60,11 @@ class AppCourse(Document):
 def recalculate_course(course, date=None):
 	"""APP-03: count the students, take the tier for that count and charge every counted subscription the
 	tier's fee, by TIER_COUNTED_PER and COUNT_WITHDRAWN above, and post the change to the doctor's account
-	(APP-05). Nothing changes once the term is closed."""
-	agreement, period = frappe.db.get_value("App Course", course, ["agreement", "period"])
+	(APP-05). Nothing changes once the term is closed.
+
+	QA-12: the course's row is locked before counting, so two subscriptions submitted together are counted one
+	after the other and neither misses the other."""
+	agreement, period = frappe.db.get_value("App Course", course, ["agreement", "period"], for_update=True)
 	term = frappe.db.get_value("Academic Period", period, ["start_date", "is_closed"], as_dict=True)
 	if term.is_closed:
 		return
@@ -69,7 +76,13 @@ def recalculate_course(course, date=None):
 	counted = {"course": ("in", courses), "docstatus": 1}
 	if not COUNT_WITHDRAWN:
 		counted["withdrawn"] = 0
-	fee = flt(get_fee_per_student(frappe.db.count("App Subscription", counted), term.start_date))
+	students_counted = frappe.db.count("App Subscription", counted)
+	fee = flt(get_fee_per_student(students_counted, term.start_date))
+	# QA-34: the tier is kept with the fee, as counted now; a schedule entered later does not relabel it.
+	from imed_erp.imederp.doctype.platform_fee_schedule.platform_fee_schedule import get_tier
+	from imed_erp.imederp.report.platform_fees.platform_fees import tier_label
+
+	tier = tier_label(get_tier(students_counted, term.start_date))
 
 	# Not a change by the user: a course or a subscription open on someone's screen can still be saved.
 	for name in courses:
@@ -77,7 +90,7 @@ def recalculate_course(course, date=None):
 		frappe.db.set_value(
 			"App Course",
 			name,
-			{"subscriptions": students, "fee_per_student": fee, "platform_fee_total": fee * students},
+			{"subscriptions": students, "fee_per_student": fee, "platform_fee_total": fee * students, "tier": tier},
 			update_modified=False,
 		)
 	frappe.db.set_value("App Subscription", counted, "platform_fee", fee, update_modified=False)

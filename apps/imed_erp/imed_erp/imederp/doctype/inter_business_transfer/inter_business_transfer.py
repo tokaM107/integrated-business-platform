@@ -48,6 +48,9 @@ class InterBusinessTransfer(Document):
             if not account or account.is_group or account.account_type not in TREASURY_TYPES:
                 frappe.throw(_("{0} is not a treasury. Choose a cash or wallet account.").format(treasury))
         check_treasury(self.from_business, self.from_treasury)
+        # QA-08: the money lands in the receiving business's own cash box or a group wallet, not in the sender's
+        # box under the other business's name.
+        check_treasury(self.to_business, self.to_treasury)
 
     def validate_period(self):
         if frappe.db.get_value("Academic Period", self.period, "is_closed"):
@@ -73,6 +76,8 @@ class InterBusinessTransfer(Document):
             frappe.throw(
                 _("Only a user with the {0} role can confirm receipt.").format(_(RECEIVER_ROLE)), frappe.PermissionError
             )
+        # QA-10: read again under a lock, so two clicks (or two people) cannot both post the receipt.
+        self.status = frappe.db.get_value(self.doctype, self.name, "status", for_update=True)
         if self.docstatus != 1 or self.status != "Sent":
             frappe.throw(_("{0} is {1}. Only a Sent transfer can be received.").format(self.name, _(self.status)))
 

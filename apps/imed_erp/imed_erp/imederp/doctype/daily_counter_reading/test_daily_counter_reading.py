@@ -1,9 +1,10 @@
 # Copyright (c) 2026, toka mohamed and Contributors
 # See license.txt
 
-# A library's counters for the day on one screen (PRN-01): every machine of the branch in service, each opening
-# from the machine's last reading, saved once into one Printer Reading per machine; what they printed is set
-# against the printing and copying the library sold that day (PRN-02). Rolled back afterwards.
+# A library's counters for the day on one screen (PRN-01): every machine of the branch in service, read in the
+# morning and in the evening (22 Oct 2026), saved into one Printer Reading per machine; what they printed is set
+# against the printing and copying the library sold that day, the paper issued and the sheets damaged (PRN-02).
+# Rolled back afterwards.
 #
 # Run:
 #   bench --site frontend run-tests --doctype "Daily Counter Reading"
@@ -12,7 +13,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days
+from frappe.utils import add_days, today
 
 from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
 from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import get_rates
@@ -20,7 +21,7 @@ from imed_erp.imederp.sales_cancellation import cancel_with_reason
 
 # Linked records already exist on the site (the libraries' machines come from setup_library.py); without this list
 # Frappe builds ERPNext's "_Test ..." records and commits them to the site.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Printer Reading", "Printing Machine"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Printer Reading", "Printing Machine", "User"]
 
 AZARITA = "مكتبة الأزاريطة - MMG"
 MAWASAH = "مكتبة المواساة - MMG"
@@ -47,13 +48,13 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		frappe.db.rollback(save_point="daily_counters")
 
 	def sheet(self, closings, date="2026-10-07", openings=None, submit=True, **values):
+		"""The day's screen; each machine's morning reading is `openings`' or, by default, what it closed at last."""
 		doc = frappe.new_doc("Daily Counter Reading")
 		doc.update({"branch": AZARITA, "reading_date": date, **values})
 		for row in get_machines(AZARITA):
 			if row["machine"] in closings:
 				row["closing_reading"] = closings[row["machine"]]
-				if openings and row["machine"] in openings:
-					row["opening_reading"] = openings[row["machine"]]
+				row["opening_reading"] = (openings or {}).get(row["machine"], row.get("previous_closing"))
 				doc.append("machines", row)
 		doc.insert()
 		if submit:
@@ -83,10 +84,15 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 	def test_the_next_day_starts_where_the_last_ended(self):
 		first, second, third = sorted(self.machines)
 		self.sheet({first: 1500, second: 800, third: 300}, openings={first: 1000, second: 500, third: 100})
-		self.assertEqual({row["machine"]: row["opening_reading"] for row in get_machines(AZARITA)}, {first: 1500, second: 800, third: 300})
-		# Typed openings are ignored once a machine has a reading.
-		sheet = self.sheet({first: 1600, second: 800, third: 350}, date="2026-10-08", openings={first: 1})
+		# The last closing is shown beside the morning reading, which is read off the counter, not copied.
+		shown = {row["machine"]: (row["previous_closing"], row.get("opening_reading")) for row in get_machines(AZARITA)}
+		self.assertEqual(shown, {first: (1500, None), second: (800, None), third: (300, None)})
+		sheet = self.sheet({first: 1600, second: 800, third: 350}, date="2026-10-08")
 		self.assertEqual([row.consumed for row in sorted(sheet.machines, key=lambda r: r.machine)], [100, 0, 50])
+		# Below the last closing is refused: a counter only goes up (a reset is the accountant's).
+		self.assertRaisesRegex(
+			frappe.ValidationError, "below its last closing", self.sheet, {first: 1700, second: 900, third: 400}, date="2026-10-09", openings={first: 1}
+		)
 
 	def test_a_reading_lower_than_the_last_is_refused(self):
 		first, second, third = sorted(self.machines)
@@ -94,6 +100,65 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		self.assertRaisesRegex(
 			frappe.ValidationError, "counter only goes up", self.sheet, {first: 1400, second: 800, third: 300}, date="2026-10-08"
 		)
+
+	# ---------- read twice a day (22 Oct 2026) ----------
+
+	def test_morning_then_evening(self):
+		first, second, third = sorted(self.machines)
+		self.sheet({first: 1500, second: 800, third: 300}, openings={first: 1000, second: 500, third: 100})
+		frappe.set_user(SARA)
+		morning = self.sheet({first: 0, second: 0, third: 0}, date="2026-10-08", openings={first: 1500, second: 800, third: 300}, submit=False)
+		self.assertEqual((morning.opening_recorded_by, morning.total_consumed), (SARA, 0))
+		self.assertTrue(morning.opening_recorded_on)
+		# The evening reading is required before the day is submitted.
+		self.assertRaisesRegex(frappe.ValidationError, "evening reading is missing", morning.submit)
+		morning.reload()
+		# The morning readings stay as read: Sara cannot change them.
+		morning.machines[0].opening_reading = 1400
+		self.assertRaisesRegex(frappe.ValidationError, "Only the accountant corrects them", morning.save)
+		morning.reload()
+		for row, closing in zip(sorted(morning.machines, key=lambda r: r.machine), (1650, 800, 350)):
+			row.closing_reading = closing
+		morning.save()
+		morning.submit()
+		frappe.set_user("Administrator")
+		self.assertEqual((morning.total_consumed, morning.closing_recorded_by), (200, SARA))
+		readings = frappe.get_all("Printer Reading", filters={"daily_counter_reading": morning.name}, fields=["opening_reading", "closing_reading", "consumed"])
+		self.assertEqual(sorted(r.consumed for r in readings), [0, 50, 150])
+
+	def test_a_gap_since_the_last_closing_says_why(self):
+		first, second, third = sorted(self.machines)
+		self.sheet({first: 1500, second: 800, third: 300}, openings={first: 1000, second: 500, third: 100})
+		# 40 sheets printed on the first machine after last night's reading.
+		self.assertRaisesRegex(
+			frappe.ValidationError, "Say why", self.sheet, {first: 1600, second: 800, third: 300}, date="2026-10-08", openings={first: 1540}
+		)
+		doc = frappe.new_doc("Daily Counter Reading")
+		doc.update({"branch": AZARITA, "reading_date": "2026-10-08"})
+		for row in get_machines(AZARITA):
+			row.update({"opening_reading": row["previous_closing"] + (40 if row["machine"] == first else 0), "closing_reading": row["previous_closing"] + 100})
+			if row["machine"] == first:
+				row["gap_note"] = "Printed after closing for a late customer"
+			doc.append("machines", row)
+		doc.insert()
+		doc.submit()
+		self.assertEqual((doc.total_gap, doc.total_consumed), (40, 260))
+		gap = frappe.db.get_value("Printer Reading", {"daily_counter_reading": doc.name, "machine": first}, ["gap", "consumed"])
+		self.assertEqual(gap, (40, 60))
+
+	def test_a_day_waiting_for_its_evening_blocks_the_next(self):
+		first, second, third = sorted(self.machines)
+		self.sheet({first: 0, second: 0, third: 0}, openings={first: 1000, second: 500, third: 100}, submit=False)
+		self.assertRaisesRegex(
+			frappe.ValidationError, "no evening readings yet", self.sheet, {first: 1100, second: 600, third: 200}, date="2026-10-08",
+			openings={first: 1000, second: 500, third: 100},
+		)
+
+	def test_the_counters_move_no_stock(self):
+		first, second, third = sorted(self.machines)
+		before = frappe.db.count("Stock Ledger Entry")
+		self.sheet({first: 1500, second: 800, third: 300}, openings={first: 1000, second: 500, third: 100})
+		self.assertEqual(frappe.db.count("Stock Ledger Entry"), before)
 
 	def test_every_machine_once_a_day(self):
 		first, second, third = sorted(self.machines)
@@ -153,6 +218,16 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 			{first: 1300, second: 650, third: 150}, date=DAY, openings={first: 1000, second: 500, third: 100}, sold_sheets=1
 		)
 		self.assertEqual((sheet.total_consumed, sheet.sold_sheets, sheet.variance), (500, 480, 20))
+		# Printed, sold, paper taken out of the store by those sales (once, by each sale) and damaged: apart.
+		issued = -sum(
+			frappe.get_all(
+				"Stock Ledger Entry",
+				filters={"item_code": "A4-PAPER", "posting_date": DAY, "is_cancelled": 0, "warehouse": "خامات الأزاريطة - MMG", "voucher_type": "Stock Entry"},
+				pluck="actual_qty",
+			)
+		)
+		self.assertEqual((sheet.paper_issued, sheet.damaged_sheets), (issued, 0))
+		self.assertIn(issued, (0, 480))
 
 	def test_a_later_sale_of_the_day_is_taken_in(self):
 		first, second, third = sorted(self.machines)
@@ -170,6 +245,7 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		first, second, third = sorted(self.machines)
 		sale = self.sell([("COPY-SVC", 50)])
 		refund = make_sales_return(sale.name)
+		refund.return_reason = "_Test returned by the accountant"
 		refund.insert()
 		refund.submit()
 		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=DAY, openings={first: 1000, second: 500, third: 100})
@@ -237,3 +313,22 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		doc.machines[-1].fault_note = "Paper jam"
 		doc.insert()
 
+
+	def test_sec08_another_library_s_machines_and_counters_are_not_shown(self):
+		from imed_erp.imederp.doctype.printer_reading.printer_reading import get_opening
+
+		mawasah_machine = frappe.get_all("Printing Machine", filters={"cost_center": MAWASAH}, pluck="name", limit=1)
+		frappe.set_user(SARA)
+		self.assertTrue(get_machines(AZARITA))
+		self.assertRaises(frappe.PermissionError, get_machines, MAWASAH)
+		if mawasah_machine:
+			self.assertRaises(frappe.PermissionError, get_opening, mawasah_machine[0])
+		get_opening(self.machines[0])
+
+	def test_qa24_qa30_the_day_s_screen_is_not_dated_ahead_and_a_first_opening_is_real(self):
+		first, second, third = sorted(self.machines)
+		closings = {first: 1050, second: 500, third: 100}
+		self.assertRaisesRegex(
+			frappe.ValidationError, "after today", self.sheet, closings, date=add_days(today(), 1), openings={first: 1000, second: 400, third: 50}
+		)
+		self.assertRaisesRegex(frappe.ValidationError, "first reading", self.sheet, closings, openings={first: 0, second: 400, third: 50})

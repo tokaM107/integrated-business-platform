@@ -26,6 +26,21 @@ DOCTYPES = ("Sales Invoice",)
 # A reason is a sentence or two; a longer text is refused rather than cut.
 MAX_REASON_LENGTH = 1000
 
+# QA-04: a return (credit note) reverses a sale as surely as cancelling it, and can pay cash out of the box, so it
+# has the same rule: only the owner and the accountant (Accounts Manager), and only with its reason.
+RETURN_REASON_FIELD = "return_reason"
+RETURN_ROLE = "Accounts Manager"
+RETURN_REASON = {
+	"fieldname": RETURN_REASON_FIELD,
+	"fieldtype": "Small Text",
+	"label": "Return Reason",
+	"insert_after": "is_return",
+	"no_copy": 1,
+	"print_hide": 1,
+	"depends_on": "eval:doc.is_return",
+	"mandatory_depends_on": "eval:doc.is_return",
+}
+
 CUSTOM_FIELDS = {
 	"Sales Invoice": [
 		{
@@ -38,7 +53,9 @@ CUSTOM_FIELDS = {
 			"print_hide": 1,
 			"depends_on": f"eval:doc.docstatus == 2 || doc.{REASON_FIELD}",
 		},
+		RETURN_REASON,
 	],
+	"POS Invoice": [RETURN_REASON],
 }
 
 
@@ -92,3 +109,24 @@ def cancel_with_reason(doctype, name, reason):
 	doc.set(REASON_FIELD, reason)
 	doc.cancel()
 	return doc.name
+
+
+def restrict_returns(doc, method=None):
+	"""Sales Invoice and POS Invoice validate hook (QA-04). The libraries take no returns (§9); a sale made by
+	mistake is cancelled with its reason, or returned by the owner or the accountant with its reason. A branch
+	manager's return, from the desk or the POS Return button, is refused. The Sales Invoice ERPNext makes from a
+	shift's POS invoices (is_consolidated) carries returns already checked one by one."""
+	if not doc.get("is_return") or doc.get("is_consolidated") or doc.flags.from_damaged_stock:
+		return
+	if RETURN_ROLE not in frappe.get_roles():
+		frappe.throw(
+			_("Only the owner or the accountant may return a sale. Ask them, or cancel a sale made by mistake with its reason."),
+			frappe.PermissionError,
+			title=_("Not Allowed"),
+		)
+	reason = clean_reason(doc.get(RETURN_REASON_FIELD))
+	if not reason:
+		frappe.throw(_("Give the reason for this return."), title=_("Return Reason Required"))
+	if len(reason) > MAX_REASON_LENGTH:
+		frappe.throw(_("The return reason is too long: at most {0} characters.").format(MAX_REASON_LENGTH))
+	doc.set(RETURN_REASON_FIELD, reason)

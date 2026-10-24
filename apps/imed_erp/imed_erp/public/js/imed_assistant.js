@@ -49,6 +49,7 @@
 		status: null, // promise of get_status()
 		history: [], // [{role, content}] sent to the server
 		items: [], // what the panel shows: {role, text?, audio_url?, transcript?}
+		audio_urls: [], // the voice messages' object URLs, released when the page goes
 		busy: false,
 		recorder: null,
 		chunks: [],
@@ -248,6 +249,7 @@
 
 	function send_voice($root, blob, mime) {
 		const item = { role: "user", audio_url: URL.createObjectURL(blob) };
+		state.audio_urls.push(item.audio_url);
 		state.items.push(item);
 		const reader = new FileReader();
 		reader.onloadend = () => {
@@ -310,6 +312,9 @@
 		state.chunks = [];
 		state.cancelled = false;
 		recorder.ondataavailable = (e) => e.data.size && state.chunks.push(e.data);
+		// A microphone unplugged mid-recording ends its track: stop there, or the timer would run on.
+		stream.getAudioTracks().forEach((track) => track.addEventListener("ended", () => stop_recording($root)));
+		recorder.onerror = () => stop_recording($root, true);
 		recorder.onstop = () => {
 			stream.getTracks().forEach((track) => track.stop());
 			const type = (recorder.mimeType || mime || "audio/webm").split(";")[0];
@@ -329,11 +334,13 @@
 	}
 
 	function stop_recording($root, cancel) {
-		if (!state.recorder) return;
-		state.cancelled = !!cancel;
 		clearInterval(state.record_timer);
+		if (!state.recorder || state.recorder.state === "inactive") return;
+		state.cancelled = !!cancel;
 		state.recorder.stop();
 	}
+
+	window.addEventListener("pagehide", () => state.audio_urls.forEach((url) => URL.revokeObjectURL(url)));
 
 	function set_recording_ui($root, on) {
 		$root.toggleClass("is-recording", on);

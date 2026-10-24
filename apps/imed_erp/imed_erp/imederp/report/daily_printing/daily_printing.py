@@ -26,11 +26,14 @@ def get_columns():
 		{"label": _("Branch"), "fieldname": "branch", "fieldtype": "Link", "options": "Cost Center", "width": 160},
 		{"label": _("Machine"), "fieldname": "machine", "fieldtype": "Link", "options": "Printing Machine", "width": 160},
 		{"label": _("Type"), "fieldname": "machine_type", "fieldtype": "Data", "width": 70},
-		{"label": _("Consumed Sheets"), "fieldname": "consumed", "fieldtype": "Int", "width": 110},
+		{"label": _("Printed Sheets"), "fieldname": "consumed", "fieldtype": "Int", "width": 110},
+		{"label": _("Gap Since Last Closing"), "fieldname": "gap", "fieldtype": "Int", "width": 110},
 		{"label": _("Utilization (%)"), "fieldname": "utilization", "fieldtype": "Percent", "width": 100},
 		{"label": _("Broke Down"), "fieldname": "fault", "fieldtype": "Data", "width": 140},
 		{"label": _("Sold Sheets"), "fieldname": "sold", "fieldtype": "Float", "precision": 1, "width": 100},
-		{"label": _("Variance (Sheets)"), "fieldname": "variance", "fieldtype": "Float", "precision": 1, "width": 110},
+		{"label": _("Printed but Not Sold"), "fieldname": "variance", "fieldtype": "Float", "precision": 1, "width": 110},
+		{"label": _("Paper Issued for Sales"), "fieldname": "paper_issued", "fieldtype": "Int", "width": 110},
+		{"label": _("Damaged Sheets Recorded"), "fieldname": "damaged_sheets", "fieldtype": "Int", "width": 110},
 		{"label": _("Cost per Sheet"), "fieldname": "cost_per_sheet", "fieldtype": "Currency", "precision": 4, "width": 100},
 		{"label": _("Variance Value"), "fieldname": "variance_value", "fieldtype": "Currency", "width": 120},
 		{"label": _("Average Price per Sheet"), "fieldname": "average_price", "fieldtype": "Currency", "precision": 4, "width": 110},
@@ -47,13 +50,13 @@ def get_data(filters):
 		"Daily Counter Reading",
 		filters=conditions,
 		fields=["name", "branch", "reading_date", "total_consumed", "sold_sheets", "variance", "cost_per_sheet",
-			"variance_value", "sales_value", "average_price", "margin_per_sheet"],
+			"variance_value", "sales_value", "average_price", "margin_per_sheet", "total_gap", "paper_issued", "damaged_sheets"],
 		order_by="reading_date, branch",
 	):
 		machines = frappe.get_all(
 			"Daily Counter Reading Item",
 			filters={"parent": day.name, "parenttype": "Daily Counter Reading"},
-			fields=["machine", "machine_type", "consumed", "cost_per_sheet", "fault", "fault_note"],
+			fields=["machine", "machine_type", "consumed", "gap", "cost_per_sheet", "fault", "fault_note"],
 			order_by="idx",
 		)
 		printed = sum(max(cint(m.consumed), 0) for m in machines)
@@ -77,6 +80,7 @@ def get_data(filters):
 					"machine": m.machine,
 					"machine_type": m.machine_type,
 					"consumed": m.consumed,
+					"gap": m.gap,
 					"utilization": flt(share * 100, 1),
 					"fault": (m.fault_note or _("Yes")) if m.fault else None,
 					"sold": flt(sold, 1),
@@ -92,6 +96,9 @@ def get_data(filters):
 				"machine": None,
 				"machine_type": _("Total"),
 				"consumed": day.total_consumed,
+				"gap": day.total_gap,
+				"paper_issued": day.paper_issued,
+				"damaged_sheets": day.damaged_sheets,
 				"utilization": 100 if machines else 0,
 				"sold": day.sold_sheets,
 				"variance": day.variance,
@@ -136,7 +143,8 @@ def period_rows(period):
 			"sold": flt(sum(m.sold for m in period.values()), 1),
 			"variance": flt(sum(m.consumed - m.sold for m in period.values()), 1),
 			"variance_value": flt(sum(m.variance_value for m in period.values()), 2),
-			"fault": _("{0} days").format(sum(m.faults for m in period.values())) or None,
+			# QA-36: nothing when there was no breakdown, not "0 days".
+			"fault": _("{0} days").format(faults) if (faults := sum(m.faults for m in period.values())) else None,
 			"is_total": 1,
 		}
 	)

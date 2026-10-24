@@ -83,11 +83,13 @@ class IntegrationTestRecurringExpense(IntegrationTestCase):
 		self.assertEqual(self.drafts_of(recurring)[0].amount, 50000)
 
 	def test_missed_months_each_get_a_draft(self):
+		# Off since last month: last month's draft and this month's. (Not further back than the company's fiscal
+		# year, which starts on 1 Sep 2026: no expense is dated outside it.)
 		recurring = self.make_recurring(day_of_month=getdate(today()).day)
-		recurring.db_set("next_date", add_months(today(), -2))
+		recurring.db_set("next_date", add_months(today(), -1))
 
 		make_due_expenses()
-		self.assertEqual(len(self.drafts_of(recurring)), 3)
+		self.assertEqual(len(self.drafts_of(recurring)), 2)
 
 	def test_not_due_yet_or_disabled_makes_nothing(self):
 		later = self.make_recurring(next_date=add_days(today(), 1))

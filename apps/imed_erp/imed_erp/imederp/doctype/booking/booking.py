@@ -25,6 +25,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt, get_datetime, get_time, getdate, now_datetime
 
+from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.booking_accounts import complete, payments_total, posted, treasury_of
 from imed_erp.imederp.booking_pricing import REVENUE_SHARE, price_booking, pricing_key, revenue_share
 from imed_erp.imederp.customers import normalize_phone
@@ -53,6 +54,7 @@ def check_own_business(cost_center):
 		for p in get_user_permissions(frappe.session.user).get("Cost Center", [])
 		if not p.get("applicable_for") or p.get("applicable_for") == "Booking"
 	]
+	check_has_branch(allowed)
 	if allowed and cost_center not in allowed:
 		frappe.throw(
 			_("{0} is not your business. You can book for: {1}.").format(cost_center, ", ".join(sorted(allowed))),
@@ -67,6 +69,7 @@ class Booking(Document):
 		self.check_resource()
 		self.check_times()
 		self.check_hall_details()
+		self.check_hour_package()
 		if self.source == MANUAL:
 			self.check_rental_model()
 			self.check_posted()
@@ -78,8 +81,45 @@ class Booking(Document):
 		self.check_overlap()
 
 	def on_update(self):
+		# Prepaid hours: what the booking holds of its package follows it (studio_hour_package.py).
+		if self.hour_package or (self.get_doc_before_save() and self.get_doc_before_save().hour_package):
+			from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import draw
+
+			draw(self)
 		# Completed: the invoice (or the revenue-share entry), once (booking_accounts.py).
 		complete(self)
+
+	def check_hour_package(self):
+		"""A session on a teacher's prepaid hours (22 Oct 2026): its exact length comes off the package while it holds
+		its time; hours beyond what is left only once the accountant or the owner decides they are billed."""
+		if not self.hour_package:
+			self.package_hours = self.extra_hours = 0
+			self.bill_extra_hours, self.extra_hours_approved_by = 0, None
+			return
+		from imed_erp.imederp.booking_pricing import exact_hours
+		from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import ACCOUNTS_ROLES, plan
+
+		if self.source != MANUAL:
+			frappe.throw(_("An imported booking is priced by the booking system; it draws on no prepaid hours."))
+		if self.package:
+			frappe.throw(_("A session on prepaid hours takes no price package."), title=_("Two Packages"))
+		before = self.get_doc_before_save()
+		authorised = bool(set(ACCOUNTS_ROLES) & set(frappe.get_roles()))
+		decided_before = bool(before and before.bill_extra_hours)
+		if before and decided_before and not authorised and (
+			flt(before.hours) != flt(self.hours) or before.hour_package != self.hour_package
+		):
+			# The decision was for the session as it was; a longer or moved one is decided again.
+			self.bill_extra_hours = 0
+		if self.bill_extra_hours and not (decided_before and before.bill_extra_hours == self.bill_extra_hours and self.extra_hours_approved_by):
+			if not authorised:
+				frappe.throw(
+					_("Only the accountant or the owner decides to bill hours beyond the package."), frappe.PermissionError, title=_("Decision Needed")
+				)
+			self.extra_hours_approved_by = frappe.session.user
+		if not self.bill_extra_hours:
+			self.extra_hours_approved_by = None
+		self.package_hours, self.extra_hours = plan(self, exact_hours(self), self.status in HOLDING)
 
 	def check_source(self):
 		"""Only the import makes an imported booking, and only the import changes it (INT-01: what comes from the
@@ -176,11 +216,14 @@ class Booking(Document):
 		self.expected_revenue = flt(cint(self.attendees) * flt(self.admission_price), 2)
 		self.lecturer_share, self.center_share = revenue_share(self.collected_amount, self.lecturer_share_percent)
 		if self.status == COMPLETED:
-			missing = [
-				_(self.meta.get_label(f))
-				for f in ("attendees", "admission_price", "lecturer_share_percent", "lecturer")
-				if not self.get(f)
-			]
+			# QA-14: 0 is an answer: no attendees, free admission, or a lecturer who takes no share. A share is never
+			# assumed (HAL-12), and the database keeps an empty share as 0, so naming the lecturer is what confirms
+			# it: without a lecturer, a 0% share is still missing.
+			missing = []
+			if not self.lecturer:
+				if not flt(self.lecturer_share_percent):
+					missing.append(_(self.meta.get_label("lecturer_share_percent")))
+				missing.append(_(self.meta.get_label("lecturer")))
 			if missing:
 				frappe.throw(
 					_("A revenue-share booking is completed with its {0}. The lecturer's share is agreed per booking: the owner has not set one rate.").format(
@@ -199,7 +242,13 @@ class Booking(Document):
 		if not documents:
 			return
 		shared = ("collected_amount", "lecturer_share_percent", "lecturer", "attendees", "admission_price")
-		changed = self.status != before.status or pricing_key(self) != before.pricing_key or any(
+		# QA-15: the day and times too, or the calendar would no longer match the invoice.
+		moved = (
+			getdate(before.booking_date) != getdate(self.booking_date)
+			or get_time(before.from_time) != get_time(self.from_time)
+			or get_time(before.to_time) != get_time(self.to_time)
+		)
+		changed = moved or self.status != before.status or pricing_key(self) != before.pricing_key or any(
 			flt(self.get(f)) != flt(before.get(f)) if f != "lecturer" else self.get(f) != before.get(f) for f in shared
 		)
 		if changed:

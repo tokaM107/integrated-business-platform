@@ -1241,3 +1241,645 @@ Expenses,المصروفات
 Paid or Credited,المدفوع أو المخصوم
 "Doctors' share of sales",نصيب الدكاترة من المبيعات
 Monthly bills reminder,تذكير الفواتير الشهرية
+"A booking's payment is recorded from the booking (Record Payment), not by naming it on a payment.",دفعة الحجز بتتسجّل من الحجز نفسه (تسجيل دفعة)، مش بكتابة الحجز على دفعة.
+A counter reading cannot be dated after today.,قراءة العدّاد ماينفعش يكون تاريخها بعد النهارده.
+A payout cannot be dated after today.,الصرف للطبيب ماينفعش يكون تاريخه بعد النهارده.
+A transfer cannot be dated after today.,التحويل ماينفعش يكون تاريخه بعد النهارده.
+Already Read,اتقرا قبل كده
+An expense cannot be dated after today.,المصروف ماينفعش يكون تاريخه بعد النهارده.
+Attach the receipt as a private file.,ارفع الإيصال كملف خاص (Private).
+Attach the receipt to this expense; a file from elsewhere is not accepted.,ارفع إيصال المصروف ده عليه؛ ملف من مكان تاني مش مقبول.
+Bookings Saved,الحجوزات اتحفظت
+Collected from Doctors This Month,المحصَّل من الأطباء الشهر ده
+Count {0} of this store was submitted after this one was made. Count again.,الجرد {0} للمخزن ده اتأكد بعد ما الجرد ده اتعمل. اعمل جرد تاني.
+Counter Reset,تصفير العدّاد
+Credit {0} of {1} to {2} for copies of {3} charged and sold since is waiting for you to submit it.,رد {0} بمبلغ {1} لـ {2} عن نسخ من {3} اتحسبت عليه واتباعت بعدها، مستني تأكيدك.
+Date Outside the Term,التاريخ برّه الترم
+Date in the Future,تاريخ في المستقبل
+Deposit held {0},العربون المحتفظ بيه {0}
+Expenses Yesterday,مصروفات امبارح
+Give the reason for rejecting the request.,اكتب سبب رفض الطلب.
+Give the reason for this return.,اكتب سبب المرتجع ده.
+Hall Bookings This Month,حجوزات القاعات الشهر ده
+"Materials go to another branch through its request, once approved: issue them from the request.",الخامات بتروح لفرع تاني من خلال طلبه بعد الموافقة عليه: اصرفها من الطلب.
+No Branch,مفيش فرع
+Not Allowed,غير مسموح
+Nothing paid,مفيش حاجة اتدفعت
+"Only the owner or the accountant may return a sale. Ask them, or cancel a sale made by mistake with its reason.",المرتجع للمالك أو المحاسب بس. اطلب منهم، أو الغي البيع الغلط وقول السبب.
+Only the owner or the accountant records a counter reset.,تصفير العدّاد بيسجّله المالك أو المحاسب بس.
+Opening Needed,القراءة الافتتاحية مطلوبة
+Platform Fees This Month,رسوم المنصة الشهر ده
+"Read the counters on the day's screen (Daily Counter Reading), with every machine of the library.",سجّل العدّادات من شاشة اليوم (قراءة العدادات اليومية)، بكل مكن المكتبة.
+Receipt Not Private,الإيصال مش خاص
+Receipt Used,الإيصال مستخدم
+Rejection Reason Required,سبب الرفض مطلوب
+Request Needed,محتاج طلب
+Reset Note,ملاحظة التصفير
+Return Reason,سبب المرتجع
+Return Reason Required,سبب المرتجع مطلوب
+Revenue Yesterday,إيرادات امبارح
+Sales Invoice {0}: the doctor's amount was not counted; its period is closed,فاتورة البيع {0}: حق الطبيب ماتحسبش؛ الفترة بتاعتها مقفولة
+Say what happened to the counter.,قول إيه اللي حصل للعدّاد.
+Sheets Printed Yesterday,الورق اللي اتطبع امبارح
+Studio Bookings This Month,حجوزات الاستوديو الشهر ده
+Studio Hours This Month,ساعات الاستوديو الشهر ده
+"The machine's counter was reset (a repair, a new board): the opening is typed, below the last reading. The owner and the accountant only.",عدّاد المكنة اتصفّر (صيانة، بوردة جديدة): القراءة الافتتاحية بتتكتب، أقل من آخر قراءة. للمالك والمحاسب بس.
+The rejection reason is too long: at most {0} characters.,سبب الرفض طويل: {0} حرف بالكتير.
+The return reason is too long: at most {0} characters.,سبب المرتجع طويل: {0} حرف بالكتير.
+The subscription date must be in the course's term {0}: from {1} to {2}.,تاريخ الاشتراك لازم يكون جوه ترم الكورس {0}: من {1} لـ {2}.
+"The tier the course was counted in, kept as it was then.",الشريحة اللي الكورس اتحسب عليها، زي ما كانت وقتها.
+This receipt is already filed under expense {0}.,الإيصال ده متسجّل قبل كده على المصروف {0}.
+Type the counter of {0} as it shows before today's printing: its first reading.,اكتب عدّاد {0} زي ما هو قبل طباعة النهارده: دي أول قراءة ليه.
+Use the Day's Screen,استخدم شاشة اليوم
+"What happened to the counter, and its last reading before the reset if known.",إيه اللي حصل للعدّاد، وآخر قراءة قبل التصفير لو معروفة.
+Wrong Receipt,إيصال غلط
+Your account is not given a branch yet. Ask the owner to give you your branch.,حسابك لسه مالوش فرع. اطلب من المالك يحدد فرعك.
+it has money or a posting on it,عليه فلوس أو قيد
+it has subscriptions or fees,عليه اشتراكات أو رسوم
+it was imported from the booking system,اتستورد من نظام الحجز
+{0} already has a reading on {1}: {2}.,{0} ليها قراءة يوم {1}: {2}.
+{0} is already subscribed to course {1}: {2}.,{0} مشترك بالفعل في الكورس {1}: {2}.
+{0} of these expenses ({1}) are on the shared premises. They are listed as paid; the Profit and Loss by business shows them split between the halls and the studio by the allocation rule.,{0} من المصروفات دي ({1}) على المقر المشترك. ظاهرة هنا زي ما اتدفعت؛ وقائمة الأرباح والخسائر لكل نشاط بتقسمها بين القاعات والاستوديو حسب قاعدة التوزيع.
+{0} {1} cannot be deleted: {2}. Cancel or close it instead: it stays on record.,{0} {1} ماينفعش يتمسح: {2}. الغيه أو اقفله بدل كده: هيفضل متسجّل.
+{0} {1} for {2} under {3}. {4},{0} {1} لـ {2} على الاتفاقية {3}. {4}
+"{0}: {1} copies charged earlier have been sold since, given back at {2} a copy, {3}.",{0}: {1} نسخة اتحسبت قبل كده واتباعت بعدها، بترجع بـ {2} للنسخة، {3}.
+Treasury Balances,أرصدة الخزائن
+At the Start of the Day,أول اليوم
+Money In,الداخل
+Money Out,الخارج
+Date,التاريخ
+A disposal of edition {0} lists its item {1} only.,التخلص من الإصدار {0} بيشمل صنفه {1} بس.
+A doctor is never charged for unsold copies: the library bears them. A curriculum change is disposed of as scrap on the edition.,الطبيب عمره ما بيتحاسب على النسخ اللي ماتباعتش: المكتبة هي اللي بتتحملها. لو المنهج اتغيّر، النسخ بتتباع خردة من الإصدار نفسه.
+Copies,النسخ
+"Copies of an obsolete edition (the curriculum changed) disposed of as scrap, from its submitted Damaged Stock Entries. The library's loss, never the doctor's.",نسخ إصدار قديم (المنهج اتغيّر) اتصرفت خردة، من قيود التالف المعتمدة بتاعته. خسارة على المكتبة، مش على الطبيب أبداً.
+Dispose as Scrap,التخلص منه كخردة
+Disposed Qty,الكمية اللي اتصرفت خردة
+Edition {0} has {1} copies left to dispose of.,الإصدار {0} فاضل منه {1} نسخة بس للتخلص منها.
+Edition {0} is not obsolete (Cancel: Curriculum Changed).,الإصدار {0} مش قديم (لازم يتسجّل إلغاء: المنهج اتغيّر).
+Edition {0} is {1}'s; dispose of it from that library's store.,الإصدار {0} تبع {1}؛ اتخلص منه من مخزن المكتبة دي.
+"Edition {0} names no item, so its copies are not in stock.",الإصدار {0} مالوش صنف، فنسخه مش في المخزن.
+Make the Disposal,اعمل قيد التخلص
+No Fiscal Year,مفيش سنة مالية
+No store of {0} holds copies of {1}.,مفيش مخزن في {0} فيه نسخ من {1}.
+Not Charged to the Doctor,مش على حساب الطبيب
+Not Obsolete,الإصدار مش قديم
+Obsolete Edition,الإصدار القديم
+Only an edition whose curriculum changed is disposed of as scrap. Record Cancel: Curriculum Changed first.,الإصدار اللي منهجه اتغيّر بس هو اللي يتباع خردة. سجّل الأول إلغاء: المنهج اتغيّر.
+Set by Dispose as Scrap on an edition whose curriculum changed: its unsold copies leave the store as the library's loss.,بيتحط من زرار التخلص منه كخردة على إصدار منهجه اتغيّر: نسخه اللي ماتباعتش بتطلع من المخزن خسارة على المكتبة.
+They leave the store as the library's loss and wait in the damaged store to be sold by weight. The doctor is not charged.,بتطلع من المخزن خسارة على المكتبة وتستنى في مخزن التالف لحد ما تتباع بالوزن. الطبيب مش بيتحاسب عليها.
+Too Many Copies,عدد نسخ أكتر من اللازم
+Total Qty - Sold Qty - Disposed Qty.,إجمالي الكمية - المباع - اللي اتصرف خردة.
+{0} cannot be dated after today: {1}. Record it on the day it happens.,{0} ماينفعش يكون تاريخه بعد النهارده: {1}. سجّله في يومه.
+{0} is not in a fiscal year of {1}. Choose a date in an open fiscal year.,{0} مش جوه سنة مالية بتاعة {1}. اختار تاريخ في سنة مالية مفتوحة.
+{0}: the curriculum changed (notice of {1}); sold as scrap by weight.,{0}: المنهج اتغيّر (إخطار يوم {1})؛ بيتباع خردة بالوزن.
+Treasury Close,إقفال الخزينة
+Cash Box Closes,إقفالات الخزائن
+The cash box or wallet counted.,الخزينة أو المحفظة اللي اتعدّت.
+The business whose cash box it is.,النشاط اللي الخزينة تبعه.
+The Day in the Books,اليوم في الدفاتر
+Expected Balance,الرصيد المفروض
+What the books show at the end of the day: start + in - out.,اللي الدفاتر بتقوله آخر اليوم: أول اليوم + الداخل - الخارج.
+Cash Counted,النقدية المعدودة
+What is actually in the cash box when it is counted.,اللي موجود فعلاً في الخزينة وقت العدّ.
+"Counted - expected: below zero a shortage, above zero a surplus. Recorded only: nothing is posted for it yet (docs/known-issues.md).",المعدود - المفروض: بالسالب عجز، وبالموجب زيادة. بيتسجّل بس: لسه مفيش قيد بيتعمل له.
+The cash counted cannot be below zero.,النقدية المعدودة ماينفعش تكون أقل من صفر.
+{0} is already closed for {1}: {2}.,{0} اتقفلت قبل كده يوم {1}: {2}.
+Already Closed,متقفلة قبل كده
+Short by {0}.,عجز {0}.
+Over by {0}.,زيادة {0}.
+Paper Balance,رصيد الورق
+Boxes,كراتين
+Reams,رزم
+Loose Sheets,ورق فرط
+Unpaid,غير المسدد
+A user is not deleted: disable the account instead (untick Enabled). Their history stays on record.,المستخدم مابيتمسحش: عطّل الحساب بدل كده (شيل علامة مفعّل). تاريخه بيفضل متسجّل.
+Disable Instead,عطّله بدل الحذف
+The cash box counted: the branch's own.,الخزينة اللي اتعدّت: خزينة الفرع نفسه.
+Closed On,اتقفلت في
+Closed By,قفلها
+The branch manager who closed the box: whoever submits it.,مدير الفرع اللي قفل الخزينة: اللي بيعمل الاعتماد.
+Shift,الشيفت
+"Morning, evening, or who was on the till, if the branch works in shifts.",صباحي، مسائي، أو مين كان على الخزينة، لو الفرع شغال شيفتات.
+Last Close,آخر تقفيل
+"The cash counted at the box's last close; for its first close, what the books held when the day began.",الفلوس اللي اتعدّت في آخر تقفيل للخزينة؛ ولو ده أول تقفيل، رصيد الدفاتر أول اليوم.
+Collections and transfers in since the last close.,التحصيلات والتحويلات الداخلة من آخر تقفيل.
+"Expenses, payouts, transfers out and other payments since the last close.",المصروفات والصرف والتحويلات الخارجة وأي مدفوعات تانية من آخر تقفيل.
+Collections,التحصيلات
+Transfers In,تحويلات داخلة
+Expenses and Payouts,مصروفات وصرف
+Transfers Out,تحويلات خارجة
+Refunds and Other Payments,مرتجعات ومدفوعات تانية
+Expected Closing,الرصيد المتوقع
+Opening + money in - money out.,رصيد البداية + الداخل - الخارج.
+Shortage (-) / Surplus (+),عجز (-) / زيادة (+)
+Cash counted - expected closing. Recorded: the books are not changed to match the cash.,الفلوس اللي اتعدّت - الرصيد المتوقع. بيتسجل بس: الدفاتر مش بتتغير عشان تطابق الفلوس.
+Balance in the Books,الرصيد في الدفاتر
+"What the ledger holds at the end of the day, with the earlier differences not adjusted yet.",رصيد الدفاتر آخر اليوم، ومعاه الفروقات اللي قبل كده ولسه متسوّتش.
+Evidence,إثبات
+"A photo of the count sheet, or anything that explains a difference.",صورة ورقة العد، أو أي حاجة بتوضح الفرق.
+Cash Discrepancy,فرق خزينة
+Reopening and Review,إعادة الفتح والمراجعة
+Needs Review,محتاجة مراجعة
+"Set when an earlier close of this box was reopened, or an entry was dated into a day this close covers.",بتتعلّم لما تقفيل قبلها للخزينة دي يتفتح تاني، أو قيد يتسجل بتاريخ يوم التقفيل ده بيغطيه.
+Review Note,ملاحظة المراجعة
+Reopening Reason,سبب إعادة الفتح
+Reopened By,فتحها تاني
+Reopened On,اتفتحت تاني في
+Pending Investigation,مستني تحقيق
+Responsibility Determined,المسؤول اتحدد
+Recovery Approved,الاسترداد اتوافق عليه
+Written Off,اتشطب على الشركة
+Pending Review,مستني مراجعة
+Explained,اتوضّح
+Withdrawn,اتسحب
+Surplus,زيادة
+"Which shift handled the cash, if known.",أنهي شيفت كان مسؤول عن الفلوس، لو معروف.
+Investigation,التحقيق
+Employees,الموظفين
+Everyone who handled the cash that day. Mark responsible only those the investigation found responsible.,كل اللي اتعامل مع الفلوس اليوم ده. علّم مسؤول بس على اللي التحقيق أثبت إنه مسؤول.
+"What caused it, or the explanation of a surplus.",سبب الفرق، أو تفسير الزيادة.
+Investigation Notes,نتيجة التحقيق
+Review and Approval,المراجعة والموافقة
+Reviewed By,راجعها
+Reviewed On,اتراجعت في
+Recovery Checked Against the Contract and the Labour Law,الاسترداد متراجع على العقد وقانون العمل
+"The accountant confirms the recovery is allowed by the employment contract and within the labour law's limits on deductions, after the employee was told and heard. Required before a recovery is approved.",المحاسب بيأكد إن الاسترداد مسموح بيه في عقد العمل وفي حدود قانون العمل للخصم، بعد ما الموظف اتبلّغ واتسمع رده. لازم قبل الموافقة على أي استرداد.
+Payroll,المرتبات
+For the payroll review report. Nothing is deducted from a salary by the system.,لتقرير مراجعة المرتبات. السيستم مش بيخصم أي حاجة من المرتب.
+Ready for Payroll Review,جاهز لمراجعة المرتبات
+Adjustment Entry,قيد التسوية
+"The book adjustment to فروقات الخزينة, posted only after the review (Post Adjustment).",تسوية الدفاتر على فروقات الخزينة، بتتعمل بس بعد المراجعة (تسجيل التسوية).
+Cash Discrepancy Employee,موظف في فرق الخزينة
+"Determined by the accountant's investigation, never by having worked in the branch.",بيتحدد من تحقيق المحاسب، مش لمجرد إنه كان شغال في الفرع.
+Notified On,اتبلّغ في
+Employee's Response,رد الموظف
+Recovery Amount,مبلغ الاسترداد
+Typed by the accountant for each responsible employee; never split automatically.,المحاسب بيكتبه لكل موظف مسؤول؛ عمره ما بيتقسم لوحده.
+Weekly Cash Reconciliation,مراجعة الخزينة الأسبوعية
+Week Starting,بداية الأسبوع
+Week Ending,نهاية الأسبوع
+Leave empty for every branch.,سيبها فاضية لكل الفروع.
+Shortages,العجز
+Surpluses,الزيادات
+Unresolved Discrepancies,فروقات لسه مفتوحة
+Needs Review Again,محتاجة مراجعة تاني
+A close of this week was reopened after the week was reviewed.,تقفيل من الأسبوع ده اتفتح تاني بعد ما الأسبوع اتراجع.
+Daily Closes,التقفيلات اليومية
+Closes,التقفيلات
+Days Without a Close,أيام من غير تقفيل
+Accountant's Note,ملاحظة المحاسب
+Weekly Cash Reconciliation Item,بند مراجعة الخزينة الأسبوعية
+Transfers (In - Out),التحويلات (داخل - خارج)
+Discrepancy Status,حالة الفرق
+Reopening a close needs a reason.,إعادة فتح التقفيل محتاجة سبب.
+Reason Needed,محتاج سبب
+{0} of {1} was reopened by {2}: {3},{0} بتاع {1} اتفتح تاني بواسطة {2}: {3}
+{0} is not a cash box. Choose your branch's cash box.,{0} مش خزينة نقدية. اختار خزينة الفرع بتاعك.
+"{0} was already closed later, on {1} ({2}). A day before it can be closed only by reopening.",{0} اتقفلت بعد كده في {1} ({2}). يوم قبله مينفعش يتقفل غير بإعادة الفتح.
+The reason is too long: at most {0} characters.,السبب طويل: أقصى حاجة {0} حرف.
+Only a submitted close can be reopened.,التقفيل المعتمد بس هو اللي ينفع يتفتح تاني.
+"{0} is already closed for {1} ({2}). Date the entry today, or ask the accountant.",{0} متقفلة بالفعل ليوم {1} ({2}). سجّل القيد بتاريخ النهارده، أو كلّم المحاسب.
+Day Already Closed,اليوم متقفل
+"{0} {1} was entered by {2} on a closed day, {3}.",{0} {1} اتسجل بواسطة {2} في يوم متقفل، {3}.
+{0} is {1}: it can no longer be changed.,{0} حالته {1}: مينفعش يتغير تاني.
+An employee is listed twice.,في موظف متسجل مرتين.
+A recovery amount cannot be below zero.,مبلغ الاسترداد مينفعش يكون أقل من صفر.
+{0} is not found responsible: nothing can be recovered from them.,{0} مش متحدد إنه مسؤول: مينفعش يتسترد منه حاجة.
+Nothing is recovered on a surplus.,مفيش استرداد على الزيادة.
+A cash discrepancy is kept. A reopened close withdraws it.,فرق الخزينة بيفضل متسجل. إعادة فتح التقفيل هي اللي بتسحبه.
+{0} is already adjusted in the books ({1}). Cancel the adjustment first.,{0} اتسوّى في الدفاتر بالفعل ({1}). الغي التسوية الأول.
+Cannot Reopen,مينفعش يتفتح تاني
+{0} has an approved recovery. Withdraw the recovery first.,{0} عليه استرداد متوافق عليه. اسحب الاسترداد الأول.
+Withdrawn: {0} was reopened.,اتسحب: {0} اتفتح تاني.
+{0} is {1} ({2}): this cannot be done to it now.,{0} حالته {1} ({2}): مينفعش يتعمل فيه كده دلوقتي.
+Write what the investigation found first.,اكتب نتيجة التحقيق الأول.
+Investigation Notes Needed,محتاج نتيجة التحقيق
+"Mark who is responsible first. If nobody can be, write the shortage off.",علّم على المسؤول الأول. لو مفيش حد ممكن يتحدد، اشطب العجز على الشركة.
+Nobody Responsible,مفيش مسؤول
+"{0} has not been told yet. Record the day they were told, and their response.",{0} لسه متبلّغش. سجّل يوم ما اتبلّغ ورده.
+Employee Not Told,الموظف متبلّغش
+Confirm the recovery is allowed by the employment contract and the labour law first.,أكّد الأول إن الاسترداد مسموح بيه في عقد العمل وقانون العمل.
+Not Checked,متراجعش
+Type the amount to recover from each responsible employee. Nothing is split by itself.,اكتب المبلغ اللي هيتسترد من كل موظف مسؤول. مفيش حاجة بتتقسم لوحدها.
+No Amounts,مفيش مبالغ
+"The recovery, {0}, is more than the shortage, {1}.",الاسترداد، {0}، أكتر من العجز، {1}.
+Withdrawing a recovery needs a reason.,سحب الاسترداد محتاج سبب.
+Recovery withdrawn: {0},الاسترداد اتسحب: {0}
+Writing a shortage off needs a reason.,شطب العجز محتاج سبب.
+"Write where the extra cash came from, or that it is not known.",اكتب الفلوس الزيادة جت منين، أو إنه مش معروف.
+{0} is already adjusted in the books.,{0} اتسوّى في الدفاتر بالفعل.
+Already Adjusted,اتسوّى بالفعل
+"Cash {0} of {1} at {2}, {3}",{0} نقدية يوم {1} في {2}، {3}
+The week has not started yet.,الأسبوع لسه مبدأش.
+{0} discrepancies are still open. Write a note on them before marking the week reviewed.,في {0} فروقات لسه مفتوحة. اكتب ملاحظة عليها قبل ما تعلّم الأسبوع إنه اتراجع.
+Note Needed,محتاج ملاحظة
+This week is already reconciled: {0}.,الأسبوع ده اتراجع بالفعل: {0}.
+Already Reconciled,اتراجع بالفعل
+Told On,اتبلّغ في
+A close of this week was reopened after the review. Cancel and amend to review the week again.,تقفيل من الأسبوع ده اتفتح تاني بعد المراجعة. الغي وعدّل عشان تراجع الأسبوع تاني.
+{0} discrepancies are still open.,في {0} فروقات لسه مفتوحة.
+No close was submitted this week.,مفيش تقفيل اتعمد الأسبوع ده.
+Needs review: {0},محتاجة مراجعة: {0}
+Short by {0}. The accountant reviews it with the week.,عجز {0}. المحاسب هيراجعه مع الأسبوع.
+Over by {0}. The accountant reviews it with the week.,زيادة {0}. المحاسب هيراجعها مع الأسبوع.
+Reopened by {0}: {1},اتفتح تاني بواسطة {0}: {1}
+Reopen,افتح تاني
+Why is it reopened?,ليه بيتفتح تاني؟
+Reopen the Close,إعادة فتح التقفيل
+Nobody is charged until the investigation finds who is responsible. Nothing is split or deducted by itself.,محدش بيتحمّل حاجة لحد ما التحقيق يحدد المسؤول. مفيش حاجة بتتقسم أو بتتخصم لوحدها.
+Approved for the payroll review. The system deducts nothing from a salary.,متوافق عليه لمراجعة المرتبات. السيستم مش بيخصم أي حاجة من المرتب.
+Write Off,اشطب على الشركة
+Why does the company bear it?,ليه الشركة هتتحمّله؟
+Approve Recovery,وافق على الاسترداد
+Withdraw Recovery,اسحب الاسترداد
+Why is it withdrawn?,ليه بيتسحب؟
+Where did the extra cash come from?,الفلوس الزيادة جت منين؟
+Post Adjustment,سجّل التسوية
+"Bring the books to the cash counted, against Cash Differences?",نخلي الدفاتر زي الفلوس اللي اتعدّت، على حساب فروقات الخزينة؟
+Discrepancies,الفروقات
+Payroll Review,مراجعة المرتبات
+Still Open Only,المفتوح بس
+Cash Discrepancies,فروقات الخزينة
+Cash Shortages This Month,عجز الخزاين الشهر ده
+Open Cash Discrepancies,فروقات خزينة مفتوحة
+Cash Discrepancies to Review,فروقات خزينة مستنية مراجعة
+Weekly Cash Reviews,مراجعات الخزينة الأسبوعية
+Cash Close Settings,إعدادات تقفيل الخزينة
+Reporting Week Starts On,أسبوع التقارير بيبدأ يوم
+"Empty until the reporting week is confirmed: a weekly review may then start on any day. Once set, every weekly review starts on this day.",فاضي لحد ما أسبوع التقارير يتأكد: ساعتها المراجعة الأسبوعية ممكن تبدأ أي يوم. أول ما يتحدد، كل مراجعة أسبوعية هتبدأ في اليوم ده.
+Recovering Shortages from Employees,استرداد العجز من الموظفين
+Recovery Policy Approved,سياسة الاسترداد متوافق عليها
+"Off until the owner approves a written policy checked by a lawyer or HR (deduction limits under the labour law and the contracts, how the employee is told and heard). While off, the owner cannot approve any recovery. The system never deducts from a salary either way.",مقفولة لحد ما صاحب الشغل يوافق على سياسة مكتوبة يراجعها محامي أو الموارد البشرية (حدود الخصم في قانون العمل والعقود، وإزاي الموظف يتبلّغ ويتسمع). طول ما هي مقفولة، صاحب الشغل مش هيقدر يوافق على أي استرداد. والسيستم مش بيخصم من المرتب في كل الأحوال.
+Policy Reference,مرجع السياسة
+"The approved policy: its title, date and who checked it.",السياسة المتوافق عليها: اسمها وتاريخها ومين راجعها.
+Only the owner approves or withdraws the recovery policy.,صاحب الشغل بس هو اللي يوافق على سياسة الاسترداد أو يلغيها.
+"Name the approved policy first: its title, date and who checked it.",اكتب السياسة المتوافق عليها الأول: اسمها وتاريخها ومين راجعها.
+Policy Needed,محتاج السياسة
+Recovery Recommended,الاسترداد مقترح
+Recommended By,اقترحه
+Recommended On,اتقترح في
+Approved By (Owner),وافق عليه (صاحب الشغل)
+Recovering shortages from employees is blocked until the recovery policy is approved (Cash Close Settings).,استرداد العجز من الموظفين متوقف لحد ما سياسة الاسترداد يتوافق عليها (إعدادات تقفيل الخزينة).
+Recovery Blocked,الاسترداد متوقف
+You recommended this recovery: another person approves it.,إنت اللي اقترحت الاسترداد ده: لازم حد تاني يوافق عليه.
+Four Eyes,موافقة شخصين
+Returning a recommendation needs a reason.,رجوع الاقتراح محتاج سبب.
+Recommendation returned: {0},الاقتراح رجع: {0}
+"Write where the extra cash came from. If it is not known yet, leave the surplus under review.",اكتب الفلوس الزيادة جت منين. لو لسه مش معروف، سيب الزيادة تحت المراجعة.
+Recommend Recovery,اقترح الاسترداد
+Return to the Accountant,رجّعه للمحاسب
+Why is it returned?,ليه بيرجع؟
+Owner,صاحب الشغل
+Recommended by {0}. Waiting for the owner's approval.,اقترحه {0}. مستني موافقة صاحب الشغل.
+Under review until the accountant finds where the extra cash came from. It is not revenue.,تحت المراجعة لحد ما المحاسب يعرف الفلوس الزيادة جت منين. دي مش إيراد.
+Still Open from Earlier Weeks,لسه مفتوحة من أسابيع قبل كده
+"Counted in their own week's totals, not this week's.",محسوبة في إجماليات أسبوعها، مش الأسبوع ده.
+Earlier Discrepancies Still Open,فروقات قديمة لسه مفتوحة
+The reporting week starts on {0}. Choose a {0}.,أسبوع التقارير بيبدأ يوم {0}. اختار يوم {0}.
+Wrong Day,يوم غلط
+{0} is not a cash box of {1}.,{0} مش خزينة نقدية تبع {1}.
+The cash counted in {0} cannot be below zero.,الفلوس المعدودة في {0} مينفعش تكون أقل من صفر.
+{0} already has entries: its opening would count twice.,{0} عليها قيود بالفعل: رصيدها الافتتاحي هيتحسب مرتين.
+No cash to enter.,مفيش فلوس تتسجل.
+"Opening cash, counted in each branch",النقدية الافتتاحية، معدودة في كل فرع
+Recoveries to Approve,استردادات مستنية موافقتك
+Reporting Week Ends On,أسبوع التقارير بيخلص يوم
+"The last working day of the week (owner: Saturday to Thursday). The days after it, to the next week's start, are days off: a close made on one still shows in the week, and a day off without a close is not listed as missing.",آخر يوم شغل في الأسبوع (صاحب الشغل: من السبت للخميس). الأيام اللي بعده لحد بداية الأسبوع الجاي إجازة: التقفيل اللي يتعمل فيها بيظهر في الأسبوع، ويوم الإجازة من غير تقفيل مش بيتحسب ناقص.
+Prepaid hours {0}: {1} hours from the package.,ساعات مدفوعة مقدمًا {0}: {1} ساعة من الباقة.
+{0} has no price by the hour for the hours beyond the package.,{0} مالوش سعر بالساعة للساعات الزيادة عن الباقة.
+"Prepaid hours {0}: {1} hours from the package; {2} hours beyond it x {3} ({4}), approved by {5}.",ساعات مدفوعة مقدمًا {0}: {1} ساعة من الباقة، و{2} ساعة زيادة × {3} ({4})، وافق عليها {5}.
+Held for the doctor {0}; not the group's revenue.,محفوظ لحساب الدكتور {0}؛ مش إيراد للمجموعة.
+Cancel with Reason,إلغاء مع ذكر السبب
+Cancel Payment,إلغاء الدفعة
+Subscription,الاشتراك
+The student's subscription the payment is for.,اشتراك الطالب اللي الدفعة دي عشانه.
+Payment Date,تاريخ الدفع
+Collecting Branch,الفرع اللي استلم
+Where the student paid: the branch whose cash box takes a cash payment.,المكان اللي الطالب دفع فيه: الفرع اللي خزينته بتستلم الدفع الكاش.
+Payment Method,طريقة الدفع
+Bank Transfer,تحويل بنكي
+InstaPay,إنستاباي
+Vodafone Cash,فودافون كاش
+Other Electronic,دفع إلكتروني تاني
+Paid Into,اتدفع في
+Cash: the collecting branch's own cash box. Electronic: the bank account or wallet the money reached.,كاش: خزينة الفرع اللي استلم. إلكتروني: الحساب البنكي أو المحفظة اللي الفلوس وصلتلها.
+Reference No,رقم المرجع
+The transfer's or the wallet's transaction number. Required for an electronic payment; the same number is never recorded twice.,رقم التحويل أو رقم عملية المحفظة. لازم للدفع الإلكتروني، ونفس الرقم مايتسجلش مرتين.
+Accounts,الحسابات
+BA Plus Payment ID,رقم الدفعة في BA Plus
+Reference Key,مفتاح المرجع
+App Payment,دفعة التطبيق
+The amount must be greater than zero.,المبلغ لازم يكون أكبر من صفر.
+A payment imported from BA Plus needs its id there.,الدفعة المستوردة من BA Plus لازم يكون معاها رقمها هناك.
+Subscription {0} is not submitted. A payment is for a submitted subscription.,الاشتراك {0} مش معتمد. الدفعة بتتسجل على اشتراك معتمد.
+{0} is not your branch.,{0} مش فرعك.
+{0} is not a treasury.,{0} مش خزينة.
+"{0} has no cash box. A cash payment is taken at a branch, into its own cash box.",{0} مالوش خزينة كاش. الدفع الكاش بيتاخد في فرع، في خزينته هو.
+No Cash Box,مفيش خزينة كاش
+"Cash paid at {0} goes into its cash box, {1}.",الكاش اللي اتدفع في {0} يدخل خزينته، {1}.
+"An electronic payment reaches a bank account or a wallet, not a cash box: {0} is not one.",الدفع الإلكتروني بيوصل حساب بنكي أو محفظة، مش خزينة كاش: {0} مش واحد منهم.
+An electronic payment needs its reference number.,الدفع الإلكتروني لازم يكون معاه رقم المرجع.
+Reference Needed,رقم المرجع مطلوب
+Reference {0} into {1} is already recorded: {2}.,المرجع {0} على {1} متسجل قبل كده: {2}.
+"{0}: {1} paid {2} for {3} ({4}), held for {5}.",{0}: {1} دفع {2} عن {3} ({4})، محفوظ لحساب {5}.
+Cancelling a payment needs a reason.,إلغاء الدفعة محتاج سبب.
+{0} was posted by App Payment {1}. Cancel the payment instead.,{0} اتعمل من دفعة التطبيق {1}. ألغِ الدفعة بدل كده.
+Prepaid Hours,ساعات مدفوعة مقدمًا
+"The teacher's prepaid hours this session draws on: its exact length comes off the package, and only hours beyond what is left are billed, once approved.",الساعات المدفوعة مقدمًا للمدرس اللي الجلسة دي بتسحب منها: مدتها بالظبط بتتخصم من الباقة، والساعات الزيادة عن الباقي بس هي اللي بتتحاسب، بعد الموافقة.
+Hours From the Package,ساعات من الباقة
+Hours Beyond the Package,ساعات زيادة عن الباقة
+Bill the Hours Beyond the Package,حاسب على الساعات الزيادة عن الباقة
+"The accountant's or the owner's decision: the session is longer than the hours left, and the rest is billed at the hourly price.",قرار المحاسب أو المالك: الجلسة أطول من الساعات الباقية، والباقي بيتحاسب بسعر الساعة.
+An imported booking is priced by the booking system; it draws on no prepaid hours.,الحجز المستورد سعره من نظام الحجز؛ مابيسحبش من ساعات مدفوعة مقدمًا.
+A session on prepaid hours takes no price package.,الجلسة على ساعات مدفوعة مقدمًا مايتحطلهاش باقة سعر.
+Two Packages,باقتين
+Only the accountant or the owner decides to bill hours beyond the package.,المحاسب أو المالك بس هو اللي يقرر يحاسب على الساعات الزيادة عن الباقة.
+Decision Needed,محتاج قرار
+Weekly Cash Hand-over,تسليم النقدية الأسبوعي
+Owner's Custody Account,حساب عهدة المالك
+Where cash handed over to the owner is held: a cash account. Confirming a hand-over is refused while it is empty.,المكان اللي فيه الكاش اللي اتسلم للمالك: حساب نقدية. تأكيد التسليم بيترفض طول ما هو فاضي.
+Accountant's Custody Account,حساب عهدة المحاسب
+Where cash handed over to the accountant is held: a cash account.,المكان اللي فيه الكاش اللي اتسلم للمحاسب: حساب نقدية.
+Cause,السبب
+Adjust Against,التسوية على حساب
+Surplus Explained,الزيادة اتعرف مصدرها
+"Bring the books to the cash counted, against {0}?",نظبط الدفاتر على الكاش المعدود، على حساب {0}؟
+the customer's account,حساب العميل
+Where the Surplus Came From,الزيادة جت منين
+"Set by the accountant with Explained, once the source is verified. Unknown: the surplus stays under review.","المحاسب بيحدده لما يختار ""اتعرف مصدرها"" بعد ما يتأكد من المصدر. لو مش معروف: الزيادة تفضل تحت المراجعة."
+Omitted Customer Payment,دفعة عميل ماتسجلتش
+Money Held for a Customer,فلوس محفوظة لعميل
+Recording Error,غلطة في التسجيل
+Other Identified Adjustment,تسوية تانية معروف سببها
+The account the verified source belongs to; the customer's own account for an omitted payment.,الحساب اللي المصدر المؤكد تبعه؛ حساب العميل نفسه لو دفعة ماتسجلتش.
+"Choose the surplus's verified cause. If it is not known yet, leave the surplus under review.",اختار سبب الزيادة المؤكد. لو لسه مش معروف، سيب الزيادة تحت المراجعة.
+Cause Needed,السبب مطلوب
+Name the customer the cash belongs to.,اكتب العميل اللي الكاش بتاعه.
+Customer Needed,العميل مطلوب
+Name the account the verified source belongs to.,اكتب الحساب اللي المصدر المؤكد تبعه.
+Account Needed,الحساب مطلوب
+{0} is not an account of {1} that takes entries.,{0} مش حساب في {1} بيقبل قيود.
+{0} is a treasury: the surplus is already in the cash box.,{0} خزينة: الزيادة أصلًا في الخزينة.
+Money held for a customer is owed to them: choose a liability account.,الفلوس المحفوظة لعميل هي حقه: اختار حساب التزامات.
+Wrong Account,حساب غلط
+{0} is kept per customer: name the customer.,{0} بيتسجل لكل عميل لوحده: اكتب العميل.
+"{0} has no verified cause. Classify it (Explained, with its cause) before adjusting the books.",{0} مالهاش سبب مؤكد. صنّفها (اتعرف مصدرها، مع سببها) قبل تسوية الدفاتر.
+Signed receipt attached. {0} confirms after counting {1}.,الإيصال الموقّع مرفق. {0} يأكد بعد ما يعد {1}.
+"Print the receipt, have {0} sign it by hand, then attach the scan or photo (Signed Receipt).",اطبع الإيصال، وخلي {0} يوقع عليه بإيده، وبعدين ارفع صورته أو السكان (الإيصال الموقّع).
+Received by {0} on {1}.,استلمه {0} يوم {1}.
+Cancelled by {0}: {1},ألغاه {0}: {1}
+Print Receipt,اطبع الإيصال
+Cancel Hand-over,إلغاء التسليم
+From Cash Box,من خزينة
+The branch's own cash box the money is taken from.,خزينة الفرع اللي الفلوس بتتاخد منها.
+Amount in Words,المبلغ بالحروف
+Hand-over Date,تاريخ التسليم
+Hand-over Time,وقت التسليم
+Pending Receipt,مستني الاستلام
+Who,مين
+Handed Over By,سلّمه
+Receiver,المستلم
+"The person who takes the cash, signs the paper receipt and confirms it here.",الشخص اللي بياخد الكاش، ويوقع على الإيصال الورق، ويأكد الاستلام هنا.
+Signed Receipt,الإيصال الموقّع
+Signed Receipt (Scan or Photo),الإيصال الموقّع (سكان أو صورة)
+"The printed receipt, signed by hand by the receiver: a PDF or a photo, attached to this hand-over.",الإيصال المطبوع موقّع بإيد المستلم: PDF أو صورة، مرفقة على التسليم ده.
+Amount Received,المبلغ المستلم
+Counted by the receiver at hand-over.,المستلم عدّه وقت التسليم.
+Confirmed By,أكده
+Confirmed On,تاريخ التأكيد
+Received Into,اتحط في
+Cancellation,الإلغاء
+Cancelled By,ألغاه
+Cancelled On,تاريخ الإلغاء
+Cash Handover,تسليم نقدية
+{0} is not a cash box. Cash is handed over from a branch's cash box.,{0} مش خزينة كاش. الكاش بيتسلم من خزينة فرع.
+Choose who receives the cash: the owner or the accountant.,اختار مين هيستلم الكاش: المالك ولا المحاسب.
+{0} is not the {1}.,{0} مش {1}.
+Wrong Receiver,مستلم غلط
+Cash is handed over to someone else: the receiver cannot be the person handing it over.,الكاش بيتسلم لحد تاني: المستلم مينفعش يكون هو نفسه اللي بيسلم.
+{0} holds {1} that is not already being handed over; {2} cannot be handed over.,{0} فيها {1} مش داخلين في تسليم تاني؛ مينفعش يتسلم {2}.
+Not Enough Cash,الكاش مش كفاية
+"{0} is already closed for {1} ({2}). Date the hand-over today, or ask the accountant.",{0} اتقفلت خلاص يوم {1} ({2}). خلي تاريخ التسليم النهارده، أو كلم المحاسب.
+Cash Handover {0} was recorded by {1} on a closed day.,تسليم النقدية {0} سجله {1} في يوم متقفل.
+{0} is {1}: its receipt and amounts stay as confirmed.,{0} حالته {1}: الإيصال والمبالغ بتفضل زي ما اتأكدت.
+Already Confirmed,متأكد قبل كده
+Cancelling a hand-over needs a reason.,إلغاء التسليم محتاج سبب.
+A confirmed hand-over is cancelled by the accountant or the owner only.,التسليم المتأكد مايلغيهوش غير المحاسب أو المالك.
+"Only the person who recorded it, or the accountant, cancels a pending hand-over.",التسليم اللي مستني الاستلام مايلغيهوش غير اللي سجله أو المحاسب.
+Cash Handover {0} was cancelled by {1}: {2},تسليم النقدية {0} ألغاه {1}: {2}
+Attach the signed paper receipt (a scan or a photo) before confirming.,ارفع الإيصال الورق الموقّع (سكان أو صورة) قبل التأكيد.
+Signed Receipt Needed,الإيصال الموقّع مطلوب
+The signed receipt must be a file attached to {0} itself.,الإيصال الموقّع لازم يكون ملف مرفوع على {0} نفسه.
+Wrong Attachment,مرفق غلط
+The signed receipt must be a private file.,الإيصال الموقّع لازم يكون ملف خاص.
+The signed receipt must be a PDF or a photo.,الإيصال الموقّع لازم يكون PDF أو صورة.
+The signed receipt was uploaded before {0} was recorded.,الإيصال الموقّع اترفع قبل ما {0} يتسجل.
+This scan is already the receipt of {0}. Each hand-over has its own signed receipt.,السكان ده هو إيصال {0} أصلًا. كل تسليم ليه إيصاله الموقّع.
+"Only {0}, the receiver named on {1}, confirms it.",{0} بس، المستلم المكتوب على {1}، هو اللي يأكده.
+Not the Receiver,مش المستلم
+The person who handed the cash over cannot confirm it.,اللي سلّم الكاش مينفعش يأكد الاستلام.
+{0} is {1}. Only a pending hand-over is confirmed.,{0} حالته {1}. التأكيد بيكون للتسليم اللي مستني الاستلام بس.
+"The cash counted, {0}, is not the {1} recorded. Cancel this hand-over and record the amount actually handed over.",الكاش المعدود {0} مش زي الـ {1} المتسجلين. ألغِ التسليم ده وسجّل المبلغ اللي اتسلم فعلًا.
+Amount Differs,المبلغ مختلف
+Cash Close Settings has no {0} (a cash account). The accountant sets it first.,إعدادات تقفيل الخزنة مافيهاش {0} (حساب نقدية). المحاسب يحدده الأول.
+Custody Account Needed,حساب العهدة مطلوب
+Received {0} and confirmed with the signed receipt.,استلم {0} وأكد بالإيصال الموقّع.
+{0}: cash handed over from {1} by {2} to {3}.,{0}: كاش اتسلم من {1}، سلّمه {2} لـ {3}.
+{0} was posted by Cash Handover {1}. Cancel the hand-over instead.,{0} اتعمل من تسليم النقدية {1}. ألغِ التسليم بدل كده.
+{0} is the signed receipt of {1}. It is kept.,{0} هو الإيصال الموقّع لـ {1}. بيفضل محفوظ.
+"Morning: type each machine's counter as it shows now, then Save.",الصبح: اكتب عداد كل ماكينة زي ما هو دلوقتي، وبعدين احفظ.
+"Evening: type each machine's closing reading, then Submit. Tick Broke Down for a machine that stopped today.","بالليل: اكتب قراية آخر اليوم لكل ماكينة، وبعدين اعتمد. علّم ""عطلت"" على الماكينة اللي وقفت النهارده."
+{0} sheets were printed while no reading was taken (Gap Since Last Closing).,{0} ورقة اتطبعت ومحدش قرا العداد (فرق من آخر قفلة).
+Morning Reading By,قراية الصبح بواسطة
+Morning Reading At,قراية الصبح الساعة
+Evening Reading By,قراية آخر اليوم بواسطة
+Evening Reading At,قراية آخر اليوم الساعة
+Printed Sheets,الورق المطبوع
+Printed but Not Sold,اتطبع ومااتباعش
+"Printed minus sold: waste, spoiled sheets and unrecorded sales; the paper of these sheets leaves the store only when a stock count finds it short.",المطبوع ناقص المباع: هالك وورق بايظ ومبيعات ماتسجلتش؛ ورق الشيتات دي بيخرج من المخزن بس لما الجرد يلاقيه ناقص.
+Paper Issued for Sales,ورق اتصرف للمبيعات
+"Sheets of A4 paper taken out of the library's store by the day's sales (once each, by the sale).",ورق A4 اللي طلع من مخزن المكتبة بمبيعات اليوم (مرة واحدة، مع البيعة).
+Damaged Sheets Recorded,ورق تالف متسجل
+Sheets of A4 paper recorded as damaged in the library that day (Damaged Stock Entry).,ورق A4 اتسجل تالف في المكتبة اليوم ده (حركة تالف).
+Gap Since Last Closing,فرق من آخر قفلة
+Row #{0}: read the counter of {1} at the end of the day: its evening reading is missing.,سطر #{0}: اقرا عداد {1} آخر اليوم: قراية آخر اليوم ناقصة.
+Evening Reading Missing,قراية آخر اليوم ناقصة
+"{0} of {1} has no evening readings yet. Record them, or ask the accountant to remove that day, first.",{0} بتاع يوم {1} لسه مافيهوش قراية آخر اليوم. سجلها، أو اطلب من المحاسب يشيل اليوم ده، الأول.
+The morning readings of {0} were recorded at {1}. Only the accountant corrects them.,قراية الصبح لـ {0} اتسجلت الساعة {1}. المحاسب بس هو اللي يصلحها.
+Morning Reading Recorded,قراية الصبح متسجلة
+Row #{0}: read the counter of {1} at the start of the day: its morning reading is missing.,سطر #{0}: اقرا عداد {1} أول اليوم: قراية الصبح ناقصة.
+Morning Reading Missing,قراية الصبح ناقصة
+"Row #{0}: the morning reading of {1}, {2}, is below its last closing {3}. A counter only goes up: if it was reset, the accountant records the reset.",سطر #{0}: قراية الصبح لـ {1} وهي {2} أقل من آخر قفلة {3}. العداد بيزيد بس: لو اتصفّر، المحاسب يسجل التصفير.
+Row #{0}: {1} printed {2} sheets between its last closing and this morning. Say why (Why the Gap).,سطر #{0}: {1} طبعت {2} ورقة بين آخر قفلة والنهارده الصبح. اكتب السبب (سبب الفرق).
+Last Closing,آخر قفلة
+The machine's closing reading at its last reading.,قراية آخر اليوم للماكينة في آخر مرة اتقرت.
+Morning Reading,قراية الصبح
+Read at the start of the day.,بتتقرا أول اليوم.
+Evening Reading,قراية آخر اليوم
+Read at the end of the day.,بتتقرا آخر اليوم.
+This morning's reading minus the last closing: sheets printed while no reading was taken.,قراية الصبح ناقص آخر قفلة: ورق اتطبع ومحدش قرا العداد.
+Why the Gap,سبب الفرق
+Reversed: {0},اتعكس: {0}
+Reverse with Reason,اعكسه مع ذكر السبب
+Why is it reversed?,ليه بيتعكس؟
+Reverse Adjustment,عكس التسوية
+Adjustment Basis,أساس التسوية
+Why the doctor's balance is changed by hand; it decides the account. A doctor is never charged for unsold or obsolete copies: the library bears them.,ليه رصيد الدكتور بيتغير يدوي؛ وده اللي بيحدد الحساب. الدكتور عمره ما يتحمل نسخ مااتباعتش أو قديمة: المكتبة هي اللي بتتحملها.
+Correct the Doctor's Share,تصحيح نصيب الدكتور
+Correct the Platform Fee,تصحيح رسوم المنصة
+"Other: the account the adjustment belongs to, named by the accountant. Without it, nothing is posted.",أخرى: الحساب اللي التسوية تبعه، والمحاسب هو اللي يحدده. من غيره مفيش حاجة بتترحّل.
+Reversal Reason,سبب العكس
+A doctor's share is corrected on a books agreement; this is an app agreement.,نصيب الدكتور بيتصحح على اتفاقية كتب؛ دي اتفاقية تطبيق.
+A platform fee is corrected on an app agreement; this is a books agreement.,رسوم المنصة بتتصحح على اتفاقية تطبيق؛ دي اتفاقية كتب.
+"{0} is a treasury or a party's account. Money paid or collected is a Payout or a Collection, not an adjustment.",{0} خزينة أو حساب طرف. الفلوس اللي بتتدفع أو بتتحصل تبقى صرف أو تحصيل، مش تسوية.
+Write the reason for adjusting the doctor's balance (Remarks).,اكتب سبب تسوية رصيد الدكتور (ملاحظات).
+"Choose the adjustment's basis. While it is unclear, the accountant clarifies it and nothing is posted.",اختار أساس التسوية. طول ما هو مش واضح، المحاسب يوضحه ومفيش حاجة بتترحّل.
+Basis Needed,الأساس مطلوب
+Name the account this adjustment belongs to. Nothing is posted until the accountant does.,اكتب الحساب اللي التسوية دي تبعه. مفيش حاجة بتترحّل لحد ما المحاسب يكتبه.
+A manual adjustment is reversed by the owner or the accountant only.,التسوية اليدوية مايعكسهاش غير المالك أو المحاسب.
+Reversing an adjustment needs a reason.,عكس التسوية محتاج سبب.
+{0} is not a submitted manual adjustment.,{0} مش تسوية يدوية معتمدة.
+This reading's opening minus the machine's last closing: sheets printed while no reading was taken.,بداية القراية دي ناقص آخر قفلة للماكينة: ورق اتطبع ومحدش قرا العداد.
+The opening reading {0} is below the last closing {1}. A counter only goes up.,قراية البداية {0} أقل من آخر قفلة {1}. العداد بيزيد بس.
+{0} of {1} hours left.,فاضل {0} من {1} ساعة.
+Cancel Package,إلغاء الباقة
+Teacher,المدرس
+Purchase Date,تاريخ الشراء
+Hours Purchased,الساعات المشتراة
+Package Price,سعر الباقة
+Used Up,خلصت
+Hours Used,الساعات المستخدمة
+Hours Left,الساعات الباقية
+Sessions,الجلسات
+Studio Hour Package,باقة ساعات استوديو
+{0} is not a studio service. Prepaid hours are for the studio.,{0} مش خدمة استوديو. الساعات المدفوعة مقدمًا للاستوديو.
+Hours Purchased must be greater than zero.,الساعات المشتراة لازم تكون أكبر من صفر.
+The package price cannot be negative.,سعر الباقة مينفعش يكون بالسالب.
+Cancelling a package needs a reason.,إلغاء الباقة محتاج سبب.
+{0} hours of {1} are held by bookings ({2}). Cancel or move them first.,{0} ساعة من {1} محجوزة في حجوزات ({2}). ألغيها أو انقلها الأول.
+Hours Still Used,ساعات لسه مستخدمة
+{0} is billed by {1}. Cancel the invoice first (with its reason).,{0} اتعمل عليها فاتورة {1}. ألغِ الفاتورة الأول (بسببها).
+Billed,اتعملها فاتورة
+Another session used {0} at the same moment. Save again.,جلسة تانية استخدمت {0} في نفس اللحظة. احفظ تاني.
+{0} is not an active package.,{0} مش باقة شغالة.
+Package Not Active,الباقة مش شغالة
+{0} is {1}'s package for {2}.,{0} باقة {1} لـ {2}.
+Wrong Package,باقة غلط
+"{0} has {1} hours left; this session is {2} hours. Shorten it, or the accountant decides to bill the {3} hours beyond the package.",{0} فاضل فيها {1} ساعة؛ الجلسة دي {2} ساعة. قصّرها، أو المحاسب يقرر يحاسب على الـ {3} ساعة الزيادة.
+Not Enough Hours,الساعات مش كفاية
+Session drawn,جلسة اتسحبت
+Session shortened or moved,جلسة اتقصرت أو اتنقلت
+{0} cannot go below zero hours.,{0} مينفعش تنزل تحت صفر ساعة.
+{0} is already billed: {1}.,{0} اتعملها فاتورة قبل كده: {1}.
+Already Billed,متحاسب عليها قبل كده
+Submit the package first.,اعتمد الباقة الأول.
+{0} has no service item to bill.,{0} مالوش صنف خدمة نعمل بيه فاتورة.
+Prepaid studio hours {0}: {1} hours,ساعات استوديو مدفوعة مقدمًا {0}: {1} ساعة
+The invoice total {0} differs from the package price {1}.,إجمالي الفاتورة {0} مختلف عن سعر الباقة {1}.
+Session Date,تاريخ الجلسة
+Drawn (above zero) or given back (below zero).,اتسحب (فوق الصفر) أو رجع (تحت الصفر).
+Hours Left After,الساعات الباقية بعدها
+Studio Hour Package Usage,استخدام باقة ساعات الاستوديو
+Handed Over,اتسلّم
+"Cash handed over to the owner or the accountant (Cash Handover) on these days, waiting for their confirmation or confirmed.",الكاش اللي اتسلّم للمالك أو المحاسب (تسليم نقدية) في الأيام دي، مستني تأكيدهم أو اتأكد.
+"Handed Over, Not Yet Confirmed",اتسلّم ولسه ماتأكدش
+Hand-overs Without a Signed Receipt,تسليمات من غير إيصال موقّع
+Cash Handed Over,النقدية المسلّمة
+Hand-overs,التسليمات
+Hand-over,التسليم
+Signed Receipt Attached,الإيصال الموقّع مرفق
+Weekly Cash Reconciliation Handover,تسليم في المراجعة الأسبوعية للخزنة
+In Cash,كاش
+Electronically,إلكتروني
+Not Yet Matched With the Statement,لسه ماتطابقش مع كشف الحساب
+App Payments,مدفوعات التطبيق
+Matched On,تاريخ المطابقة
+Approved By,وافق عليه
+Approved On,تاريخ الموافقة
+Accountant,المحاسب
+History,السجل
+Why,السبب
+By,بواسطة
+On,في
+An import log is kept: it cannot be deleted.,سجل الاستيراد بيتحفظ: مينفعش يتمسح.
+An import log is written only by the import.,سجل الاستيراد بيكتبه الاستيراد بس.
+An imported record needs its source system and its id there.,السجل المستورد لازم يكون عليه النظام اللي جه منه ورقمه هناك.
+BA Plus doctor id {0} is already on agreement {1}.,رقم الطبيب في BA Plus {0} موجود قبل كده على الاتفاقية {1}.
+Course {0} is named {1} in BA Plus and {2} here; not renamed.,الكورس {0} اسمه {1} في BA Plus و{2} هنا؛ ما اتغيرش اسمه.
+"Course {0} is {1}'s in the ERP, but the file gives doctor {2}. Not changed: check it in BA Plus.",الكورس {0} تبع {1} عندنا، بس الملف بيقول الطبيب {2}. ما اتغيرش: راجعه في BA Plus.
+"Customer group {0} is missing, so no new student can be added. Run setup_core.py.",مجموعة العملاء {0} مش موجودة، فمينفعش يتضاف طالب جديد. شغّل setup_core.py.
+Imported Record,سجل مستورد
+No submitted app agreement has BA Plus doctor id {0}. Write the id on the doctor's app agreement.,مفيش اتفاقية تطبيق معتمدة عليها رقم الطبيب في BA Plus {0}. اكتب الرقم على اتفاقية التطبيق بتاعة الطبيب.
+The app's cost center {0} is missing. Run setup_core.py.,مركز تكلفة التطبيق {0} مش موجود. شغّل setup_core.py.
+The file has no column {0}.,الملف مافيهوش عمود {0}.
+The import stopped at line {0}: the database dropped the run ({1}). Nothing was kept; run it again.,الاستيراد وقف عند السطر {0}: قاعدة البيانات لغت التشغيل ({1}). مفيش حاجة اتحفظت؛ شغّله تاني.
+"The row is from {0}, not BA Plus.",الصف ده من {0}، مش من BA Plus.
+Unknown source system {0}.,نظام مصدر مش معروف {0}.
+Wrong File,ملف غلط
+"You may not make an {0}, so you may not import them.",مش مسموحلك تعمل {0}، فمش مسموحلك تستوردها.
+"cancelled here, still in BA Plus",اتلغى هنا، ولسه موجود في BA Plus
+course {0},الكورس {0}
+date {0},التاريخ {0}
+student phone {0},تليفون الطالب {0}
+{0} differs from {1}: {2}.,{0} مختلف عن {1}: {2}.
+{0} terms hold {1}: {2}. The course's term must be one; check the academic periods.,{0} ترم فيهم يوم {1}: {2}. لازم يبقى ترم واحد للكورس؛ راجع الفترات الأكاديمية.
+{0} was imported from {1}. Change it there; the next import lists the change. Changed here: {2}.,{0} اتستورد من {1}. غيّره هناك؛ والاستيراد الجاي هيسجل التغيير. اللي اتغير هنا: {2}.
+Integration Import Log,سجل الاستيراد
+Integration Import Logs,سجلات الاستيراد
+Integration Import Log Error,صف في سجل الاستيراد
+Started At,بدأ
+Finished At,خلص
+Run By,اتشغل بواسطة
+File Name,اسم الملف
+File Hash,بصمة الملف
+Rows Read,الصفوف المقروءة
+Inserted,اتضاف
+Other Records Created,سجلات تانية اتعملت
+Skipped,اتخطّى
+Changed in Source,اتغير في المصدر
+Rows to Look At,صفوف محتاجة مراجعة
+Completed with Errors,خلص بأخطاء
+Row,الصف
+Import Log,سجل الاستيراد
+BA Plus Doctor ID,رقم الطبيب في BA Plus
+Import Logs,سجلات الاستيراد
+Completed with Errors: some rows failed or changed in the source; the rest were imported. Failed: nothing of the run was kept.,خلص بأخطاء: فيه صفوف فشلت أو اتغيرت في المصدر، والباقي اتستورد. فشل: مفيش حاجة من التشغيل اتحفظت.
+"The user the import ran as: the integration user, or whoever uploaded the file.",المستخدم اللي الاستيراد اشتغل بيه: مستخدم الربط، أو اللي رفع الملف.
+SHA-256 of the file: the same file sent twice has the same one.,بصمة الملف (SHA-256): نفس الملف لو اتبعت مرتين بيبقى ليه نفس البصمة.
+"Rows that became a new record (a subscription, a sale, a booking).",الصفوف اللي بقت سجل جديد (اشتراك، بيعة، حجز).
+"Other records made on the way, e.g. a course or a student seen for the first time.",سجلات تانية اتعملت في السكة، زي كورس أو طالب بيظهر لأول مرة.
+Already imported and unchanged: nothing done.,اتستورد قبل كده ومتغيرش: ما اتعملش حاجة.
+"Already imported, and the source now says something else: listed below, not overwritten.",اتستورد قبل كده، والمصدر دلوقتي بيقول حاجة تانية: متسجل تحت، وما اتكتبش فوقه.
+"Why the whole run failed, when it did.",سبب فشل التشغيل كله، لو فشل.
+"The row's line in the file, the header being line 1.",رقم السطر في الملف، وسطر العناوين هو السطر 1.
+"Failed: nothing of the row was kept. Changed in Source: already imported, and the source now says something else; not overwritten (INT-01).",فشل: مفيش حاجة من الصف اتحفظت. اتغير في المصدر: اتستورد قبل كده، والمصدر دلوقتي بيقول حاجة تانية؛ ما اتكتبش فوقه (INT-01).
+"The doctor's id in BA Plus, written once: the daily import finds this agreement by it. One active app agreement per id.",رقم الطبيب في BA Plus، بيتكتب مرة واحدة: الاستيراد اليومي بيلاقي الاتفاقية دي بيه. اتفاقية تطبيق واحدة لكل رقم.
+"Always BA Plus: the platform fee is the app's revenue, whoever subscribed the student.",دايمًا BA Plus: رسوم المنصة إيراد التطبيق، أيًا كان مين سجل الطالب.
+"Manual: entered here. Imported: from BA Plus, changed only there (INT-01).",يدوي: اتدخل هنا. مستورد: جه من BA Plus، وبيتغير هناك بس (INT-01).
+The subscription's id in BA Plus.,رقم الاشتراك في BA Plus.
+Source System and External ID together: an imported subscription is recorded once.,النظام المصدر والرقم فيه مع بعض: الاشتراك المستورد بيتسجل مرة واحدة.
+The course's id in BA Plus.,رقم الكورس في BA Plus.
+Source System and External ID together: an imported course is recorded once.,النظام المصدر والرقم فيه مع بعض: الكورس المستورد بيتسجل مرة واحدة.
+Integration Status,متابعة الربط
+Last Successful Import,آخر استيراد ناجح
+Last Run,آخر تشغيل
+Last Run Status,حالة آخر تشغيل
+Libraries (point of sale),المكتبات (نقطة البيع)
+Studio (bookings),الاستوديو (الحجوزات)
+BA Plus app,تطبيق BA Plus
+No import has run yet.,لسه مفيش استيراد اشتغل.
+Not connected yet: no import reads this system.,لسه مش متربط: مفيش استيراد بيقرا من النظام ده.
+Open the log for the rows to look at.,افتح السجل علشان تشوف الصفوف اللي محتاجة مراجعة.
+"No import reads {0} yet, so there is nothing to run again.",لسه مفيش استيراد بيقرا من {0}، فمفيش حاجة تتعاد.
+The period ends before it starts.,الفترة بتخلص قبل ما تبدأ.
+No file of {0} came in from {1} to {2}.,مفيش ملف من {0} وصل من {1} لـ {2}.
+Import a Period Again,إعادة الاستيراد لفترة
+Import Again,استورد تاني
+Importing...,جاري الاستيراد...
+Imported Again,اتستورد تاني
+Nothing was run.,ما اتشغلش حاجة.
+Only BA Plus's import reads files so far.,استيراد BA Plus بس اللي بيقرا ملفات لحد دلوقتي.
+"{0}: {1} imported, {2} skipped, {3} failed ({4})",{0}: {1} اتستورد، {2} اتخطّى، {3} فشل ({4})
+File Content,محتوى الملف
+"The file as it came, kept so a period can be imported again (INT-09). Holds students' names and phones: the owner and the accountant read it.",الملف زي ما وصل، محفوظ علشان الفترة تتستورد تاني (INT-09). فيه أسماء الطلبة وتليفوناتهم: المالك والمحاسب بس اللي بيقروه.
+Deposit held,العربون المحتفظ بيه

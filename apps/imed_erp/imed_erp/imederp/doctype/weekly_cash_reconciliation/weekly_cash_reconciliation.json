@@ -1,0 +1,235 @@
+{
+ "doctype": "DocType",
+ "module": "ImedERP",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-22 13:00:00.000000",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "links": [],
+ "actions": [],
+ "states": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "name": "Weekly Cash Reconciliation",
+ "autoname": "WCR-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "is_submittable": 1,
+ "track_changes": 1,
+ "editable_grid": 1,
+ "title_field": "week_start",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "create": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "delete": 1,
+   "share": 1
+  },
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "create": 1,
+   "write": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "share": 1
+  }
+ ],
+ "fields": [
+  {
+   "fieldname": "week_start",
+   "fieldtype": "Date",
+   "label": "Week Starting",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "week_end",
+   "fieldtype": "Date",
+   "label": "Week Ending",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "business",
+   "fieldtype": "Link",
+   "options": "Cost Center",
+   "label": "Business",
+   "description": "Leave empty for every branch."
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_shortage",
+   "fieldtype": "Currency",
+   "label": "Shortages",
+   "read_only": 1,
+   "in_list_view": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "total_surplus",
+   "fieldtype": "Currency",
+   "label": "Surpluses",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "unresolved",
+   "fieldtype": "Int",
+   "label": "Unresolved Discrepancies",
+   "read_only": 1,
+   "in_list_view": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "total_handed_over",
+   "fieldtype": "Currency",
+   "label": "Handed Over",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pending_handovers",
+   "fieldtype": "Currency",
+   "label": "Handed Over, Not Yet Confirmed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "handovers_without_receipt",
+   "fieldtype": "Int",
+   "label": "Hand-overs Without a Signed Receipt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "needs_review",
+   "fieldtype": "Check",
+   "label": "Needs Review Again",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "A close of this week was reopened after the week was reviewed."
+  },
+  {
+   "fieldname": "closes_section",
+   "fieldtype": "Section Break",
+   "label": "Daily Closes"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "options": "Weekly Cash Reconciliation Item",
+   "label": "Closes",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "missing_days",
+   "fieldtype": "Small Text",
+   "label": "Days Without a Close",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "earlier_open",
+   "fieldtype": "Int",
+   "label": "Still Open from Earlier Weeks",
+   "read_only": 1,
+   "no_copy": 1,
+   "description": "Counted in their own week's totals, not this week's."
+  },
+  {
+   "fieldname": "earlier_open_list",
+   "fieldtype": "Small Text",
+   "label": "Earlier Discrepancies Still Open",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "handovers_section",
+   "fieldtype": "Section Break",
+   "label": "Cash Handed Over"
+  },
+  {
+   "fieldname": "handovers",
+   "fieldtype": "Table",
+   "label": "Hand-overs",
+   "options": "Weekly Cash Reconciliation Handover",
+   "read_only": 1
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Review"
+  },
+  {
+   "fieldname": "review_note",
+   "fieldtype": "Small Text",
+   "label": "Accountant's Note"
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Reviewed By",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Datetime",
+   "label": "Reviewed On",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "options": "Weekly Cash Reconciliation",
+   "label": "Amended From",
+   "read_only": 1,
+   "no_copy": 1,
+   "print_hide": 1
+  }
+ ],
+ "field_order": [
+  "week_start",
+  "week_end",
+  "business",
+  "column_break_head",
+  "total_shortage",
+  "total_surplus",
+  "unresolved",
+  "total_handed_over",
+  "pending_handovers",
+  "handovers_without_receipt",
+  "needs_review",
+  "closes_section",
+  "items",
+  "missing_days",
+  "earlier_open",
+  "earlier_open_list",
+  "handovers_section",
+  "handovers",
+  "review_section",
+  "review_note",
+  "reviewed_by",
+  "reviewed_on",
+  "amended_from"
+ ]
+}

@@ -1,0 +1,26 @@
+{
+ "add_total_row": 1,
+ "creation": "2026-10-22 10:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Report",
+ "is_standard": "Yes",
+ "modified": "2026-10-22 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "App Payments",
+ "owner": "Administrator",
+ "ref_doctype": "App Payment",
+ "report_name": "App Payments",
+ "report_type": "Script Report",
+ "roles": [
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Branch Manager"
+  }
+ ]
+}

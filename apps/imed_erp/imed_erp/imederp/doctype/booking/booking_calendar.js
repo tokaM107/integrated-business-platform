@@ -98,6 +98,8 @@ frappe.views.calendar["Booking"] = {
 			},
 			// Selecting free time opens a new booking on that day and those hours.
 			select(info) {
+				// Someone who may only read bookings is not sent to a form that would refuse them.
+				if (!frappe.model.can_create("Booking")) return;
 				const values = { booking_date: moment(info.start).format("YYYY-MM-DD") };
 				if (!info.allDay) {
 					values.from_time = moment(info.start).format("HH:mm:ss");
@@ -117,7 +119,7 @@ frappe.views.calendar["Booking"] = {
 				Object.entries(BOOKING_COLORS)
 					.map(
 						([status, color]) =>
-							`<span class="mr-3"><span class="indicator-pill ${color}">${__(status)}</span></span>`
+							`<span style="margin-inline-end: 0.75rem"><span class="indicator-pill ${color}">${__(status)}</span></span>`
 					)
 					.concat(`<span class="indicator-pill red">${__("Overlap")}</span>`)
 					.join("")
@@ -127,7 +129,7 @@ frappe.views.calendar["Booking"] = {
 		if (!document.getElementById("imed-booking-calendar-css")) {
 			$(`<style id="imed-booking-calendar-css">
 				.imed-booking-free { opacity: 0.55; text-decoration: line-through; }
-				.imed-booking-conflict { box-shadow: inset 3px 0 0 var(--red-500); font-weight: 600; }
+				.imed-booking-conflict { border-inline-start: 3px solid var(--red-500); font-weight: 600; }
 				.imed-booking-legend .indicator-pill { margin-bottom: 4px; }
 				@media (max-width: 767px) {
 					#fc-calendar-wrapper .fc-header-toolbar { flex-wrap: wrap; gap: 8px; }

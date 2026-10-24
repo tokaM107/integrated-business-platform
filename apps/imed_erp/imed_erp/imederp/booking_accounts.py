@@ -218,6 +218,20 @@ def on_posted_change(doc, method=None):
 		refresh_booking(doc.custom_booking)
 
 
+def guard_booking_link(doc, method=None):
+	"""Payment Entry validate (SEC-13): a payment names a booking only through record_payment, which checks the
+	booking (not imported, cancelled or a no-show; not more than is owed; its business's cash box). One made
+	through the API or the form with the field set would skip all of that and still count on the booking."""
+	if not doc.get("custom_booking") or doc.flags.from_booking:
+		return
+	before = doc.get_doc_before_save()
+	if doc.is_new() or not before or before.get("custom_booking") != doc.custom_booking:
+		frappe.throw(
+			_("A booking's payment is recorded from the booking (Record Payment), not by naming it on a payment."),
+			title=_("Not Allowed"),
+		)
+
+
 # ---------- Recording a payment ----------
 
 
@@ -318,7 +332,7 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 def invoice_lines(doc):
 	income, cost_center = income_account_of(doc.cost_center), doc.cost_center
 
-	def line(item, qty, rate, amount):
+	def line(item, qty, rate, amount=None):
 		"""A line of the booking's amount. A part of an hour (1.5 hours) on an item counted in whole units (Nos)
 		is one unit at the amount, the hours and price in its description: ERPNext refuses 1.5 Nos."""
 		uom = frappe.get_cached_value("Item", item, "stock_uom")
@@ -334,25 +348,44 @@ def invoice_lines(doc):
 		if flt(qty) != int(flt(qty)) and frappe.get_cached_value("UOM", uom, "must_be_whole_number"):
 			name = frappe.get_cached_value("Item", item, "item_name")
 			row.update(
-				{"qty": 1, "rate": flt(amount, 2), "description": f"{name}: {flt(qty, 2)} x {flt(rate, 2)}"}
+				{"qty": 1, "rate": flt(amount if amount is not None else qty * rate, 2), "description": f"{name}: {flt(qty, 2)} x {flt(rate, 2)}"}
 			)
 		return row
 
+	# QA-13: an hourly line bills the amount the booking was priced at, from its exact length; the hours shown
+	# are rounded, so the rate is the amount over them (40 minutes: 0.67 x 2,238.81 = 1,500).
+	by_hours = lambda item, qty, amount: line(item, qty, rate_for(amount, qty), amount)
 	lines = []
 	if flt(doc.base_amount):
-		if doc.package:
+		if doc.get("hour_package"):
+			# Only the hours beyond the prepaid package: the package's own invoice billed the rest.
+			lines.append(by_hours(frappe.db.get_value("Booking Resource", doc.resource, "item"), flt(doc.extra_hours, 2), flt(doc.base_amount)))
+		elif doc.package:
 			package = frappe.get_doc("Booking Package", doc.package)
-			if package.charged == ONCE:
-				lines.append(line(package.item, 1, flt(doc.base_amount), doc.base_amount))
-			else:
-				lines.append(line(package.item, flt(doc.hours, 2), flt(doc.rate), doc.base_amount))
+			lines.append(
+				line(package.item, 1, flt(doc.base_amount))
+				if package.charged == ONCE
+				else by_hours(package.item, flt(doc.hours, 2), flt(doc.base_amount))
+			)
 		else:
-			item = frappe.db.get_value("Booking Resource", doc.resource, "item")
-			lines.append(line(item, flt(doc.hours, 2), flt(doc.rate), doc.base_amount))
+			lines.append(by_hours(frappe.db.get_value("Booking Resource", doc.resource, "item"), flt(doc.hours, 2), flt(doc.base_amount)))
 	for row in doc.extras:
-		qty = row.quantity * (flt(doc.hours, 2) if row.charged == PIECE_PER_HOUR else 1)
-		lines.append(line(row.item, qty, flt(row.rate), row.amount))
+		if row.charged == PIECE_PER_HOUR:
+			lines.append(by_hours(row.item, row.quantity * flt(doc.hours, 2), flt(row.amount)))
+		else:
+			lines.append(line(row.item, row.quantity, flt(row.rate)))
 	return lines
+
+
+def rate_for(amount, qty):
+	"""The rate, to the piastre, that bills `amount` for `qty`: the closest one whose qty x rate rounds to it."""
+	if not flt(qty):
+		return flt(amount, 2)
+	rate = flt(amount / qty, 2)
+	for step in (0, 0.01, -0.01, 0.02, -0.02):
+		if flt(flt(rate + step, 2) * qty, 2) == flt(amount, 2):
+			return flt(rate + step, 2)
+	return rate
 
 
 def advances(doc, total):

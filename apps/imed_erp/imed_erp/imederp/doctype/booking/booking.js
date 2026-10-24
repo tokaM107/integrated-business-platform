@@ -23,6 +23,10 @@ frappe.ui.form.on("Booking", {
 	setup(frm) {
 		frm.set_query("resource", () => ({ filters: { disabled: 0 } }));
 		frm.set_query("package", () => ({ filters: { resource: frm.doc.resource || "", disabled: 0 } }));
+		// The teacher's own prepaid hours of this studio service, still active.
+		frm.set_query("hour_package", () => ({
+			filters: { customer: frm.doc.customer || "", resource: frm.doc.resource || "", docstatus: 1, status: ["in", ["Active", "Used Up"]] },
+		}));
 		frm.set_query("extra", "extras", () => ({
 			filters: {
 				disabled: 0,
@@ -116,11 +120,14 @@ function card_html(frm) {
 		tile(__("Extras"), money(doc.extras_amount)),
 		tile(__("Total"), money(doc.total_amount), "is-total"),
 		tile(__("Paid"), money(doc.paid_amount)),
-		tile(
-			__("Remaining"),
-			money(doc.outstanding_amount),
-			flt(doc.outstanding_amount) > 0 ? "is-due" : "is-done"
-		),
+		// QA-35: a cancelled booking or a no-show owes nothing more; what was paid is the deposit kept.
+		["Cancelled", "No Show"].includes(doc.status)
+			? tile(__("Deposit held"), flt(doc.paid_amount) ? money(doc.paid_amount) : __("Nothing paid"))
+			: tile(
+					__("Remaining"),
+					money(doc.outstanding_amount),
+					flt(doc.outstanding_amount) > 0 ? "is-due" : "is-done"
+			  ),
 	];
 	if (doc.source === "Imported") {
 		// The booking system's amounts: only the total, paid and remaining mean something here.

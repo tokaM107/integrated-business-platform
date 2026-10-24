@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import flt, getdate, today
+from frappe.utils import cstr, flt, getdate, today
 
 # A doctor is a Customer in this group (CRM-01): one record for the person, whatever they buy or earn.
 # setup/setup_core.py makes it.
@@ -33,7 +33,23 @@ class DoctorAgreement(Document):
 		self.balance_direction = DIRECTION.get(self.agreement_type)
 		self.validate_terms()
 		self.validate_settlement_period()
+		self.validate_ba_plus_id()
 		self.set_summary()
+
+	def validate_ba_plus_id(self):
+		# INT-05: the daily import finds the doctor's app agreement by his BA Plus id, so the id names one agreement.
+		if self.agreement_type != "App":
+			self.ba_plus_doctor_id = None
+			return
+		self.ba_plus_doctor_id = cstr(self.ba_plus_doctor_id).strip() or None
+		if not self.ba_plus_doctor_id:
+			return
+		other = frappe.db.exists(
+			"Doctor Agreement",
+			{"ba_plus_doctor_id": self.ba_plus_doctor_id, "agreement_type": "App", "docstatus": ("<", 2), "name": ("!=", self.name)},
+		)
+		if other:
+			frappe.throw(_("BA Plus doctor id {0} is already on agreement {1}.").format(self.ba_plus_doctor_id, other))
 
 	def set_summary(self):
 		# SEC-07: the balance is never typed, not even through the API; it is the doctor's ledger, where every
@@ -47,6 +63,7 @@ class DoctorAgreement(Document):
 		# ledger, so a form opened before an entry was posted saves the right figures.
 		self.validate_terms()
 		self.validate_settlement_period()
+		self.validate_ba_plus_id()
 		self.set_summary()
 
 	def validate_settlement_period(self):

@@ -45,7 +45,8 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		doc = frappe.new_doc("Daily Counter Reading")
 		doc.update({"branch": AZARITA, "reading_date": date or DAY})
 		for i, (row, used) in enumerate(zip(get_machines(AZARITA), consumed)):
-			opening = row["opening_reading"] if row["opening_reading"] is not None else start
+			# Read in the morning where the machine closed last (no gap).
+			opening = row["previous_closing"] if row["previous_closing"] is not None else start
 			row.update({"opening_reading": opening, "closing_reading": opening + used})
 			if faults and i in faults:
 				row.update({"fault": 1, "fault_note": faults[i]})
@@ -143,4 +144,32 @@ class IntegrationTestDailyPrinting(IntegrationTestCase):
 		self.assertEqual((total["consumed"], total["sold"], total["variance"]), (500, 100, 400))
 		days = [r for r in rows[:heading] if r.get("is_total")]
 		self.assertAlmostEqual(total["variance_value"], sum(d["variance_value"] for d in days), places=1)
+		self.assertEqual(total["fault"], "2 days")
 
+	def test_qa36_a_period_without_breakdowns_shows_none(self):
+		first_day = add_days(DAY, -1)
+		self.day([10, 10, 10], date=first_day)
+		self.sell(100)
+		self.day([100, 50, 50])
+		rows = self.report(from_date=first_day)
+		heading = next(i for i, r in enumerate(rows) if r.get("machine_type") == "The Period")
+		self.assertIsNone(rows[heading + 4]["fault"])
+
+
+	def test_a_gap_since_the_last_closing_is_reported(self):
+		# Printed while no reading was taken: shown apart from the day's printing, never counted as the day's.
+		self.day([100, 50, 10], date=add_days(DAY, -1))
+		doc = frappe.new_doc("Daily Counter Reading")
+		doc.update({"branch": AZARITA, "reading_date": DAY})
+		for i, row in enumerate(get_machines(AZARITA)):
+			row.update({"opening_reading": row["previous_closing"] + (25 if i == 0 else 0), "closing_reading": row["previous_closing"] + 125})
+			if i == 0:
+				row["gap_note"] = "Late job after closing"
+			doc.append("machines", row)
+		with patch(PAPER, return_value=0.30):
+			doc.insert()
+			doc.submit()
+		rows = self.report()
+		total = next(r for r in rows if r.get("is_total") and r.get("reading_date"))
+		self.assertEqual((total["gap"], total["consumed"]), (25, 350))
+		self.assertEqual([r["gap"] for r in rows if r.get("machine")], [25, 0, 0])

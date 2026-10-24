@@ -14,9 +14,11 @@ from frappe.tests import IntegrationTestCase
 
 from frappe.utils import flt, today
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
+from imed_erp.imederp.testing import fund_cash_boxes
 
 
 # On IntegrationTestCase, the doctype test records and all
@@ -35,6 +37,12 @@ IGNORE_TEST_RECORD_DEPENDENCIES = ["Academic Period", "App Course", "Book Editio
 
 
 class IntegrationTestDoctorAgreement(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# A cash box never goes below zero: the money paid out here is put in first.
+		fund_cash_boxes()
+
 	def agreement(self, doctor, name="_Test Agreement"):
 		return frappe.get_doc(
 			{
@@ -72,7 +80,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		if frappe.db.get_value("Doctor Agreement", agreement, "docstatus") == 0:
 			frappe.get_doc("Doctor Agreement", agreement).submit()
 		entry = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount}
+			ledger_entry({"agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount})
 		)
 		if entry_type == "Payout":
 			entry.treasury = TREASURY
@@ -85,11 +93,11 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		self.assertEqual((str(agreement.start_date), agreement.status, flt(agreement.balance)), (today(), "Active", 0))
 
 	def test_the_balance_comes_from_the_doctors_ledger(self):
-		# 800 owed for copies sold, 300 paid out, 50 charged for unsold copies, -20 adjusted: 430 left.
+		# 800 owed for copies sold, 300 paid out, -50 and -20 adjusted: 430 left.
 		agreement = self.agreement(make_doctor(), "_Test Balance").insert()
 		self.entry(agreement.name, "Accrual", 800)
 		payment = self.entry(agreement.name, "Payout", 300)
-		self.entry(agreement.name, "Unsold Copies Charge", 50)
+		self.entry(agreement.name, "Adjustment", -50)
 		self.entry(agreement.name, "Adjustment", -20)
 		self.assertEqual(frappe.db.get_value("Doctor Agreement", agreement.name, "balance"), 430)
 
@@ -127,6 +135,8 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 		try:
 			added = self.entry(agreement.name, "Adjustment", 50)
 			self.entry(agreement.name, "Adjustment", -20)
+			# Reversed by the accountant, with its reason (22 Oct 2026).
+			added.cancel_reason = "_Test entered by mistake"
 			added.cancel()
 		finally:
 			frappe.set_user("Administrator")
@@ -170,7 +180,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 				"student": make_doctor("_Test Suspended Student"),
 				"course": course,
 				"cost_center": frappe.get_all("Cost Center", filters={"is_group": 0}, pluck="name", limit=1)[0],
-				"subscription_date": today(),
+				"subscription_date": "2026-09-15",
 				"platform_fee": 50,
 			}
 		)
@@ -327,19 +337,24 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 
 		# The last settlement is the latest payout; an accrual is not one.
 		self.entry(agreement.name, "Accrual", 800)
-		self.entry(agreement.name, "Payout", 300)
+		# A payout is never dated ahead (QA-24): the earlier one is entered for last week, the later one today.
+		earlier_date = frappe.utils.add_days(today(), -7)
+		earlier = frappe.get_doc(
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": earlier_date, "entry_type": "Payout", "amount": 300, "treasury": TREASURY}
+		).insert()
+		earlier.submit()
 		later = frappe.get_doc(
-			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": "2027-06-01", "entry_type": "Payout", "amount": 200, "treasury": TREASURY}
+			{"doctype": "Doctor Ledger Entry", "agreement": agreement.name, "entry_date": today(), "entry_type": "Payout", "amount": 200, "treasury": TREASURY}
 		).insert()
 		later.submit()
 		self.assertEqual(
 			frappe.db.get_value("Doctor Agreement", agreement.name, ["balance", "last_settlement_date", "last_settlement_amount"]),
-			(300, frappe.utils.getdate("2027-06-01"), 200),
+			(300, frappe.utils.getdate(today()), 200),
 		)
 		later.cancel()
 		self.assertEqual(
 			frappe.db.get_value("Doctor Agreement", agreement.name, ["last_settlement_date", "last_settlement_amount"]),
-			(frappe.utils.getdate(today()), 300),
+			(frappe.utils.getdate(earlier_date), 300),
 		)
 
 	def test_each_agreement_has_its_own_summary(self):
@@ -433,7 +448,7 @@ class IntegrationTestDoctorAgreement(IntegrationTestCase):
 
 		def entry(agreement, entry_type, amount, **values):
 			return frappe.get_doc(
-				{"doctype": "Doctor Ledger Entry", "agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount, **values}
+				ledger_entry({"agreement": agreement, "entry_date": today(), "entry_type": entry_type, "amount": amount, **values})
 			)
 
 		self.assertRaisesRegex(frappe.ValidationError, "greater than zero", entry(books.name, "Accrual", -50).insert)

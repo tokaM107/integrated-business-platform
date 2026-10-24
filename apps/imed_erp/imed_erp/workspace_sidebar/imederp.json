@@ -33,6 +33,8 @@
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Courses", "link_to": "App Course", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Platform Fees", "link_to": "Platform Fees", "link_type": "Report", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Integration Status", "link_to": "Integration Status", "link_type": "Report", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Import Logs", "link_to": "Integration Import Log", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 0, "collapsible": 1, "icon": "wallet", "indent": 1, "keep_closed": 1, "label": "Expenses and Cash", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense List", "link_to": "Expense", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Recurring Expenses", "link_to": "Recurring Expense", "link_type": "DocType", "show_arrow": 0, "type": "Link"},

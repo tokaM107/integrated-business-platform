@@ -48,6 +48,9 @@ class Expense(Document):
         self.validate_company()
         self.validate_recurring_expense()
         self.reset_approval_if_amount_changed()
+        # SEC-03: a draft's receipt is attached to it on save, so it is checked on save too, not only on submit.
+        if self.receipt and (self.is_new() or self.has_value_changed("receipt")):
+            self.check_receipt_is_own()
 
     def validate_amount(self):
         if flt(self.amount) <= 0:
@@ -157,6 +160,9 @@ class Expense(Document):
         self.validate_receipt()
         self.approval_status = PENDING
         self.approval_requested_by = frappe.session.user
+        # SEC-09: the guard is off for this save; only the request's own fields change, whatever the browser sent.
+        self.approved_by = None
+        self.rejection_reason = None
         self.flags.approval_action = True
         self.save()
         # The time makes each request its own notification: the service skips one the approver already has,
@@ -213,6 +219,36 @@ class Expense(Document):
             frappe.throw(_("Receipt {0} was not found. Attach the receipt again.").format(self.receipt))
         if not self.receipt.lower().endswith(RECEIPT_EXTENSIONS):
             frappe.throw(_("Receipt must be an image or a PDF file, got {0}.").format(self.receipt))
+        self.check_receipt_is_own()
+
+    def check_receipt_is_own(self):
+        """SEC-03: the receipt is this expense's own private file. On save Frappe attaches whatever file the field
+        names to this expense (attach_files_to_document), which would let anyone who can open the expense read a
+        file they could not, or file one receipt under two expenses."""
+        if not self.receipt.startswith("/private/files/"):
+            frappe.throw(_("Attach the receipt as a private file."), title=_("Receipt Not Private"))
+        files = frappe.get_all(
+            "File",
+            filters={"file_url": self.receipt},
+            fields=["owner", "attached_to_doctype", "attached_to_name"],
+        )
+
+        def is_own(file):
+            if file.attached_to_doctype == "Expense" and file.attached_to_name == self.name:
+                return True
+            # Just uploaded by this person: not attached yet, or attached to the form before it had its name.
+            just_uploaded = not file.attached_to_name or (
+                file.attached_to_doctype == "Expense" and not frappe.db.exists("Expense", file.attached_to_name)
+            )
+            return just_uploaded and file.owner == frappe.session.user
+
+        other = frappe.db.get_value(
+            "Expense", {"receipt": self.receipt, "docstatus": ("<", 2), "name": ("!=", self.name)}, "name"
+        )
+        if other:
+            frappe.throw(_("This receipt is already filed under expense {0}.").format(other), title=_("Receipt Used"))
+        if not any(is_own(file) for file in files):
+            frappe.throw(_("Attach the receipt to this expense; a file from elsewhere is not accepted."), title=_("Wrong Receipt"))
 
     def on_submit(self):
         # The money leaves the treasury and is charged to the business's expense account.
@@ -239,7 +275,10 @@ class Expense(Document):
 
     def add_to_monthly_bills(self):
         """A monthly expense whose bill was not in the list adds it, so next month it can be picked."""
-        if self.expense_type != EVERY_MONTH or self.recurring_expense:
+        if self.expense_type != EVERY_MONTH:
+            return
+        if self.recurring_expense:
+            self.move_bill_on()
             return
         filters = {"activity": self.activity, "expense_category": self.expense_category}
         bill = frappe.db.get_value("Recurring Expense", filters)
@@ -259,6 +298,20 @@ class Expense(Document):
             bill.flags.ignore_permissions = True
             bill = bill.insert().name
         self.db_set("recurring_expense", bill)
+
+    def move_bill_on(self):
+        """QA-09: a bill paid by hand before its due date this month is paid: it is next due the month after, so the
+        scheduler makes no second draft for it and no reminder follows."""
+        from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
+
+        bill = frappe.db.get_value("Recurring Expense", self.recurring_expense, ["next_date", "day_of_month"], as_dict=True)
+        if not bill or not bill.next_date:
+            return
+        posted, due = getdate(self.posting_date), getdate(bill.next_date)
+        if (posted.year, posted.month) == (due.year, due.month) and posted <= due:
+            frappe.db.set_value(
+                "Recurring Expense", self.recurring_expense, "next_date", due_date_in(add_months(due, 1), bill.day_of_month)
+            )
 
     def on_cancel(self):
         if self.journal_entry and frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:

@@ -53,7 +53,7 @@
 		const $notification = $(".body-sidebar .sidebar-notification").first();
 		if (!$notification.length || $notification.siblings(".imed-sidebar-theme").length) return;
 		const $item = $(`
-			<div class="imed-sidebar-theme" data-toggle="tooltip" data-placement="right">
+			<div class="imed-sidebar-theme" data-toggle="tooltip" data-placement="${frappe.utils.is_rtl() ? "left" : "right"}">
 				<div class="standard-sidebar-item">
 					<a class="item-anchor imed-theme-toggle" role="button" tabindex="0">
 						<span class="sidebar-item-icon text-ink-gray-7 imed-theme-toggle__icon"></span>

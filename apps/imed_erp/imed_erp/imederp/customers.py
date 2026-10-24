@@ -95,17 +95,26 @@ def normalize_phone(value):
 
 	if international:
 		national = digits[len(EGYPT) :]
-	elif re.fullmatch(EGYPT + EGYPT_MOBILE.pattern, digits):
-		# 201012345678: the country code typed without its plus.
-		national = digits[len(EGYPT) :]
 	else:
 		national = digits
-	if national.startswith("0"):
-		# The trunk 0 of a local number, also when typed after +20 (+20 010...).
-		national = national[1:]
-	if not (EGYPT_MOBILE.fullmatch(national) or EGYPT_LANDLINE.fullmatch(national)):
+		# The country code typed without its plus, with or without a 0 before it or after it: 201012345678,
+		# 2001012345678, 0201012345678, 2034567890 (QA-31). Only when the number is not valid as typed.
+		bare = national[1:] if national.startswith("0" + EGYPT) else national
+		if not is_egyptian(without_trunk(national)) and bare.startswith(EGYPT) and is_egyptian(without_trunk(bare[len(EGYPT) :])):
+			national = bare[len(EGYPT) :]
+	# The trunk 0 of a local number, also when typed after +20 (+20 010...).
+	national = without_trunk(national)
+	if not is_egyptian(national):
 		invalid_phone(value)
 	return "+" + EGYPT + national
+
+
+def without_trunk(number):
+	return number[1:] if number.startswith("0") else number
+
+
+def is_egyptian(national):
+	return bool(EGYPT_MOBILE.fullmatch(national) or EGYPT_LANDLINE.fullmatch(national))
 
 
 def invalid_phone(value):

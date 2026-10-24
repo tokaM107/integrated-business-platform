@@ -951,13 +951,13 @@ html[dir="rtl"] .imed-home-hero__art {
 	border-color: rgba(255, 255, 255, 0.36);
 	transform: translateY(-1px);
 }
-/* The first action is the main one: solid white. */
-.imed-home-action:first-child {
+/* The first action is the main one: solid white. Each button sits in its list item (screen readers). */
+.imed-home-action-item:first-child .imed-home-action {
 	background: #ffffff;
 	border-color: #ffffff;
 	color: var(--imed-teal-800);
 }
-.imed-home-action:first-child:hover {
+.imed-home-action-item:first-child .imed-home-action:hover {
 	background: var(--imed-teal-50);
 }
 .imed-home-action:focus-visible {

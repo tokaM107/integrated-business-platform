@@ -11,6 +11,10 @@
   "branch",
   "column_break_main",
   "reading_date",
+  "opening_recorded_by",
+  "opening_recorded_on",
+  "closing_recorded_by",
+  "closing_recorded_on",
   "machines_section",
   "machines",
   "totals_section",
@@ -19,6 +23,9 @@
   "sold_sheets",
   "column_break_totals_2",
   "variance",
+  "paper_issued",
+  "damaged_sheets",
+  "total_gap",
   "money_section",
   "cost_per_sheet",
   "variance_value",
@@ -54,6 +61,36 @@
    "in_standard_filter": 1
   },
   {
+   "fieldname": "opening_recorded_by",
+   "fieldtype": "Link",
+   "label": "Morning Reading By",
+   "options": "User",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "opening_recorded_on",
+   "fieldtype": "Datetime",
+   "label": "Morning Reading At",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "closing_recorded_by",
+   "fieldtype": "Link",
+   "label": "Evening Reading By",
+   "options": "User",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "closing_recorded_on",
+   "fieldtype": "Datetime",
+   "label": "Evening Reading At",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "machines_section",
    "fieldtype": "Section Break"
   },
@@ -72,7 +109,7 @@
   {
    "fieldname": "total_consumed",
    "fieldtype": "Int",
-   "label": "Consumed Sheets",
+   "label": "Printed Sheets",
    "read_only": 1,
    "in_list_view": 1,
    "description": "What the machines' counters went up by."
@@ -96,10 +133,30 @@
   {
    "fieldname": "variance",
    "fieldtype": "Int",
-   "label": "Variance (Sheets)",
+   "label": "Printed but Not Sold",
    "read_only": 1,
    "in_list_view": 1,
-   "description": "Consumed - sold: sheets printed and not sold."
+   "description": "Printed minus sold: waste, spoiled sheets and unrecorded sales; the paper of these sheets leaves the store only when a stock count finds it short."
+  },
+  {
+   "fieldname": "paper_issued",
+   "fieldtype": "Int",
+   "label": "Paper Issued for Sales",
+   "read_only": 1,
+   "description": "Sheets of A4 paper taken out of the library's store by the day's sales (once each, by the sale)."
+  },
+  {
+   "fieldname": "damaged_sheets",
+   "fieldtype": "Int",
+   "label": "Damaged Sheets Recorded",
+   "read_only": 1,
+   "description": "Sheets of A4 paper recorded as damaged in the library that day (Damaged Stock Entry)."
+  },
+  {
+   "fieldname": "total_gap",
+   "fieldtype": "Int",
+   "label": "Gap Since Last Closing",
+   "read_only": 1
   },
   {
    "fieldname": "money_section",
@@ -169,7 +226,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 20:00:00.000000",
+ "modified": "2026-10-22 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Daily Counter Reading",

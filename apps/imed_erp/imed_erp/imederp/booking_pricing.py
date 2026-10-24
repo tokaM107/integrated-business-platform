@@ -78,17 +78,18 @@ def price_of(item, lists, on_date, what):
 
 def pricing_key(doc):
 	"""What the price depends on: when it changes, the booking is priced again."""
-	return json.dumps(
-		[
-			doc.resource,
-			doc.customer,
-			flt(doc.hours, 2),
-			doc.package or "",
-			doc.rental_model or "",
-			[[row.extra, cint(row.quantity)] for row in doc.extras],
-		],
-		ensure_ascii=False,
-	)
+	key = [
+		doc.resource,
+		doc.customer,
+		flt(doc.hours, 2),
+		doc.package or "",
+		doc.rental_model or "",
+		[[row.extra, cint(row.quantity)] for row in doc.extras],
+	]
+	# Only a session on prepaid hours adds these, so the bookings priced before keep their key (and their prices).
+	if doc.get("hour_package"):
+		key.append([doc.hour_package, flt(doc.extra_hours, 4)])
+	return json.dumps(key, ensure_ascii=False)
 
 
 def price_booking(doc):
@@ -112,7 +113,25 @@ def set_base(doc, lists, reprice):
 		doc.pricing_note = _("Revenue share: no rent; the center keeps its share of what it collects.")
 		return
 
-	hours = flt(doc.hours, 2)
+	hours = exact_hours(doc)
+	if doc.get("hour_package"):
+		# Prepaid hours (studio_hour_package.py): the hours the package covers are paid by its own invoice; only the
+		# hours beyond it, once that is decided, are priced, at the hourly price.
+		extra = flt(doc.extra_hours, 4)
+		if not extra:
+			doc.rate, doc.base_amount = 0, 0
+			doc.price_list = doc.price_list or (lists[0] if lists else None)
+			doc.pricing_note = _("Prepaid hours {0}: {1} hours from the package.").format(doc.hour_package, flt(doc.package_hours, 2))
+			return
+		if not resource.item:
+			frappe.throw(_("{0} has no price by the hour for the hours beyond the package.").format(doc.resource), title=_("No Price"))
+		if reprice or not flt(doc.rate):
+			doc.rate, doc.price_list = price_of(resource.item, lists, today(), doc.resource)
+		doc.base_amount = flt(flt(doc.rate) * extra, 2)
+		doc.pricing_note = _("Prepaid hours {0}: {1} hours from the package; {2} hours beyond it x {3} ({4}), approved by {5}.").format(
+			doc.hour_package, flt(doc.package_hours, 2), flt(extra, 2), money(doc.rate), doc.price_list, doc.extra_hours_approved_by
+		)
+		return
 	if doc.package:
 		package = frappe.get_doc("Booking Package", doc.package)
 		if package.resource != doc.resource:
@@ -124,11 +143,11 @@ def set_base(doc, lists, reprice):
 				frappe.throw(_("Package {0} is disabled.").format(doc.package))
 			doc.rate, doc.price_list = price_of(package.item, lists, today(), doc.package)
 		if package.charged == ONCE:
-			if flt(package.hours) and hours > flt(package.hours):
+			if flt(package.hours) and flt(hours, 2) > flt(package.hours):
 				frappe.throw(
-					_(
-						"Package {0} covers up to {1} hours; this booking is {2}. Book the rest separately, or choose another package."
-					).format(doc.package, flt(package.hours), hours),
+					_("Package {0} covers up to {1} hours; this booking is {2}. Book the rest separately, or choose another package.").format(
+						doc.package, flt(package.hours), flt(hours, 2)
+					),
 					title=_("Longer Than the Package"),
 				)
 			doc.base_amount = flt(doc.rate, 2)
@@ -137,9 +156,7 @@ def set_base(doc, lists, reprice):
 			)
 		else:
 			doc.base_amount = flt(flt(doc.rate) * hours, 2)
-			doc.pricing_note = _("Package {0}: {1} hours x {2} ({3}).").format(
-				doc.package, hours, money(doc.rate), doc.price_list
-			)
+			doc.pricing_note = _("Package {0}: {1} hours x {2} ({3}).").format(doc.package, flt(hours, 2), money(doc.rate), doc.price_list)
 		return
 
 	if not resource.item:
@@ -150,13 +167,13 @@ def set_base(doc, lists, reprice):
 	if reprice:
 		doc.rate, doc.price_list = price_of(resource.item, lists, today(), doc.resource)
 	doc.base_amount = flt(flt(doc.rate) * hours, 2)
-	doc.pricing_note = _("{0} hours x {1} ({2}).").format(hours, money(doc.rate), doc.price_list)
+	doc.pricing_note = _("{0} hours x {1} ({2}).").format(flt(hours, 2), money(doc.rate), doc.price_list)
 
 
 def set_extras(doc, lists, reprice):
 	seen = set()
 	total = 0
-	hours = flt(doc.hours, 2)
+	hours = exact_hours(doc)
 	for row in doc.extras:
 		if row.extra in seen:
 			frappe.throw(
@@ -174,12 +191,24 @@ def set_extras(doc, lists, reprice):
 				frappe.throw(_("Extra {0} is disabled.").format(row.extra))
 			row.rate = price_of(extra.item, lists, today(), row.extra)[0]
 			row.item, row.charged = extra.item, extra.charged
-		row.hours = hours if row.charged == PIECE_PER_HOUR else 0
-		row.amount = flt(
-			cint(row.quantity) * flt(row.rate) * (hours if row.charged == PIECE_PER_HOUR else 1), 2
-		)
+		row.hours = flt(hours, 2) if row.charged == PIECE_PER_HOUR else 0
+		row.amount = flt(cint(row.quantity) * flt(row.rate) * (hours if row.charged == PIECE_PER_HOUR else 1), 2)
 		total += row.amount
 	doc.extras_amount = flt(total, 2)
+
+
+def exact_hours(doc):
+	"""QA-13: the booking's length in hours, unrounded (40 minutes = 2/3 hour), for working out money. Booking.hours
+	is rounded to 2 decimals for the screen; a price from it would be off (0.67 x 2,250 = 1,507.50, not 1,500)."""
+	from datetime import datetime
+
+	from frappe.utils import get_time
+
+	if not (doc.from_time and doc.to_time):
+		return flt(doc.hours)
+	day = datetime.min
+	seconds = (datetime.combine(day, get_time(doc.to_time)) - datetime.combine(day, get_time(doc.from_time))).total_seconds()
+	return seconds / 3600
 
 
 def revenue_share(collected, percent):

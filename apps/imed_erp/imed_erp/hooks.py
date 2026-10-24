@@ -57,6 +57,8 @@ app_include_js = [
 	# The Owner Dashboard's welcome band, card icons and colours.
 	asset("js/imed_owner_dashboard.js"),
 	asset("js/imed_theme_toggle.js"),
+	# Fixes to Frappe's desk seen in the browser (a broken icon in the sidebar menu).
+	asset("js/imed_desk_fixes.js"),
 ]
 
 # include js, css files in header of web template (the theme there only touches the login page)
@@ -207,6 +209,21 @@ page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
 # branch's (imederp/stock_count.py).
 doc_events = {
+	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).
+	"*": {
+		"validate": "imed_erp.imederp.dates.refuse_future_date",
+		# A cash box never goes below zero, whatever pays out of it (imederp/cash_balance.py). After the document's
+		# own on_submit and on_cancel, which post its ledger lines.
+		"on_submit": [
+			"imed_erp.imederp.cash_balance.check_on_submit",
+			"imed_erp.imederp.doctype.treasury_close.treasury_close.check_closed_days",
+		],
+		"before_cancel": "imed_erp.imederp.cash_balance.remember_before_cancel",
+		"on_cancel": [
+			"imed_erp.imederp.cash_balance.check_on_cancel",
+			"imed_erp.imederp.doctype.treasury_close.treasury_close.check_closed_days",
+		],
+	},
 	"Journal Entry": {
 		"validate": [
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_manual_current_account",
@@ -218,6 +235,8 @@ doc_events = {
 		"before_cancel": [
 			"imed_erp.imederp.doctype.expense.expense.block_cancel_of_expense_entry",
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_cancel_of_transfer_entry",
+			"imed_erp.imederp.doctype.app_payment.app_payment.block_cancel_of_payment_entry",
+			"imed_erp.imederp.doctype.cash_handover.cash_handover.block_cancel_of_handover_entry",
 			# The doctor's amount posted by a sale goes only with the sale (imederp/doctor_accrual.py).
 			"imed_erp.imederp.doctor_accrual.block_cancel_of_accrual",
 		],
@@ -228,6 +247,7 @@ doc_events = {
 			"imed_erp.imederp.doctype.inter_business_transfer.inter_business_transfer.block_current_account_in_payment",
 			"imed_erp.imederp.treasuries.block_spending_without_approval",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.booking_accounts.guard_booking_link",
 		],
 		"before_cancel": "imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
@@ -237,6 +257,7 @@ doc_events = {
 	},
 	"Sales Invoice": {
 		"validate": [
+			"imed_erp.imederp.sales_cancellation.restrict_returns",
 			"imed_erp.imederp.library_revenue.set_library_income_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 			"imed_erp.imederp.services.clear_service_warehouses",
@@ -248,6 +269,7 @@ doc_events = {
 			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
 			# A sale is cancelled only with its reason (ACC-06; imederp/sales_cancellation.py).
 			"imed_erp.imederp.sales_cancellation.require_cancel_reason",
+			"imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
 		],
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 		"on_submit": [
@@ -263,6 +285,7 @@ doc_events = {
 			"imed_erp.imederp.booking_accounts.on_posted_change",
 		],
 		"on_cancel": [
+			"imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 			"imed_erp.imederp.paper_use.cancel_paper_used",
 			"imed_erp.imederp.paper_use.refresh_counters",
 			"imed_erp.imederp.edition_sales.update_sold",
@@ -272,6 +295,7 @@ doc_events = {
 	},
 	"POS Invoice": {
 		"validate": [
+			"imed_erp.imederp.sales_cancellation.restrict_returns",
 			"imed_erp.imederp.library_revenue.set_library_income_account",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 			"imed_erp.imederp.services.clear_service_warehouses",
@@ -285,6 +309,8 @@ doc_events = {
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
 		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Entry": {
@@ -300,17 +326,23 @@ doc_events = {
 		"before_cancel": [
 			"imed_erp.imederp.paper_use.block_cancel_of_paper_issue",
 			"imed_erp.imederp.damaged_stock.block_cancel_of_posted_entry",
+			"imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
 		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Delivery Note": {
 		"validate": "imed_erp.imederp.damaged_stock.guard_damaged_store",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Receipt": {
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Stock Reconciliation": {
@@ -318,8 +350,12 @@ doc_events = {
 			"imed_erp.imederp.stock_count.check_count_type",
 			"imed_erp.imederp.stock_count.set_branch_cost_center",
 		],
-		"before_cancel": "imed_erp.imederp.doctype.stock_count.stock_count.block_cancel_of_count_reconciliation",
+		"before_cancel": [
+			"imed_erp.imederp.doctype.stock_count.stock_count.block_cancel_of_count_reconciliation",
+			"imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
+		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
+		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Cost Center Allocation": {
@@ -403,6 +439,48 @@ doc_events = {
 		"onload": "imed_erp.imederp.material_issue.material_request_onload",
 		"validate": "imed_erp.imederp.material_issue.validate_material_request",
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_material_request",
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	# SEC-12: kept once they carry money, postings, students or fees (imederp/no_delete.py).
+	"Platform Fee Schedule": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Booking": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_kept",
+	},
+	"App Course": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_kept",
+	},
+	"Treasury Close": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	"Weekly Cash Reconciliation": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+	},
+	# What students pay BA Plus (App Payment), the weekly cash hand-over (Cash Handover, ACC-09) and the studio's
+	# prepaid hours (Studio Hour Package), 22 Oct 2026.
+	"App Payment": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Cash Handover": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	"Studio Hour Package": {
+		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
+		"validate": "imed_erp.imederp.period_lock.validate_closed_period",
+		"before_cancel": "imed_erp.imederp.period_lock.validate_closed_period",
+	},
+	# A confirmed hand-over's signed receipt is kept (cash_handover.py).
+	"File": {
+		"on_trash": "imed_erp.imederp.doctype.cash_handover.cash_handover.keep_signed_receipt",
+	},
+	# CORE-07: a user is disabled, never deleted (imederp/users.py).
+	"User": {
+		"on_trash": "imed_erp.imederp.users.block_user_delete",
 	},
 }
 # Month-end closing (setup/close_period.py) also locks the app's own documents (imederp/period_lock.py).
@@ -416,6 +494,9 @@ period_closing_doctypes = [
 	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",
+	"App Payment",
+	"Cash Handover",
+	"Studio Hour Package",
 ]
 
 # The custom fields the app's code relies on: made when the app is installed (install-app does not run

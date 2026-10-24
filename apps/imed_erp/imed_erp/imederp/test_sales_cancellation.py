@@ -15,6 +15,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
 from imed_erp.imederp.sales_cancellation import REASON_FIELD, cancel_with_reason
+from imed_erp.imederp.testing import fund_cash_boxes
 
 # A test module outside a doctype folder builds no "_Test ..." records; keep it here, not under a doctype.
 COMPANY = "Mohamed Mamdouh group"
@@ -33,6 +34,8 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		# Cancelling a cash sale takes its cash back out of the box (cash_balance.py): the box holds it first.
+		fund_cash_boxes()
 		cls.customer = frappe.get_doc(
 			{
 				"doctype": "Customer",
@@ -46,7 +49,8 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 				"doctype": "Stock Entry",
 				"stock_entry_type": "Material Receipt",
 				"company": COMPANY,
-				"items": [{"item_code": "BOOK", "qty": 10, "basic_rate": 40, "t_warehouse": EDITIONS}],
+				# Enough for every test's sale of 2: the store holds nothing else on a clean site.
+				"items": [{"item_code": "BOOK", "qty": 100, "basic_rate": 40, "t_warehouse": EDITIONS}],
 			}
 		).insert()
 		receipt.submit()
@@ -155,6 +159,46 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		self.assertEqual(frappe.db.get_value("Sales Invoice", invoice.name, ["docstatus", REASON_FIELD]), (1, None))
 
+	# ---------- Returns (QA-04) ----------
+
+	def make_return(self, invoice, user, reason=None):
+		from erpnext.accounts.doctype.sales_invoice.sales_invoice import make_sales_return
+
+		frappe.set_user(user)
+		try:
+			credit = make_sales_return(invoice.name)
+			credit.return_reason = reason
+			# The cash goes back out of the box, without the change given on the sale.
+			credit.change_amount = credit.base_change_amount = 0
+			for payment in credit.payments:
+				payment.amount = payment.base_amount = credit.grand_total or -315
+			credit.insert()
+			credit.submit()
+			return credit
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_qa04_a_branch_manager_cannot_return_a_sale(self):
+		before = self.books()
+		invoice = self.sell()
+		self.assertRaisesRegex(frappe.PermissionError, "Only the owner or the accountant", self.make_return, invoice, RAGHAD, "Mistake")
+		# Nothing was reversed: the books stay sold and the cash stays in the box.
+		self.assertEqual(self.books(), before - 2)
+		self.assertFalse(frappe.db.exists("Sales Invoice", {"return_against": invoice.name}))
+
+	def test_qa04_a_return_needs_its_reason(self):
+		invoice = self.sell()
+		for blank in (None, "  ", "<b></b>"):
+			with self.subTest(blank):
+				self.assertRaisesRegex(frappe.ValidationError, "reason", self.make_return, invoice, ACCOUNTANT, blank)
+
+	def test_qa04_the_accountant_returns_a_sale_with_its_reason(self):
+		before = self.books()
+		invoice = self.sell()
+		credit = self.make_return(invoice, ACCOUNTANT, "  <i>Wrong book</i> given  ")
+		self.assertEqual((credit.docstatus, credit.return_reason), (1, "Wrong book given"))
+		self.assertEqual(self.books(), before)
+
 	def test_another_branch_cannot_see_the_sale(self):
 		invoice = self.sell()
 		frappe.set_user(SARA)
@@ -198,6 +242,14 @@ class IntegrationTestSalesCancellation(IntegrationTestCase):
 			self.assertIn(text, html)
 		for row in invoice.items:
 			self.assertIn(row.item_name, html)
+
+	def test_sec10_names_on_the_receipt_are_printed_as_text(self):
+		# A value written without Frappe's cleaning (db_set, an import) must not run in the printed receipt.
+		invoice = self.sell()
+		frappe.db.set_value("Sales Invoice", invoice.name, "customer_name", '<img src=x onerror="alert(1)">Ali')
+		html = frappe.get_print("Sales Invoice", invoice.name, print_format="MMG Sales Invoice")
+		self.assertNotIn('<img src=x onerror="alert(1)">', html)
+		self.assertIn("&lt;img src=x", html)
 
 	def test_the_reason_is_kept_as_plain_text(self):
 		invoice = self.sell()

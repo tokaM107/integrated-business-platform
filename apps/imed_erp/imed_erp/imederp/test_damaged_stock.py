@@ -11,7 +11,9 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, nowdate
 
+from imed_erp.imederp import damaged_stock
 from imed_erp.imederp.damaged_stock import SCRAP_BUYER
+from imed_erp.imederp.testing import fund_cash_boxes
 
 COMPANY = "Mohamed Mamdouh group"
 ABBR = "MMG"
@@ -76,11 +78,20 @@ def receive(item, quantity, warehouse, rate):
 
 
 class IntegrationTestDamagedStock(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		# A sale by weight cancelled takes its cash back out of the box (cash_balance.py): the box holds it first.
+		fund_cash_boxes()
+
 	def setUp(self):
 		frappe.set_user("Administrator")
 		frappe.db.savepoint("damaged_stock_test")
 		receive(PAPER, 5000, MAWASAH_STORE, 0.26)
 		receive("BOOK", 10, AZARITA_EDITIONS, 50)
+		# The stores may already hold stock on this site (QA-37): every check is against what they hold now.
+		self.store, self.damaged = qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)
+		self.books, self.damaged_books = qty("BOOK", AZARITA_EDITIONS), qty("BOOK", DAMAGED)
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
@@ -129,38 +140,78 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		frappe.db.rollback(save_point="refused")
 		frappe.set_user("Administrator")
 
+	def test_sec02_posting_in_the_system_s_name_keeps_the_browser_session(self):
+		# SEC-02: inside a web request, set_user alone replaced Raghad's session with Administrator's, and she
+		# was logged out when the request ended.
+		frappe.set_user(RAGHAD)
+		session = frappe.local.session
+		session.sid, session.data = "browser-session-id", frappe._dict(csrf_token="token", user=RAGHAD)
+		data = session.data
+		try:
+			self.assertEqual(damaged_stock.as_system(lambda: frappe.session.user), "Administrator")
+			self.assertEqual((frappe.session.user, session.sid), (RAGHAD, "browser-session-id"))
+			self.assertIs(session.data, data)
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_sec07_a_branch_manager_without_a_branch_is_refused(self):
+		# A new account given the role but not yet its branch: refused everywhere, not let into every branch.
+		user = frappe.get_doc(
+			{
+				"doctype": "User",
+				"email": "_test-no-branch@imed.local",
+				"first_name": "_Test No Branch",
+				"send_welcome_email": 0,
+				"roles": [{"role": "Branch Manager"}, {"role": "Stock User"}],
+			}
+		).insert(ignore_permissions=True)
+		self.assert_refused(frappe.PermissionError, self.damage, user=user.name)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged)
+
+	def test_qa29_a_count_of_the_damaged_store_finds_a_surplus(self):
+		# Damaged goods are kept at no value; a count finding more of them than recorded posts the surplus at none.
+		self.damage()
+		count = frappe.get_doc(
+			{"doctype": "Stock Count", "store": DAMAGED, "items": [{"item_code": PAPER, "counted_qty": self.damaged + 1005}]}
+		)
+		as_user(RAGHAD, count.insert)
+		as_user(RAGHAD, count.submit)
+		self.assertEqual((qty(PAPER, DAMAGED), stock_value(PAPER, DAMAGED)), (self.damaged + 1005, 0))
+
 	# ---------- 1, 3, 12: damage recorded, moved, loss on the library ----------
 	def test_damage_is_a_loss_and_waits_in_the_damaged_store(self):
 		rate_before = flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": MAWASAH_STORE}, "valuation_rate"))
 		doc = self.damage()
 		doc.reload()
 		self.assertEqual((doc.responsible, doc.owner, doc.branch), (RAGHAD, RAGHAD, MAWASAH_LIBRARY))
-		self.assertEqual(qty(PAPER, MAWASAH_STORE), 4000)
-		self.assertEqual(qty(PAPER, DAMAGED), 1000)
+		self.assertEqual(qty(PAPER, MAWASAH_STORE), self.store - 1000)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged + 1000)
 		# Kept in the damaged store at no value; the store it came from keeps its cost per sheet.
 		self.assertEqual(stock_value(PAPER, DAMAGED), 0)
 		self.assertEqual(flt(frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": MAWASAH_STORE}, "valuation_rate")), rate_before)
-		# 1,000 sheets at 0.26: a loss of 260 on Mawasah's library.
-		self.assertEqual(flt(doc.total_loss), 260)
-		self.assertEqual(gl(doc.loss_entry).get((LOSS, MAWASAH_LIBRARY)), 260)
+		# 1,000 sheets at the store's cost (0.26 on an empty store): a loss of 260 on Mawasah's library.
+		loss = flt(1000 * rate_before, 2)
+		self.assertEqual(flt(doc.total_loss), loss)
+		self.assertEqual(gl(doc.loss_entry).get((LOSS, MAWASAH_LIBRARY)), loss)
 		self.assertEqual(sum(gl(doc.damaged_store_entry).values()), 0)
 		# DOC-19: never charged to a doctor.
 		self.assertFalse(frappe.db.exists("Doctor Ledger Entry", {"remarks": ["like", f"%{doc.name}%"]}))
 
 	def test_azarita_damage_goes_to_the_damaged_store_as_azarita_loss(self):
+		rate = flt(frappe.db.get_value("Bin", {"item_code": "BOOK", "warehouse": AZARITA_EDITIONS}, "valuation_rate"))
 		doc = self.damage([{"item_code": "BOOK", "qty": 2}], store=AZARITA_EDITIONS, user=SARA, reason="نسخ مبلولة في التخزين")
-		self.assertEqual(qty("BOOK", AZARITA_EDITIONS), 8)
-		self.assertEqual(qty("BOOK", DAMAGED), 2)
-		self.assertEqual(gl(doc.loss_entry).get((LOSS, AZARITA_LIBRARY)), 100)
+		self.assertEqual(qty("BOOK", AZARITA_EDITIONS), self.books - 2)
+		self.assertEqual(qty("BOOK", DAMAGED), self.damaged_books + 2)
+		self.assertEqual(gl(doc.loss_entry).get((LOSS, AZARITA_LIBRARY)), flt(2 * rate, 2))
 
 	# ---------- 2: missing or wrong data ----------
 	def test_missing_or_wrong_data_is_refused(self):
 		self.assert_refused(frappe.ValidationError, self.damage, reason="  ")
 		self.assert_refused(frappe.ValidationError, self.damage, [{"item_code": PAPER, "qty": 0}])
-		self.assert_refused(frappe.ValidationError, self.damage, [{"item_code": PAPER, "qty": 6000}])
+		self.assert_refused(frappe.ValidationError, self.damage, [{"item_code": PAPER, "qty": self.store + 1}])
 		self.assert_refused(frappe.ValidationError, self.damage, [{"item_code": PAPER, "qty": 1}, {"item_code": PAPER, "qty": 2}])
 		self.assert_refused(frappe.ValidationError, self.damage, store=DAMAGED, user="Administrator")
-		self.assertEqual((qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)), (5000, 0))
+		self.assertEqual((qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)), (self.store, self.damaged))
 
 	# ---------- 4: never taken off twice ----------
 	def test_damage_is_taken_off_once(self):
@@ -171,7 +222,7 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		except Exception:
 			frappe.db.rollback(save_point="again")
 		frappe.set_user("Administrator")
-		self.assertEqual((qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)), (4000, 1000))
+		self.assertEqual((qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)), (self.store - 1000, self.damaged + 1000))
 		self.assertEqual(frappe.db.count("Stock Entry", {"remarks": ["like", f"%{doc.name}%"], "docstatus": 1}), 2)
 		# Its stock entries are reversed only through the damage record.
 		self.assert_refused(frappe.ValidationError, frappe.get_doc("Stock Entry", doc.loss_entry).cancel)
@@ -179,7 +230,7 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 	def test_cancelling_the_damage_puts_everything_back(self):
 		doc = self.damage()
 		frappe.get_doc("Damaged Stock Entry", doc.name).cancel()
-		self.assertEqual((qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)), (5000, 0))
+		self.assertEqual((qty(PAPER, MAWASAH_STORE), qty(PAPER, DAMAGED)), (self.store, self.damaged))
 		self.assertEqual(gl(doc.loss_entry), {})
 
 	# ---------- 5, 6, 7, 8: sale by weight ----------
@@ -188,8 +239,8 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		sale = self.sale(weight=12.5, rate=3.4)
 		sale.reload()
 		self.assertEqual(flt(sale.amount), 42.5)
-		self.assertEqual(qty(PAPER, DAMAGED), 0)
-		self.assertEqual(qty(PAPER, MAWASAH_STORE), 4000)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged)
+		self.assertEqual(qty(PAPER, MAWASAH_STORE), self.store - 1000)
 		# Revenue through ERPNext's Sales Invoice, on Mawasah's library; the cash in its cash box.
 		invoice = frappe.get_doc("Sales Invoice", sale.sales_invoice)
 		self.assertEqual((invoice.docstatus, flt(invoice.grand_total), invoice.items[0].qty, invoice.items[0].uom), (1, 42.5, 12.5, "Kg"))
@@ -227,11 +278,11 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 
 	def test_selling_more_than_the_damaged_store_holds_is_refused(self):
 		self.damage()
-		self.assert_refused(frappe.ValidationError, self.sale, [{"item_code": PAPER, "qty": 1001}])
+		self.assert_refused(frappe.ValidationError, self.sale, [{"item_code": PAPER, "qty": qty(PAPER, DAMAGED) + 1}])
 		self.assert_refused(frappe.ValidationError, self.sale, weight=0)
 		self.assert_refused(frappe.ValidationError, self.sale, rate=0)
-		self.assertEqual(qty(PAPER, DAMAGED), 1000)
-		self.assertFalse(frappe.db.exists("Sales Invoice", {"customer": SCRAP_BUYER, "docstatus": 1}))
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged + 1000)
+		self.assertFalse(frappe.db.exists("Sales Invoice", {"customer": SCRAP_BUYER, "docstatus": 1, "creation": (">", frappe.utils.add_to_date(None, minutes=-5))}))
 
 	# ---------- 10, 12: traced from the damage to the sale ----------
 	def test_sale_traced_to_the_damage_record(self):
@@ -244,7 +295,7 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		self.assert_refused(frappe.ValidationError, frappe.get_doc("Damaged Stock Entry", damage.name).cancel)
 		frappe.get_doc("Damaged Stock Sale", sale.name).cancel()
 		self.assertEqual(flt(frappe.db.get_value("Damaged Stock Item", {"parent": damage.name}, "sold_qty")), 0)
-		self.assertEqual(qty(PAPER, DAMAGED), 1000)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged + 1000)
 		self.assertEqual(gl(sale.sales_invoice), {})
 
 	# ---------- No way round the damage record and the sale by weight ----------
@@ -262,10 +313,10 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		# Out by a plain issue: not a sale by weight.
 		self.damage()
 		self.assert_refused(frappe.ValidationError, as_user, RAGHAD, plain_entry, "Material Issue", {"s_warehouse": DAMAGED})
-		self.assertEqual(qty(PAPER, DAMAGED), 1000)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged + 1000)
 		# The owner and the accountant may, to correct a mistake.
 		plain_entry("Material Issue", {"s_warehouse": DAMAGED})
-		self.assertEqual(qty(PAPER, DAMAGED), 900)
+		self.assertEqual(qty(PAPER, DAMAGED), self.damaged + 900)
 
 	# ---------- 11: who may do what ----------
 	def test_permissions(self):

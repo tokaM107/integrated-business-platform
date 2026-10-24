@@ -12,6 +12,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, getdate, nowtime, today
 
+from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.stock_count import branch_of
 from imed_erp.imederp.system_user import as_administrator
 
@@ -38,8 +39,23 @@ class StockCount(Document):
 				),
 				title=_("Count Again"),
 			)
+		self.check_no_later_count()
 		# The stock may have moved since the count was saved.
 		self.set_differences()
+
+	def check_no_later_count(self):
+		"""QA-19: a count compares with the stock at its own time. One of the same store submitted since, and dated
+		at or after it, has already set the stock from then on; this one would post the same shortage again."""
+		later = frappe.db.sql(
+			"""select name from `tabStock Count` where store = %s and docstatus = 1 and name != %s
+			and timestamp(posting_date, posting_time) >= timestamp(%s, %s) limit 1""",
+			(self.store, self.name, self.posting_date, self.posting_time),
+		)
+		if later:
+			frappe.throw(
+				_("Count {0} of this store was submitted after this one was made. Count again.").format(later[0][0]),
+				title=_("Count Again"),
+			)
 
 	def set_count_time(self):
 		# A branch manager's count is dated when it is first saved, whatever was typed: the quantities were
@@ -57,6 +73,7 @@ class StockCount(Document):
 		allowed = frappe.get_all(
 			"User Permission", filters={"user": frappe.session.user, "allow": "Cost Center"}, pluck="for_value"
 		)
+		check_has_branch(allowed)
 		if allowed and self.branch not in allowed:
 			frappe.throw(
 				_("{0} is not a store of your branch. You can count the stores of: {1}.").format(
@@ -84,6 +101,8 @@ class StockCount(Document):
 	def set_differences(self):
 		for row in self.items:
 			row.recorded_qty, row.valuation_rate = recorded(row.item_code, self.store, self.posting_date, self.posting_time)
+			# QA-05: paper sold before the count but still waiting as a draft issue is already gone from the shelf.
+			row.recorded_qty -= pending_issues(row.item_code, self.store, self.posting_date, self.posting_time)
 			row.difference_qty = flt(row.counted_qty) - row.recorded_qty
 			row.difference_value = flt(row.difference_qty * row.valuation_rate, row.precision("difference_value"))
 		self.items_counted = len(self.items)
@@ -94,6 +113,10 @@ class StockCount(Document):
 		changed = [row for row in self.items if row.difference_qty]
 		if not changed:
 			return
+		from imed_erp.imederp.damaged_stock import is_damaged_store
+
+		# QA-29: damaged goods are kept at no value (damaged_stock.py), so a surplus found there is too.
+		at_no_value = {"valuation_rate": 0, "allow_zero_valuation_rate": 1} if is_damaged_store(self.store) else {}
 		reconciliation = frappe.get_doc(
 			{
 				"doctype": "Stock Reconciliation",
@@ -104,8 +127,17 @@ class StockCount(Document):
 				"set_posting_time": 1,
 				"custom_count_type": self.count_type,
 				"custom_counted_by": self.counted_by,
+				# What was counted, plus what the draft issues will still take off when the accountant submits them,
+				# so the store ends at what was counted and nothing is taken twice (QA-05).
 				"items": [
-					{"item_code": row.item_code, "warehouse": self.store, "qty": flt(row.counted_qty)} for row in changed
+					{
+						**at_no_value,
+						"item_code": row.item_code,
+						"warehouse": self.store,
+						"qty": flt(row.counted_qty)
+						+ pending_issues(row.item_code, self.store, self.posting_date, self.posting_time),
+					}
+					for row in changed
 				],
 			}
 		)
@@ -128,6 +160,22 @@ class StockCount(Document):
 
 def can_date_counts(user=None):
 	return DATING_ROLE in frappe.get_roles(user)
+
+
+def pending_issues(item_code, store, posting_date, posting_time):
+	"""Stock units of an item that sales made before the count took from the store, in issues still waiting as drafts
+	for the accountant (paper_use.py: the store showed too few sheets)."""
+	from frappe.utils import get_datetime
+
+	return flt(
+		frappe.db.sql(
+			"""select sum(sed.transfer_qty) from `tabStock Entry Detail` sed
+			join `tabStock Entry` se on se.name = sed.parent
+			where se.docstatus = 0 and ifnull(se.sales_invoice_no, '') != ''
+				and sed.item_code = %s and sed.s_warehouse = %s and se.creation <= %s""",
+			(item_code, store, get_datetime(f"{posting_date} {posting_time}")),
+		)[0][0]
+	)
 
 
 def recorded(item_code, store, posting_date, posting_time):

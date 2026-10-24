@@ -1,0 +1,55 @@
+# Production settings for the IMED ERP on top of pwd.yml (SEC-04). pwd.yml is the local development setup: its
+# passwords are "admin" and it serves the site on every interface. This file replaces those, and nothing else.
+#
+#   DB_ROOT_PASSWORD and ADMIN_PASSWORD must be set (in a .env file kept off the repository, or the environment);
+#   compose refuses to start without them.
+#
+#   docker compose -f pwd.yml -f overrides/compose.imed-production.yaml up -d
+#
+# The site is served on 127.0.0.1:8080 only: a TLS proxy on the host (Caddy or nginx) faces the internet and adds
+# the security headers (docs/production-hardening.md). After the first start, turn developer mode and tests off:
+#   docker exec <backend> bench --site frontend set-config developer_mode 0
+#   docker exec <backend> bench --site frontend set-config allow_tests 0
+
+x-db-password: &db-password
+  MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD, never admin}
+  MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD, never admin}
+
+services:
+  backend:
+    environment: *db-password
+
+  db:
+    environment: *db-password
+
+  create-site:
+    command:
+      - >
+        wait-for-it -t 120 db:3306;
+        wait-for-it -t 120 redis-cache:6379;
+        wait-for-it -t 120 redis-queue:6379;
+        export start=`date +%s`;
+        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && \
+          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] && \
+          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
+        do
+          echo "Waiting for sites/common_site_config.json to be created";
+          sleep 5;
+          if (( `date +%s`-start > 120 )); then
+            echo "could not find sites/common_site_config.json with required keys";
+            exit 1
+          fi
+        done;
+        echo "sites/common_site_config.json found";
+        if [ -d "sites/frontend" ]; then
+          echo "Site frontend already exists, skipping creation";
+        else
+          bench new-site --mariadb-user-host-login-scope='%' --admin-password="$$ADMIN_PASSWORD" --db-root-username=root --db-root-password="$$DB_ROOT_PASSWORD" --install-app erpnext --set-default frontend;
+        fi;
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD, never admin}
+      DB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD, never admin}
+
+  frontend:
+    ports: !override
+      - "127.0.0.1:8080:8080"

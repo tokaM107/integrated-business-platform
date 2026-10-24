@@ -13,7 +13,10 @@
   "reading_date",
   "opening_reading",
   "closing_reading",
+  "counter_reset",
+  "reset_note",
   "consumed",
+  "gap",
   "sold_sheets",
   "variance",
   "daily_counter_reading",
@@ -62,11 +65,35 @@
    "reqd": 1
   },
   {
+   "fieldname": "counter_reset",
+   "fieldtype": "Check",
+   "label": "Counter Reset",
+   "default": "0",
+   "no_copy": 1,
+   "description": "The machine's counter was reset (a repair, a new board): the opening is typed, below the last reading. The owner and the accountant only."
+  },
+  {
+   "fieldname": "reset_note",
+   "fieldtype": "Small Text",
+   "label": "Reset Note",
+   "depends_on": "eval:doc.counter_reset",
+   "mandatory_depends_on": "eval:doc.counter_reset",
+   "no_copy": 1,
+   "description": "What happened to the counter, and its last reading before the reset if known."
+  },
+  {
    "fieldname": "consumed",
    "fieldtype": "Int",
    "in_list_view": 1,
-   "label": "Consumed Sheets",
+   "label": "Printed Sheets",
    "read_only": 1
+  },
+  {
+   "fieldname": "gap",
+   "fieldtype": "Int",
+   "label": "Gap Since Last Closing",
+   "read_only": 1,
+   "description": "This reading's opening minus the machine's last closing: sheets printed while no reading was taken."
   },
   {
    "fieldname": "sold_sheets",
@@ -106,7 +133,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-18 17:00:00.000000",
+ "modified": "2026-10-22 11:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printer Reading",

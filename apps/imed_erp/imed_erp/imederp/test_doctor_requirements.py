@@ -15,12 +15,14 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
 
+from imed_erp.imederp.testing import ledger_entry
 from imed_erp.imederp import test_edition_sales
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_agreement
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_doctor_summary
 from imed_erp.imederp.report.owner_share_plan_vs_actual.owner_share_plan_vs_actual import execute as owner_share
 from imed_erp.imederp.report.unsold_editions.unsold_editions import execute as unsold
 from imed_erp.imederp.test_edition_sales import COMPANY, EDITIONS, MAWASAH, RAGHAD
+from imed_erp.imederp.testing import fund_cash_boxes
 
 LEDGER = "Doctor Ledger Entry"
 TREASURY = "الخزينة الرئيسية - MMG"
@@ -31,6 +33,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		# A payout leaves a cash box: the box holds the cash first (cash_balance.py).
+		fund_cash_boxes()
 		helpers = test_edition_sales.IntegrationTestEditionSales
 		cls.items = [helpers.make_item(f"_Test Reports Book {n}") for n in (1, 2)]
 		receipt = frappe.get_doc(
@@ -99,7 +103,7 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 
 	def entry(self, entry_type, amount, **values):
 		doc = frappe.get_doc(
-			{"doctype": LEDGER, "agreement": self.agreement, "entry_type": entry_type, "amount": amount, "entry_date": today(), **values}
+			ledger_entry({"agreement": self.agreement, "entry_type": entry_type, "amount": amount, "entry_date": today(), **values})
 		).insert()
 		doc.submit()
 		return doc
@@ -120,7 +124,8 @@ class IntegrationTestDoctorReports(IntegrationTestCase):
 
 	def test_a_doctor_below_zero_shows_as_owing(self):
 		balance = flt(frappe.db.get_value("Doctor Agreement", self.agreement, "balance"))
-		self.entry("Unsold Copies Charge", balance + 50)
+		# A deduction by hand, approved: the only way a books doctor goes below zero (owner, 21 Oct 2026).
+		self.entry("Adjustment", -(balance + 50))
 		[row] = [row for row in get_doctor_summary(self.doctor) if row["agreement"] == self.agreement]
 		self.assertEqual((row["balance"], row["direction"], row["owed_by_doctor"]), (50, "Owed by Doctor", True))
 

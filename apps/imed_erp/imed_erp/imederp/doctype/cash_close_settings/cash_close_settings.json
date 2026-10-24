@@ -1,0 +1,118 @@
+{
+ "doctype": "DocType",
+ "module": "ImedERP",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-21 18:00:00.000000",
+ "modified": "2026-10-22 13:00:00.000000",
+ "name": "Cash Close Settings",
+ "issingle": 1,
+ "track_changes": 1,
+ "engine": "InnoDB",
+ "links": [],
+ "actions": [],
+ "states": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "print": 1,
+   "write": 1
+  },
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "print": 1
+  }
+ ],
+ "fields": [
+  {
+   "fieldname": "week_starts_on",
+   "fieldtype": "Select",
+   "label": "Reporting Week Starts On",
+   "options": "\nSaturday\nSunday\nMonday\nTuesday\nWednesday\nThursday\nFriday",
+   "description": "Empty until the reporting week is confirmed: a weekly review may then start on any day. Once set, every weekly review starts on this day."
+  },
+  {
+   "fieldname": "week_ends_on",
+   "fieldtype": "Select",
+   "label": "Reporting Week Ends On",
+   "options": "\nSaturday\nSunday\nMonday\nTuesday\nWednesday\nThursday\nFriday",
+   "description": "The last working day of the week (owner: Saturday to Thursday). The days after it, to the next week's start, are days off: a close made on one still shows in the week, and a day off without a close is not listed as missing."
+  },
+  {
+   "fieldname": "recovery_section",
+   "fieldtype": "Section Break",
+   "label": "Recovering Shortages from Employees"
+  },
+  {
+   "fieldname": "recovery_policy_approved",
+   "fieldtype": "Check",
+   "label": "Recovery Policy Approved",
+   "description": "Off until the owner approves a written policy checked by a lawyer or HR (deduction limits under the labour law and the contracts, how the employee is told and heard). While off, the owner cannot approve any recovery. The system never deducts from a salary either way."
+  },
+  {
+   "fieldname": "recovery_policy_reference",
+   "fieldtype": "Small Text",
+   "label": "Policy Reference",
+   "description": "The approved policy: its title, date and who checked it."
+  },
+  {
+   "fieldname": "column_break_recovery",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "recovery_policy_approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Approved By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recovery_policy_approved_on",
+   "fieldtype": "Datetime",
+   "label": "Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "handover_section",
+   "fieldtype": "Section Break",
+   "label": "Weekly Cash Hand-over"
+  },
+  {
+   "fieldname": "owner_custody_account",
+   "fieldtype": "Link",
+   "label": "Owner's Custody Account",
+   "options": "Account",
+   "description": "Where cash handed over to the owner is held: a cash account. Confirming a hand-over is refused while it is empty."
+  },
+  {
+   "fieldname": "column_break_handover",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "accountant_custody_account",
+   "fieldtype": "Link",
+   "label": "Accountant's Custody Account",
+   "options": "Account",
+   "description": "Where cash handed over to the accountant is held: a cash account."
+  }
+ ],
+ "field_order": [
+  "week_starts_on",
+  "week_ends_on",
+  "recovery_section",
+  "recovery_policy_approved",
+  "recovery_policy_reference",
+  "column_break_recovery",
+  "recovery_policy_approved_by",
+  "recovery_policy_approved_on",
+  "handover_section",
+  "owner_custody_account",
+  "column_break_handover",
+  "accountant_custody_account"
+ ]
+}

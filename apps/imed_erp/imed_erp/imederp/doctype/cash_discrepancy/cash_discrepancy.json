@@ -1,0 +1,290 @@
+{
+ "doctype": "DocType",
+ "module": "ImedERP",
+ "owner": "Administrator",
+ "modified_by": "Administrator",
+ "creation": "2026-10-21 17:00:00.000000",
+ "modified": "2026-10-22 14:00:00.000000",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "links": [],
+ "actions": [],
+ "states": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "name": "Cash Discrepancy",
+ "autoname": "CDS-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "track_changes": 1,
+ "title_field": "treasury",
+ "editable_grid": 1,
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "write": 1,
+   "share": 1
+  },
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1,
+   "write": 1,
+   "share": 1
+  },
+  {
+   "role": "Branch Manager",
+   "read": 1,
+   "report": 1,
+   "print": 1,
+   "email": 1,
+   "export": 1
+  }
+ ],
+ "fields": [
+  {
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "options": "Pending Investigation\nResponsibility Determined\nRecovery Recommended\nRecovery Approved\nWritten Off\nPending Review\nExplained\nWithdrawn",
+   "default": "Pending Investigation"
+  },
+  {
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Shortage\nSurplus",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "treasury_close",
+   "fieldtype": "Link",
+   "options": "Treasury Close",
+   "label": "Treasury Close",
+   "read_only": 1
+  },
+  {
+   "fieldname": "treasury",
+   "fieldtype": "Link",
+   "options": "Account",
+   "label": "Cash Box",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "business",
+   "fieldtype": "Link",
+   "options": "Cost Center",
+   "label": "Business",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "close_date",
+   "fieldtype": "Date",
+   "label": "Date",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "shift",
+   "fieldtype": "Data",
+   "label": "Shift",
+   "description": "Which shift handled the cash, if known."
+  },
+  {
+   "fieldname": "investigation_section",
+   "fieldtype": "Section Break",
+   "label": "Investigation"
+  },
+  {
+   "fieldname": "employees",
+   "fieldtype": "Table",
+   "options": "Cash Discrepancy Employee",
+   "label": "Employees",
+   "description": "Everyone who handled the cash that day. Mark responsible only those the investigation found responsible."
+  },
+  {
+   "fieldname": "reason",
+   "fieldtype": "Small Text",
+   "label": "Reason",
+   "description": "What caused it, or the explanation of a surplus."
+  },
+  {
+   "fieldname": "investigation_notes",
+   "fieldtype": "Text",
+   "label": "Investigation Notes"
+  },
+  {
+   "fieldname": "evidence",
+   "fieldtype": "Attach",
+   "label": "Evidence"
+  },
+  {
+   "fieldname": "surplus_section",
+   "fieldtype": "Section Break",
+   "label": "Where the Surplus Came From",
+   "depends_on": "eval:doc.kind=='Surplus'"
+  },
+  {
+   "fieldname": "surplus_cause",
+   "fieldtype": "Select",
+   "label": "Cause",
+   "options": "\nOmitted Customer Payment\nMoney Held for a Customer\nRecording Error\nOther Identified Adjustment",
+   "read_only": 1,
+   "description": "Set by the accountant with Explained, once the source is verified. Unknown: the surplus stays under review."
+  },
+  {
+   "fieldname": "surplus_customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_surplus",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "surplus_account",
+   "fieldtype": "Link",
+   "label": "Adjust Against",
+   "options": "Account",
+   "read_only": 1,
+   "description": "The account the verified source belongs to; the customer's own account for an omitted payment."
+  },
+  {
+   "fieldname": "review_section",
+   "fieldtype": "Section Break",
+   "label": "Review and Approval"
+  },
+  {
+   "fieldname": "reviewed_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Reviewed By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reviewed_on",
+   "fieldtype": "Datetime",
+   "label": "Reviewed On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "legal_check",
+   "fieldtype": "Check",
+   "label": "Recovery Checked Against the Contract and the Labour Law",
+   "description": "The accountant confirms the recovery is allowed by the employment contract and within the labour law's limits on deductions, after the employee was told and heard. Required before a recovery is approved."
+  },
+  {
+   "fieldname": "recommended_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Recommended By",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recommended_on",
+   "fieldtype": "Datetime",
+   "label": "Recommended On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_review",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "approved_by",
+   "fieldtype": "Link",
+   "options": "User",
+   "label": "Approved By (Owner)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "approved_on",
+   "fieldtype": "Datetime",
+   "label": "Approved On",
+   "read_only": 1
+  },
+  {
+   "fieldname": "recovery_total",
+   "fieldtype": "Currency",
+   "label": "Recovery Approved",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payroll_status",
+   "fieldtype": "Select",
+   "label": "Payroll",
+   "read_only": 1,
+   "options": "\nReady for Payroll Review",
+   "description": "For the payroll review report. Nothing is deducted from a salary by the system."
+  },
+  {
+   "fieldname": "adjustment_entry",
+   "fieldtype": "Link",
+   "options": "Journal Entry",
+   "label": "Adjustment Entry",
+   "read_only": 1,
+   "description": "The book adjustment to فروقات الخزينة, posted only after the review (Post Adjustment)."
+  }
+ ],
+ "field_order": [
+  "status",
+  "kind",
+  "amount",
+  "column_break_head",
+  "treasury_close",
+  "treasury",
+  "business",
+  "close_date",
+  "shift",
+  "investigation_section",
+  "employees",
+  "reason",
+  "investigation_notes",
+  "evidence",
+  "surplus_section",
+  "surplus_cause",
+  "surplus_customer",
+  "column_break_surplus",
+  "surplus_account",
+  "review_section",
+  "reviewed_by",
+  "reviewed_on",
+  "legal_check",
+  "recommended_by",
+  "recommended_on",
+  "column_break_review",
+  "approved_by",
+  "approved_on",
+  "recovery_total",
+  "payroll_status",
+  "adjustment_entry"
+ ]
+}

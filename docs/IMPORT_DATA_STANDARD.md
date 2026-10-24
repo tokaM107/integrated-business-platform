@@ -1,7 +1,8 @@
 # Daily import: data standard and unique identifiers (INT-02, INT-03, INT-05, INT-06, INT-14)
 
-**Status: proposal for the team to approve.** Nothing here is built yet: no import job, and no source-ID fields
-on the documents. The existing systems have not yet said how their data is reached or what identifier each record
+**Status: proposal for the team to approve.** Built so far: the BA Plus import (part 3, `imederp/app_import.py`) and
+the shared run log (*Integration Import Log*); the booking import's logic (part 4). Not built: the libraries' sales
+and stock (parts 1 and 2). The existing systems have not yet said how their data is reached or what identifier each record
 carries (requirements v1.2, open questions 27, 28 and INT question 2). This document fixes the shape of the daily
 files and the rules for identifiers, so the import can be built once those answers come, and so a file sent twice
 never records anything twice.
@@ -20,7 +21,7 @@ shows the format only and is not real data.
 | **Cancelled in the source** | Listed for the accountant, who cancels it in the ERP with the reason "cancelled in the source system" (ACC-06). How each system shows a cancellation (deleted or a status) is still to be answered (INT question 6). |
 | **Missing or invalid field** | The record is not imported. It goes to the error list with the field and the reason; the rest of the file goes on (INT-07). Nothing is guessed or filled in. |
 | **Source marked** (INT-14) | Every imported record keeps `source_system`, so screens and reports can tell imported records from ones entered by hand. |
-| **Audit** (INT-12, SEC-01) | Imports run as one integration user per system, never as a person, so the history of every record shows where it came from. Each run logs: file, time, records read, inserted, skipped as already imported, failed. |
+| **Audit** (INT-12, SEC-01) | Imports run as one integration user per system, never as a person, so the history of every record shows where it came from. Each run writes an **Integration Import Log** (INT-07): the system, the file and its SHA-256, when, who ran it, rows read, inserted, other records made on the way, skipped as already imported, changed in the source, failed, and each row to look at with its line in the file and its reason. Only the import writes a log; nobody edits or deletes one. A run the database drops as a whole (a deadlock) keeps nothing and is logged as Failed. |
 | **Re-running** | Running the same file again inserts nothing (every key is already there) and logs the run as all skipped. |
 
 **Proposed fields** (to add when the import is built, after approval; no existing record changes): `source_system`
@@ -74,19 +75,50 @@ Material Receipt, or Material Issue.
 
 A transfer that takes a store below zero is refused by ERPNext (negative stock is off) and listed.
 
-## 3. App subscriptions (INT-05, APP-04, APP-13): `import/app_subscriptions.csv`
+## 3. BA Plus: courses and subscriptions (INT-05, APP-04, APP-13): `import/app_subscriptions.csv`
 
-One row per student subscription. Becomes a submitted **App Subscription**.
+**Built** (`imederp/app_import.py`, tests `imederp/test_app_import.py`). One row per student subscription. Becomes
+a submitted **App Subscription** on an **App Course**, both keyed by their ids in BA Plus.
 
-| Column | Type | Required | Meaning and checks |
-|---|---|---|---|
-| `source_system`, `source_id` | text | yes | `ba_plus` and the subscription's id in the app. |
-| `subscription_date` | date | yes | |
-| `doctor_agreement` | text | yes | The doctor's App agreement in the ERP (mapped once from the app's course or doctor id). Used to find or make the *App Course*; the subscription takes its agreement, doctor and term from the course. |
-| `course` | text | yes | The course name in the app. Matched to an *App Course* of the agreement in the subscription's term, made first if missing. |
-| `student_phone` | text | yes | Matched to the student (a Customer) by phone, as in sales. |
-| `student_name` | text | yes | Used only when the student is new. |
-| ~~`platform_fee`~~ | | no | Not imported: the ERP works it out from the course's number of students and the tiers in force when its term starts (APP-02/03). A value in the file is ignored. |
+Run (the file on the server; as the integration user or an accountant; commits at the end):
+
+```bash
+docker exec frappe_docker-backend-1 bench --site frontend execute imed_erp.imederp.app_import.import_file \
+  --kwargs '{"path": "/home/frappe/frappe-bench/sites/app_2026-10-22.csv"}'
+```
+
+| Column | Type | Required | Meaning and checks | Confirmed? |
+|---|---|---|---|---|
+| `source_system` | text | no | `ba_plus` if present; another value fails the row. | Ours |
+| `subscription_id` | text | yes | The subscription's id in BA Plus. With `ba_plus`, unique (`App Subscription.import_key`): the same id again is skipped, or listed if it changed. | **Needs a real export**: is it stable, and unique across courses? |
+| `subscription_date` | date `YYYY-MM-DD` | yes | Not after today; inside one ERP term (the course's). | **Needs a real export**: the format |
+| `course_id` | text | yes | The course's id in BA Plus (`App Course.import_key`). The first row with a new id makes the course, in the one term the date falls in; two terms over that day, or none, fails the row. | **Needs a real export** |
+| `course_name` | text | yes | The name of a new course. A known course whose name changed in BA Plus is listed, not renamed. | **Needs a real export** |
+| `doctor_id` | text | yes | The doctor's id in BA Plus. Found on his submitted app agreement (*Doctor Agreement* › BA Plus Doctor ID, written once by the accountant; one agreement per id). Not found: the row fails. A known course under another doctor fails too. | **Needs a real export**, and the ids written on the agreements |
+| `student_phone` | text | yes | Matched to the student (a Customer) by phone, one customer per number (CRM-04). | **Needs a real export**: are phones always given? |
+| `student_name` | text | yes | Used only for a new student, made in the customer group `طالب`. | **Needs a real export** |
+
+Not in the file: the **platform fee** (the ERP works it out from the course's students and the tiers, APP-02/03; a
+`platform_fee` column is ignored), the agreement and the term (from the course), the cost center (always
+`تطبيق BA Plus`, whatever the file or the user says).
+
+What happens to a row:
+
+| The subscription id | Result |
+|---|---|
+| new | The course and the student are found or made, the subscription is submitted, the course counted again and the change posted to the doctor's account (APP-03/05), as for one entered by hand. Nothing is checked less because it comes from a file: the user needs the rights to make subscriptions and courses. |
+| known, the same | Skipped. Nothing posted again: no subscription, ledger entry, journal entry or fee twice. |
+| known, changed (course, student phone, date), or cancelled here and still in BA Plus | Listed as *Changed in Source*, **not overwritten** (INT-01). The accountant decides, e.g. cancels it here and lets the next file bring it again. |
+| anything wrong | The row fails with its line and reason; nothing of it is kept (a course made for it goes back too); the others go on. |
+
+An imported course or subscription is changed only in BA Plus: saving it here is refused, except a course's
+status (open or closed to new students), which is the ERP's own. An imported student who withdraws is ticked in
+BA Plus, not here.
+
+**Not decided, so not built** (do not guess them): how BA Plus shows a **cancelled** subscription or a **withdrawn**
+student in the file (INT question 6, and whether a withdrawn student counts, `COUNT_WITHDRAWN`); whether its ids
+are stable; whether it can send only the day's rows or the whole term each time (both work: known rows are
+skipped); the totals check against BA Plus's own count (INT-13, APP-09).
 
 ## 4. Studio bookings (INT-04): the import is written, the file is not
 
