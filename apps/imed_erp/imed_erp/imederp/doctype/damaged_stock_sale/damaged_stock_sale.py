@@ -49,8 +49,11 @@ class DamagedStockSale(Document):
 			frappe.throw(_("Enter the weight sold, more than zero."), title=_("Missing Weight"))
 		if flt(self.rate) <= 0:
 			frappe.throw(_("Enter the price per kilogram, more than zero."), title=_("Missing Price"))
-		# The price as the invoice keeps it (the currency's precision, piastres), so the two totals agree.
+		# The price and the weight as the invoice keeps them (the currency's precision, piastres; the invoice's
+		# quantity precision, System Settings > Float Precision), so the two totals agree: a weight of 2.345 Kg on a
+		# site that keeps 2 decimals is invoiced as 2.34, and the sale says so too.
 		self.rate = flt(self.rate, self.precision("rate"))
+		self.weight = flt(self.weight, frappe.get_precision("Sales Invoice Item", "qty"))
 		self.amount = flt(flt(self.weight) * self.rate, self.precision("amount"))
 		self.set_cash_account()
 		self.check_items()
