@@ -51,7 +51,7 @@ Each record is its own savepoint; a failing record is listed with its reason and
 
 | Entity / event | Status | Notes |
 |---|---|---|
-| Customers from bookings (id, name, phone) | Working, mock-tested | Email/address/notes are not read (no customer list endpoint without the 200-row cap). A customer with no booking in the window is not imported. |
+| Customers from bookings (id, name, phone) | Working, mock-tested, live on staging | A customer is matched by XStudio id, then by phone, then made; a **name or phone changed later in XStudio is not written over the ERP customer** (seen 25 Oct 2026; a row to add when wanted). | Email/address/notes are not read (no customer list endpoint without the 200-row cap). A customer with no booking in the window is not imported. |
 | Customer without usable phone | Working, mock-tested | Created without number, flagged for review. |
 | Historical bookings, last 30 days (+60 ahead) | Working with limitations, mock-tested | Complete unless a one-hour span holds ≥ 500 bookings (then listed, not claimed). |
 | Booking statuses | Working, mock-tested | `pending`→Tentative; `confirmed`→Tentative, or Confirmed with Deposit when `amount_paid > 0`; `completed`→Completed; `cancelled`→Cancelled with reason "Cancelled in XStudio by …". XStudio's own status kept. |
@@ -87,6 +87,72 @@ XStudio reads one variable, `DATABASE_URL` (`backend/src/db.js:25`). SSL is swit
 3. Start the backend from `xstudio-platform/backend` with the variables in a git-ignored `.env` or the shell: `DATABASE_URL`, `TZ=Africa/Cairo`, `PORT=4000`, `JWT_SECRET=<random>`, `WHATSAPP_DRIVER=dev`; leave `TELEGRAM_*` unset. `npm ci && node src/index.js`.
 4. `scripts/xstudio_staging.sh` (this repo) logs in as the seed admin, **changes its password**, creates the `accountant` login for the sync and prints nothing secret.
 5. On the ERP: `XStudio Settings` → URL `http://host.docker.internal:4000` (the ERP runs in Docker; http is accepted for this host only), login = the accountant's phone, password; run `setup_xstudio.run` once; **Test Connection**; enable; **Sync Now**.
+
+## 6a. Automatic sync: scheduler, locking, retries (verified 25 Oct 2026 on the local `frontend` site)
+
+- The job: `hooks.py` cron `*/10 * * * *` → `run_scheduled`, registered as a Scheduled Job Type on migrate. It runs only
+  when XStudio Settings → Enabled, and only when Minutes Between Runs (default 10) have passed since the last attempt.
+- Needs the Frappe scheduler **enabled for the site** (`bench --site <site> scheduler status` / `enable-scheduler`) and
+  the `scheduler` and `queue-*` containers up (`bench doctor` → workers online). Enabling the scheduler starts every
+  other enabled Scheduled Job Type too; on `frontend` the ones that would create records or touch mail were paused
+  (`stopped = 1`): `recurring_expense.run_daily`, `doctor_accrual.run_daily`, `email_account.pull`,
+  `email_account.notify_unreplied`. Un-pause them from the Scheduled Job Type list when wanted.
+- Two runs never overlap: a MariaDB named lock (`get_lock`) is taken by the scheduler's run and by Sync Now alike; the
+  second is refused with "Already Running".
+- A failed run (XStudio unreachable, a timeout, a refused login) is written as a Failed log, rolled back to the run's
+  savepoint, counted in Failures in a Row, and **retried on the next tick**; three in a row → health Down. There is no
+  in-run retry of a single call (the client timeout is 20 s).
+- **Dry run** (nothing kept, not even the log; the settings are left as they were):
+  `bench --site <site> execute imed_erp.imederp.xstudio.sync.dry_run`. Works with the sync disabled, so it is the
+  first look at a real XStudio before any import: the window, the counts, the customers / packages / bookings it
+  would add, and the rows it would list for review.
+
+## 6b. Time zone
+
+The site's System Settings time zone must be `Africa/Cairo` (`setup_regional.py` sets it; the dev site had been
+left on Frappe's default `Asia/Kolkata` and was corrected on 25 Oct 2026). The sync itself converts XStudio's UTC
+instants with an explicit Cairo zone, so Date/Time fields are right whatever the site zone; Datetime fields
+(exact start / end, last read) are stored naive in Cairo and are only *displayed* right when the site zone is Cairo.
+Containers and MariaDB stay on UTC (nothing to change there). Changing the setting rewrites no row.
+
+## 6c. Connecting the real XStudio (xstudioeg.com): the procedure, in order
+
+Nothing below writes to XStudio, and nothing is imported until step 6. No credential goes through chat, a ticket
+or a commit: the password is typed once into XStudio Settings (stored encrypted) or passed through an environment
+variable to `setup_xstudio.configure`.
+
+1. **An account for the sync, on XStudio.** XStudio's super admin (Admin → Users, or `POST /api/admin/users`)
+   creates a staff login with role **accountant** (`bookings.read` + `packages.read`; `manager` also works but
+   holds `bookings.write`), its own phone and a long random password, named "ERP Sync". Never the owner's own
+   login. XStudio has no read-only role and no API keys (§7): the accountant role is the least that can read
+   packages.
+2. **The hostname.** Production is `https://www.xstudioeg.com` (API under `/api`, `backend/src/index.js`); check it
+   answers `GET /api/health` with `{"ok":true}` over https. The settings refuse `http://` for any host but a local
+   test server.
+3. **Enter the connection**, with the sync still **off**: on XStudio Settings, URL, the sync login's phone,
+   its password → Save → **Test Connection**. It must say the login worked and list no unmapped hall (the six halls
+   1, 3, 4, 5, 6, 8 are mapped by `setup_xstudio.run`). Or from a shell, password through the environment only:
+   `XSTUDIO_SYNC_PASSWORD=... bench --site <site> execute imed_erp.setup.setup_xstudio.configure --kwargs
+   '{"base_url": "https://www.xstudioeg.com", "login": "<phone>", "enabled": 0}'`.
+4. **Permissions check.** Test Connection calls `/api/halls` (public) and the login; the dry run below is the
+   check of `bookings.read` and `packages.read` (a missing permission fails the run with XStudio's 403 reason).
+5. **Dry run:** `bench --site <site> execute imed_erp.imederp.xstudio.sync.dry_run`. It reads the window
+   (30 days back, 60 ahead), reports the counts, the customers / packages / bookings it would add and the rows it
+   would list for review, and keeps nothing. Read it for: a span listed as incomplete (a one-hour span with ≥ 500
+   bookings, §7), customers without a usable phone, and bookings that would fail on a manual booking in the way.
+6. **The owner approves** the dry run's report. Only then: Enabled → Save → **Sync Now** (the first real run,
+   with the owner watching the Integration Import Log), then the scheduler keeps it up every 10 minutes.
+
+## 6d. Keeping it running when the Mac is off
+
+The ERP today runs in Docker Desktop on the development Mac (`frappe_docker/pwd.yml`, site `frontend`,
+`http://localhost:8080`); its scheduler and workers stop with the Mac, and so does the sync. For the sync to run
+on its own, the ERP must be on an always-on server, which is the production deployment of
+`docs/production-deployment-plan.md` (A: a Linux server with Docker; D: scheduler and workers enabled and
+checked with `bench doctor`), with the XStudio connection entered there (§6c) and port 443 open outbound to
+xstudioeg.com. Nothing else is needed on XStudio's side: XStudio is the server, the ERP only calls it.
+Until then, the sync runs whenever the Mac is on and Docker Desktop is running, and catches up on its first tick
+(the window is re-read in full on every run; nothing is missed by a pause shorter than 30 days).
 
 ## 7. Known limitations that need an XStudio change (not done in this sprint)
 

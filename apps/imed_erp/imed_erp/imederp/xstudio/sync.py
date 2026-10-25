@@ -111,17 +111,56 @@ def run_scheduled():
 	return run(trigger="scheduler")
 
 
-def run(trigger="scheduler", lookback_days=None, lookahead_days=None):
-	"""One run of the sync. Returns its Integration Import Log. Two runs at once: the second is refused."""
+def run(trigger="scheduler", lookback_days=None, lookahead_days=None, dry_run=False):
+	"""One run of the sync. Returns its Integration Import Log. Two runs at once: the second is refused.
+	dry_run: the whole run, then rolled back: nothing is kept, not even the log; what it would have done is returned."""
 	settings = frappe.get_single("XStudio Settings")
-	if not settings.enabled:
+	if not settings.enabled and not dry_run:
 		frappe.throw(_("The XStudio sync is not enabled (XStudio Settings)."), title=_("Sync Disabled"))
 	if not acquire_lock():
 		frappe.throw(_("An XStudio sync is already running. Wait for it to finish."), title=_("Already Running"))
 	try:
-		return _run(settings, trigger, lookback_days, lookahead_days)
+		return _run(settings, trigger, lookback_days, lookahead_days, dry_run)
 	finally:
 		release_lock()
+
+
+@frappe.whitelist()
+def dry_run(lookback_days=None, lookahead_days=None):
+	"""What a run would do, without keeping anything (the first look at a real XStudio before any import):
+	  bench --site frontend execute imed_erp.imederp.xstudio.sync.dry_run"""
+	frappe.only_for(MANAGERS)
+	return run(trigger="dry run", lookback_days=lookback_days, lookahead_days=lookahead_days, dry_run=True)
+
+
+def _snapshot():
+	"""The XStudio records on the site now, so a dry run can say which ones it would add."""
+	return {
+		"customers": set(frappe.get_all("Customer", filters={"xstudio_customer_id": ("is", "set")}, pluck="xstudio_customer_id")),
+		"packages": set(frappe.get_all("Studio Hour Package", filters={"source_system": SOURCE}, pluck="import_key")),
+		"bookings": set(frappe.get_all("Booking", filters={"source_system": SOURCE}, pluck="import_key")),
+	}
+
+
+def _would_add(before):
+	after = _snapshot()
+	new_bookings = frappe.get_all(
+		"Booking",
+		filters={"source_system": SOURCE, "import_key": ("in", list(after["bookings"] - before["bookings"]))},
+		fields=["booking_date", "from_time", "to_time", "resource", "customer", "status", "total_amount", "paid_amount"],
+		order_by="booking_date, from_time",
+	) if after["bookings"] - before["bookings"] else []
+	new_customers = frappe.get_all(
+		"Customer",
+		filters={"xstudio_customer_id": ("in", list(after["customers"] - before["customers"]))},
+		fields=["customer_name", "mobile_no", "xstudio_needs_review"],
+	) if after["customers"] - before["customers"] else []
+	new_packages = frappe.get_all(
+		"Studio Hour Package",
+		filters={"source_system": SOURCE, "import_key": ("in", list(after["packages"] - before["packages"]))},
+		fields=["customer", "unit", "hours_purchased", "hours_remaining", "xstudio_payment_status"],
+	) if after["packages"] - before["packages"] else []
+	return {"customers": new_customers, "packages": new_packages, "bookings": new_bookings}
 
 
 def acquire_lock():
@@ -133,7 +172,7 @@ def release_lock():
 	frappe.db.sql("select release_lock(%s)", LOCK)
 
 
-def _run(settings, trigger, lookback_days, lookahead_days):
+def _run(settings, trigger, lookback_days, lookahead_days, dry_run=False):
 	today = datetime.now(CAIRO).date()
 	start, end = mappers.window_edges(
 		today,
@@ -142,7 +181,9 @@ def _run(settings, trigger, lookback_days, lookahead_days):
 	)
 	label = f"XStudio bookings starting {start.date()} to {(end - timedelta(days=1)).date()} ({trigger})"
 	run = ImportRun(SOURCE, file_name=label)
-	set_state(last_attempt_at=now_datetime())
+	if not dry_run:
+		set_state(last_attempt_at=now_datetime())
+	before = _snapshot() if dry_run else None
 	# The run's own savepoint: a run that stops is rolled back to it, and what earlier runs committed stays.
 	frappe.db.savepoint(RUN_SAVEPOINT)
 	try:
@@ -162,6 +203,18 @@ def _run(settings, trigger, lookback_days, lookahead_days):
 		if not incomplete:
 			find_missing(context, bookings, start, end)
 		log = run.finish()
+		if dry_run:
+			would = _would_add(before)
+			rows = [dict(row) for row in run.rows]
+			frappe.db.rollback(save_point=RUN_SAVEPOINT)
+			return {
+				"dry_run": True,
+				"window": label,
+				"status": log.status,
+				"counts": {k: log.get(k) for k in ("rows_read", "inserted", "updated", "skipped", "changed", "failed")},
+				"would_add": would,
+				"to_look_at": rows,
+			}
 		set_state(last_success_at=now_datetime(), consecutive_failures=0, last_message=summary(log), health=health_of(log, 0))
 		return log
 	except Exception as e:
@@ -170,8 +223,10 @@ def _run(settings, trigger, lookback_days, lookahead_days):
 		except Exception:
 			# A deadlock made the database roll the whole transaction back, savepoint and all.
 			frappe.db.rollback()
-		failures = cint(frappe.db.get_single_value("XStudio Settings", "consecutive_failures")) + 1
 		message = cstr(getattr(e, "message", None) or e)
+		if dry_run:
+			return {"dry_run": True, "window": label, "status": "Failed", "message": message}
+		failures = cint(frappe.db.get_single_value("XStudio Settings", "consecutive_failures")) + 1
 		if frappe.flags.in_test:
 			# The tests roll everything back at their end; a commit here would leave their records on the site.
 			run.counts.update(inserted=0, records_created=0, updated=0)

@@ -219,6 +219,11 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 
 	def setUp(self):
 		frappe.db.savepoint("xstudio_test")
+		# Bookings a real XStudio put on this site are not the fake's: set aside until the rollback at the end.
+		frappe.db.sql("update `tabBooking` set source_system = 'xstudio-set-aside' where source_system = 'xstudio'")
+		# Nor is a token a real XStudio gave: the fake logs in itself.
+		frappe.db.set_single_value("XStudio Settings", {"token": None, "token_obtained_at": None}, update_modified=False)
+		frappe.clear_document_cache("XStudio Settings", "XStudio Settings")
 		self.x = FakeXStudio()
 		self.patches = [
 			patch.object(XStudioClient, "request", lambda c, method, path, params=None, body=None, auth=True, _retry=True: self.fake_request(c, method, path, params, body, auth)),
@@ -311,6 +316,24 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		self.assertEqual(self.counts(second), ("Completed", 2, 0, 0, 1, 0, 0))
 		self.assertEqual((frappe.db.count("Booking", {"source_system": "xstudio"}), frappe.db.count("Customer", {"xstudio_customer_id": teacher})), before)
 		self.assertEqual(frappe.db.count("Booking", {"import_key": mappers.import_key(list(self.x.bookings)[0])}), 1)
+
+	def test_a_dry_run_says_what_it_would_add_and_keeps_nothing(self):
+		teacher = self.x.customer("_Test Teacher Dry", self.phone(1))
+		self.x.booking(teacher)
+		logs = frappe.db.count("Integration Import Log", {"source_system": "xstudio"})
+		attempt = frappe.db.get_single_value("XStudio Settings", "last_attempt_at")
+		result = sync.run(trigger="dry run", dry_run=True)
+		self.assertTrue(result["dry_run"])
+		self.assertEqual(result["counts"]["inserted"], 1)
+		self.assertEqual([c["customer_name"] for c in result["would_add"]["customers"]], ["_Test Teacher Dry"])
+		self.assertEqual(len(result["would_add"]["bookings"]), 1)
+		# Nothing stayed: no booking, no customer, no log, and the settings' last attempt is as it was.
+		self.assertEqual(frappe.db.count("Booking", {"import_key": mappers.import_key(list(self.x.bookings)[0])}), 0)
+		self.assertEqual(frappe.db.count("Customer", {"xstudio_customer_id": teacher}), 0)
+		self.assertEqual(frappe.db.count("Integration Import Log", {"source_system": "xstudio"}), logs)
+		self.assertEqual(frappe.db.get_single_value("XStudio Settings", "last_attempt_at"), attempt)
+		# A real run after it adds exactly what the dry run said.
+		self.assertEqual(self.counts(self.run_sync())[2], 1)
 
 	# ---------- the 30-day window ----------
 
