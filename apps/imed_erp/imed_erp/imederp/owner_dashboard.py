@@ -138,6 +138,23 @@ def studio_hours_this_month(filters=None):
 
 
 @frappe.whitelist()
+def xstudio_due_this_month(filters=None):
+	"""What XStudio says is still due (its amount due less its amount paid) on the studio's held bookings dated this
+	month. Read from XStudio and shown for monitoring: nothing is invoiced or posted here (owner's rule)."""
+	check_access()
+	rows = frappe.get_all(
+		"Booking",
+		filters={
+			"source_system": "xstudio",
+			"status": ("not in", NOT_HELD),
+			"booking_date": ("between", (get_first_day(today()), get_last_day(today()))),
+		},
+		fields=["xstudio_amount_due", "xstudio_amount_paid"],
+	)
+	return card(flt(sum(flt(r.xstudio_amount_due) - flt(r.xstudio_amount_paid) for r in rows), 2))
+
+
+@frappe.whitelist()
 def hall_bookings_this_month(filters=None):
 	check_access()
 	return card(bookings(HALLS), "Int")

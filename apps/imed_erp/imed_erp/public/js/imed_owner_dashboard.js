@@ -24,6 +24,7 @@
 		"Studio Hours This Month": ["clock", "count"],
 		"Hall Bookings This Month": ["presentation", "count"],
 		"Unpaid on Bookings": ["hourglass", "due"],
+		"Due on Studio Bookings (XStudio)": ["clapperboard", "due"],
 	};
 	// The section headers are written in Arabic on the workspace (setup_dashboard.py).
 	const HEADERS = {
@@ -85,6 +86,8 @@
 				return ["Booking", studio];
 			case "Hall Bookings This Month":
 				return ["Booking", { resource_type: "Hall", booking_date: month, status: held }];
+			case "Due on Studio Bookings (XStudio)":
+				return ["Booking", { source_system: "xstudio", resource_type: "Studio Service", booking_date: month, status: held, xstudio_amount_due: [">", 0] }];
 			case "Unpaid on Bookings":
 				return ["Booking", { status: ["in", ["Confirmed with Deposit", "Completed"]], booking_date: ["<=", frappe.datetime.get_today()], outstanding_amount: [">", 0] }];
 			case "Owed to Us":
@@ -211,7 +214,7 @@
 	const open_route = (route) => frappe.set_route("List", route[0], route[1]);
 	const HELD = ["not in", ["Cancelled", "No Show"]];
 
-	function bookings_card(b, day) {
+	function bookings_card(b, day, currency) {
 		const list = (resource_type, status) => ["Booking", { booking_date: day, resource_type, status }];
 		const kind = (title, s, resource_type) =>
 			`<div class="imed-yday-sub">${esc(title)}</div>
@@ -233,6 +236,11 @@
 				${stat(__("Studio hours booked"), hours, "", list("Studio Service", HELD))}
 				${stat(__("Studio hours delivered"), delivered, "", list("Studio Service", "Completed"))}
 				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday), "", made)}
+			</div>
+			<div class="imed-yday-sub">${esc(__("The studio's money, as XStudio says it (not posted here)"))}</div>
+			<div class="imed-yday-stats">
+				${stat(__("Due in XStudio"), money(b.xstudio_due, currency), b.xstudio_due ? "is-negative" : "", ["Booking", { booking_date: day, source_system: "xstudio", status: HELD, xstudio_amount_due: [">", 0] }])}
+				${stat(__("Paid in XStudio"), money(b.xstudio_paid, currency), b.xstudio_paid ? "is-positive" : "", ["Booking", { booking_date: day, source_system: "xstudio", xstudio_amount_paid: [">", 0] }])}
 			</div>
 			${
 				b.still_open
@@ -348,7 +356,7 @@
 				</div>
 				<div class="imed-yday-grid">
 					${money_card(d)}
-					${bookings_card(d.bookings, d.day)}
+					${bookings_card(d.bookings, d.day, d.currency)}
 					${app_card(d.app, d.currency, d.day)}
 					${printing_card(d.printing, d.day)}
 					${systems_card(d.systems)}

@@ -184,7 +184,7 @@ def bookings(period):
 	rows = frappe.get_all(
 		"Booking",
 		filters={"booking_date": period.day},
-		fields=["resource_type", "status", "hours", "source_system"],
+		fields=["resource_type", "status", "hours", "source_system", "xstudio_amount_due", "xstudio_amount_paid"],
 	)
 	by_status = {}
 	for row in rows:
@@ -197,6 +197,10 @@ def bookings(period):
 		"studio": summary(by_status.get(STUDIO, {})),
 		"studio_hours_booked": flt(sum(flt(row.hours) for row in studio if row.status not in NOT_HELD), 2),
 		"studio_hours_delivered": flt(sum(flt(row.hours) for row in studio if row.status == "Completed"), 2),
+		# What XStudio says is due and paid on the studio's held bookings of the day: shown for monitoring, never
+		# posted here (no invoice, no payment entry; owner's rule). The studio's money is in XStudio.
+		"xstudio_due": flt(sum(flt(row.xstudio_amount_due) for row in studio if row.source_system == "xstudio" and row.status not in NOT_HELD), 2),
+		"xstudio_paid": flt(sum(flt(row.xstudio_amount_paid) for row in studio if row.source_system == "xstudio" and row.status not in NOT_HELD), 2),
 		# A day gone by and the booking neither completed nor cancelled: someone has to close it, here. An imported
 		# one (XStudio) is closed there, and stays "pending" there as a rule: not counted.
 		"still_open": len([row for row in rows if row.status in OPEN_STATUSES and not row.source_system]),

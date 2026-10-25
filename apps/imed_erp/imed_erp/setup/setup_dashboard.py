@@ -44,6 +44,8 @@ booking_cards = [
     dict(label="Studio Hours This Month", method=M + "studio_hours_this_month", color=TEAL),
     dict(label="Hall Bookings This Month", method=M + "hall_bookings_this_month", color=SLATE),
     dict(label="Unpaid on Bookings", money=1, method=M + "unpaid_on_bookings_card", color=AMBER),
+    # What XStudio says is still due on the studio's bookings of the month: read from XStudio, never posted here.
+    dict(label="Due on Studio Bookings (XStudio)", money=1, method=M + "xstudio_due_this_month", color=AMBER),
 ]
 cards = money_cards + booking_cards
 # Cards of earlier runs: counts and all-time sums, not the owner's money, and yesterday's figures now in the
