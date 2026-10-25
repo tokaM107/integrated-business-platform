@@ -549,15 +549,23 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		self.run_sync()
 		self.assertEqual(len(self.erp_package(package).usage), 2)
 
-	def test_a_balance_edited_by_hand_in_xstudio_is_kept_and_flagged(self):
+	def test_a_balance_the_ledger_does_not_explain_is_kept_and_noted_not_flagged(self):
+		"""XStudio's balance is the balance. A package migrated from the sheet (remaining hours set, no usage row for
+		the hours already used) or edited by hand there: the balance kept, the package marked, an informational note on
+		the log, and the run still Completed and Healthy."""
 		teacher = self.x.customer("_Test Hand Edit", self.phone(1))
-		package = self.x.package(teacher, hours=10, remaining=7)  # 3 hours gone with no ledger row (PATCH /customer-packages/:id)
+		package = self.x.package(teacher, hours=10, remaining=7)  # 3 hours gone with no ledger row
 		self.x.booking(teacher)
 		log = self.run_sync()
 		erp_package = self.erp_package(package)
 		self.assertEqual((erp_package.hours_remaining, erp_package.xstudio_hours_remaining, erp_package.hours_used, erp_package.xstudio_balance_matches), (7, 7, 0, 0))
-		self.assertEqual([r.kind for r in log.errors], ["Needs Review"])
-		self.assertIn("edited by hand", log.errors[0].reason)
+		self.assertEqual([r.kind for r in log.errors], ["Note"])
+		self.assertIn("Incomplete historical usage", log.errors[0].reason)
+		self.assertEqual((log.status, log.changed, log.failed), ("Completed", 0, 0))
+		self.assertEqual(frappe.db.get_single_value("XStudio Settings", "health"), "Healthy")
+		# Running again neither recalculates the balance nor turns the note into an error.
+		log = self.run_sync()
+		self.assertEqual((self.erp_package(package).hours_remaining, log.status), (7, "Completed"))
 
 	def test_a_reels_bundle_counts_reels(self):
 		teacher = self.x.customer("_Test Reels", self.phone(1))

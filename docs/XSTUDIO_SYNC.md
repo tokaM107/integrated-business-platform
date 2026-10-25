@@ -15,7 +15,7 @@
 | Booking fields | `Booking` JSON | Section "XStudio": XStudio status, payment status, service, screen/cameras, full price, amount due/paid, price-pending, deposit, exact start/end (Cairo), hours, crosses-midnight flag, customer name/phone as sent, package id, photographer id, cancelled-by, source payload (JSON), payload hash, changed-in-source-at, last-read-at, not-returned flag. |
 | Package fields | `Studio Hour Package` JSON | Source section (source, system, id, key, payload, hash, times) and XStudio section (name, **unit Hour/Reel**, category, expires on, XStudio hours remaining, ledger-explains-balance flag, payment status, paid total, payments summary). Usage child rows carry XStudio's row id. |
 | Customer fields | custom fields (`imederp/xstudio/fields.py`) | `xstudio_customer_id` (unique), `xstudio_needs_review`, `xstudio_last_synced_at`. |
-| Import Log | `Integration Import Log` | New source `xstudio`, counter **Updated**, error kind **Needs Review**. Integration Status report shows the row. |
+| Import Log | `Integration Import Log` | New source `xstudio`, counter **Updated**, row kinds **Needs Review** (actionable) and **Note** (information only, counted nowhere). Integration Status report shows the row. |
 | Controllers | `booking.py`, `studio_hour_package.py` | An imported booking takes its package hours from the source and is never drawn/priced/posted here. An imported package cannot be saved, cancelled or drawn on by a booking entered here ("Change it there"). |
 | Site setup | `setup/setup_xstudio.py` | Customer group `عملاء الاستوديو`, resources `X Studio — Hall {1,3,4,5,6,8}` and `X Studio — Prepaid Packages` (studio services, cost center `استوديو X`), the hall map. Run once: `bench --site frontend execute imed_erp.setup.setup_xstudio.run`. |
 | Tests | `imederp/test_xstudio_sync.py` | 35 tests against an in-memory stand-in of XStudio's API (same endpoints, filters, 500 cap, roles). |
@@ -42,7 +42,7 @@ The sync account must hold `bookings.read` **and** `packages.read`. Of XStudio's
 3. Customers (from the bookings' `customer_id/name/phone`): found by `xstudio_customer_id`; else by phone (`normalize_phone`) and linked; else created in `عملاء الاستوديو`. A phone that is a placeholder (`no-phone-…`) or invalid → customer **without** a number, `xstudio_needs_review = 1`. Never a made-up number.
 4. Packages of those customers (`GET /api/customers/:id/packages`): inserted and submitted, or their mirror fields updated.
 5. Bookings: inserted, updated (payload hash changed) or skipped (unchanged). Overlap with a booking entered here → that row fails with "already booked".
-6. Usage ledger rows appended once each by XStudio's row id; `Hours Used` = ledger sum; `Hours Remaining` = **XStudio's figure**; mismatch → flag off + **Needs Review**.
+6. Usage ledger rows appended once each by XStudio's row id; `Hours Used` = ledger sum; `Hours Remaining` = **XStudio's figure**, never recalculated; a ledger that does not add up to it → flag off + an informational **Note** on the log (incomplete historical usage; not an error).
 7. Bookings imported earlier whose start is in the window but which XStudio did not return: looked up by `customerId`; found → updated (moved); not found → `xstudio_not_in_last_fetch = 1` + **Needs Review**. **Nothing is deleted or cancelled because XStudio did not return it.** A failed API call aborts the run (Failed log) and changes nothing.
 
 Each record is its own savepoint; a failing record is listed with its reason and the rest continue. Two runs cannot overlap (MariaDB named lock). Health: Healthy / Degraded (errors or 1–2 failures) / Down (3 failures in a row).
@@ -64,7 +64,7 @@ Each record is its own savepoint; a failing record is listed with its reason and
 | Completed + amount paid | Working, mock-tested | Aggregate `amount_paid` only. |
 | Packages (incl. bought before the window) | Working, mock-tested | Whole ledger comes with the package. Balance = XStudio's figure. |
 | Package usage ledger | Working, mock-tested | Rows whose booking is outside the window are kept with "(booking … not imported)". |
-| Hand-edited package balance (`PATCH /customer-packages/:id`) | Detected, flagged | No ledger row exists in XStudio; the sync keeps XStudio's balance and lists it for review. |
+| Package whose usage rows do not add up to its balance (migrated from the sheet by XStudio's import, which writes no usage row for the hours already used; or `PATCH /customer-packages/:id`) | Kept, marked, noted | **XStudio's balance is the balance** (owner's rule, 25 Oct 2026). Hours Remaining = XStudio's figure, never recalculated; Hours Used = the usage rows that exist; the package's "Ledger Explains the Balance" is off and the log carries an informational **Note** (kind `Note`, counted nowhere: the run stays Completed and Healthy). Not an error, nothing to do. |
 | Deleted package (`DELETE /customer-packages/:id`) | **Not possible to detect reliably** | It simply stops being returned; the ERP copy stays as last read. |
 | Payments | Aggregate only | Booking: `amount_paid`/`payment_status`; package: `paid_total` + text summary. **No individual payment records, no stable payment ids exist in the API.** |
 | Reels bundles | Working, mock-tested | `unit = Reel`. |
@@ -181,3 +181,13 @@ Until then, the sync runs whenever the Mac is on and Docker Desktop is running, 
   of that day). Backup of 14:43 kept in the site and in `~/Documents/imed-erp-backups`.
 - **Deployed on an always-on server:** none. The sync runs only while the Mac, Docker Desktop, the scheduler, the
   workers and the internet are up (§6d). The scheduler job is present in `hooks.py` but inert until Settings → Enabled, which should be done only after the staging run and the full regression suite pass.
+
+## 9. Source of truth (owner's rule, 25 Oct 2026)
+
+XStudio's production database, through its API, is the single source of truth for customers, bookings and their
+statuses, halls, packages, their totals, the usage rows that exist, the remaining balances and the payment
+summaries. Audit of the ERP side on that day: nothing in `imederp/xstudio/` reads a spreadsheet or a file; the only
+balance ever written is XStudio's `hours_remaining`; the ERP's own package arithmetic (`studio_hour_package.py`)
+refuses imported packages; every call is a GET (the client refuses the rest); a second run changes nothing
+(idempotent). The separate file import of studio bookings (`booking_import.py`, "Studio (bookings, file)") is an
+older, unrelated path that the XStudio sync neither uses nor falls back to.

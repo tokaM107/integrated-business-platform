@@ -312,7 +312,7 @@
    "fieldname": "xstudio_balance_matches",
    "fieldtype": "Check",
    "label": "Ledger Explains the Balance",
-   "description": "Off: XStudio's balance differs from what its usage rows add up to; it was edited by hand there.",
+   "description": "Off: incomplete historical usage. XStudio's usage rows do not add up to its balance (a package migrated from the sheet, or a balance set by hand there). XStudio's balance is the balance; nothing here recalculates it, and nothing needs doing.",
    "read_only": 1,
    "no_copy": 1
   },

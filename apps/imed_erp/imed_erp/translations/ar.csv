@@ -1982,3 +1982,6 @@ Last Read From XStudio,آخر قراءة من XStudio
 "XStudio (studio bookings, API)",XStudio (حجوزات الاستوديو، API)
 "Studio (bookings, file)",الاستوديو (حجوزات، ملف)
 No sync has run yet: enable it on XStudio Settings.,المزامنة ما اشتغلتش لسه: فعّلها من إعدادات XStudio.
+Note,ملاحظة
+"Incomplete historical usage: XStudio's balance is {0}, its usage rows account for {1}. XStudio's balance is kept as is.",سجل استخدام تاريخي ناقص: رصيد XStudio هو {0}، وصفوف الاستخدام بتفسّر {1}. رصيد XStudio محفوظ زي ما هو.
+"Off: incomplete historical usage. XStudio's usage rows do not add up to its balance (a package migrated from the sheet, or a balance set by hand there). XStudio's balance is the balance; nothing here recalculates it, and nothing needs doing.",مطفي: سجل استخدام تاريخي ناقص. صفوف الاستخدام في XStudio مش بتوصل لرصيده (باقة متنقلة من الشيت، أو رصيد اتحط يدوي هناك). رصيد XStudio هو الرصيد؛ مفيش حاجة هنا بتعيد حسابه، ومفيش حاجة مطلوبة.

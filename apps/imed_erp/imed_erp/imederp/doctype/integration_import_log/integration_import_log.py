@@ -19,7 +19,7 @@ from frappe.model.document import Document
 from frappe.utils import cstr, now_datetime
 
 SOURCE_SYSTEMS = ("ba_plus", "library_pos", "booking", "xstudio")
-FAILED, CHANGED, REVIEW = "Failed", "Changed in Source", "Needs Review"
+FAILED, CHANGED, REVIEW, NOTE = "Failed", "Changed in Source", "Needs Review", "Note"
 
 
 class IntegrationImportLog(Document):
@@ -80,6 +80,10 @@ class ImportRun:
 		"""Kept as it was, and listed for someone to decide: counted with the rows to look at."""
 		self.counts["changed"] += 1
 		self.rows.append({"row_no": row_no, "external_id": external_id, "kind": REVIEW, "reason": reason})
+
+	def note(self, row_no, external_id, reason):
+		"""Information only: listed on the log, counted nowhere, and the run is still Completed."""
+		self.rows.append({"row_no": row_no, "external_id": external_id, "kind": NOTE, "reason": reason})
 
 	def failed(self, row_no, external_id, reason):
 		self.counts["failed"] += 1

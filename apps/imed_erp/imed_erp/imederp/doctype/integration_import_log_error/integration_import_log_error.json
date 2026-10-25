@@ -32,7 +32,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Kind",
-   "options": "Failed\nChanged in Source\nNeeds Review",
+   "options": "Failed\nChanged in Source\nNeeds Review\nNote",
    "read_only": 1
   },
   {

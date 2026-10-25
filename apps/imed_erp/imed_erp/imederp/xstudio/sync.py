@@ -26,8 +26,9 @@
 #   - payments carry no ids (routes.js:912): a booking shows what XStudio says was paid, a package a summary;
 #   - a package deleted in XStudio (DELETE /customer-packages/:id) simply stops being returned: it stays here as
 #     it was, and its balance is no longer updated;
-#   - a package edited by hand (PATCH /customer-packages/:id) has no ledger row: the balance XStudio reports is kept
-#     (XStudio Hours Remaining) and the package is marked when the ledger no longer explains it.
+#   - the balance XStudio reports is the balance (XStudio Hours Remaining); when its usage rows do not add up to it
+#     (a package migrated from the sheet, or a balance set by hand there) the package is marked and the log carries
+#     an informational note, nothing more. Nothing here recalculates a balance.
 
 import hashlib
 from datetime import datetime, timedelta
@@ -655,10 +656,13 @@ def append_usage(context, xid, package):
 	if added:
 		context.run.created(added)
 	if not explained:
-		context.run.review(
+		# XStudio's balance is the balance. Its usage rows not adding up to it is history: a package migrated from
+		# the sheet (XStudio's import sets the remaining hours and writes no usage row for the hours already used) or
+		# a balance set by hand there. Information only: nothing is recalculated and nothing needs doing.
+		context.run.note(
 			context.row_no,
 			xid,
-			_("XStudio says {0} left, but its ledger explains {1}: the balance was edited by hand in XStudio. Its figure is kept.").format(
+			_("Incomplete historical usage: XStudio's balance is {0}, its usage rows account for {1}. XStudio's balance is kept as is.").format(
 				remaining, flt(purchased - used, PRECISION)
 			),
 		)
