@@ -20,9 +20,9 @@
 		"Net This Month": ["scale", "net"],
 		"Owed to Us": ["hand-coins", "due"],
 		"We Owe": ["receipt", "owe"],
-		"Studio Bookings": ["clapperboard", "count"],
-		"Studio Hours": ["clock", "count"],
-		"Hall Bookings": ["presentation", "count"],
+		"Studio Bookings This Month": ["clapperboard", "count"],
+		"Studio Hours This Month": ["clock", "count"],
+		"Hall Bookings This Month": ["presentation", "count"],
 		"Unpaid on Bookings": ["hourglass", "due"],
 	};
 	// The section headers are written in Arabic on the workspace (setup_dashboard.py).
@@ -74,14 +74,47 @@
 		});
 	}
 
+	// The list each custom card opens when clicked (a Frappe "Custom" card opens nothing by itself).
+	function card_route(label) {
+		const month = ["Between", [frappe.datetime.month_start(), frappe.datetime.month_end()]];
+		const held = ["not in", ["Cancelled", "No Show"]];
+		const studio = { resource_type: "Studio Service", booking_date: month, status: held };
+		switch (label) {
+			case "Studio Bookings This Month":
+			case "Studio Hours This Month":
+				return ["Booking", studio];
+			case "Hall Bookings This Month":
+				return ["Booking", { resource_type: "Hall", booking_date: month, status: held }];
+			case "Unpaid on Bookings":
+				return ["Booking", { status: ["in", ["Confirmed with Deposit", "Completed"]], booking_date: ["<=", frappe.datetime.get_today()], outstanding_amount: [">", 0] }];
+			case "Owed to Us":
+				return ["Sales Invoice", { docstatus: 1, outstanding_amount: [">", 0] }];
+			case "We Owe":
+				return ["Purchase Invoice", { docstatus: 1, outstanding_amount: [">", 0] }];
+			case "Cash in the Cash Boxes":
+				return ["Treasury", {}];
+			default:
+				return null;
+		}
+	}
+
 	function mark_cards($page) {
 		const map = by_title();
 		$page.find(".widget.number-widget-box").each(function () {
 			const $card = $(this);
-			const entry = map[$card.find(".widget-title").first().text().trim()];
+			const title = $card.find(".widget-title").first().text().trim();
+			const entry = map[title];
 			if (entry && !$card.attr("data-imed-kind")) {
 				$card.attr("data-imed-kind", entry[1]).addClass("imed-dash-card");
 				$card.find(".widget-label").first().prepend(`<span class="imed-dash-card-icon">${frappe.utils.icon(entry[0], "md")}</span>`);
+				const label = Object.keys(CARDS).find((key) => __(key) === title);
+				const route = card_route(label);
+				if (route) {
+					$card.addClass("imed-dash-card-link").attr("title", __("Open the list")).on("click", (e) => {
+						if ($(e.target).closest(".widget-control, .dropdown").length) return;
+						open_route(route);
+					});
+				}
 			}
 			// A negative amount (cash short, a month at a loss) shows in red; it changes when the card reloads.
 			const value = $card.find(".number").first().text();
@@ -167,56 +200,68 @@
 		);
 	}
 
-	function stat(label, value, cls = "") {
-		return `<div class="imed-yday-stat ${cls}"><span>${esc(label)}</span><b>${value}</b></div>`;
+	// Every figure opens the list behind it: route = [doctype, filters] (a Frappe list view with those filters).
+	function stat(label, value, cls = "", route = null) {
+		const inner = `<span>${esc(label)}</span><b>${value}</b>`;
+		return route
+			? `<a class="imed-yday-stat imed-yday-link ${cls}" href="#" data-route="${esc(JSON.stringify(route))}" title="${esc(__("Open the list"))}">${inner}</a>`
+			: `<div class="imed-yday-stat ${cls}">${inner}</div>`;
 	}
 
-	function bookings_card(b) {
-		const kind = (title, s) =>
+	const open_route = (route) => frappe.set_route("List", route[0], route[1]);
+	const HELD = ["not in", ["Cancelled", "No Show"]];
+
+	function bookings_card(b, day) {
+		const list = (resource_type, status) => ["Booking", { booking_date: day, resource_type, status }];
+		const kind = (title, s, resource_type) =>
 			`<div class="imed-yday-sub">${esc(title)}</div>
 			<div class="imed-yday-stats">
-				${stat(__("Held"), number(s.held))}
-				${stat(__("Completed"), number(s.completed))}
-				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "")}
-				${stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "")}
+				${stat(__("Held"), number(s.held), "", list(resource_type, HELD))}
+				${stat(__("Completed"), number(s.completed), "", list(resource_type, "Completed"))}
+				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "", list(resource_type, "Cancelled"))}
+				${stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "", list(resource_type, "No Show"))}
 			</div>`;
 		const hours = __("{0} h", [number(b.studio_hours_booked)]);
 		const delivered = __("{0} h", [number(b.studio_hours_delivered)]);
+		const made = ["Booking", { creation: ["Between", [`${day} 00:00:00`, `${day} 23:59:59`]] }];
+		const open = ["Booking", { booking_date: day, status: ["in", ["Tentative", "Confirmed with Deposit"]], source_system: ["is", "not set"] }];
 		return card(
 			"calendar-days",
 			__("Halls and studio"),
-			`${kind(__("Halls"), b.halls)}${kind(__("Studio"), b.studio)}
+			`${kind(__("Halls"), b.halls, "Hall")}${kind(__("Studio"), b.studio, "Studio Service")}
 			<div class="imed-yday-stats">
-				${stat(__("Studio hours booked"), hours)}
-				${stat(__("Studio hours delivered"), delivered)}
-				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday))}
+				${stat(__("Studio hours booked"), hours, "", list("Studio Service", HELD))}
+				${stat(__("Studio hours delivered"), delivered, "", list("Studio Service", "Completed"))}
+				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday), "", made)}
 			</div>
 			${
 				b.still_open
-					? `<p class="imed-yday-warn">${esc(
+					? `<p class="imed-yday-warn"><a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(open))}">${esc(
 							__("{0} booking(s) of yesterday are neither completed nor cancelled.", [b.still_open])
-					  )}</p>`
+					  )}</a></p>`
 					: ""
 			}`
 		);
 	}
 
-	function app_card(a, currency) {
+	function app_card(a, currency, day) {
 		if (a.state !== "ok") {
 			return card("smartphone", __("Platform fees"), `<p class="imed-yday-warn">${esc(__("No app agreement yet."))}</p>`);
 		}
+		const ledger = (types) => ["Doctor Ledger Entry", { docstatus: 1, entry_date: day, entry_type: ["in", types] }];
 		return card(
 			"smartphone",
 			__("Platform fees"),
 			`<div class="imed-yday-stats">
-				${stat(__("Charged yesterday"), money(a.charged, currency))}
-				${stat(__("Collected yesterday"), money(a.collected, currency), a.collected ? "is-positive" : "")}
+				${stat(__("Charged yesterday"), money(a.charged, currency), "", ledger(["Accrual", "Adjustment"]))}
+				${stat(__("Collected yesterday"), money(a.collected, currency), a.collected ? "is-positive" : "", ledger(["Collection"]))}
 				${stat(
 					__("Still owed by doctors"),
 					a.outstanding == null ? esc(__("Not configured")) : money(a.outstanding, currency),
-					a.outstanding > 0 ? "is-negative" : ""
+					a.outstanding > 0 ? "is-negative" : "",
+					["Doctor Ledger Entry", { docstatus: 1 }]
 				)}
-				${stat(__("New students"), number(a.subscriptions))}
+				${stat(__("New students"), number(a.subscriptions), "", ["App Subscription", { docstatus: 1, subscription_date: day }])}
 			</div>`
 		);
 	}
@@ -227,7 +272,7 @@
 			: "";
 	}
 
-	function printing_card(p) {
+	function printing_card(p, day) {
 		if (p.state !== "ok") {
 			return card("printer", __("Paper and counters"), `<p class="imed-yday-warn">${esc(__("No printing machine is set up."))}</p>`);
 		}
@@ -248,13 +293,21 @@
 						<tbody>${machines}</tbody>
 					</table>
 					<div class="imed-yday-stats">
-						${stat(__("Sheets printed"), number(lib.consumed))}
-						${stat(__("Sheets sold"), number(lib.sold))}
-						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "")}
+						${stat(__("Sheets printed"), number(lib.consumed), "", ["Printer Reading", { reading_date: day }])}
+						${stat(__("Sheets sold"), number(lib.sold), "", ["Sales Invoice", { docstatus: 1, posting_date: day }])}
+						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "", ["Printer Reading", { reading_date: day }])}
 					</div>`;
 			})
 			.join("");
 		return card("printer", __("Paper and counters"), libraries + warnings(p.warnings));
+	}
+
+	// Where a system's figures live: the XStudio sync and the file imports in the import logs, the jobs in theirs.
+	function system_route(s) {
+		if (s.name === __("XStudio bookings")) return ["Integration Import Log", { source_system: "xstudio" }];
+		if (s.name === __("File imports")) return ["Data Import", {}];
+		if (s.name.startsWith(__("Daily job"))) return ["Scheduled Job Log", {}];
+		return ["Error Log", {}];
 	}
 
 	function systems_card(list) {
@@ -262,7 +315,7 @@
 			.map(
 				(s) => `<li class="imed-yday-system is-${esc(s.state)}">
 					<span class="imed-yday-dot"></span>
-					<div><b>${esc(s.name)}</b> <span class="imed-yday-state">${esc(STATES[s.state] || s.state)}</span>
+					<div><b><a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(system_route(s)))}">${esc(s.name)}</a></b> <span class="imed-yday-state">${esc(STATES[s.state] || s.state)}</span>
 						${s.detail ? `<div class="imed-yday-detail">${esc(s.detail)}</div>` : ""}
 						${
 							s.last_success
@@ -295,12 +348,16 @@
 				</div>
 				<div class="imed-yday-grid">
 					${money_card(d)}
-					${bookings_card(d.bookings)}
-					${app_card(d.app, d.currency)}
-					${printing_card(d.printing)}
+					${bookings_card(d.bookings, d.day)}
+					${app_card(d.app, d.currency, d.day)}
+					${printing_card(d.printing, d.day)}
 					${systems_card(d.systems)}
 				</div>
 			</div>`);
+		$panel.on("click", ".imed-yday-link", function (e) {
+			e.preventDefault();
+			open_route(JSON.parse($(this).attr("data-route")));
+		});
 		const $welcome = $page.find(".imed-dash-welcome").first();
 		if ($welcome.length) $panel.insertAfter($welcome);
 		else $panel.insertBefore($page.find(".codex-editor").first());

@@ -184,7 +184,7 @@ def bookings(period):
 	rows = frappe.get_all(
 		"Booking",
 		filters={"booking_date": period.day},
-		fields=["resource_type", "status", "hours"],
+		fields=["resource_type", "status", "hours", "source_system"],
 	)
 	by_status = {}
 	for row in rows:
@@ -197,8 +197,9 @@ def bookings(period):
 		"studio": summary(by_status.get(STUDIO, {})),
 		"studio_hours_booked": flt(sum(flt(row.hours) for row in studio if row.status not in NOT_HELD), 2),
 		"studio_hours_delivered": flt(sum(flt(row.hours) for row in studio if row.status == "Completed"), 2),
-		# A day gone by and the booking neither completed nor cancelled: someone has to close it.
-		"still_open": len([row for row in rows if row.status in OPEN_STATUSES]),
+		# A day gone by and the booking neither completed nor cancelled: someone has to close it, here. An imported
+		# one (XStudio) is closed there, and stays "pending" there as a rule: not counted.
+		"still_open": len([row for row in rows if row.status in OPEN_STATUSES and not row.source_system]),
 		"made_yesterday": made,
 	}
 
@@ -257,7 +258,7 @@ def booking_import():
 	"""The XStudio sync (imederp/xstudio/sync.py): its health from XStudio Settings and its last log."""
 	settings = frappe.get_cached_doc("XStudio Settings")
 	last = frappe.get_all(
-		"Integration Import Log", filters={"source_system": "xstudio"}, fields=["status", "finished_at"], order_by="finished_at desc", limit=1
+		"Integration Import Log", filters={"source_system": "xstudio"}, fields=["name", "status", "finished_at"], order_by="finished_at desc", limit=1
 	)
 	last_status = last[0].status if last else None
 	if not settings.enabled:
@@ -265,6 +266,12 @@ def booking_import():
 	health = settings.health or "Never Run"
 	state = {"Healthy": "ok", "Degraded": "warning", "Down": "error"}.get(health, "unknown")
 	detail = settings.last_message or _("No run yet.")
+	if last and last[0].status != "Failed":
+		# Said in the reader's language, from the log's counts (the stored message is in the scheduler's).
+		log = frappe.db.get_value("Integration Import Log", last[0].name, ["rows_read", "inserted", "updated", "skipped", "changed", "failed"], as_dict=True)
+		detail = _("{0} read, {1} inserted, {2} updated, {3} unchanged, {4} to look at, {5} failed.").format(
+			log.rows_read, log.inserted, log.updated, log.skipped, log.changed, log.failed
+		)
 	if health == "Down":
 		detail = _("XStudio could not be read {0} times in a row: {1}").format(settings.consecutive_failures, detail)
 	return system(_("XStudio bookings"), state, detail, last_success=settings.last_success_at, last_status=last_status)

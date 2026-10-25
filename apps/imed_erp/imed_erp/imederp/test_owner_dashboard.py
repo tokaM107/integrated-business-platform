@@ -10,7 +10,7 @@
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days, today
+from frappe.utils import get_last_day, add_days, today
 
 from imed_erp.imederp import owner_dashboard as dashboard
 
@@ -74,18 +74,20 @@ class IntegrationTestOwnerDashboard(IntegrationTestCase):
 		doc.db_insert()
 		return doc
 
-	def test_only_bookings_done_this_month_count(self):
+	def test_the_held_bookings_of_this_month_count_the_tentative_ones_included(self):
+		"""The studio's bookings come from XStudio, where one stays pending until its day (owner, 25 Oct 2026)."""
 		before = dashboard.studio_bookings_this_month()["value"], dashboard.studio_hours_this_month()["value"]
 		self.booking("Completed", today(), hours=3)
 		self.booking("Confirmed with Deposit", today(), hours=1)
-		# Not counted: tentative, still to come, cancelled, before this month.
-		self.booking("Tentative", today())
-		self.booking("Confirmed with Deposit", add_days(today(), 40))
+		self.booking("Tentative", get_last_day(today()), hours=2)  # still to come, this month
+		# Not counted: cancelled, a no-show, another month.
 		self.booking("Cancelled", today())
+		self.booking("No Show", today())
+		self.booking("Confirmed with Deposit", add_days(get_last_day(today()), 1))
 		self.booking("Completed", add_days(today(), -400))
 		self.assertEqual(
 			(dashboard.studio_bookings_this_month()["value"], dashboard.studio_hours_this_month()["value"]),
-			(before[0] + 2, before[1] + 4),
+			(before[0] + 3, before[1] + 6),
 		)
 
 	def test_qa18_unpaid_on_bookings_leaves_out_what_is_not_owed(self):

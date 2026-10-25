@@ -4,19 +4,22 @@
 #
 #   revenue and expenses   from the general ledger: every income or expense account, so the platform fees and the
 #                          halls' revenue share (posted by journal entry) are in, not only sales invoices
-#   bookings and hours     confirmed or completed bookings dated from the start of the month to today; a tentative
-#                          booking or one still to come is not business done
+#   bookings and hours     the bookings dated this month that are held (not cancelled, not a no-show), the ones still
+#                          to come included: the studio's come from XStudio, where a booking stays "pending" until
+#                          the day, so a card that counted only confirmed-with-deposit or completed read 0 (owner,
+#                          25 Oct 2026). "Business done" (BUSINESS_DONE) is still what the money figures use.
 #   unpaid on bookings     what is still owed on bookings up to today: a completed booking's invoice outstanding
 #                          (it is paid on the invoice), else the booking's own Remaining
 #   paper                  sheets the printing machines counted yesterday (Printer Reading)
 #   app fees               the platform fees posted this month, and what was collected from the doctors
 
 import frappe
-from frappe.utils import add_days, flt, get_first_day, today
+from frappe.utils import add_days, flt, get_first_day, get_last_day, today
 
 STUDIO = "استوديو X"
 HALLS = "قاعات Imed"
 BUSINESS_DONE = ("Confirmed with Deposit", "Completed")
+NOT_HELD = ("Cancelled", "No Show")
 FEE_ACCOUNT = "إيراد رسوم المنصة"
 
 
@@ -111,11 +114,11 @@ def app_collections_this_month(filters=None):
 
 
 def bookings(business, field=None):
-	start, end = month_to_date()
+	"""The business's held bookings dated this month, past and to come (the list the card opens shows the same)."""
 	filters = {
 		"cost_center": cost_center(business),
-		"status": ("in", BUSINESS_DONE),
-		"booking_date": ("between", (start, end)),
+		"status": ("not in", NOT_HELD),
+		"booking_date": ("between", (get_first_day(today()), get_last_day(today()))),
 	}
 	if field:
 		return flt(sum(flt(v) for v in frappe.get_all("Booking", filters=filters, pluck=field)), 2)
