@@ -1046,7 +1046,7 @@ Booking Extra Item,خدمة إضافية في حجز
 Extra,الخدمة الإضافية
 Pieces,عدد القطع
 The price when the booking was priced: a later change of the price list does not change it.,السعر وقت ما الحجز اتسعّر: تغيير قائمة الأسعار بعد كده مش بيغيّره.
-Booking Packages,باقات الحجز
+Booking Packages,باقات أسعار الحجز
 Booking Extras,الخدمات الإضافية للحجز
 "Choose the hall or service, and the customer.",اختار القاعة أو الخدمة، والعميل.
 "Set the day and the time. A hall also needs its activity, the person responsible and the rental model.",حدد اليوم والوقت. القاعة كمان محتاجة النشاط، والمسؤول، ونموذج التأجير.
@@ -1990,3 +1990,7 @@ Due on Studio Bookings (XStudio),المطلوب على حجوزات الاستو
 Due in XStudio,المطلوب في XStudio
 Paid in XStudio,المدفوع في XStudio
 Open the list,افتح القائمة
+All Bookings,كل الحجوزات
+Booking Calendar,تقويم الحجوزات
+Studio Hour Packages,باقات ساعات الاستوديو
+Studio Customers,عملاء الاستوديو
