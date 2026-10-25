@@ -298,10 +298,12 @@ class IntegrationTestAppImport(IntegrationTestCase):
 	def test_the_screen_shows_each_systems_last_import(self):
 		good = app_import.import_content(self.csv(self.rows(3)), file_name="good.csv")
 		rows = self.status()
-		self.assertEqual(set(rows), {"ba_plus", "library_pos", "booking"})
+		self.assertEqual(set(rows), {"ba_plus", "library_pos", "booking", "xstudio"})
 		ba_plus = rows["ba_plus"]
 		self.assertEqual((ba_plus["log"], ba_plus["inserted"], ba_plus["failed"]), (good.name, 3, 0))
 		self.assertIn("no import reads", rows["library_pos"]["note"].lower())
+		if not frappe.db.exists("Integration Import Log", {"source_system": "xstudio"}):
+			self.assertIn("XStudio Settings", rows["xstudio"]["note"])
 
 		# A later run that failed as a whole does not hide the last one that went through.
 		with patch.object(app_import, "import_row", side_effect=Exception("boom")), patch.object(

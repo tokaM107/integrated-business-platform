@@ -433,7 +433,15 @@ class IntegrationTestOwnerYesterday(OwnerReportsTestCase):
 
 	def test_a_system_without_records_is_never_ok(self):
 		systems = {s["name"]: s for s in owner_yesterday.systems()}
-		self.assertEqual(systems[frappe._("Booking system import")]["state"], "not_configured")
+		# The XStudio card: off means not configured; on, it is ok only after a run that went through.
+		xstudio = systems[frappe._("XStudio bookings")]
+		if not frappe.db.get_single_value("XStudio Settings", "enabled"):
+			self.assertEqual(xstudio["state"], "not_configured")
+		elif not xstudio["last_success"]:
+			self.assertNotEqual(xstudio["state"], "ok")
+		frappe.db.set_single_value("XStudio Settings", "enabled", 0)
+		frappe.clear_document_cache("XStudio Settings", "XStudio Settings")
+		self.assertEqual({s["name"]: s for s in owner_yesterday.systems()}[frappe._("XStudio bookings")]["state"], "not_configured")
 		if not frappe.db.count("Data Import"):
 			self.assertEqual(systems[frappe._("File imports")]["state"], "unknown")
 		from imed_erp.assistant.providers import get_provider

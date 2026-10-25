@@ -70,7 +70,36 @@
   "source_system",
   "column_break_source",
   "external_id",
-  "import_key"
+  "import_key",
+  "source_updated_at",
+  "last_synced_at",
+  "source_payload_hash",
+  "source_payload",
+  "xstudio_section",
+  "xstudio_status",
+  "xstudio_payment_status",
+  "xstudio_booking_type",
+  "xstudio_screen_size",
+  "xstudio_cameras",
+  "xstudio_photographer",
+  "xstudio_cancelled_by",
+  "column_break_xstudio",
+  "xstudio_price_total",
+  "xstudio_amount_due",
+  "xstudio_amount_paid",
+  "xstudio_price_pending",
+  "xstudio_deposit_due",
+  "xstudio_package_id",
+  "xstudio_hours_deducted",
+  "xstudio_times_section",
+  "xstudio_starts_at",
+  "xstudio_ends_at",
+  "xstudio_hours",
+  "xstudio_crosses_midnight",
+  "column_break_xstudio_times",
+  "xstudio_customer_name",
+  "xstudio_customer_phone",
+  "xstudio_not_in_last_fetch"
  ],
  "fields": [
   {
@@ -514,11 +543,221 @@
    "no_copy": 1,
    "read_only": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "source_updated_at",
+   "fieldtype": "Datetime",
+   "label": "Changed in Source At",
+   "description": "When the source last changed the booking (XStudio updated_at).",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "last_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Last Read From Source",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_payload_hash",
+   "fieldtype": "Data",
+   "label": "Source Payload Hash",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_payload",
+   "fieldtype": "Long Text",
+   "label": "Source Data (JSON)",
+   "description": "The booking exactly as the source sent it.",
+   "collapsible": 0,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_section",
+   "fieldtype": "Section Break",
+   "label": "XStudio",
+   "collapsible": 1,
+   "depends_on": "eval:doc.source_system=='xstudio'"
+  },
+  {
+   "fieldname": "xstudio_status",
+   "fieldtype": "Data",
+   "label": "XStudio Status",
+   "description": "pending, confirmed, completed or cancelled, as XStudio has it. Confirmed there says nothing about a deposit.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_payment_status",
+   "fieldtype": "Data",
+   "label": "XStudio Payment Status",
+   "description": "unpaid, partial, paid or refunded. For reading only: no payment is posted here from it.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_booking_type",
+   "fieldtype": "Data",
+   "label": "XStudio Service",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_screen_size",
+   "fieldtype": "Int",
+   "label": "Screen (inches)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_cameras",
+   "fieldtype": "Int",
+   "label": "Cameras",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_photographer",
+   "fieldtype": "Data",
+   "label": "XStudio Photographer ID",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_cancelled_by",
+   "fieldtype": "Data",
+   "label": "Cancelled By (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_xstudio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "xstudio_price_total",
+   "fieldtype": "Currency",
+   "label": "XStudio Full Price",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_amount_due",
+   "fieldtype": "Currency",
+   "label": "XStudio Amount Due",
+   "description": "What the customer owes after package hours and discounts: the Total Amount above.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_amount_paid",
+   "fieldtype": "Currency",
+   "label": "XStudio Amount Paid",
+   "description": "An aggregate: XStudio's payments carry no ids, so no Payment Entry is made from this.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_price_pending",
+   "fieldtype": "Check",
+   "label": "Price Still To Be Agreed",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_deposit_due",
+   "fieldtype": "Currency",
+   "label": "XStudio Deposit Due",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_package_id",
+   "fieldtype": "Data",
+   "label": "XStudio Package ID",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_hours_deducted",
+   "fieldtype": "Float",
+   "label": "Hours Deducted (XStudio)",
+   "precision": "4",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_times_section",
+   "fieldtype": "Section Break",
+   "label": "XStudio Times",
+   "collapsible": 1,
+   "depends_on": "eval:doc.source_system=='xstudio'"
+  },
+  {
+   "fieldname": "xstudio_starts_at",
+   "fieldtype": "Datetime",
+   "label": "Starts At (Cairo)",
+   "description": "XStudio's exact start, Cairo time.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_ends_at",
+   "fieldtype": "Datetime",
+   "label": "Ends At (Cairo)",
+   "description": "XStudio's exact end. A booking ending at midnight is kept to 23:59:59 on its day above; this is the exact end.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_hours",
+   "fieldtype": "Float",
+   "label": "Hours (XStudio)",
+   "precision": "2",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_crosses_midnight",
+   "fieldtype": "Check",
+   "label": "Ends at or After Midnight",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_xstudio_times",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "xstudio_customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_customer_phone",
+   "fieldtype": "Data",
+   "label": "Customer Phone (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_not_in_last_fetch",
+   "fieldtype": "Check",
+   "label": "Not Returned by XStudio in Its Last Read",
+   "description": "XStudio did not return this booking for its day: it may have been moved. Kept here as it was; check it in XStudio.",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-24 12:00:00.000000",
+ "modified": "2026-10-24 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",

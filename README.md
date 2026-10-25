@@ -881,6 +881,19 @@ own checks; nothing is written to the ledger by hand:
 | STU-03, ACC-04 deposit, remaining, each business's cash box | `booking_accounts.record_payment`, the invoice's advances |
 | STU-14 one overlap check for manual and imported bookings | `Booking.check_overlap` (both are saved through it) |
 
+### XStudio: the studio's bookings, read from its API (STU-06, STU-09, STU-10, STU-14, INT-01, INT-06, INT-07)
+
+The studio's bookings are made in XStudio (xstudioeg.com), which stays their source. The ERP reads them: every
+10 minutes the scheduler runs `imederp/xstudio/sync.py` (when **XStudio Settings** is enabled), which reads the
+bookings that start in the last 30 and next 60 days, their customers and their prepaid packages, through XStudio's
+existing REST API, and writes an Integration Import Log per run. Imported bookings and packages are read-only here
+("Change it there"), post nothing (no Payment Entry, invoice or journal entry; amounts are shown for monitoring),
+and the halls map to studio services, never to the lecture halls. Setup once:
+`bench --site frontend execute imed_erp.setup.setup_xstudio.run`, then the URL, an `accountant` login and its
+password on XStudio Settings, **Test Connection**, enable, **Sync Now**. What the existing API can and cannot tell
+(500-row cap, no `updatedSince`, no payment ids), the coverage table and the staging setup on Supabase:
+`docs/XSTUDIO_SYNC.md`.
+
 ### Point of sale, customers and cancelling a sale (LIB-01, CRM-01/02/04, ACC-06, SEC-06)
 
 **The point of sale** is ERPNext's own (Point of Sale page, one POS Profile per library, `setup_library.py`).
@@ -1633,6 +1646,7 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --module ime
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking_pricing
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_xstudio_sync  # XStudio read-only sync against a stand-in of its API (docs/XSTUDIO_SYNC.md)
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_daily_printing

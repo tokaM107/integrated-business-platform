@@ -1884,3 +1884,101 @@ File Content,محتوى الملف
 "The file as it came, kept so a period can be imported again (INT-09). Holds students' names and phones: the owner and the accountant read it.",الملف زي ما وصل، محفوظ علشان الفترة تتستورد تاني (INT-09). فيه أسماء الطلبة وتليفوناتهم: المالك والمحاسب بس اللي بيقروه.
 Deposit held,العربون المحتفظ بيه
 Every expense is paid only once the owner approves it. Request the owner's approval first.,أي مصروف مابيتصرفش غير بعد موافقة المالك. اطلب موافقة المالك الأول.
+XStudio bookings,حجوزات XStudio
+The sync is off (XStudio Settings).,المزامنة مقفولة (إعدادات XStudio).
+No run yet.,لسه ما اشتغلتش.
+XStudio could not be read {0} times in a row: {1},XStudio ما اتقراش {0} مرة ورا بعض: {1}
+"{0} read, {1} inserted, {2} updated, {3} unchanged, {4} to look at, {5} failed.",{0} اتقرا، {1} اتضاف، {2} اتحدّث، {3} زي ما هو، {4} محتاج مراجعة، {5} فشل.
+The XStudio sync is not enabled (XStudio Settings).,مزامنة XStudio مش مفعّلة (إعدادات XStudio).
+Sync Disabled,المزامنة مقفولة
+An XStudio sync is already running. Wait for it to finish.,في مزامنة XStudio شغّالة دلوقتي. استنى لما تخلص.
+Already Running,شغّالة بالفعل
+XStudio answered and the login worked. {0} active halls.,XStudio رد وتسجيل الدخول نجح. {0} قاعة شغّالة.
+Not mapped to a resource yet: {0}.,لسه مش مربوطة بمورد: {0}.
+XStudio Not Reachable,XStudio مش بيرد
+XStudio hall {0} is not mapped to a booking resource (XStudio Settings).,قاعة XStudio رقم {0} مش مربوطة بمورد حجز (إعدادات XStudio).
+Changed in XStudio after {0} was posted here; not changed. The accountant decides.,اتغيّر في XStudio بعد ما {0} اترحّل هنا؛ ما اتغيّرش. المحاسب يقرر.
+"XStudio says {0} left, but its ledger explains {1}: the balance was edited by hand in XStudio. Its figure is kept.",XStudio بيقول المتبقي {0}، لكن دفتر الاستخدام بيفسّر {1}: الرصيد اتعدّل يدوي في XStudio. رقمه هو اللي اتحفظ.
+"Not returned by XStudio for its day, nor in its customer's list: kept here as it was. Check it in XStudio.",XStudio ما رجّعوش في يومه ولا في قائمة عميله: اتحفظ هنا زي ما كان. راجعه في XStudio.
+The booking has no customer account in XStudio (a walk-in without a phone); a booking here needs its customer.,الحجز ماله حساب عميل في XStudio (عميل عابر بدون رقم)؛ الحجز هنا لازم له عميل.
+"XStudio returned its maximum of {0} bookings for this span, which cannot be split further: some of its bookings may be missing from this run.",XStudio رجّع الحد الأقصى {0} حجز للفترة دي ومش ممكن تتقسم أكتر: ممكن يكون في حجوزات ناقصة في التشغيل ده.
+{0} was imported from {1}. Change it there; the next sync brings the change.,{0} مستورد من {1}. عدّله هناك، والمزامنة الجاية هتجيب التعديل.
+Imported Package,باقة مستوردة
+"{0} is kept in {1}, where its balance is drawn. Book the session there.",{0} متحفظ في {1} وهناك بيتخصم رصيده. احجز الجلسة هناك.
+An imported package needs its source system and its id there.,الباقة المستوردة لازم لها اسم نظامها ورقمها فيه.
+Enter the XStudio password before enabling the sync.,اكتب باسورد XStudio قبل تفعيل المزامنة.
+Map XStudio's halls to booking resources before enabling the sync.,اربط قاعات XStudio بموارد الحجز قبل تفعيل المزامنة.
+Enter {0} before enabling the sync.,اكتب {0} قبل تفعيل المزامنة.
+Hall {0} is mapped twice.,القاعة {0} مربوطة مرتين.
+"{0} is a {1}. XStudio's halls are studio services, kept apart from the lecture halls.",{0} ده {1}. قاعات XStudio خدمات استوديو، منفصلة عن قاعات المحاضرات.
+{0} is not a studio service.,{0} مش خدمة استوديو.
+The XStudio URL must start with https:// (http is allowed only for a local test server).,رابط XStudio لازم يبدأ بـ https:// (http مسموح لسيرفر تجربة محلي بس).
+XStudio Settings,إعدادات XStudio
+XStudio URL,رابط XStudio
+XStudio Login (phone or email),حساب دخول XStudio (موبايل أو إيميل)
+XStudio Password,باسورد XStudio
+Token Obtained At,اتاخد التوكن في
+What to Read,إيه اللي بيتقرا
+Days Back,أيام لورا
+Days Ahead,أيام لقدام
+Minutes Between Runs,دقايق بين كل تشغيل
+Resource for Prepaid Packages,مورد الباقات المدفوعة مقدمًا
+XStudio Halls,قاعات XStudio
+XStudio Hall,قاعة XStudio
+Name in XStudio,اسمها في XStudio
+Last Runs,آخر تشغيلات
+Last Attempt,آخر محاولة
+Last Success,آخر نجاح
+Failures in a Row,مرات الفشل ورا بعض
+Health,الحالة الصحية
+Last Message,آخر رسالة
+Sync Now,مزامنة الآن
+Test Connection,اختبار الاتصال
+Healthy,سليم
+Degraded,محتاج متابعة
+Down,متوقف
+Never Run,ما اشتغلش قبل كده
+Reading XStudio...,بيقرا من XStudio...
+Sync Finished,المزامنة خلصت
+XStudio Status,حالة الحجز في XStudio
+XStudio Payment Status,حالة الدفع في XStudio
+XStudio Service,الخدمة في XStudio
+Screen (inches),الشاشة (بوصة)
+XStudio Photographer ID,رقم المصوّر في XStudio
+Cancelled By (XStudio),اتلغى بواسطة (XStudio)
+XStudio Full Price,السعر الكامل في XStudio
+XStudio Amount Due,المطلوب في XStudio
+XStudio Amount Paid,المدفوع في XStudio
+Price Still To Be Agreed,السعر لسه هيتحدد
+XStudio Deposit Due,العربون في XStudio
+XStudio Package ID,رقم الباقة في XStudio
+Hours Deducted (XStudio),الساعات المخصومة (XStudio)
+XStudio Times,مواعيد XStudio
+Starts At (Cairo),يبدأ (القاهرة)
+Ends At (Cairo),ينتهي (القاهرة)
+Hours (XStudio),الساعات (XStudio)
+Ends at or After Midnight,بينتهي عند نص الليل أو بعده
+Customer Name (XStudio),اسم العميل (XStudio)
+Customer Phone (XStudio),موبايل العميل (XStudio)
+Not Returned by XStudio in Its Last Read,XStudio ما رجّعوش في آخر قراءة
+Changed in Source At,اتغيّر في المصدر في
+Last Read From Source,آخر قراءة من المصدر
+Source Data (JSON),بيانات المصدر (JSON)
+Package Name (XStudio),اسم الباقة (XStudio)
+Reel,ريل
+XStudio Category,فئة الباقة في XStudio
+Expires On,تنتهي في
+XStudio Hours Remaining,المتبقي في XStudio
+Ledger Explains the Balance,الدفتر بيفسّر الرصيد
+XStudio Paid Total,إجمالي المدفوع في XStudio
+XStudio Payments (summary),دفعات XStudio (ملخص)
+Source Row ID,رقم الصف في المصدر
+Updated,اتحدّث
+To Look At,محتاج مراجعة
+File / Window,الملف / الفترة
+XStudio Customer ID,رقم العميل في XStudio
+XStudio Customer Without a Usable Phone,عميل XStudio من غير رقم صالح
+Last Read From XStudio,آخر قراءة من XStudio
+"XStudio (studio bookings, API)",XStudio (حجوزات الاستوديو، API)
+"Studio (bookings, file)",الاستوديو (حجوزات، ملف)
+No sync has run yet: enable it on XStudio Settings.,المزامنة ما اشتغلتش لسه: فعّلها من إعدادات XStudio.

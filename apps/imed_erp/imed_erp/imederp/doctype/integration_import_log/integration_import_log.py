@@ -18,8 +18,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, now_datetime
 
-SOURCE_SYSTEMS = ("ba_plus", "library_pos", "booking")
-FAILED, CHANGED = "Failed", "Changed in Source"
+SOURCE_SYSTEMS = ("ba_plus", "library_pos", "booking", "xstudio")
+FAILED, CHANGED, REVIEW = "Failed", "Changed in Source", "Needs Review"
 
 
 class IntegrationImportLog(Document):
@@ -37,7 +37,8 @@ class ImportRun:
 	"""Counts one run and writes its log.
 
 	run = ImportRun("ba_plus", file_name, content)
-	run.read(); run.inserted(); run.skipped(); run.created(); run.changed(row_no, id, reason); run.failed(row_no, id, reason)
+	run.read(); run.inserted(); run.updated(); run.skipped(); run.created(); run.changed(row_no, id, reason)
+	run.review(row_no, id, reason); run.failed(row_no, id, reason)
 	run.finish()          the log, Completed or Completed with Errors, in the caller's transaction
 	run.abort(exception)  after rolling the whole run back: a Failed log, committed
 	"""
@@ -52,7 +53,7 @@ class ImportRun:
 		# Kept with the log, so the file can be imported again for its period (INT-09).
 		self.file_content = raw.decode("utf-8-sig") if raw else None
 		self.started_at = now_datetime()
-		self.counts = dict(rows_read=0, inserted=0, records_created=0, skipped=0, changed=0, failed=0)
+		self.counts = dict(rows_read=0, inserted=0, updated=0, records_created=0, skipped=0, changed=0, failed=0)
 		self.rows = []
 
 	def read(self):
@@ -60,6 +61,10 @@ class ImportRun:
 
 	def inserted(self):
 		self.counts["inserted"] += 1
+
+	def updated(self):
+		"""Already imported, changed in the source, and the change taken over (the XStudio sync does; file imports do not)."""
+		self.counts["updated"] += 1
 
 	def created(self, n=1):
 		self.counts["records_created"] += n
@@ -70,6 +75,11 @@ class ImportRun:
 	def changed(self, row_no, external_id, reason):
 		self.counts["changed"] += 1
 		self.rows.append({"row_no": row_no, "external_id": external_id, "kind": CHANGED, "reason": reason})
+
+	def review(self, row_no, external_id, reason):
+		"""Kept as it was, and listed for someone to decide: counted with the rows to look at."""
+		self.counts["changed"] += 1
+		self.rows.append({"row_no": row_no, "external_id": external_id, "kind": REVIEW, "reason": reason})
 
 	def failed(self, row_no, external_id, reason):
 		self.counts["failed"] += 1

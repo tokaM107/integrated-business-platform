@@ -24,6 +24,26 @@
   "column_break_billing",
   "cancel_reason",
   "notes",
+  "source_section",
+  "source",
+  "source_system",
+  "external_id",
+  "import_key",
+  "source_updated_at",
+  "last_synced_at",
+  "source_payload_hash",
+  "source_payload",
+  "xstudio_section",
+  "package_name",
+  "unit",
+  "xstudio_category",
+  "expires_on",
+  "column_break_xstudio",
+  "xstudio_hours_remaining",
+  "xstudio_balance_matches",
+  "xstudio_payment_status",
+  "xstudio_paid_total",
+  "xstudio_payments_summary",
   "amended_from"
  ],
  "fields": [
@@ -167,10 +187,160 @@
    "read_only": 1,
    "no_copy": 1,
    "print_hide": 1
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Select",
+   "label": "Source",
+   "options": "Manual\nImported",
+   "default": "Manual",
+   "description": "Imported: from XStudio, where its balance is kept; read here, never drawn on by a booking entered here.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_system",
+   "fieldtype": "Data",
+   "label": "Source System",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "external_id",
+   "fieldtype": "Data",
+   "label": "External ID",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "import_key",
+   "fieldtype": "Data",
+   "label": "Import Key",
+   "hidden": 1,
+   "unique": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_updated_at",
+   "fieldtype": "Datetime",
+   "label": "Changed in Source At",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "last_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Last Read From Source",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_payload_hash",
+   "fieldtype": "Data",
+   "label": "Source Payload Hash",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_payload",
+   "fieldtype": "Long Text",
+   "label": "Source Data (JSON)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_section",
+   "fieldtype": "Section Break",
+   "label": "XStudio",
+   "collapsible": 1,
+   "depends_on": "eval:doc.source_system=='xstudio'"
+  },
+  {
+   "fieldname": "package_name",
+   "fieldtype": "Data",
+   "label": "Package Name (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "unit",
+   "fieldtype": "Select",
+   "label": "Unit",
+   "options": "Hour\nReel",
+   "default": "Hour",
+   "description": "A reels bundle counts reels, not hours, in the same figures.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_category",
+   "fieldtype": "Data",
+   "label": "XStudio Category",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "expires_on",
+   "fieldtype": "Date",
+   "label": "Expires On",
+   "description": "Empty: never expires.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_xstudio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "xstudio_hours_remaining",
+   "fieldtype": "Float",
+   "label": "XStudio Hours Remaining",
+   "precision": "4",
+   "description": "The balance as XStudio reports it: Hours Remaining above follows it.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_balance_matches",
+   "fieldtype": "Check",
+   "label": "Ledger Explains the Balance",
+   "description": "Off: XStudio's balance differs from what its usage rows add up to; it was edited by hand there.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_payment_status",
+   "fieldtype": "Data",
+   "label": "XStudio Payment Status",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_paid_total",
+   "fieldtype": "Currency",
+   "label": "XStudio Paid Total",
+   "description": "An aggregate: XStudio's payments carry no ids, so nothing is posted from this.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_payments_summary",
+   "fieldtype": "Small Text",
+   "label": "XStudio Payments (summary)",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "links": [],
- "modified": "2026-10-22 10:00:00.000000",
+ "modified": "2026-10-24 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Studio Hour Package",

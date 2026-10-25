@@ -254,14 +254,20 @@ def system(name, state, detail="", last_success=None, last_status=None):
 
 
 def booking_import():
-	last = frappe.db.get_value("Booking", {"source": "Imported"}, "creation", order_by="creation desc")
-	# booking_import.py is written, but nothing runs it and it keeps no log of its runs (known-issues 17, 18).
-	return system(
-		_("Booking system import"),
-		"not_configured",
-		_("Nothing runs the import yet, and its runs are not logged."),
-		last_success=last,
+	"""The XStudio sync (imederp/xstudio/sync.py): its health from XStudio Settings and its last log."""
+	settings = frappe.get_cached_doc("XStudio Settings")
+	last = frappe.get_all(
+		"Integration Import Log", filters={"source_system": "xstudio"}, fields=["status", "finished_at"], order_by="finished_at desc", limit=1
 	)
+	last_status = last[0].status if last else None
+	if not settings.enabled:
+		return system(_("XStudio bookings"), "not_configured", _("The sync is off (XStudio Settings)."), last_success=settings.last_success_at, last_status=last_status)
+	health = settings.health or "Never Run"
+	state = {"Healthy": "ok", "Degraded": "warning", "Down": "error"}.get(health, "unknown")
+	detail = settings.last_message or _("No run yet.")
+	if health == "Down":
+		detail = _("XStudio could not be read {0} times in a row: {1}").format(settings.consecutive_failures, detail)
+	return system(_("XStudio bookings"), state, detail, last_success=settings.last_success_at, last_status=last_status)
 
 
 def file_imports():

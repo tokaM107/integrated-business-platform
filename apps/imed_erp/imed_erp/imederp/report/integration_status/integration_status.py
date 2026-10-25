@@ -17,7 +17,7 @@ from frappe.utils import add_days, cint, getdate
 
 from imed_erp.imederp.doctype.integration_import_log.integration_import_log import SOURCE_SYSTEMS
 
-SYSTEM_LABELS = {"library_pos": "Libraries (point of sale)", "booking": "Studio (bookings)", "ba_plus": "BA Plus app"}
+SYSTEM_LABELS = {"library_pos": "Libraries (point of sale)", "booking": "Studio (bookings, file)", "ba_plus": "BA Plus app", "xstudio": "XStudio (studio bookings, API)"}
 DONE = ("Completed", "Completed with Errors")
 
 
@@ -72,7 +72,10 @@ def get_data():
 		if last:
 			row.update(last_run=last[0].finished_at, last_run_status=_(last[0].status))
 		if not last:
-			row["note"] = _("No import has run yet.") if system in can_reimport else _("Not connected yet: no import reads this system.")
+			if system == "xstudio":
+				row["note"] = _("No sync has run yet: enable it on XStudio Settings.")
+			else:
+				row["note"] = _("No import has run yet.") if system in can_reimport else _("Not connected yet: no import reads this system.")
 		elif last[0].status == "Failed":
 			row["note"] = _("The last run failed: {0}").format(last[0].message or "")
 		elif cint(row.get("failed")) or cint(row.get("changed")):

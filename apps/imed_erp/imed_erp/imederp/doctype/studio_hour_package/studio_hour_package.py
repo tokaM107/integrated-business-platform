@@ -44,13 +44,40 @@ class StudioHourPackage(Document):
 			frappe.throw(_("Hours Purchased must be greater than zero."))
 		if flt(self.price) < 0:
 			frappe.throw(_("The package price cannot be negative."))
+		self.check_source()
 		if self.docstatus == 0:
 			self.status, self.hours_used, self.hours_remaining = "Draft", 0, flt(self.hours_purchased, PRECISION)
+
+	def check_source(self):
+		"""Only the sync makes an imported package (the XStudio sync: imederp/xstudio/sync.py), and only it changes
+		one; a package entered here is Manual, whatever was typed."""
+		if self.flags.from_import:
+			self.source = "Imported"
+			if not (self.source_system and self.external_id):
+				frappe.throw(_("An imported package needs its source system and its id there."))
+			self.import_key = f"{self.source_system}:{self.external_id}"
+			return
+		if self.is_new():
+			self.source = "Manual"
+			for field in ("source_system", "external_id", "import_key"):
+				self.set(field, None)
+			return
+		before = self.get_doc_before_save()
+		if before and before.source == "Imported":
+			frappe.throw(
+				_("{0} was imported from {1}. Change it there; the next sync brings the change.").format(self.name, before.source_system),
+				title=_("Imported Package"),
+			)
 
 	def on_submit(self):
 		self.db_set({"status": ACTIVE, "hours_used": 0, "hours_remaining": flt(self.hours_purchased, PRECISION)})
 
 	def before_cancel(self):
+		if self.source == "Imported" and not self.flags.from_import:
+			frappe.throw(
+				_("{0} was imported from {1}. Change it there; the next sync brings the change.").format(self.name, self.source_system),
+				title=_("Imported Package"),
+			)
 		frappe.only_for(ACCOUNTS_ROLES)
 		if not clean_reason(self.cancel_reason):
 			frappe.throw(_("Cancelling a package needs a reason."), title=_("Reason Needed"))
@@ -86,7 +113,7 @@ def lock(package):
 		return frappe.db.get_value(
 			"Studio Hour Package",
 			package,
-			["name", "docstatus", "status", "customer", "resource", "hours_purchased", "hours_used"],
+			["name", "docstatus", "status", "customer", "resource", "hours_purchased", "hours_used", "source", "source_system"],
 			as_dict=True,
 			for_update=True,
 		)
@@ -109,6 +136,11 @@ def plan(booking, hours, holding):
 	"""For a booking about to be saved: (hours from the package, hours beyond it). Refuses a session longer than the
 	hours left unless billing the rest was decided."""
 	package = lock(booking.hour_package)
+	if package and package.source == "Imported":
+		frappe.throw(
+			_("{0} is kept in {1}, where its balance is drawn. Book the session there.").format(booking.hour_package, package.source_system or _("its source")),
+			title=_("Imported Package"),
+		)
 	if not package or package.docstatus != 1 or package.status not in (ACTIVE, USED_UP):
 		frappe.throw(_("{0} is not an active package.").format(booking.hour_package), title=_("Package Not Active"))
 	if package.customer != booking.customer or package.resource != booking.resource:

@@ -82,7 +82,7 @@ class Booking(Document):
 
 	def on_update(self):
 		# Prepaid hours: what the booking holds of its package follows it (studio_hour_package.py).
-		if self.hour_package or (self.get_doc_before_save() and self.get_doc_before_save().hour_package):
+		if self.source == MANUAL and (self.hour_package or (self.get_doc_before_save() and self.get_doc_before_save().hour_package)):
 			from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import draw
 
 			draw(self)
@@ -100,6 +100,12 @@ class Booking(Document):
 		from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import ACCOUNTS_ROLES, plan
 
 		if self.source != MANUAL:
+			if self.flags.from_import:
+				# The source keeps the package's ledger (the XStudio sync brings its rows): the booking only shows
+				# what the source deducted; nothing is planned or drawn here.
+				self.package_hours, self.extra_hours = flt(self.package_hours, 4), 0
+				self.bill_extra_hours, self.extra_hours_approved_by = 0, None
+				return
 			frappe.throw(_("An imported booking is priced by the booking system; it draws on no prepaid hours."))
 		if self.package:
 			frappe.throw(_("A session on prepaid hours takes no price package."), title=_("Two Packages"))

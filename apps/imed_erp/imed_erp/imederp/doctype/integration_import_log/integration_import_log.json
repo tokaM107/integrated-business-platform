@@ -19,6 +19,7 @@
   "counts_section",
   "rows_read",
   "inserted",
+  "updated",
   "records_created",
   "column_break_counts",
   "skipped",
@@ -44,7 +45,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Source System",
-   "options": "ba_plus\nlibrary_pos\nbooking",
+   "options": "ba_plus\nlibrary_pos\nbooking\nxstudio",
    "read_only": 1,
    "reqd": 1
   },
@@ -91,8 +92,9 @@
   {
    "fieldname": "file_name",
    "fieldtype": "Data",
-   "label": "File Name",
-   "read_only": 1
+   "label": "File / Window",
+   "read_only": 1,
+   "description": "The file imported, or what a sync read (XStudio: the window of booking days)."
   },
   {
    "description": "SHA-256 of the file: the same file sent twice has the same one.",
@@ -149,10 +151,10 @@
    "read_only": 1
   },
   {
-   "description": "Already imported, and the source now says something else: listed below, not overwritten.",
+   "description": "Already imported and changed in the source without being taken over, or needing a decision: listed below.",
    "fieldname": "changed",
    "fieldtype": "Int",
-   "label": "Changed in Source",
+   "label": "To Look At",
    "read_only": 1
   },
   {
@@ -180,11 +182,19 @@
    "label": "Rows",
    "options": "Integration Import Log Error",
    "read_only": 1
+  },
+  {
+   "fieldname": "updated",
+   "fieldtype": "Int",
+   "label": "Updated",
+   "description": "Already imported and changed in the source; the change was taken over (the XStudio sync).",
+   "read_only": 1,
+   "in_list_view": 1
   }
  ],
  "in_create": 1,
  "links": [],
- "modified": "2026-10-22 18:00:00.000000",
+ "modified": "2026-10-24 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Integration Import Log",

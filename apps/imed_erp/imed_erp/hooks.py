@@ -510,6 +510,7 @@ after_install = [
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
+	"imed_erp.imederp.xstudio.fields.make_custom_fields",
 ]
 after_migrate = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
@@ -518,6 +519,7 @@ after_migrate = [
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
+	"imed_erp.imederp.xstudio.fields.make_custom_fields",
 	# The home screen's tiles: what the group uses (imederp/home_screen.py).
 	"imed_erp.imederp.home_screen.tidy_home",
 ]
@@ -544,6 +546,11 @@ after_migrate = [
 # }
 
 scheduler_events = {
+	"cron": {
+		# XStudio's bookings, customers and prepaid packages, read from its API (imederp/xstudio/sync.py); the
+		# settings say whether it is on and how many minutes between runs.
+		"*/10 * * * *": ["imed_erp.imederp.xstudio.sync.run_scheduled"],
+	},
 	"daily": [
 		"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily",
 		# The doctor's amount on any sale the hooks missed, e.g. imported ones (imederp/doctor_accrual.py).
