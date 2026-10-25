@@ -26,7 +26,7 @@
 
 | Endpoint | Role needed | Used for | Limitation (xstudio-platform/backend/src/routes.js) |
 |---|---|---|---|
-| `POST /api/auth/login` | — | token (7 days) | password kept in ERP (encrypted); no API keys exist |
+| `POST /api/auth/login` | — | token (7 days) | password kept in ERP (encrypted); no API keys exist. **The client refuses every other non-GET call** (`client.py request()`), whatever the account may do in XStudio. |
 | `GET /api/health` | — | Test Connection | |
 | `GET /api/halls` | — | Test Connection (unmapped halls) | |
 | `GET /api/bookings?from&to` | `bookings.read` | the bookings of the window | **max 500 rows, no paging** (`:582`); filter is on `starts_at` only; **no `updatedSince`** |
@@ -121,7 +121,7 @@ Nothing below writes to XStudio, and nothing is imported until step 6. No creden
 or a commit: the password is typed once into XStudio Settings (stored encrypted) or passed through an environment
 variable to `setup_xstudio.configure`.
 
-1. **An account for the sync, on XStudio.** XStudio's super admin (Admin → Users, or `POST /api/admin/users`)
+1. **The account.** Owner's decision of 25 Oct 2026: the accountant's existing XStudio login is used (it opens the admin panel; the ERP client is hard-wired read-only, so that access is never exercised). No new account or role is made. *(The original plan, kept for reference:)*  XStudio's super admin (Admin → Users, or `POST /api/admin/users`)
    creates a staff login with role **accountant** (`bookings.read` + `packages.read`; `manager` also works but
    holds `bookings.write`), its own phone and a long random password, named "ERP Sync". Never the owner's own
    login. XStudio has no read-only role and no API keys (§7): the accountant role is the least that can read

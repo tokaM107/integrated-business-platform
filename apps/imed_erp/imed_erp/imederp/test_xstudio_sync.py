@@ -335,6 +335,14 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		# A real run after it adds exactly what the dry run said.
 		self.assertEqual(self.counts(self.run_sync())[2], 1)
 
+	def test_the_client_never_writes_to_xstudio(self):
+		# The real request(), not the fake the other tests patch in: the refusal is before any transport.
+		real_request = self.patches[0].temp_original
+		client = XStudioClient(frappe.get_single("XStudio Settings"))
+		for method, path in (("POST", "/api/bookings"), ("PATCH", "/api/customers/x"), ("DELETE", "/api/customer-packages/x"), ("PUT", "/api/config")):
+			with self.assertRaises(client_module.XStudioError):
+				real_request(client, method, path, body={})
+
 	# ---------- the 30-day window ----------
 
 	def test_only_bookings_of_the_window_are_read(self):

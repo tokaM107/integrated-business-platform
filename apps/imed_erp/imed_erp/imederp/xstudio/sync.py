@@ -137,8 +137,10 @@ def _snapshot():
 	"""The XStudio records on the site now, so a dry run can say which ones it would add."""
 	return {
 		"customers": set(frappe.get_all("Customer", filters={"xstudio_customer_id": ("is", "set")}, pluck="xstudio_customer_id")),
+		"customer_names": set(frappe.get_all("Customer", pluck="name")),
 		"packages": set(frappe.get_all("Studio Hour Package", filters={"source_system": SOURCE}, pluck="import_key")),
 		"bookings": set(frappe.get_all("Booking", filters={"source_system": SOURCE}, pluck="import_key")),
+		"usage": frappe.db.count("Studio Hour Package Usage", {"external_id": ("is", "set")}),
 	}
 
 
@@ -150,17 +152,30 @@ def _would_add(before):
 		fields=["booking_date", "from_time", "to_time", "resource", "customer", "status", "total_amount", "paid_amount"],
 		order_by="booking_date, from_time",
 	) if after["bookings"] - before["bookings"] else []
-	new_customers = frappe.get_all(
+	touched = frappe.get_all(
 		"Customer",
 		filters={"xstudio_customer_id": ("in", list(after["customers"] - before["customers"]))},
-		fields=["customer_name", "mobile_no", "xstudio_needs_review"],
+		fields=["name", "customer_name", "mobile_no", "xstudio_needs_review"],
 	) if after["customers"] - before["customers"] else []
+	# A customer that was on the site before the run and now carries an XStudio id was linked (by phone), not made.
+	new_customers = [c for c in touched if c.name not in before["customer_names"]]
+	linked_customers = [c for c in touched if c.name in before["customer_names"]]
 	new_packages = frappe.get_all(
 		"Studio Hour Package",
 		filters={"source_system": SOURCE, "import_key": ("in", list(after["packages"] - before["packages"]))},
-		fields=["customer", "unit", "hours_purchased", "hours_remaining", "xstudio_payment_status"],
+		fields=["customer", "unit", "hours_purchased", "hours_remaining", "xstudio_hours_remaining", "xstudio_balance_matches", "xstudio_payment_status", "xstudio_paid_total", "xstudio_payments_summary"],
 	) if after["packages"] - before["packages"] else []
-	return {"customers": new_customers, "packages": new_packages, "bookings": new_bookings}
+	by_status = {}
+	for row in new_bookings:
+		by_status[row.status] = by_status.get(row.status, 0) + 1
+	return {
+		"customers": new_customers,
+		"customers_linked": linked_customers,
+		"packages": new_packages,
+		"usage_rows": after["usage"] - before["usage"],
+		"bookings": new_bookings,
+		"bookings_by_status": by_status,
+	}
 
 
 def acquire_lock():
@@ -213,7 +228,9 @@ def _run(settings, trigger, lookback_days, lookahead_days, dry_run=False):
 				"status": log.status,
 				"counts": {k: log.get(k) for k in ("rows_read", "inserted", "updated", "skipped", "changed", "failed")},
 				"would_add": would,
-				"to_look_at": rows,
+				"incomplete_spans": [f"{a.isoformat()}..{b.isoformat()}" for a, b in incomplete],
+				"to_look_at": [r for r in rows if r.get("kind") != "Failed"],
+				"would_fail": [r for r in rows if r.get("kind") == "Failed"],
 			}
 		set_state(last_success_at=now_datetime(), consecutive_failures=0, last_message=summary(log), health=health_of(log, 0))
 		return log

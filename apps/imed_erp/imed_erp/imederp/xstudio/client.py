@@ -51,6 +51,9 @@ class XStudioClient:
 	# ---------- transport ----------
 
 	def request(self, method, path, params=None, body=None, auth=True, _retry=True):
+		# Read-only, whatever the account may do in XStudio: a GET, or the one POST that logs in. Nothing else leaves.
+		if not (method == "GET" or (method == "POST" and path == "/api/auth/login")):
+			raise XStudioError(f"The ERP only reads from XStudio; {method} {path} is refused.")
 		"""One call. 401 with a token: log in again once and repeat. Anything else that is not 2xx raises."""
 		url = self.base_url + path
 		if params:
