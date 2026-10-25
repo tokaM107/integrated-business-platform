@@ -171,4 +171,13 @@ Until then, the sync runs whenever the Mac is on and Docker Desktop is running, 
 - **Code implemented locally:** everything in §1, on branch `feature/xstudio-sync`, not committed, not pushed, not deployed.
 - **Tested with mocks:** §4 rows marked mock-tested.
 - **Tested against a running XStudio instance:** yes, XStudio's own backend on a Supabase **staging** database (see §4, last row). Not against xstudioeg.com.
-- **Deployed and operational:** none. The scheduler job is present in `hooks.py` but inert until Settings → Enabled, which should be done only after the staging run and the full regression suite pass.
+- **Connected to the real XStudio (25 Oct 2026, 15:09 Cairo), on the development Mac:** the accountant's existing
+  XStudio login (role `manager`; the ERP client refuses every write), URL `https://www.xstudioeg.com`. Staging records
+  removed first (8 bookings, 2 packages, 4 customers; the 7 staging logs kept). Dry run, then the first import
+  IMP-2026-00008: 155 rows read, 97 bookings (77 Tentative, 20 Cancelled, halls 1/3/4/5/6), 30 customers in
+  عملاء الاستوديو (4 without a usable phone, flagged), 14 packages (13 Hour, 1 Reel; 8 with a hand-edited balance,
+  flagged), 92 usage rows, 0 failed. Second run IMP-2026-00009: 0 inserted, 111 unchanged, no duplicate on any key.
+  No Payment Entry, Sales Invoice, Journal Entry or GL Entry. Automatic sync enabled afterwards (see the final report
+  of that day). Backup of 14:43 kept in the site and in `~/Documents/imed-erp-backups`.
+- **Deployed on an always-on server:** none. The sync runs only while the Mac, Docker Desktop, the scheduler, the
+  workers and the internet are up (§6d). The scheduler job is present in `hooks.py` but inert until Settings → Enabled, which should be done only after the staging run and the full regression suite pass.
