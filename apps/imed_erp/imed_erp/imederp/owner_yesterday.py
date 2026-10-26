@@ -25,7 +25,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, flt, get_datetime, getdate, nowdate
+from frappe.utils import get_first_day, get_last_day, add_days, cint, flt, get_datetime, getdate, nowdate, now_datetime
 from frappe.utils.scheduler import is_scheduler_disabled
 
 from imed_erp.imederp.business_figures import (
@@ -40,7 +40,7 @@ from imed_erp.imederp.owner_figures import balance
 
 OWNER_ROLE = "Super Admin"
 STUDIO, HALL = "Studio Service", "Hall"
-OPEN_STATUSES = ("Tentative", "Confirmed with Deposit")
+OPEN_STATUSES = ("Tentative", "Confirmed", "Confirmed with Deposit")
 NOT_HELD = ("Cancelled", "No Show")
 PLATFORM_RECEIVABLE = "مستحقات على الأطباء — رسوم المنصة"
 # A daily job that has not run for this long is a warning.
@@ -74,6 +74,7 @@ def get_yesterday():
 		"money": money(period.day),
 		"printing": printing(period.day),
 		"bookings": bookings(period),
+		"halls": halls(),
 		"app": app_fees(period.day),
 		"systems": systems(),
 	}
@@ -205,6 +206,41 @@ def bookings(period):
 		# one (XStudio) is closed there, and stays "pending" there as a rule: not counted.
 		"still_open": len([row for row in rows if row.status in OPEN_STATUSES and not row.source_system]),
 		"made_yesterday": made,
+	}
+
+
+def halls():
+	"""IMED's lecture halls (resource type Hall, never XStudio's rooms): today's bookings, the next seven days, the
+	halls active, which are occupied at this moment, this month's cancellations and booked hours, and the bookings
+	that need someone's action: past ones neither completed nor cancelled, and revenue shares not agreed."""
+	from imed_erp.imederp.doctype.booking.booking import HOLDING
+
+	now = now_datetime()
+	day = nowdate()
+	first, last = get_first_day(day), get_last_day(day)
+	held = ("status", "in", HOLDING)
+	hall = ("resource_type", "=", HALL)
+	today_rows = frappe.get_all("Booking", filters=[hall, ("booking_date", "=", day)], fields=["status", "hours", "resource"])
+	upcoming = frappe.db.count("Booking", filters=[hall, held, ("booking_date", ">", day), ("booking_date", "<=", add_days(day, 7))])
+	active = frappe.get_all("Booking Resource", filters={"resource_type": HALL, "disabled": 0}, pluck="name")
+	occupied = frappe.get_all("Booking", filters=[hall, held, ("starts_at", "<=", now), ("ends_at", ">", now)], pluck="resource", distinct=True)
+	month_rows = frappe.get_all("Booking", filters=[hall, ("booking_date", "between", (first, last))], fields=["status", "hours", "resource", "rental_model", "total_amount", "financial_review"])
+	past_open = frappe.db.count("Booking", filters=[hall, ("status", "in", OPEN_STATUSES), ("ends_at", "<", now), ("source_system", "is", "not set")])
+	review = frappe.db.count("Booking", filters=[hall, held, ("financial_review", "=", 1)])
+	return {
+		"today": summary({s: sum(1 for r in today_rows if r.status == s) for s in {r.status for r in today_rows}}),
+		"today_hours": flt(sum(flt(r.hours) for r in today_rows if r.status not in NOT_HELD), 2),
+		"upcoming": upcoming,
+		"active_halls": len(active),
+		"occupied_now": len([h for h in occupied if h in active]),
+		"month_held": len([r for r in month_rows if r.status not in NOT_HELD]),
+		"month_cancelled": len([r for r in month_rows if r.status == "Cancelled"]),
+		"month_hours": flt(sum(flt(r.hours) for r in month_rows if r.status not in NOT_HELD), 2),
+		# Operational figure, not accounting: the fixed rents of this month's held bookings, invoiced only on completion.
+		"month_fixed_rent": flt(sum(flt(r.total_amount) for r in month_rows if r.status not in NOT_HELD and r.rental_model == "Fixed Rent"), 2),
+		"month_revenue_share": len([r for r in month_rows if r.status not in NOT_HELD and r.rental_model == "Revenue Share"]),
+		"past_open": past_open,
+		"financial_review": review,
 	}
 
 

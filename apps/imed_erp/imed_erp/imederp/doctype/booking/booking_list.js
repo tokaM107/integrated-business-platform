@@ -7,6 +7,7 @@ frappe.listview_settings["Booking"] = {
 	get_indicator(doc) {
 		const colors = {
 			Tentative: "orange",
+			Confirmed: "green",
 			"Confirmed with Deposit": "green",
 			Completed: "blue",
 			Cancelled: "gray",

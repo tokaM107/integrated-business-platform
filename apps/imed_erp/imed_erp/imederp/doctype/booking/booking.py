@@ -18,12 +18,12 @@
 # box, and Completed makes its invoice (STU-03, ACC-04: booking_accounts.py). An imported booking keeps the
 # booking system's amounts and posts nothing.
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import cint, flt, get_datetime, get_time, getdate, now_datetime
+from frappe.utils import add_days, cint, flt, get_datetime, get_time, getdate, now_datetime
 
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.booking_accounts import complete, payments_total, posted, treasury_of
@@ -31,14 +31,27 @@ from imed_erp.imederp.booking_pricing import REVENUE_SHARE, price_booking, prici
 from imed_erp.imederp.customers import normalize_phone
 
 TENTATIVE, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW = "Tentative", "Confirmed with Deposit", "Completed", "Cancelled", "No Show"
+# IMED's halls take no deposit: a hall booking is confirmed by the halls' staff, which is not a payment (26 Oct 2026).
+CONFIRMED_NO_DEPOSIT = "Confirmed"
 # The bookings that hold their time: a cancelled booking frees it, and so does a no-show, whose time has passed.
-HOLDING = (TENTATIVE, CONFIRMED, COMPLETED)
+HOLDING = (TENTATIVE, CONFIRMED_NO_DEPOSIT, CONFIRMED, COMPLETED)
+HALL = "Hall"
+NOT_BILLABLE = "Not Billable"
+DOCTOR_GROUP = "طبيب"
+# IMED's own halls (never XStudio's rooms): what a hall is used for, and what that fixes about its money.
+#   Fixed-fee Rental -> Fixed Rent; Revenue Share -> Revenue Share; Internal Meeting and Maintenance Block -> Not
+#   Billable; an Internal Course or Lecture is Not Billable unless chosen otherwise (its fees are the app's or the
+#   course's, never counted twice); an External Lecturer is rented the hall or shares the revenue, never free.
+HALL_TYPES = ("Internal Course or Lecture", "External Lecturer", "Fixed-fee Rental", "Revenue Share", "Internal Meeting", "Maintenance Block")
+FORCED_MODEL = {"Fixed-fee Rental": "Fixed Rent", "Revenue Share": "Revenue Share", "Internal Meeting": NOT_BILLABLE, "Maintenance Block": NOT_BILLABLE}
+MAINTENANCE = "Maintenance Block"
 MANUAL, IMPORTED = "Manual", "Imported"
 SOURCE_FIELDS = ("source", "source_system", "external_id", "import_key")
 
 
 def on_doctype_update():
-	"""The overlap check reads a resource's bookings of one day: an index on both, so it stays quick as they grow."""
+	"""The overlap check reads a resource's bookings around an instant, the reports a day's: an index on each."""
+	frappe.db.add_index("Booking", ["resource", "starts_at"])
 	frappe.db.add_index("Booking", ["resource", "booking_date"])
 
 
@@ -66,14 +79,18 @@ def check_own_business(cost_center):
 class Booking(Document):
 	def validate(self):
 		self.check_source()
-		self.check_resource()
 		self.check_times()
+		self.check_resource()
+		self.check_hall_type()
 		self.check_hall_details()
 		self.check_hour_package()
 		if self.source == MANUAL:
 			self.check_rental_model()
 			self.check_posted()
-			price_booking(self)
+			if self.not_billable():
+				self.price_nothing()
+			else:
+				price_booking(self)
 			self.set_paid()
 		else:
 			self.check_amounts()
@@ -172,9 +189,8 @@ class Booking(Document):
 			return True
 		same_time = (
 			before.resource == self.resource
-			and getdate(before.booking_date) == getdate(self.booking_date)
-			and get_time(before.from_time) == get_time(self.from_time)
-			and get_time(before.to_time) == get_time(self.to_time)
+			and get_datetime(before.starts_at) == get_datetime(self.starts_at)
+			and get_datetime(before.ends_at) == get_datetime(self.ends_at)
 		)
 		return not same_time
 
@@ -184,21 +200,81 @@ class Booking(Document):
 		missing = [_(self.meta.get_label(f)) for f in ("booking_date", "from_time", "to_time") if not self.get(f)]
 		if missing:
 			frappe.throw(_("Enter the booking's {0}.").format(", ".join(missing)), frappe.MandatoryError, title=_("Missing Value"))
-		if get_time(self.to_time) <= get_time(self.from_time):
-			frappe.throw(_("The booking ends at {0}, not after it starts at {1}.").format(self.to_time, self.from_time), title=_("Wrong Times"))
-		# Both as times: a booking read back has its times as durations, and one changed through the API as text.
-		day = datetime.min
-		ends, starts = datetime.combine(day, get_time(self.to_time)), datetime.combine(day, get_time(self.from_time))
-		self.hours = flt((ends - starts).total_seconds() / 3600, 2)
+		starts, ends = get_time(self.from_time), get_time(self.to_time)
+		if ends == starts:
+			frappe.throw(_("The booking ends at {0}, the moment it starts: it has no length.").format(self.to_time), title=_("Wrong Times"))
+		# An end earlier than the start is the next day: a booking across midnight (at most 24 hours by construction).
+		self.ends_next_day = 1 if ends < starts else 0
+		self.starts_at = datetime.combine(getdate(self.booking_date), starts)
+		self.ends_at = datetime.combine(getdate(self.booking_date) + timedelta(days=self.ends_next_day), ends)
+		self.hours = flt((self.ends_at - self.starts_at).total_seconds() / 3600, 2)
+
+	def not_billable(self):
+		return self.resource_type == HALL and self.rental_model == NOT_BILLABLE
+
+	def check_hall_type(self):
+		"""IMED's halls: the booking's type, the money it fixes, the doctor and course links, the capacity."""
+		if self.resource_type != HALL:
+			self.hall_booking_type, self.doctor, self.course, self.expected_attendees, self.capacity = None, None, None, 0, 0
+			self.financial_review, self.financial_note = 0, None
+			return
+		if not self.hall_booking_type:
+			# Bookings sent without a type (the API, the import, the older screens): the rental model says enough.
+			self.hall_booking_type = {"Fixed Rent": "Fixed-fee Rental", "Revenue Share": "Revenue Share", NOT_BILLABLE: "Internal Meeting"}.get(self.rental_model)
+		if not self.hall_booking_type:
+			frappe.throw(_("Choose what the hall is used for (Hall Booking Type), and its rental model: Fixed Rent or Revenue Share (HAL-12)."), title=_("Missing Value"))
+		if self.hall_booking_type not in HALL_TYPES:
+			frappe.throw(_("Unknown hall booking type {0}.").format(self.hall_booking_type))
+		forced = FORCED_MODEL.get(self.hall_booking_type)
+		if forced:
+			self.rental_model = forced
+		elif self.hall_booking_type == "Internal Course or Lecture" and not self.rental_model:
+			self.rental_model = NOT_BILLABLE
+		elif self.hall_booking_type == "External Lecturer" and self.rental_model not in ("Fixed Rent", "Revenue Share"):
+			frappe.throw(_("An external lecturer is rented the hall (Fixed Rent) or shares the revenue (Revenue Share): choose one."), title=_("Missing Value"))
+		if self.hall_booking_type == MAINTENANCE:
+			self.activity = (self.activity or "").strip() or _("Maintenance")
+			self.customer, self.doctor, self.course = None, None, None
+		if self.source == MANUAL and not self.customer and not self.not_billable():
+			frappe.throw(_("A billed hall booking names its customer: the renter, or the lecturer's customer record."), frappe.MandatoryError, title=_("Missing Value"))
+		if self.doctor:
+			group = frappe.db.get_value("Customer", self.doctor, "customer_group")
+			if group != DOCTOR_GROUP:
+				frappe.throw(_("{0} is not a doctor (customer group {1}).").format(self.doctor, DOCTOR_GROUP), title=_("Not a Doctor"))
+		if self.course:
+			course_doctor = frappe.db.get_value("App Course", self.course, "doctor")
+			if course_doctor and not self.doctor:
+				self.doctor = course_doctor
+		self.capacity = cint(frappe.db.get_value("Booking Resource", self.resource, "capacity"))
+		if self.capacity:
+			for field in ("expected_attendees", "attendees"):
+				if cint(self.get(field)) > self.capacity:
+					frappe.throw(
+						_("{0}: {1} is more than {2}'s capacity of {3}.").format(_(self.meta.get_label(field)), cint(self.get(field)), self.resource, self.capacity),
+						title=_("Over Capacity"),
+					)
+		for field in ("expected_attendees", "attendees"):
+			if cint(self.get(field)) < 0:
+				frappe.throw(_("{0} cannot be negative.").format(_(self.meta.get_label(field))))
+
+	def price_nothing(self):
+		"""A not-billable hall booking: nothing is priced, no invoice is made (booking_accounts.complete)."""
+		if self.package or self.extras:
+			frappe.throw(_("A not-billable hall booking takes no package and no extras."), title=_("Not Billable"))
+		self.rate, self.base_amount, self.extras_amount, self.total_amount = 0, 0, 0, 0
+		self.price_list, self.pricing_key = None, pricing_key(self)
+		self.pricing_note = _("Not billable: an internal use of the hall; nothing is priced or invoiced here.")
 
 	def check_hall_details(self):
 		if self.resource_type != "Hall":
 			return
-		for field in ("activity", "responsible_name", "responsible_phone"):
+		needed = ("activity",) if self.hall_booking_type == MAINTENANCE else ("activity", "responsible_name", "responsible_phone")
+		for field in needed:
 			if not (self.get(field) or "").strip():
 				frappe.throw(_("A hall booking needs {0} (HAL-02).").format(_(self.meta.get_label(field))), title=_("Missing Value"))
 		# The same check as a customer's number: a number that cannot be called is refused.
-		normalize_phone(self.responsible_phone)
+		if (self.responsible_phone or "").strip():
+			normalize_phone(self.responsible_phone)
 
 	def check_rental_model(self):
 		"""HAL-12: each hall booking names its model; a revenue-share one records its attendees and admission price
@@ -213,7 +289,16 @@ class Booking(Document):
 			for field in ("attendees", "admission_price", "expected_revenue", "collected_amount", "lecturer_share_percent", "lecturer_share", "center_share"):
 				self.set(field, 0)
 			self.lecturer = None
+			self.financial_review, self.financial_note = 0, None
 			return
+		# No Doctor Agreement defines a hall share (the agreements are for books and the app): the share is agreed on
+		# each booking (known issue 11). Until it is, the booking is flagged for the accountant; nothing is assumed.
+		if flt(self.lecturer_share_percent) or self.lecturer:
+			self.financial_review = 0
+			self.financial_note = _("Share agreed on this booking: {0}% to the lecturer. No Doctor Agreement defines a hall share.").format(flt(self.lecturer_share_percent))
+		else:
+			self.financial_review = 1
+			self.financial_note = _("Revenue share with no lecturer's share agreed yet, and no Doctor Agreement defines one: to be agreed before the booking is completed.")
 		for field in ("attendees", "admission_price", "collected_amount", "lecturer_share_percent"):
 			if flt(self.get(field)) < 0:
 				frappe.throw(_("{0} cannot be negative.").format(_(self.meta.get_label(field))))
@@ -293,17 +378,19 @@ class Booking(Document):
 			frappe.throw(_("Give the reason for cancelling the booking."), title=_("Cancellation Reason Required"))
 		if self.status != CANCELLED:
 			self.cancellation_reason = None
+		if self.status == CONFIRMED_NO_DEPOSIT and self.resource_type != HALL:
+			frappe.throw(_("The studio confirms a booking with a deposit (Confirmed with Deposit); 'Confirmed' is for IMED's halls."), title=_("Wrong Status"))
 		if self.status == CONFIRMED and not self.paid_amount:
 			# STU-08: "confirmed with a deposit".
 			frappe.throw(
 				_("A booking is confirmed with a deposit: record the deposit (Record Payment) first.") if self.source == MANUAL else _("A booking is confirmed with a deposit: enter the amount paid."),
 				title=_("No Deposit"),
 			)
-		if self.status in (COMPLETED, NO_SHOW) and self.starts_at() > now_datetime():
+		if self.status in (COMPLETED, NO_SHOW) and self.starts() > now_datetime():
 			frappe.throw(_("The booking has not started yet; it cannot be {0}.").format(_(self.status)))
 
-	def starts_at(self):
-		return get_datetime(f"{self.booking_date} {self.from_time}")
+	def starts(self):
+		return get_datetime(self.starts_at)
 
 	def check_overlap(self):
 		"""No two bookings of the resource that hold their time overlap. One that ends when the next starts does
@@ -324,31 +411,33 @@ class Booking(Document):
 			)
 		except frappe.QueryDeadlockError:
 			frappe.throw(_("Another booking of {0} was saved at the same moment. Save again.").format(self.resource), title=_("Save Again"))
+		# Exact instants (a booking may cross midnight), and the resource's buffer on both sides: with a buffer of
+		# 15 minutes a booking ending at 12:00 and one starting at 12:10 clash; with none, back to back is free.
+		buffer = timedelta(minutes=cint(frappe.db.get_value("Booking Resource", self.resource, "buffer_minutes")))
 		clash = frappe.db.sql(
-			"""select name, from_time, to_time, status from `tabBooking`
-			where resource = %(resource)s and booking_date = %(date)s and name != %(name)s
-			and status in %(holding)s and from_time < %(to_time)s and to_time > %(from_time)s
-			order by from_time limit 1""",
+			"""select name, starts_at, ends_at, status from `tabBooking`
+			where resource = %(resource)s and name != %(name)s and status in %(holding)s
+			and starts_at < %(ends)s and ends_at > %(starts)s
+			order by starts_at limit 1""",
 			{
 				"resource": self.resource,
-				"date": self.booking_date,
 				"name": self.name or "",
 				"holding": HOLDING,
-				"from_time": self.from_time,
-				"to_time": self.to_time,
+				"starts": get_datetime(self.starts_at) - buffer,
+				"ends": get_datetime(self.ends_at) + buffer,
 			},
 			as_dict=True,
 		)
 		if clash:
 			other = clash[0]
 			frappe.throw(
-				_("{0} is already booked from {1} to {2} on {3} ({4}, {5}).").format(
+				_("{0} is already booked from {1} to {2} ({3}, {4}){5}.").format(
 					self.resource,
-					str(other.from_time)[:5],
-					str(other.to_time)[:5],
-					frappe.format_value(self.booking_date, {"fieldtype": "Date"}),
+					frappe.format_value(other.starts_at, {"fieldtype": "Datetime"}),
+					frappe.format_value(other.ends_at, {"fieldtype": "Datetime"}),
 					other.name,
 					_(other.status),
+					_(" with {0} minutes kept free around each booking").format(buffer.seconds // 60) if buffer else "",
 				),
 				title=_("Already Booked"),
 			)
@@ -371,15 +460,15 @@ def get_events(start, end, filters=None, **kwargs):
 		filters = [[field, *value] if isinstance(value, list) else [field, "=", value] for field, value in filters.items()]
 	rows = frappe.get_list(
 		"Booking",
-		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status"],
-		filters=[*filters, ["booking_date", ">=", getdate(start)], ["booking_date", "<=", getdate(end)]],
+		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status", "starts_at", "ends_at", "hall_booking_type", "activity", "doctor"],
+		filters=[*filters, ["booking_date", ">=", add_days(getdate(start), -1)], ["booking_date", "<=", getdate(end)]],
 		order_by="booking_date asc, from_time asc",
 		limit_page_length=0,
 	)
 	events = []
 	for row in rows:
-		starts = datetime.combine(getdate(row.booking_date), get_time(row.from_time))
-		ends = datetime.combine(getdate(row.booking_date), get_time(row.to_time))
+		starts = get_datetime(row.starts_at) if row.starts_at else datetime.combine(getdate(row.booking_date), get_time(row.from_time))
+		ends = get_datetime(row.ends_at) if row.ends_at else datetime.combine(getdate(row.booking_date), get_time(row.to_time))
 		if starts >= end or ends <= start:
 			continue
 		events.append(
@@ -392,7 +481,9 @@ def get_events(start, end, filters=None, **kwargs):
 				holding=int(row.status in HOLDING),
 				start=starts.strftime("%Y-%m-%d %H:%M:%S"),
 				end=ends.strftime("%Y-%m-%d %H:%M:%S"),
-				title=f"{row.resource} · {row.customer} ({_(row.status)})",
+				title=f"{row.resource} · {row.customer or row.activity or ''} ({_(row.status)})" + (f" · {_(row.hall_booking_type)}" if row.hall_booking_type else ""),
+				hall_booking_type=row.hall_booking_type,
+				doctor=row.doctor,
 				all_day=0,
 				# A booking's times are the hall's or the studio's clock, whatever the user's time zone.
 				convert_to_user_tz=0,

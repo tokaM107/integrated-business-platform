@@ -252,6 +252,46 @@
 		);
 	}
 
+	// IMED's lecture halls, apart from the studio's rooms and from XStudio: today, the week ahead, what needs action.
+	function halls_card(h, currency) {
+		const day = frappe.datetime.get_today();
+		const held = ["not in", ["Cancelled", "No Show"]];
+		const hall = (extra) => ["Booking", Object.assign({ resource_type: "Hall" }, extra)];
+		const month = ["Between", [frappe.datetime.month_start(), frappe.datetime.month_end()]];
+		return card(
+			"presentation",
+			__("IMED hall bookings"),
+			`<div class="imed-yday-sub">${esc(__("Today"))}</div>
+			<div class="imed-yday-stats">
+				${stat(__("Booked"), number(h.today.held), "", hall({ booking_date: day, status: held }))}
+				${stat(__("Completed"), number(h.today.completed), "", hall({ booking_date: day, status: "Completed" }))}
+				${stat(__("Cancelled"), number(h.today.cancelled), h.today.cancelled ? "is-warning" : "", hall({ booking_date: day, status: "Cancelled" }))}
+				${stat(__("Hours today"), __("{0} h", [number(h.today_hours)]), "", hall({ booking_date: day, status: held }))}
+			</div>
+			<div class="imed-yday-stats">
+				${stat(__("Next 7 days"), number(h.upcoming), "", hall({ booking_date: ["Between", [frappe.datetime.add_days(day, 1), frappe.datetime.add_days(day, 7)]], status: held }))}
+				${stat(__("Active halls"), number(h.active_halls), "", ["Booking Resource", { resource_type: "Hall", disabled: 0 }])}
+				${stat(__("Occupied now"), `${number(h.occupied_now)} / ${number(h.active_halls)}`, h.occupied_now ? "is-positive" : "", hall({ status: held, booking_date: day }))}
+			</div>
+			<div class="imed-yday-sub">${esc(__("This month"))}</div>
+			<div class="imed-yday-stats">
+				${stat(__("Bookings"), number(h.month_held), "", hall({ booking_date: month, status: held }))}
+				${stat(__("Hours"), __("{0} h", [number(h.month_hours)]), "", hall({ booking_date: month, status: held }))}
+				${stat(__("Cancelled"), number(h.month_cancelled), h.month_cancelled ? "is-warning" : "", hall({ booking_date: month, status: "Cancelled" }))}
+				${stat(__("Fixed rents (not yet invoiced)"), money(h.month_fixed_rent, currency), "", hall({ booking_date: month, status: held, rental_model: "Fixed Rent" }))}
+				${stat(__("Revenue shares"), number(h.month_revenue_share), "", hall({ booking_date: month, status: held, rental_model: "Revenue Share" }))}
+			</div>
+			${
+				h.past_open || h.financial_review
+					? `<p class="imed-yday-warn">
+						${h.past_open ? `<a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(hall({ status: ["in", ["Tentative", "Confirmed", "Confirmed with Deposit"]], booking_date: ["<=", day] })))}">${esc(__("{0} past hall booking(s) neither completed nor cancelled.", [h.past_open]))}</a>` : ""}
+						${h.financial_review ? ` <a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(hall({ financial_review: 1, status: held })))}">${esc(__("{0} revenue share(s) with no share agreed yet.", [h.financial_review]))}</a>` : ""}
+					  </p>`
+					: ""
+			}`
+		);
+	}
+
 	function app_card(a, currency, day) {
 		if (a.state !== "ok") {
 			return card("smartphone", __("Platform fees"), `<p class="imed-yday-warn">${esc(__("No app agreement yet."))}</p>`);
@@ -357,6 +397,7 @@
 				<div class="imed-yday-grid">
 					${money_card(d)}
 					${bookings_card(d.bookings, d.day, d.currency)}
+					${d.halls ? halls_card(d.halls, d.currency) : ""}
 					${app_card(d.app, d.currency, d.day)}
 					${printing_card(d.printing, d.day)}
 					${systems_card(d.systems)}

@@ -248,6 +248,8 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 		return frappe.db.get_value("Payment Entry", {"custom_booking_request": request_id}, "name")
 	if doc.source == "Imported":
 		frappe.throw(_("{0} was imported: its payments are recorded in the booking system.").format(doc.name))
+	if doc.resource_type == "Hall" and doc.rental_model == "Not Billable":
+		frappe.throw(_("{0} is not billable: nothing is paid on it.").format(doc.name), title=_("Not Billable"))
 	if doc.status in ("Cancelled", "No Show"):
 		frappe.throw(_("{0} is {1}: it takes no payment.").format(doc.name, _(doc.status)))
 	amount = flt(amount, 2)
@@ -513,6 +515,10 @@ def complete(doc):
 	"""Post a completed booking, once: a booking that already has its invoice (or entry) gets no second one, however
 	often it is saved as completed."""
 	if doc.source == "Imported" or doc.status != "Completed":
+		return
+	if doc.resource_type == "Hall" and doc.rental_model == "Not Billable":
+		# An internal use of the hall: no invoice, no entry; the course's or the app's own fees are posted elsewhere.
+		refresh_booking(doc.name)
 		return
 	frappe.db.get_value("Booking", doc.name, "name", for_update=True)
 	if (

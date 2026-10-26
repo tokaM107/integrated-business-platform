@@ -114,8 +114,10 @@ class IntegrationTestBooking(IntegrationTestCase):
 
 	def test_required_values_and_times(self):
 		self.assertRaises(frappe.MandatoryError, self.book, customer=None)
-		self.assertRaisesRegex(frappe.ValidationError, "not after it starts", self.book, start="12:00", end="10:00")
-		self.assertRaisesRegex(frappe.ValidationError, "not after it starts", self.book, start="10:00", end="10:00")
+		# An end earlier than the start is the next day (a booking across midnight, 26 Oct 2026); equal times are refused.
+		self.assertRaisesRegex(frappe.ValidationError, "no length", self.book, start="10:00", end="10:00")
+		late = self.book(start="22:00", end="01:00")
+		self.assertEqual((late.ends_next_day, late.hours, str(late.ends_at)[:16]), (1, 3, f"{add_days(DAY, 1)} 01:00"))
 		for field in ("activity", "responsible_name", "responsible_phone"):
 			self.assertRaises(frappe.ValidationError, self.book, **{field: ""})
 		self.assertRaisesRegex(frappe.ValidationError, "not a valid phone", self.book, responsible_phone="123")
@@ -290,14 +292,14 @@ class IntegrationTestBooking(IntegrationTestCase):
 			{"external_id": "B1", "from_time": "10:30", "to_time": "11:30"},  # overlaps the manual one
 			{"external_id": "B2", "from_time": "12:00", "to_time": "13:00", "customer_phone": "01099998888"},
 			{"external_id": "", "from_time": "13:00", "to_time": "14:00"},
-			{"external_id": "B3", "from_time": "14:00", "to_time": "13:00"},
+			{"external_id": "B3", "from_time": "14:00", "to_time": "14:00"},
 			{"external_id": "B4", "from_time": "15:00", "to_time": "16:00"},
 		)
 		failed = dict(result["failed"])
 		self.assertIn("already booked", failed["B1"])
 		self.assertIn("No customer", failed["B2"])
 		self.assertIn("no id", failed[""])
-		self.assertIn("not after it starts", failed["B3"])
+		self.assertIn("no length", failed["B3"])
 		self.assertEqual(len(result["inserted"]), 1)
 		self.assertFalse(frappe.db.exists("Booking", {"external_id": ["in", ["B1", "B2", "B3"]]}))
 
@@ -317,7 +319,7 @@ class IntegrationTestBooking(IntegrationTestCase):
 			with self.assertRaisesRegex(frappe.ValidationError, "nothing of this run was kept"):
 				self.import_rows(
 					{"external_id": "C1", "from_time": "10:00", "to_time": "11:00"},
-					{"external_id": "C2", "from_time": "11:00", "to_time": "10:00"},  # fails
+					{"external_id": "C2", "from_time": "11:00", "to_time": "11:00"},  # fails: no length
 				)
 
 	def test_restrictions_for_other_screens_do_not_apply(self):

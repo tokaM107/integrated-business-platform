@@ -204,11 +204,17 @@ def exact_hours(doc):
 
 	from frappe.utils import get_time
 
+	from datetime import timedelta
+
+	from frappe.utils import cint, getdate
+
 	if not (doc.from_time and doc.to_time):
 		return flt(doc.hours)
-	day = datetime.min
-	seconds = (datetime.combine(day, get_time(doc.to_time)) - datetime.combine(day, get_time(doc.from_time))).total_seconds()
-	return seconds / 3600
+	# A booking across midnight (ends_next_day) ends on the next day; the length is the exact gap between the two.
+	day = getdate(doc.booking_date) if doc.get("booking_date") else datetime.min
+	starts = datetime.combine(day, get_time(doc.from_time))
+	ends = datetime.combine(day + timedelta(days=cint(doc.get("ends_next_day"))), get_time(doc.to_time))
+	return (ends - starts).total_seconds() / 3600
 
 
 def revenue_share(collected, percent):

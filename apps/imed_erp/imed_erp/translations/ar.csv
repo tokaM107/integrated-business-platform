@@ -2033,3 +2033,59 @@ Changed in the library system after it was read; the copy here now follows it.,�
 {0} is read from the library system. Change it there; the next sync brings the change.,{0} بيتقرا من نظام المكتبة. عدّله هناك والمزامنة الجاية هتجيب التعديل.
 "A library document is kept: it is the library system's record, mirrored here.",مستند المكتبة بيتحفظ: ده سجل نظام المكتبة، منسوخ هنا.
 A library document,مستند مكتبة
+Hall Booking Type,نوع حجز القاعة
+Internal Course or Lecture,كورس أو محاضرة داخلية
+External Lecturer,محاضر خارجي
+Fixed-fee Rental,إيجار بمبلغ ثابت
+Internal Meeting,اجتماع داخلي
+Maintenance Block,صيانة / إغلاق مؤقت
+Not Billable,بدون فوترة
+Confirmed,مؤكد
+Doctor / Lecturer,الدكتور / المحاضر
+Expected Attendees,الحضور المتوقع
+Attendees (actual),الحضور الفعلي
+Hall Capacity,سعة القاعة
+Ends After Midnight,ينتهي بعد منتصف الليل
+Starts At,يبدأ في
+Ends At,ينتهي في
+Financial Arrangement Needs Review,الترتيب المالي محتاج مراجعة
+Financial Note,ملاحظة مالية
+Location,المكان
+Buffer Between Bookings (minutes),فاصل بين الحجوزات (دقايق)
+IMED Halls,قاعات IMED
+IMED hall bookings,حجوزات قاعات IMED
+Confirm Booking,تأكيد الحجز
+Reschedule,تغيير الموعد
+Save the new time,حفظ الموعد الجديد
+An end earlier than the start means the next day.,نهاية قبل البداية معناها اليوم التالي.
+Choose what the hall is used for (Hall Booking Type).,اختار القاعة هتتستخدم في إيه (نوع حجز القاعة).
+Unknown hall booking type {0}.,نوع حجز قاعة غير معروف {0}.
+An external lecturer is rented the hall (Fixed Rent) or shares the revenue (Revenue Share): choose one.,المحاضر الخارجي يا إما بيأجّر القاعة (إيجار ثابت) أو بيشارك في الإيراد (مشاركة إيراد): اختار واحد.
+Maintenance,صيانة
+"A billed hall booking names its customer: the renter, or the lecturer's customer record.",حجز القاعة المدفوع لازم له عميل: المستأجر، أو سجل عميل المحاضر.
+{0} is not a doctor (customer group {1}).,{0} مش دكتور (مجموعة العملاء {1}).
+{0}: {1} is more than {2}'s capacity of {3}.,{0}: {1} أكتر من سعة {2} وهي {3}.
+Over Capacity,أكتر من السعة
+A not-billable hall booking takes no package and no extras.,حجز القاعة بدون فوترة ما ياخدش باقة ولا إضافات.
+Not billable: an internal use of the hall; nothing is priced or invoiced here.,بدون فوترة: استخدام داخلي للقاعة؛ مفيش تسعير ولا فاتورة هنا.
+"The booking ends at {0}, the moment it starts: it has no length.",الحجز بينتهي الساعة {0}، نفس لحظة بدايته: مالوش مدة.
+Share agreed on this booking: {0}% to the lecturer. No Doctor Agreement defines a hall share.,النسبة متفق عليها في الحجز ده: {0}% للمحاضر. مفيش اتفاقية دكتور بتحدد نسبة للقاعات.
+"Revenue share with no lecturer's share agreed yet, and no Doctor Agreement defines one: to be agreed before the booking is completed.",مشاركة إيراد من غير نسبة محاضر متفق عليها، ومفيش اتفاقية دكتور بتحددها: لازم تتحدد قبل إكمال الحجز.
+The studio confirms a booking with a deposit (Confirmed with Deposit); 'Confirmed' is for IMED's halls.,الاستوديو بيأكد الحجز بعربون (مؤكد بعربون)؛ «مؤكد» لقاعات IMED.
+Wrong Status,حالة غلط
+"{0} is already booked from {1} to {2} ({3}, {4}){5}.",{0} محجوزة بالفعل من {1} إلى {2} ({3}، {4}){5}.
+ with {0} minutes kept free around each booking, مع {0} دقيقة فاصل حوالين كل حجز
+{0} is not billable: nothing is paid on it.,{0} بدون فوترة: مفيش مدفوعات عليه.
+Nothing is invoiced: an internal use of the hall.,مفيش فاتورة: استخدام داخلي للقاعة.
+"Confirmed by the halls' staff (no deposit). Next: when the session is over, press Mark Completed.",متأكد من موظفي القاعات (بدون عربون). بعدين: لما الجلسة تخلص اضغط «اكتمل».
+Today,النهاردة
+Booked,محجوز
+Hours today,ساعات النهاردة
+Next 7 days,الأسبوع الجاي
+Active halls,القاعات الشغّالة
+Occupied now,مشغولة دلوقتي
+This month,الشهر ده
+Fixed rents (not yet invoiced),إيجارات ثابتة (لسه ما اتفوترتش)
+Revenue shares,مشاركات إيراد
+{0} past hall booking(s) neither completed nor cancelled.,{0} حجز قاعة فات ميعاده ولا اكتمل ولا اتلغى.
+{0} revenue share(s) with no share agreed yet.,{0} مشاركة إيراد من غير نسبة متفق عليها.

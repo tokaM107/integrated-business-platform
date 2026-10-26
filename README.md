@@ -814,6 +814,34 @@ Mark Completed, No Show, Cancel Booking); the worked-out and technical fields in
   id, wrong times) fails alone with its reason. The customer is found by phone; none is made from an import. An
   imported booking is changed only in its source: saving it here is refused (INT-01).
 
+#### IMED's lecture halls (26 Oct 2026)
+
+IMED's own halls (resource type **Hall**, cost center `قاعات Imed`) are managed here, apart from XStudio's rooms,
+which are only mirrored (see *XStudio* below). A hall booking names its **Hall Booking Type**: Internal Course or
+Lecture, External Lecturer, Fixed-fee Rental, Revenue Share, Internal Meeting, Maintenance Block. The type fixes the
+money: a fixed-fee rental is **Fixed Rent**, a revenue share is **Revenue Share**, an internal meeting or a
+maintenance block is **Not Billable** (no customer needed, nothing priced, no invoice on completion), an internal
+course is Not Billable unless chosen otherwise (its fees are the app's or the course's, never counted twice), and an
+external lecturer is rented the hall or shares the revenue, never free. A booking may name the **Doctor / Lecturer**
+(the doctor's own customer record, group `طبيب`; never a second record) and the **Course** (an App Course, whose
+doctor it takes). A revenue share with no lecturer's share agreed yet is flagged **Financial Arrangement Needs
+Review**: no Doctor Agreement defines a hall share, and none is assumed.
+
+- **Confirmed** (no deposit): the halls' staff confirm a booking with the *Confirm Booking* button; the studio keeps
+  *Confirmed with Deposit*. Nothing is completed by itself when the time passes.
+- **Times**: exact `Starts At` / `Ends At` (Cairo); an end earlier than the start is the next day (**Ends After
+  Midnight**), so a late session holds both days; equal times are refused. The overlap check works on the instants,
+  with the resource's **Buffer Between Bookings** (minutes kept free around each booking; 0 = back to back is fine).
+- **Capacity**: Expected Attendees and Attendees (actual) are checked against the hall's capacity.
+- **Maintenance Block**: holds the hall like a booking (so nothing else is booked), no customer, no price; cancel it to
+  free the hall. The hall's **Location** is on the resource.
+- **Reschedule** (button): the new day and times, saved through the form, where the overlap check runs.
+- The owner's dashboard has its own card **حجوزات قاعات IMED** (today, next seven days, active and occupied halls,
+  this month's bookings, hours, cancellations, fixed rents not yet invoiced, revenue shares, and what needs action:
+  past bookings neither completed nor cancelled, shares not agreed); the sidebar lists **IMED Halls** (the hall
+  resources) and the **Hall Bookings** report, which now shows the type, the doctor and the hours.
+- Tests: `test_hall_bookings` (26), on top of `test_booking` and `test_booking_pricing`.
+
 #### Price and money (HAL-03, HAL-08, HAL-11, HAL-12, STU-03..05, ACC-04)
 
 A booking entered here is priced when it is saved, on the server (`imederp/booking_pricing.py`), from Item Prices only:

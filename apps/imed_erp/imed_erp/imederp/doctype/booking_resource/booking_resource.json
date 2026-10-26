@@ -15,6 +15,8 @@
   "disabled",
   "capacity",
   "equipment",
+  "location",
+  "buffer_minutes",
   "notes",
   "bookings_saved"
  ],
@@ -77,6 +79,19 @@
    "fieldname": "equipment",
    "fieldtype": "Small Text",
    "label": "Equipment"
+  },
+  {
+   "fieldname": "location",
+   "fieldtype": "Data",
+   "label": "Location",
+   "description": "Floor, building, or how to find it."
+  },
+  {
+   "fieldname": "buffer_minutes",
+   "fieldtype": "Int",
+   "label": "Buffer Between Bookings (minutes)",
+   "default": "0",
+   "description": "Minutes kept free before and after each booking of this resource (set-up, cleaning). 0: back-to-back bookings are allowed."
   },
   {
    "fieldname": "notes",

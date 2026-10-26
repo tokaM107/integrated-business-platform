@@ -13,6 +13,7 @@
 
 const BOOKING_COLORS = {
 	Tentative: "orange",
+	Confirmed: "green",
 	"Confirmed with Deposit": "green",
 	Completed: "blue",
 	Cancelled: "gray",

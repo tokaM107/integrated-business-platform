@@ -12,12 +12,13 @@
 // The calendar's colours (booking_calendar.js), so a status looks the same everywhere.
 const BOOKING_STATUS_COLORS = {
 	Tentative: "orange",
+	Confirmed: "green",
 	"Confirmed with Deposit": "green",
 	Completed: "blue",
 	Cancelled: "gray",
 	"No Show": "gray",
 };
-const BOOKING_OPEN = ["Tentative", "Confirmed with Deposit"];
+const BOOKING_OPEN = ["Tentative", "Confirmed", "Confirmed with Deposit"];
 
 frappe.ui.form.on("Booking", {
 	setup(frm) {
@@ -174,6 +175,8 @@ function next_step_html(frm) {
 		text = hall
 			? __("Next: when the booking is over, press Mark Completed. A hall takes no deposit; it is paid after that.")
 			: __("Next: record the customer's deposit (Record Deposit) to confirm the booking.");
+	} else if (doc.status === "Confirmed") {
+		text = __("Confirmed by the halls' staff (no deposit). Next: when the session is over, press Mark Completed.");
 	} else if (doc.status === "Confirmed with Deposit") {
 		kind = "is-todo";
 		text = __("Confirmed. Next: when the booking is over, press Mark Completed: its invoice is made and the deposit taken off it.");
@@ -220,7 +223,12 @@ function add_buttons(frm) {
 		frm.add_custom_button(__("No Show"), () => set_status(frm, "No Show"), __("More"));
 	}
 	if (open) {
+		frm.add_custom_button(__("Reschedule"), () => reschedule(frm));
 		frm.add_custom_button(__("Cancel Booking"), () => cancel_booking(frm), __("More"));
+	}
+	// IMED's halls take no deposit: the halls' staff confirm a booking; that is not a payment.
+	if (doc.resource_type === "Hall" && doc.status === "Tentative" && doc.source === "Manual") {
+		frm.add_custom_button(__("Confirm Booking"), () => set_status(frm, "Confirmed")).addClass("btn-primary");
 	}
 	if (doc.status === "Completed" && !doc.sales_invoice && flt(doc.total_amount) > 0) {
 		frm.add_custom_button(__("Make Invoice"), () =>
@@ -240,11 +248,26 @@ function set_status(frm, status, values = {}) {
 
 function mark_completed(frm) {
 	const doc = frm.doc;
-	const message =
-		doc.rental_model === "Revenue Share"
+	const message = doc.rental_model === "Not Billable"
+		? __("Nothing is invoiced: an internal use of the hall.")
+		: doc.rental_model === "Revenue Share"
 			? __("The amount collected ({0}) goes into the cash box and is shared with the lecturer. Make sure the attendees, the collected amount and the lecturer's share are right.", [money(doc.collected_amount)])
 			: __("The booking's invoice of {0} is made, and its deposit taken off it.", [money(doc.total_amount)]);
 	frappe.confirm(`${esc(__("Mark this booking completed?"))}<br><br>${esc(message)}`, () => set_status(frm, "Completed"));
+}
+
+function reschedule(frm) {
+	// The new day and times are saved through the form, where the overlap check runs (never by dragging).
+	frappe.prompt(
+		[
+			{ fieldname: "booking_date", fieldtype: "Date", label: __("Booking Date"), reqd: 1, default: frm.doc.booking_date },
+			{ fieldname: "from_time", fieldtype: "Time", label: __("From"), reqd: 1, default: frm.doc.from_time },
+			{ fieldname: "to_time", fieldtype: "Time", label: __("To"), reqd: 1, default: frm.doc.to_time, description: __("An end earlier than the start means the next day.") },
+		],
+		(values) => frm.set_value(values).then(() => frm.save()),
+		__("Reschedule"),
+		__("Save the new time")
+	);
 }
 
 function cancel_booking(frm) {
