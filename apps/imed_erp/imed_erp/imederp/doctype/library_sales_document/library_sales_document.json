@@ -1,0 +1,478 @@
+{
+ "actions": [],
+ "autoname": "LIB-.YYYY.-.#####",
+ "creation": "2026-10-26 12:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "document_kind",
+  "number",
+  "reg_date",
+  "is_final",
+  "is_cancelled",
+  "column_break_1",
+  "branch_code",
+  "branch_name",
+  "cost_center",
+  "store_code",
+  "store_name",
+  "store_to_code",
+  "store_to_name",
+  "cash_desk_code",
+  "cash_desk_name",
+  "column_break_2",
+  "status_code",
+  "status_name",
+  "operation_code",
+  "operation_name",
+  "payment_type_code",
+  "payment_type_name",
+  "sales_type_code",
+  "sales_type_name",
+  "parties_section",
+  "customer_code",
+  "customer_name",
+  "customer_phone",
+  "column_break_3",
+  "vendor_code",
+  "vendor_name",
+  "salesman_code",
+  "salesman_name",
+  "user_code",
+  "user_name",
+  "amounts_section",
+  "total",
+  "qty_total",
+  "money_direction",
+  "column_break_4",
+  "cash_value",
+  "credit_value",
+  "visa_value",
+  "column_break_5",
+  "discount_percent",
+  "discount_value",
+  "vat_value",
+  "lines_section",
+  "lines",
+  "remarks",
+  "source_section",
+  "source_system",
+  "family",
+  "external_id",
+  "import_key",
+  "column_break_6",
+  "last_synced_at",
+  "payload_hash",
+  "source_payload"
+ ],
+ "fields": [
+  {
+   "fieldname": "document_kind",
+   "fieldtype": "Select",
+   "label": "Kind",
+   "options": "Retail Sale\nWholesale Sale\nRetail Return\nWholesale Return\nPurchase\nPurchase Return\nOpening Balance\nAdjustment In\nAdjustment Out\nTransfer\nPrice Offer\nCash Receipt\nCash Payment\nOther",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "number",
+   "fieldtype": "Data",
+   "label": "Number in the Library System",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "reg_date",
+   "fieldtype": "Datetime",
+   "label": "Date",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_final",
+   "fieldtype": "Check",
+   "label": "Issued (final)",
+   "in_standard_filter": 1,
+   "description": "On: the library issued it. Off: held, or cancelled; see Status.",
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_cancelled",
+   "fieldtype": "Check",
+   "label": "Cancelled in the Library System",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "branch_code",
+   "fieldtype": "Data",
+   "label": "Branch Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "branch_name",
+   "fieldtype": "Data",
+   "label": "Branch",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center",
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "store_code",
+   "fieldtype": "Data",
+   "label": "Store Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "store_name",
+   "fieldtype": "Data",
+   "label": "Store",
+   "read_only": 1
+  },
+  {
+   "fieldname": "store_to_code",
+   "fieldtype": "Data",
+   "label": "Store To Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "store_to_name",
+   "fieldtype": "Data",
+   "label": "Store To",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cash_desk_code",
+   "fieldtype": "Data",
+   "label": "Cash Desk Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cash_desk_name",
+   "fieldtype": "Data",
+   "label": "Cash Desk",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "status_code",
+   "fieldtype": "Data",
+   "label": "Status Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "status_name",
+   "fieldtype": "Data",
+   "label": "Status",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "operation_code",
+   "fieldtype": "Data",
+   "label": "Operation Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "operation_name",
+   "fieldtype": "Data",
+   "label": "Operation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_type_code",
+   "fieldtype": "Data",
+   "label": "Payment Type Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_type_name",
+   "fieldtype": "Data",
+   "label": "Payment Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sales_type_code",
+   "fieldtype": "Data",
+   "label": "Sales Type Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "sales_type_name",
+   "fieldtype": "Data",
+   "label": "Sales Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "parties_section",
+   "fieldtype": "Section Break",
+   "label": "Parties"
+  },
+  {
+   "fieldname": "customer_code",
+   "fieldtype": "Data",
+   "label": "Customer Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer",
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_phone",
+   "fieldtype": "Data",
+   "label": "Customer Phone",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "vendor_code",
+   "fieldtype": "Data",
+   "label": "Vendor Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vendor_name",
+   "fieldtype": "Data",
+   "label": "Vendor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "salesman_code",
+   "fieldtype": "Data",
+   "label": "Salesman Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "salesman_name",
+   "fieldtype": "Data",
+   "label": "Salesman",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_code",
+   "fieldtype": "Data",
+   "label": "User Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "user_name",
+   "fieldtype": "Data",
+   "label": "Entered By (library user)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "amounts_section",
+   "fieldtype": "Section Break",
+   "label": "Amounts, as the library system has them (nothing is posted here)"
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "qty_total",
+   "fieldtype": "Float",
+   "label": "Total Qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "money_direction",
+   "fieldtype": "Select",
+   "label": "Money",
+   "options": "None\nIn\nOut",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "cash_value",
+   "fieldtype": "Currency",
+   "label": "Cash",
+   "read_only": 1
+  },
+  {
+   "fieldname": "credit_value",
+   "fieldtype": "Currency",
+   "label": "Credit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "visa_value",
+   "fieldtype": "Currency",
+   "label": "Visa",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "discount_percent",
+   "fieldtype": "Percent",
+   "label": "Discount %",
+   "read_only": 1
+  },
+  {
+   "fieldname": "discount_value",
+   "fieldtype": "Currency",
+   "label": "Discount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_value",
+   "fieldtype": "Currency",
+   "label": "VAT",
+   "read_only": 1
+  },
+  {
+   "fieldname": "lines_section",
+   "fieldtype": "Section Break",
+   "label": "Lines"
+  },
+  {
+   "fieldname": "lines",
+   "fieldtype": "Table",
+   "label": "Lines",
+   "options": "Library Sales Document Line",
+   "read_only": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Small Text",
+   "label": "Remarks",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_section",
+   "fieldtype": "Section Break",
+   "label": "Source",
+   "collapsible": 1
+  },
+  {
+   "fieldname": "source_system",
+   "fieldtype": "Data",
+   "label": "Source System",
+   "read_only": 1
+  },
+  {
+   "fieldname": "family",
+   "fieldtype": "Data",
+   "label": "Family",
+   "read_only": 1
+  },
+  {
+   "fieldname": "external_id",
+   "fieldtype": "Data",
+   "label": "External ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "import_key",
+   "fieldtype": "Data",
+   "label": "Import Key",
+   "unique": 1,
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break",
+   "label": ""
+  },
+  {
+   "fieldname": "last_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Last Read From Source",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payload_hash",
+   "fieldtype": "Data",
+   "label": "Payload Hash",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_payload",
+   "fieldtype": "Long Text",
+   "label": "Source Data (JSON)",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-26 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Library Sales Document",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager",
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "read": 1,
+   "role": "Accounts Manager",
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "read": 1,
+   "role": "Super Admin",
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "read": 1,
+   "role": "Accountant",
+   "print": 1,
+   "export": 1,
+   "report": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "number,customer_name,branch_name",
+ "sort_field": "reg_date",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "number",
+ "track_changes": 0
+}

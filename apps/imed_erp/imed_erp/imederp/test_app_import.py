@@ -298,7 +298,7 @@ class IntegrationTestAppImport(IntegrationTestCase):
 	def test_the_screen_shows_each_systems_last_import(self):
 		good = app_import.import_content(self.csv(self.rows(3)), file_name="good.csv")
 		rows = self.status()
-		self.assertEqual(set(rows), {"ba_plus", "library_pos", "booking", "xstudio"})
+		self.assertEqual(set(rows), {"ba_plus", "library_pos", "booking", "xstudio", "tanmya"})
 		ba_plus = rows["ba_plus"]
 		self.assertEqual((ba_plus["log"], ba_plus["inserted"], ba_plus["failed"]), (good.name, 3, 0))
 		self.assertIn("no import reads", rows["library_pos"]["note"].lower())

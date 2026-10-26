@@ -1,0 +1,34 @@
+{
+  "_comment": "Copy to config.json on the library PC. The queries are placeholders built from the names the Tanmya app reads; replace the physical column names after collect_metadata.ps1 confirmed them. SELECT only. Each heads query takes two parameters: the watermark id and the re-read date; each lines query takes the head ids as {ids}.",
+  "source": "tanmya",
+  "odbc": "Driver={ODBC Driver 17 for SQL Server};Server=.;Database=Db2BDoctorNew;Trusted_Connection=yes;ApplicationIntent=ReadOnly;",
+  "erp": {"url": "https://erp.example.com", "api_key": "<api key of the integration user>", "api_secret": "<its secret>"},
+  "reread_days": 7,
+  "batch_size": 200,
+  "branch_map": {"1": "مكتبة الأزاريطة", "2": "مكتبة المواساة"},
+  "operation_map": {
+    "_comment": "TxtOperationCode -> document kind, filled from TblOperationInfo. Kinds: Retail Sale, Wholesale Sale, Retail Return, Wholesale Return, Purchase, Purchase Return, Opening Balance, Adjustment In, Adjustment Out, Transfer, Price Offer, Cash Receipt, Cash Payment"
+  },
+  "issued_status_codes": ["<TxtStatusRefCode of the issued state, from TblStatusRefInfo>"],
+  "cancelled_status_codes": ["<TxtStatusRefCode of the cancelled state>"],
+  "queries": {
+    "stock": {
+      "id_key": "TxtIdRefStock",
+      "line_head_key": "TxtIdRefStock",
+      "heads": "SELECT h.TxtIdRefStock, h.TxtNumberRefStock, h.TxtRegDateRefStock, h.TxtOperationCodeRefStock, o.TxtOperationName AS TxtOperationNameRefStock, h.TxtStatusCodeRefStock, st.TxtStatusRefName AS TxtStatusNameRefStock, h.TxtBranchCodeRefStock, b.TxtBranchName AS TxtBranchNameRefStock, h.TxtStoreCodeFromRefStock, h.TxtStoreCodeToRefStock, h.TxtCashDeskCodeRefStock, h.TxtCustomerCodeRefStock, c.TxtCustomerName AS TxtCustomerNameRefStock, c.TxtCustomerPhone, h.TxtVendorCodeRefStock, h.TxtSalesmanCodeRefStock, h.TxtPaymentTypeCodeRefStock, h.TxtSalesTypeCode, h.TxtCashValueRefStock, h.TxtCreditValueRefStock, h.TxtVisaValueRefStock, h.TxtDiscountPercent, h.TxtDiscountValue, h.TxtVatValue, h.TxtRemarksRefStock, h.TxtUserCodeRefStock FROM dbo.TblRefStockHead h LEFT JOIN dbo.TblOperationInfo o ON o.TxtOperationCode = h.TxtOperationCodeRefStock LEFT JOIN dbo.TblStatusRefInfo st ON st.TxtStatusRefCode = h.TxtStatusCodeRefStock LEFT JOIN dbo.TblBranchInfo b ON b.TxtBranchCode = h.TxtBranchCodeRefStock LEFT JOIN dbo.TblCustomerInfo c ON c.TxtCustomerCode = h.TxtCustomerCodeRefStock WHERE h.TxtIdRefStock > ? OR h.TxtRegDateRefStock >= ? ORDER BY h.TxtIdRefStock",
+      "lines": "SELECT s.TxtIdRefStockSub, s.TxtIdRefStock, s.TxtProductCodeRefStockSub, p.TxtProductName AS TxtProductNameRefStockSub, p.TxtProductBarCode, s.TxtStoreCodeRefStockSub, s.TxtProductQtyOutRefStockSub, s.TxtProductQtyInRefStockSub, s.TxtProductSalesPriceSmallQtyRefStockSub, s.TxtProductSalesPriceSmallQtyBDiscountRefStockSub, s.TxtProductSalesPriceBigQtyRefStockSub, s.TxtDiscountPercentToRefStockSub, s.TxtDiscountValueToRefStockSub, s.TxtProductTotalValueDownRefStockSub, s.TxtProductTotalValueUpRefStockSub, s.TxtProductVatValueRefStockSub, s.TxtProductCostPriceRefStockSub, s.TxtProductCostAvgRefStockSub, s.TxtAdjustmentResonCodeRefStockSub FROM dbo.TblRefStockSub s LEFT JOIN dbo.TblProductInfo p ON p.TxtProductCode = s.TxtProductCodeRefStockSub WHERE s.TxtIdRefStock IN ({ids}) ORDER BY s.TxtIdRefStock, s.TxtIdRefStockSub"
+    },
+    "cash_receipt": {
+      "id_key": "TxtIdRefCashReceipt",
+      "line_head_key": "TxtIdRefCashReceipt",
+      "heads": "SELECT h.TxtIdRefCashReceipt, h.TxtNumberRefCashReceipt, h.TxtRegDateRefCashReceipt, h.TxtOperationCodeRefCashReceipt, h.TxtStatusCodeRefCashReceipt, st.TxtStatusRefName AS TxtStatusNameRefCashReceipt, h.TxtBranchCodeRefCashReceipt, h.TxtCashDeskCodeRefCashReceipt, h.TxtRemarksRefCashReceiptHead, h.TxtUserCodeRefCashReceipt FROM dbo.TblRefCashReceiptHead h LEFT JOIN dbo.TblStatusRefInfo st ON st.TxtStatusRefCode = h.TxtStatusCodeRefCashReceipt WHERE h.TxtIdRefCashReceipt > ? OR h.TxtRegDateRefCashReceipt >= ? ORDER BY h.TxtIdRefCashReceipt",
+      "lines": "SELECT s.TxtIdRefCashReceiptSub, s.TxtIdRefCashReceipt, s.TxtAccNumberLevel5CodeRefCashReceiptSub, s.TxtAccNumberLevel6CodeRefCashReceiptSub, s.TxtAccNumberLevel7CodeRefCashReceiptSub, s.TxtDebitValueRefCashReceiptSub, s.TxtCreditValueRefCashReceiptSub, s.TxtRemarksRefCashReceiptSub FROM dbo.TblRefCashReceiptSub s WHERE s.TxtIdRefCashReceipt IN ({ids})"
+    },
+    "cash_payment": {
+      "id_key": "TxtIdRefCashPayment",
+      "line_head_key": "TxtIdRefCashPayment",
+      "heads": "SELECT h.TxtIdRefCashPayment, h.TxtNumberRefCashPayment, h.TxtRegDateRefCashPayment, h.TxtOperationCodeRefCashPayment, h.TxtStatusCodeRefCashPayment, st.TxtStatusRefName AS TxtStatusNameRefCashPayment, h.TxtBranchCodeRefCashPayment, h.TxtCashDeskCodeRefCashPayment, h.TxtRemarksRefCashPaymentHead, h.TxtUserCodeRefCashPayment FROM dbo.TblRefCashPaymentHead h LEFT JOIN dbo.TblStatusRefInfo st ON st.TxtStatusRefCode = h.TxtStatusCodeRefCashPayment WHERE h.TxtIdRefCashPayment > ? OR h.TxtRegDateRefCashPayment >= ? ORDER BY h.TxtIdRefCashPayment",
+      "lines": "SELECT s.TxtIdRefCashPaymentSub, s.TxtIdRefCashPayment, s.TxtAccNumberLevel5CodeRefCashPaymentSub, s.TxtAccNumberLevel6CodeRefCashPaymentSub, s.TxtAccNumberLevel7CodeRefCashPaymentSub, s.TxtDebitValueRefCashPaymentSub, s.TxtCreditValueRefCashPaymentSub, s.TxtRemarksRefCashPaymentSub FROM dbo.TblRefCashPaymentSub s WHERE s.TxtIdRefCashPayment IN ({ids})"
+    }
+  }
+}

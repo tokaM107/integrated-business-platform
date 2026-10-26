@@ -17,7 +17,7 @@ from frappe.utils import add_days, cint, getdate
 
 from imed_erp.imederp.doctype.integration_import_log.integration_import_log import SOURCE_SYSTEMS
 
-SYSTEM_LABELS = {"library_pos": "Libraries (point of sale)", "booking": "Studio (bookings, file)", "ba_plus": "BA Plus app", "xstudio": "XStudio (studio bookings, API)"}
+SYSTEM_LABELS = {"library_pos": "Libraries (point of sale)", "booking": "Studio (bookings, file)", "ba_plus": "BA Plus app", "xstudio": "XStudio (studio bookings, API)", "tanmya": "Libraries (Tanmya system, connector)"}
 DONE = ("Completed", "Completed with Errors")
 
 

@@ -1994,3 +1994,42 @@ All Bookings,كل الحجوزات
 Booking Calendar,تقويم الحجوزات
 Studio Hour Packages,باقات ساعات الاستوديو
 Studio Customers,عملاء الاستوديو
+Library Sales Document,مستند مكتبة (من نظام المكتبة)
+Library Sales Documents,مستندات المكتبة (من نظام المكتبة)
+Library Sales Document Line,سطر مستند مكتبة
+"Libraries (Tanmya system, connector)",المكتبات (نظام تنمية، الموصّل)
+Number in the Library System,الرقم في نظام المكتبة
+Issued (final),مُصدر (نهائي)
+"On: the library issued it. Off: held, or cancelled; see Status.",مفعّل: المكتبة أصدرته. مطفي: معلّق أو ملغي؛ انظر الحالة.
+Cancelled in the Library System,ملغي في نظام المكتبة
+Retail Sale,مبيعات تجزئة
+Wholesale Sale,مبيعات جملة
+Retail Return,مرتجع تجزئة
+Wholesale Return,مرتجع جملة
+Purchase,مشتريات
+Purchase Return,مردودات مشتريات
+Opening Balance,رصيد افتتاحي
+Adjustment In,تسوية بالإضافة
+Adjustment Out,تسوية بالخصم
+Transfer,تحويل بين مخازن
+Price Offer,عرض سعر
+Cash Receipt,إيصال استلام نقدية
+Cash Payment,إذن صرف نقدية
+"Amounts, as the library system has them (nothing is posted here)",المبالغ زي ما هي في نظام المكتبة (مفيش ترحيل هنا)
+Entered By (library user),أدخله (مستخدم نظام المكتبة)
+Store To,المخزن إليه
+Cash Desk,الخزينة
+Money,الفلوس
+Family,العائلة
+Small Unit,وحدة صغيرة
+Unit Factor,معامل الوحدة
+Value Out,قيمة الخارج
+Value In,قيمة الداخل
+Cost Average,متوسط التكلفة
+The batch holds no documents.,الدفعة مفيهاش مستندات.
+Another library batch is being imported. Try again in a moment.,في دفعة تانية من المكتبة بتتستورد دلوقتي. جرّب بعد شوية.
+"Library connector batch of {0} documents, read {1}",دفعة موصّل المكتبة: {0} مستند، اتقرت {1}
+Changed in the library system after it was read; the copy here now follows it.,اتغيّر في نظام المكتبة بعد ما اتقرا؛ النسخة هنا بقت زيه.
+{0} is read from the library system. Change it there; the next sync brings the change.,{0} بيتقرا من نظام المكتبة. عدّله هناك والمزامنة الجاية هتجيب التعديل.
+"A library document is kept: it is the library system's record, mirrored here.",مستند المكتبة بيتحفظ: ده سجل نظام المكتبة، منسوخ هنا.
+A library document,مستند مكتبة
