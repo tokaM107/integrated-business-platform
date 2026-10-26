@@ -187,8 +187,9 @@ Cash receipts / payments use the same shape with the `RefCashReceipt` / `RefCash
 
 ## 6. What must be collected on the next authorized connection (read-only)
 
-Run `scripts/library_connector/collect_metadata.ps1` (it calls `sqlcmd -E`, Windows authentication, and writes
-text files into a folder you bring back; nothing is changed). It collects:
+Double-click `scripts/library_connector/COLLECT_METADATA.bat` on the library PC (instructions in
+`scripts/library_connector/INSTRUCTIONS.md`; Windows login, nothing installed, nothing written, one ZIP on the Desktop,
+a PASS/FAIL report; tested on canned data in the PowerShell container on 26 Oct 2026). It collects:
 
 1. `INFORMATION_SCHEMA.COLUMNS` for every table (name, type, nullability, identity, default) and the primary and
    foreign keys (`sys.key_constraints`, `sys.foreign_keys`).
@@ -205,12 +206,14 @@ text files into a folder you bring back; nothing is changed). It collects:
 4. Row counts and date ranges of `TblRefStockHead`, `TblRefStockSub`, `TblRefCashReceiptHead`,
    `TblRefCashPaymentHead`, `TblLedgerMovement`, `TblCustomerInfo`, `TblDoctorInfo`, `TblProductInfo`; counts per
    operation code and status code; max ids (the watermarks).
-5. The top 20 rows of `TblRefStockHead` and their `TblRefStockSub` lines, of the last 30 days, with names masked
-   (the script masks customer names and phones): to validate the contract against real shapes.
+5. The last 30 rows of `TblRefStockHead` with their `TblRefStockSub` lines and the last 10 cash receipts and
+   payments with their lines, with customer / vendor / user names hashed and phones, addresses, e-mails, remarks,
+   IPs and paths redacted: to validate the contract against real shapes. The rows of the users, customers,
+   employees, vendors, banks, logs and settings tables are never read (only their column names).
 6. The SQL Server version, the database collation, whether `TblRefStockHead.TxtIdRefStock` is an identity, and
    whether a `rowversion`/`ModifiedDate` column exists anywhere (it would make change detection exact).
 
-With that folder, the remaining steps are done remotely: fill `config.json` (queries, code maps), run the
+With that ZIP, the remaining steps are done remotely: fill `config.json` (queries, code maps), run the
 connector in `--dry-run` against the saved samples, then the first real batch.
 
 ## 7. What is done remotely now, what waits for the library PC

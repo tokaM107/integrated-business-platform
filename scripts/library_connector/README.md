@@ -1,17 +1,13 @@
 # Library connector (Tanmya Market, SQL Server → IMED ERP)
 
-Runs on the library's Windows PC, reads the library system's database read-only and pushes issued documents to
-the ERP. Design and findings: `docs/LIBRARY_SQLSERVER_INTEGRATION_ANALYSIS.md`.
+Design and findings: `docs/LIBRARY_SQLSERVER_INTEGRATION_ANALYSIS.md`. Everything here is read-only toward the
+library's database.
 
-1. **Next on-site session (read-only):** `powershell -ExecutionPolicy Bypass -File collect_metadata.ps1` and bring
-   back the `metadata_<date>` folder. It needs `sqlcmd` (SQL Server command line utilities) and your Windows login.
-2. **Then, remotely:** fill `config.json` from `config.example.json` with the confirmed column names, the operation
-   and status codes (`TblOperationInfo`, `TblStatusRefInfo`), the branch → cost center map, and the ERP user's
-   API key and secret (a user with the Accounts Manager role, made for the connector).
-3. **Dry run on the PC:** `python tanmya_connector.py --dry-run` writes `batch_<date>.json` and posts nothing.
-   Check it, then `python tanmya_connector.py` for the first real batch and schedule the same command every
-   10 minutes with Task Scheduler. Needs Python 3.9+, `pip install pyodbc requests`, and the Microsoft ODBC
-   Driver 17 or 18 for SQL Server.
+| File | Purpose |
+|---|---|
+| `COLLECT_METADATA.bat` + `collect_metadata.ps1` | **The one-click metadata collector** for the next visit: double-click the `.bat` on the library PC, bring back the ZIP it leaves on the Desktop. Plain instructions, English and Arabic: `INSTRUCTIONS.md`. Needs nothing installed (Windows PowerShell 5.1 and .NET's SqlClient are part of Windows); uses the Windows login; masks personal data; writes `REPORT.txt` with PASS/FAIL per step. |
+| `tests/mock_db.json`, `tests/mock_db_failing.json` | Canned database answers to run the collector without SQL Server: `pwsh -File collect_metadata.ps1 -MockFile tests/mock_db.json -OutRoot /tmp/x` (tested in the `mcr.microsoft.com/powershell` container on 26 Oct 2026; the failing fixture must end in FAILURE and exit code 1). |
+| `tanmya_connector.py` + `config.example.json` | The connector that will run on the library PC every 10 minutes once the metadata is known: SELECT only, incremental, posts to the ERP (`imed_erp.imederp.library_sync.sync.receive`) with token auth; `--dry-run` writes the batch to a file. Needs Python 3.9+, `pyodbc`, `requests`, the Microsoft ODBC Driver 17/18. |
 
-The ERP keys every document on its source id, skips an unchanged one and updates a changed one, so running the
-connector twice is harmless. The ERP posts nothing from these documents: they are a read-only mirror.
+Order of work: collect the metadata (on site, one click) → fill `config.json` from the ZIP (remote) → dry run on
+the PC → first real batch → Task Scheduler every 10 minutes.
