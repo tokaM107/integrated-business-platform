@@ -266,40 +266,6 @@ services:
     - logs:/home/frappe/frappe-bench/logs
 volumes:
   db-data:
-    name: scratchpad_db-data
   logs:
-    name: scratchpad_logs
   redis-queue-data:
-    name: scratchpad_redis-queue-data
   sites:
-    name: scratchpad_sites
-x-backend:
-  build:
-    context: ..
-    dockerfile: deploy/Containerfile
-  environment:
-    DB_HOST: db
-    DB_PORT: '3306'
-    MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
-    MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
-  image: imed-erp:${IMED_IMAGE_TAG:-coolify}
-  restart: unless-stopped
-  volumes:
-  - sites:/home/frappe/frappe-bench/sites
-  - logs:/home/frappe/frappe-bench/logs
-x-depends:
-  depends_on:
-    configurator:
-      condition: service_completed_successfully
-    db:
-      condition: service_healthy
-    redis-cache:
-      condition: service_healthy
-    redis-queue:
-      condition: service_healthy
-x-image:
-  build:
-    context: ..
-    dockerfile: deploy/Containerfile
-  image: imed-erp:${IMED_IMAGE_TAG:-coolify}
-  restart: unless-stopped
