@@ -512,3 +512,63 @@ keys generated on production (4.5 is where the user exists), and the owner's wor
 6. **Approval to create the validation instance** (Phase 3) and, after its review, **to create production and cut
    over** (Phase 4), with the day and hour.
 7. At 4.6, your new passwords typed on the server.
+
+## 14. Cutover to https://erpmohamedmamdouh.tech: the exact actions (prepared 27 Oct 2026, not executed)
+
+State at the time of writing: the restored copy of the Mac's site (set `20261027_172628-frontend`) is on the VPS
+in the Coolify application `ctxd8ypuazxrr6tjjlfr12mw`, verified (counts, passwords decrypt, XStudio dry run,
+authenticated page loads). Its scheduler is disabled; the Mac still syncs XStudio. To keep the real data off
+plain HTTP, the site is in **maintenance mode** (`bench set-maintenance-mode on`: every desk and API call answers
+503) and its **nginx container is stopped** (`docker stop frontend-ctxd8…`): the address answers nothing until
+the HTTPS domain is set. The domain `erpmohamedmamdouh.tech` is parked at Hostinger (`2.57.91.91`,
+`dns-parking.com` name servers) and serves a parking page; nothing of ours is behind it yet.
+
+### A. Owner, in Coolify (5 minutes; brings the site back, over HTTPS only)
+
+1. Application → **Domains** for service `frontend` (port 8080): replace the list with
+   `https://erpmohamedmamdouh.tech,https://www.erpmohamedmamdouh.tech,https://frontend-ctxd8ypuazxrr6tjjlfr12mw.72.62.36.46.sslip.io`.
+   Keep *Force HTTPS* on (it is). Save; Coolify restarts the stack's containers with the new labels (the stopped
+   nginx comes back; the volumes and the site are untouched).
+2. **DNS, now**: at Hostinger's DNS zone for `erpmohamedmamdouh.tech`, set `A @ → 72.62.36.46` and
+   `A www → 72.62.36.46` (TTL 300). The parking page disappears; Traefik requests the certificates as soon as the
+   names resolve to this VPS (minutes). Doing it now is safe because the site is still in maintenance mode: only
+   the login page and 503s are reachable, and only over HTTPS.
+3. Check from any browser: `https://erpmohamedmamdouh.tech/login` shows the login page with a valid certificate;
+   `http://` redirects; the sslip address redirects to HTTPS too. Tell me, and I confirm from the server
+   (`acme.json` holds the certificate; `/api/method/ping` over HTTPS).
+
+Until the cutover the site stays in maintenance mode (503 after login), so no data is served even over HTTPS.
+
+### B. Cutover (deployer, about 20 minutes; needs the owner's written GO)
+
+| # | Where | Command / action | Check |
+|---|---|---|---|
+| 1 | Mac | `docker exec frappe_docker-backend-1 bench --site frontend disable-scheduler` | `scheduler status` disabled; no Integration Import Log in status Running |
+| 2 | Mac | `docker exec frappe_docker-backend-1 bench --site frontend backup --with-files`; copy the four files out (`docker cp`), `gzip -t` / `tar -t`, one copy to the owner's drive (the independent copy), one by `scp` to `/root/imed-restore/` | checksums equal on both sides |
+| 3 | VPS | `B=$(docker ps --filter name=backend-ctxd8 --format '{{.Names}}'); export DB_ROOT_PASSWORD="$(docker exec $B printenv DB_ROOT_PASSWORD)"; FORCE=1 BACKEND=$B SET=<new set> BACKUP_DIR=/root/imed-restore HOST_NAME=https://erpmohamedmamdouh.tech /root/imed-restore/restore_site.sh` (the script of commit 6d45b56: carries the encryption key and the installed apps, sets the flags, migrates, leaves the scheduler disabled) | "stored passwords decrypt: yes"; counts equal step 2's |
+| 4 | VPS | `docker exec $B bench --site frontend execute imed_erp.setup.review_test_users.run` then `... review_test_users.disable_users --kwargs "{'users': ['marcus@abc.com','mathias@abc.com','thalia@abc.com','test@example.com','test1@example.com','test2@example.com','test3@example.com','test4@example.com',\"test'5@example.com\",'testdelete@example.com','testpassword@example.com','testperm@example.com']}"` | `{"disabled": [12 names]}` |
+| 5 | VPS | `docker exec $B bench --site frontend execute frappe.db.sql --args '["delete from tabSessions"]'` (every session copied from the Mac is dropped; everyone logs in afresh over HTTPS) | — |
+| 6 | VPS, owner typing | `docker exec -it $B bench --site frontend set-password owner@imed.local` and `... Administrator` | the owner logs in over HTTPS with the new password |
+| 7 | VPS | System Settings (desk, as owner): Allow Consecutive Login Attempts 5, Allow Login After Fail 900, Session Expiry 12:00, Login with email link off, Enable Password Policy on, Minimum Password Score 3 | saved |
+| 8 | VPS | `docker exec $B bench --site frontend execute imed_erp.imederp.xstudio.sync.dry_run` | read ≈160 / insert 0 / skip ≈116 / 1 known failure |
+| 9 | VPS | `docker exec $B bench --site frontend set-maintenance-mode off` | `https://erpmohamedmamdouh.tech/desk` loads after login |
+| 10 | owner | **GO for the switch**: staff told the new address; Mac stack stopped: `docker compose -p frappe_docker -f frappe_docker/pwd.yml stop` (not removed) | the Mac answers nothing on 8080 |
+| 11 | VPS | `docker exec $B bench --site frontend enable-scheduler` | `scheduler status` enabled; `bench doctor` 2 workers; the four paused job types still `stopped` |
+| 12 | VPS | watch two XStudio runs (10 min apart): Integration Import Log | inserted only what XStudio got since step 2; no duplicate import_key; Health Healthy or Degraded-by-the-known-row |
+| 13 | VPS | Coolify Scheduled Task `bash /home/frappe/frappe-bench/apps/imed_erp/imed_erp/ops/backup_restic.sh` with the bucket's `RESTIC_*` values; run once; then `deploy/verify_backup.sh` from the Mac or the VPS | OFFSITE OK; RECOVERY OK |
+
+Between 1 and 11 no site syncs XStudio; from 11 only the VPS does. Rollback at any point before 10: the Mac's
+scheduler back on, nothing else to undo. After 10: the Mac's stack started again and its scheduler on, the VPS
+scheduler off; both hold the same data up to step 2 plus what XStudio brought after it, which the next run of
+whichever site is live re-reads idempotently.
+
+### C. The known XStudio failure: not a blocker
+
+One XStudio booking (`b9f026fd…`, a walk-in made in XStudio without any customer account) fails on every run,
+on the Mac since 25 Oct and on the VPS copy alike. The run goes on with the other 159 rows, nothing is posted,
+and the import is idempotent. Its only effect: the log reads "Completed with Errors" and XStudio Settings' Health
+stays **Degraded** (one failure per run) instead of Healthy, which hides a real degradation. Two ways out, both
+after the cutover and both needing the owner's word: (a) in XStudio, give that booking a customer (the studio's
+staff can), after which it imports; (b) a small code change that imports a customer-less booking under the
+placeholder customer "عميل بدون رقم" with a *Note* instead of failing, so Health is Healthy when nothing else is
+wrong. (b) is a redeploy; it is not needed to go live.
