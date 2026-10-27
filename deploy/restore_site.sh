@@ -62,6 +62,11 @@ key=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['encryptio
 docker exec "$BACKEND" bench --site "$SITE" set-config encryption_key "$key" >/dev/null
 unset key
 
+# The empty site was created with frappe and erpnext only; the restored database has imed_erp installed too, and
+# the site config lists what is installed (bench execute checks it). Taken from the backup's own config.
+apps=$(python3 -c "import json,sys; print(json.dumps(json.load(open(sys.argv[1])).get('installed_apps', [])))" "$BACKUP_DIR/$SET-site_config_backup.json")
+[ "$apps" != "[]" ] && bench --site "$SITE" set-config installed_apps --parse "$apps" >/dev/null
+
 echo "production settings on the site"
 bench --site "$SITE" set-config developer_mode 0 >/dev/null
 bench --site "$SITE" set-config allow_tests 0 >/dev/null
