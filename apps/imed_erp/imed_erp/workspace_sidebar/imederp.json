@@ -6,70 +6,570 @@
  "header_icon": "hammer",
  "idx": 0,
  "items": [
-  {"child": 0, "collapsible": 1, "icon": "home", "indent": 0, "keep_closed": 0, "label": "Owner Dashboard", "link_to": "Owner Dashboard", "link_type": "Workspace", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "calendar-days", "indent": 1, "keep_closed": 0, "label": "Bookings", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "All Bookings", "link_to": "Booking", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Booking Calendar", "link_type": "URL", "url": "/desk/booking/view/calendar/default", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "IMED Halls", "link_type": "URL", "url": "/desk/booking-resource?resource_type=Hall", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Hall Bookings", "link_to": "Hall Bookings", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Studio Hour Packages", "link_to": "Studio Hour Package", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Studio Customers", "link_to": "Customer", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "store", "indent": 1, "keep_closed": 1, "label": "Libraries", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Daily Counters", "link_to": "Daily Counter Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Daily Printing", "link_to": "Daily Printing", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Paper Counters", "link_to": "Printer Reading", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "package", "indent": 1, "keep_closed": 1, "label": "Store and Stock", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Material Requests", "link_to": "Material Request", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Material Issues", "link_to": "Material Issues", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Reorder Alerts", "link_to": "Reorder Alerts", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Stock Counts", "link_to": "Stock Count", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Stock Count Variance", "link_to": "Stock Count Variance", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Damaged Stock Entries", "link_to": "Damaged Stock Entry", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Damaged Stock Sales", "link_to": "Damaged Stock Sale", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "book-open", "indent": 1, "keep_closed": 1, "label": "Doctors and Editions", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Agreements", "link_to": "Doctor Agreement", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Book Editions", "link_to": "Book Edition", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Statement", "link_to": "Doctor Statement", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctors Ledger", "link_to": "Doctor Ledger Entry", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Receivables", "link_to": "Doctor Receivables", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Doctor Debts", "link_to": "Doctor Debts", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Unsold Editions", "link_to": "Unsold Editions", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Owner Share Plan vs Actual", "link_to": "Owner Share Plan vs Actual", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "smartphone", "indent": 1, "keep_closed": 1, "label": "BA+ App", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Courses", "link_to": "App Course", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "App Subscriptions", "link_to": "App Subscription", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Platform Fees", "link_to": "Platform Fees", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Integration Status", "link_to": "Integration Status", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Import Logs", "link_to": "Integration Import Log", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "wallet", "indent": 1, "keep_closed": 1, "label": "Expenses and Cash", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense List", "link_to": "Expense", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Recurring Expenses", "link_to": "Recurring Expense", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense Report", "link_to": "Expense Report", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Inter Business Transfer", "link_to": "Inter Business Transfer", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Inter Business Transfers", "link_to": "Inter Business Transfers", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "chart-column", "indent": 1, "keep_closed": 1, "label": "Financial Reports", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Revenue by Period", "link_to": "Revenue by Period", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Profit Before and After Shared Costs", "link_to": "Profit Before and After Shared Costs", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Profit per Business", "link_to": "Profit and Loss Statement", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Cash Box Balances", "link_to": "Cash Box Balances", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Cash Movements", "link_to": "General Ledger", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Outstanding Receivables", "link_to": "Outstanding Receivables", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Who Owes Us", "link_to": "Accounts Receivable", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Stock & Paper", "link_to": "Stock Balance", "link_type": "Report", "show_arrow": 0, "type": "Link"},
-  {"child": 0, "collapsible": 1, "icon": "settings", "indent": 1, "keep_closed": 1, "label": "Settings", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Booking Resources", "link_to": "Booking Resource", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Booking Packages", "link_to": "Booking Package", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Booking Extras", "link_to": "Booking Extra", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "XStudio Settings", "link_to": "XStudio Settings", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense Categories", "link_to": "Expense Category", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Allocation Rules", "link_to": "Allocation Rule", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Expense Settings", "link_to": "Expense Settings", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Cost Settings", "link_to": "Printing Cost Settings", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Printing Machines", "link_to": "Printing Machine", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Academic Periods", "link_to": "Academic Period", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
-  {"child": 1, "collapsible": 1, "indent": 0, "keep_closed": 0, "label": "Platform Fee Tiers", "link_to": "Platform Fee Schedule", "link_type": "DocType", "show_arrow": 0, "type": "Link"}
+  {
+   "collapsible": 1,
+   "label": "Owner Dashboard",
+   "link_to": "Owner Dashboard",
+   "link_type": "Workspace",
+   "type": "Link"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "IMED Hall Bookings",
+   "link_type": "DocType",
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Hall Calendar",
+   "link_type": "URL",
+   "type": "Link",
+   "url": "/desk/booking/view/calendar/default?resource_type=Hall"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Hall Bookings List",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Booking",
+   "filters": "[[\"Booking\", \"resource_type\", \"=\", \"Hall\"]]"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "IMED Halls",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Booking Resource",
+   "filters": "[[\"Booking Resource\", \"resource_type\", \"=\", \"Hall\"]]"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Hall Bookings Report",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Hall Bookings"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Photo Studio Bookings",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Studio Calendar",
+   "link_type": "URL",
+   "type": "Link",
+   "url": "/desk/booking/view/calendar/default?resource_type=Studio%20Service"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Studio Bookings List",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Booking",
+   "filters": "[[\"Booking\", \"resource_type\", \"=\", \"Studio Service\"]]"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Studio Hour Packages",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Studio Hour Package"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Studio Customers",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Customer"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Studio Services",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Booking Resource",
+   "filters": "[[\"Booking Resource\", \"resource_type\", \"=\", \"Studio Service\"]]"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Libraries",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Daily Counters",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Daily Counter Reading"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Daily Printing",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Daily Printing"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Paper Counters",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Printer Reading"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Store and Stock",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Material Requests",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Material Request"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Material Issues",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Material Issues"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Reorder Alerts",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Reorder Alerts"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Stock Counts",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Stock Count"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Stock Count Variance",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Stock Count Variance"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Damaged Stock Entries",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Damaged Stock Entry"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Damaged Stock Sales",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Damaged Stock Sale"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Doctors and Books",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Doctor Agreements",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Doctor Agreement"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Book Editions",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Book Edition"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Doctor Statement",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Doctor Statement"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Doctors Ledger",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Doctor Ledger Entry"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Doctor Receivables",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Doctor Receivables"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Doctor Debts",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Doctor Debts"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Unsold Editions",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Unsold Editions"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Owner Share Plan vs Actual",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Owner Share Plan vs Actual"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "BA+ Courses",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "App Courses",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "App Course"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "App Subscriptions",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "App Subscription"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Platform Fees",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Platform Fees"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Accounts and Cash",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Treasury Close",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Treasury Close"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Cash Handover",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Cash Handover"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Weekly Cash Reconciliation",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Weekly Cash Reconciliation"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Cash Discrepancy",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Cash Discrepancy"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Expense List",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Expense"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Recurring Expenses",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Recurring Expense"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Inter Business Transfer",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Inter Business Transfer"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Reports",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Revenue by Period",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Revenue by Period"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Profit Before and After Shared Costs",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Profit Before and After Shared Costs"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Profit per Business",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Profit and Loss Statement"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Cash Box Balances",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Cash Box Balances"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Cash Movements",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "General Ledger"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Outstanding Receivables",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Outstanding Receivables"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Who Owes Us",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Accounts Receivable"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Expense Report",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Expense Report"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Inter Business Transfers",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Inter Business Transfers"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Stock & Paper",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Stock Balance"
+  },
+  {
+   "collapsible": 1,
+   "indent": 1,
+   "label": "Settings",
+   "link_type": "DocType",
+   "type": "Section Break",
+   "keep_closed": 1
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Booking Packages",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Booking Package"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Booking Extras",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Booking Extra"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "XStudio Settings",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "XStudio Settings"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Integration Status",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Integration Status"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Import Logs",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Integration Import Log"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Cash Close Settings",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Cash Close Settings"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Expense Categories",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Expense Category"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Allocation Rules",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Allocation Rule"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Expense Settings",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Expense Settings"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Printing Cost Settings",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Printing Cost Settings"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Printing Machines",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Printing Machine"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Academic Periods",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Academic Period"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Platform Fee Tiers",
+   "link_type": "DocType",
+   "type": "Link",
+   "link_to": "Platform Fee Schedule"
+  }
  ],
- "modified": "2026-10-26 18:00:00.000000",
+ "modified": "2026-10-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",

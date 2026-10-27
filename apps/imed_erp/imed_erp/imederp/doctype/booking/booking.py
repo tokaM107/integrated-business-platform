@@ -16,7 +16,9 @@
 # a hall booking names its rental model, and a revenue-share one its attendees, admission price, what was collected
 # and the lecturer's share (HAL-08, HAL-12). Its deposits and payments are Payment Entries into its business's cash
 # box, and Completed makes its invoice (STU-03, ACC-04: booking_accounts.py). An imported booking keeps the
-# booking system's amounts and posts nothing.
+# booking system's amounts and posts nothing. An IMED hall booking (27 Oct 2026) posts nothing by itself either:
+# the requirements (v1.2 §4.9, v1.3) never say that completing a hall booking makes its invoice, so its invoice or
+# revenue-share entry is posted only by the explicit action (Make Invoice) once the amounts were checked.
 
 from datetime import datetime, timedelta
 
@@ -103,8 +105,10 @@ class Booking(Document):
 			from imed_erp.imederp.doctype.studio_hour_package.studio_hour_package import draw
 
 			draw(self)
-		# Completed: the invoice (or the revenue-share entry), once (booking_accounts.py).
-		complete(self)
+		# Completed: the invoice (or the revenue-share entry), once (booking_accounts.py). A hall booking posts
+		# only when asked (make_booking_invoice): see the note at the top.
+		if self.resource_type != HALL or self.flags.post_requested:
+			complete(self)
 
 	def check_hour_package(self):
 		"""A session on a teacher's prepaid hours (22 Oct 2026): its exact length comes off the package while it holds
@@ -235,6 +239,9 @@ class Booking(Document):
 		if self.hall_booking_type == MAINTENANCE:
 			self.activity = (self.activity or "").strip() or _("Maintenance")
 			self.customer, self.doctor, self.course = None, None, None
+		if self.doctor and not self.customer and self.hall_booking_type != MAINTENANCE:
+			# The doctor is a customer (group طبيب): a lecture that is billed is billed to them unless a renter is named.
+			self.customer = self.doctor
 		if self.source == MANUAL and not self.customer and not self.not_billable():
 			frappe.throw(_("A billed hall booking names its customer: the renter, or the lecturer's customer record."), frappe.MandatoryError, title=_("Missing Value"))
 		if self.doctor:
@@ -411,36 +418,78 @@ class Booking(Document):
 			)
 		except frappe.QueryDeadlockError:
 			frappe.throw(_("Another booking of {0} was saved at the same moment. Save again.").format(self.resource), title=_("Save Again"))
-		# Exact instants (a booking may cross midnight), and the resource's buffer on both sides: with a buffer of
-		# 15 minutes a booking ending at 12:00 and one starting at 12:10 clash; with none, back to back is free.
-		buffer = timedelta(minutes=cint(frappe.db.get_value("Booking Resource", self.resource, "buffer_minutes")))
-		clash = frappe.db.sql(
-			"""select name, starts_at, ends_at, status from `tabBooking`
-			where resource = %(resource)s and name != %(name)s and status in %(holding)s
-			and starts_at < %(ends)s and ends_at > %(starts)s
-			order by starts_at limit 1""",
-			{
-				"resource": self.resource,
-				"name": self.name or "",
-				"holding": HOLDING,
-				"starts": get_datetime(self.starts_at) - buffer,
-				"ends": get_datetime(self.ends_at) + buffer,
-			},
-			as_dict=True,
-		)
-		if clash:
-			other = clash[0]
-			frappe.throw(
-				_("{0} is already booked from {1} to {2} ({3}, {4}){5}.").format(
-					self.resource,
-					frappe.format_value(other.starts_at, {"fieldtype": "Datetime"}),
-					frappe.format_value(other.ends_at, {"fieldtype": "Datetime"}),
-					other.name,
-					_(other.status),
-					_(" with {0} minutes kept free around each booking").format(buffer.seconds // 60) if buffer else "",
-				),
-				title=_("Already Booked"),
-			)
+		other = find_clash(self.resource, self.starts_at, self.ends_at, exclude=self.name)
+		if other:
+			frappe.throw(clash_message(self.resource, self.resource_type, other), title=_("Already Booked"))
+
+
+def find_clash(resource, starts_at, ends_at, exclude=None):
+	"""The first booking of `resource` that holds its time and overlaps [starts_at, ends_at), or None.
+
+	Exact instants (a booking may cross midnight), and the resource's buffer on both sides: with a buffer of 15
+	minutes a booking ending at 12:00 and one starting at 12:10 clash; with none, back to back is free."""
+	buffer = timedelta(minutes=cint(frappe.db.get_value("Booking Resource", resource, "buffer_minutes")))
+	rows = frappe.db.sql(
+		"""select name, starts_at, ends_at, status, activity, customer from `tabBooking`
+		where resource = %(resource)s and name != %(name)s and status in %(holding)s
+		and starts_at < %(ends)s and ends_at > %(starts)s
+		order by starts_at limit 1""",
+		{
+			"resource": resource,
+			"name": exclude or "",
+			"holding": HOLDING,
+			"starts": get_datetime(starts_at) - buffer,
+			"ends": get_datetime(ends_at) + buffer,
+		},
+		as_dict=True,
+	)
+	if rows:
+		rows[0].buffer_minutes = buffer.seconds // 60
+	return rows[0] if rows else None
+
+
+def clash_message(resource, resource_type, other):
+	"""What the reception reads when the time is taken: first the plain sentence, then which booking has it."""
+	first = _("This hall is already booked at the time you chose. Try another time.") if resource_type == HALL else _("This service is already booked at the time you chose. Try another time.")
+	return first + " " + _("{0} is already booked from {1} to {2} ({3}, {4}){5}.").format(
+		resource,
+		frappe.format_value(other.starts_at, {"fieldtype": "Datetime"}),
+		frappe.format_value(other.ends_at, {"fieldtype": "Datetime"}),
+		other.name,
+		_(other.status),
+		_(" with {0} minutes kept free around each booking").format(other.buffer_minutes) if other.buffer_minutes else "",
+	)
+
+
+@frappe.whitelist()
+def check_availability(resource, booking_date, from_time, to_time, name=None):
+	"""Is `resource` free on `booking_date` from `from_time` to `to_time` (an end before the start: the next day)?
+	Read by the booking form as the times are typed (HAL-10: the booked and free times of each hall), with the same
+	rule as the save, so what the form says and what the save does agree. Only for someone who may read bookings."""
+	frappe.has_permission("Booking", "read", throw=True)
+	if not frappe.db.exists("Booking Resource", resource):
+		frappe.throw(_("Resource {0} not found.").format(resource))
+	starts, ends = get_time(from_time), get_time(to_time)
+	if starts == ends:
+		return {"free": 0, "message": _("The booking ends at {0}, the moment it starts: it has no length.").format(to_time)}
+	starts_at = datetime.combine(getdate(booking_date), starts)
+	ends_at = datetime.combine(getdate(booking_date) + timedelta(days=1 if ends < starts else 0), ends)
+	resource_type = frappe.db.get_value("Booking Resource", resource, "resource_type")
+	other = find_clash(resource, starts_at, ends_at, exclude=name)
+	if other:
+		return {"free": 0, "message": clash_message(resource, resource_type, other), "booking": other.name}
+	return {"free": 1, "message": _("The hall is free at this time.") if resource_type == HALL else _("Free at this time.")}
+
+
+def event_title(row):
+	"""A hall: the hall, the purpose, then the doctor or the customer and the type; a studio service: the service and
+	the customer; the status, in the user's language, closes it (and gives the colour, booking_calendar.js)."""
+	if row.resource_type == HALL:
+		who = row.doctor or row.customer or ""
+		parts = [row.resource, row.activity or "", who if who != row.activity else "", _(row.hall_booking_type) if row.hall_booking_type else ""]
+	else:
+		parts = [row.resource, row.customer or row.activity or ""]
+	return " · ".join(p for p in parts if p) + f" ({_(row.status)})"
 
 
 @frappe.whitelist()
@@ -481,7 +530,7 @@ def get_events(start, end, filters=None, **kwargs):
 				holding=int(row.status in HOLDING),
 				start=starts.strftime("%Y-%m-%d %H:%M:%S"),
 				end=ends.strftime("%Y-%m-%d %H:%M:%S"),
-				title=f"{row.resource} · {row.customer or row.activity or ''} ({_(row.status)})" + (f" · {_(row.hall_booking_type)}" if row.hall_booking_type else ""),
+				title=event_title(row),
 				hall_booking_type=row.hall_booking_type,
 				doctor=row.doctor,
 				all_day=0,

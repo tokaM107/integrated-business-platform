@@ -692,7 +692,7 @@ Hall,قاعة
 Studio Service,خدمة استوديو
 Business (Cost Center),النشاط (مركز التكلفة)
 Service Item,صنف الخدمة
-Capacity,السعة
+Capacity,عدد الأماكن
 Equipment,التجهيزات
 Booking Date,تاريخ الحجز
 Hours,الساعات
@@ -748,7 +748,7 @@ The booking has not started yet; it cannot be {0}.,الحجز لسه مابدأ�
 Another booking of {0} was saved at the same moment. Save again.,حجز تاني لـ {0} اتسجل في نفس اللحظة. احفظ تاني.
 Save Again,احفظ تاني
 "{0} is already booked from {1} to {2} on {3} ({4}, {5}).",{0} محجوز من {1} لـ {2} يوم {3} ({4}، {5}).
-Already Booked,محجوز بالفعل
+Already Booked,محجوزة بالفعل
 "Imported from {0}: change it there, and the next import brings the change.",مستورد من {0}: عدّله هناك، والاستيراد الجاي هيجيب التعديل.
 Name the system the bookings come from.,اكتب اسم النظام اللي الحجوزات جاية منه.
 The row has no id from the booking system.,السطر مفيهوش رقم من نظام الحجز.
@@ -989,10 +989,10 @@ Record,تسجيل
 Recorded: {0},اتسجل: {0}
 Customer Category,فئة العميل
 "HAL-03: the category's price list (Customer Group > Default Price List) prices the booking, when it has a price.",HAL-03: قائمة أسعار الفئة (مجموعة العملاء > قائمة الأسعار الافتراضية) هي اللي بتسعّر الحجز، لو فيها سعر.
-Rental Model,نموذج التأجير
+Rental Model,نظام الإيجار
 HAL-12. Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the students and shares what it collected with the lecturer.,HAL-12. إيجار ثابت: المحاضر بيدفع سعر القاعة. اقتسام إيراد: السنتر بيحصّل من الطلبة وبيقسم اللي اتحصّل مع المحاضر.
 Fixed Rent,إيجار ثابت
-Revenue Share,اقتسام إيراد
+Revenue Share,نسبة من الإيراد
 Attendees,عدد الحاضرين
 HAL-08: how many attended.,HAL-08: عدد اللي حضروا.
 Admission Price,سعر الدخول
@@ -1068,7 +1068,7 @@ Completed and paid in full.,الحجز تم واتدفع بالكامل.
 Cancelled: {0},اتلغى: {0}
 The deposit of {0} stays with the customer until the accountant pays it back.,العربون ({0}) بيفضل رصيد للعميل لحد ما المحاسب يرجّعه.
 The customer did not come.,العميل ما جاش.
-Mark Completed,تم الحجز
+Mark Completed,انتهى الحجز
 More,المزيد
 Cancel Booking,إلغاء الحجز
 "The amount collected ({0}) goes into the cash box and is shared with the lecturer. Make sure the attendees, the collected amount and the lecturer's share are right.",المبلغ المحصَّل ({0}) هيدخل الخزينة ويتقسم مع المحاضر. اتأكد إن عدد الحاضرين والمحصَّل ونسبة المحاضر صح.
@@ -2033,18 +2033,18 @@ Changed in the library system after it was read; the copy here now follows it.,�
 {0} is read from the library system. Change it there; the next sync brings the change.,{0} بيتقرا من نظام المكتبة. عدّله هناك والمزامنة الجاية هتجيب التعديل.
 "A library document is kept: it is the library system's record, mirrored here.",مستند المكتبة بيتحفظ: ده سجل نظام المكتبة، منسوخ هنا.
 A library document,مستند مكتبة
-Hall Booking Type,نوع حجز القاعة
+Hall Booking Type,نوع الحجز
 Internal Course or Lecture,كورس أو محاضرة داخلية
 External Lecturer,محاضر خارجي
 Fixed-fee Rental,إيجار بمبلغ ثابت
 Internal Meeting,اجتماع داخلي
 Maintenance Block,صيانة / إغلاق مؤقت
-Not Billable,بدون فوترة
+Not Billable,بدون رسوم
 Confirmed,مؤكد
 Doctor / Lecturer,الدكتور / المحاضر
-Expected Attendees,الحضور المتوقع
+Expected Attendees,العدد المتوقع
 Attendees (actual),الحضور الفعلي
-Hall Capacity,سعة القاعة
+Hall Capacity,عدد الأماكن
 Ends After Midnight,ينتهي بعد منتصف الليل
 Starts At,يبدأ في
 Ends At,ينتهي في
@@ -2073,7 +2073,7 @@ Share agreed on this booking: {0}% to the lecturer. No Doctor Agreement defines 
 "Revenue share with no lecturer's share agreed yet, and no Doctor Agreement defines one: to be agreed before the booking is completed.",مشاركة إيراد من غير نسبة محاضر متفق عليها، ومفيش اتفاقية دكتور بتحددها: لازم تتحدد قبل إكمال الحجز.
 The studio confirms a booking with a deposit (Confirmed with Deposit); 'Confirmed' is for IMED's halls.,الاستوديو بيأكد الحجز بعربون (مؤكد بعربون)؛ «مؤكد» لقاعات IMED.
 Wrong Status,حالة غلط
-"{0} is already booked from {1} to {2} ({3}, {4}){5}.",{0} محجوزة بالفعل من {1} إلى {2} ({3}، {4}){5}.
+"{0} is already booked from {1} to {2} ({3}, {4}){5}.",{0} محجوزة من {1} لحد {2} ({3}، {4}){5}.
  with {0} minutes kept free around each booking, مع {0} دقيقة فاصل حوالين كل حجز
 {0} is not billable: nothing is paid on it.,{0} بدون فوترة: مفيش مدفوعات عليه.
 Nothing is invoiced: an internal use of the hall.,مفيش فاتورة: استخدام داخلي للقاعة.
@@ -2089,3 +2089,53 @@ Fixed rents (not yet invoiced),إيجارات ثابتة (لسه ما اتفوت
 Revenue shares,مشاركات إيراد
 {0} past hall booking(s) neither completed nor cancelled.,{0} حجز قاعة فات ميعاده ولا اكتمل ولا اتلغى.
 {0} revenue share(s) with no share agreed yet.,{0} مشاركة إيراد من غير نسبة متفق عليها.
+IMED Hall Bookings,حجوزات قاعات IMED
+Hall Calendar,تقويم القاعات
+Hall Bookings List,حجوزات القاعات
+Hall Bookings Report,تقرير حجوزات القاعات
+Photo Studio Bookings,حجوزات استوديو التصوير
+Studio Calendar,تقويم الاستوديو
+Studio Bookings List,حجوزات الاستوديو
+Studio Services,خدمات الاستوديو
+Doctors and Books,الدكاترة والكتب
+BA+ Courses,كورسات BA+
+Accounts and Cash,الحسابات والخزنة
+Reports,التقارير
+Booking Type,نوع الحجز
+Start Time,من الساعة
+End Time,لحد الساعة
+Purpose,الغرض من الحجز
+Customer / Renter,العميل / المستأجر
+Name,الاسم
+What the hall is used for. It decides whether the booking is billed and which fields are needed.,القاعة هتستخدم في إيه. ده اللي بيحدد لو الحجز عليه رسوم وإيه الخانات المطلوبة.
+An internal course is free unless chosen otherwise; an external lecturer rents the hall or shares the revenue.,الكورس الداخلي بدون رسوم إلا لو اختارتي غير كده؛ المحاضر الخارجي يا بيأجّر القاعة يا بياخد نسبة من الإيراد.
+"New booking, step by step",حجز جديد خطوة بخطوة
+Choose the hall (or the studio service).,اختاري القاعة (أو خدمة الاستوديو).
+"Set the day, the start and the end time: you are told at once whether it is free.",حدّدي اليوم ومن الساعة لحد الساعة: هيظهرلك فورًا لو القاعة فاضية.
+"Choose the booking type and its purpose, name the doctor or the renter, then Save: the price is worked out by itself.",اختاري نوع الحجز والغرض منه، وحدّدي الدكتور أو المستأجر، وبعدين احفظي: السعر بيتحسب لوحده.
+Then Confirm the booking; Reschedule or Cancel it from the same buttons when needed.,بعد الحفظ أكّدي الحجز، ولو احتجتي غيّري الموعد أو الغيه من نفس الزراير.
+Checking whether it is free…,بنتأكد إن الوقت ده فاضي…
+The hall is free at this time.,القاعة فاضية في الوقت ده.
+Free at this time.,الوقت ده فاضي.
+This hall is already booked at the time you chose. Try another time.,القاعة دي محجوزة بالفعل في الوقت اللي اخترته. جرّبي معاد تاني.
+This service is already booked at the time you chose. Try another time.,الخدمة دي محجوزة بالفعل في الوقت اللي اخترته. جرّبي معاد تاني.
+Fee,الرسوم
+None (not billable),لا يوجد (بدون رسوم)
+Completed. An internal use of the hall: nothing is invoiced.,الحجز انتهى. استخدام داخلي للقاعة: مفيش فاتورة.
+"Completed. The collected amount is not posted yet: check the attendees, the collected amount and the lecturer's share, then press Post the Collected Amount.",الحجز انتهى. المحصَّل لسه ماتسجلش: راجعي عدد الحضور والمبلغ المحصَّل ونسبة المحاضر، وبعدين اضغطي «تسجيل المحصَّل».
+"Completed. Its invoice is not made yet: check the price, then press Make Invoice.",الحجز انتهى. الفاتورة لسه ماتعملتش: راجعي السعر وبعدين اضغطي «عمل الفاتورة».
+Post the Collected Amount,تسجيل المحصَّل
+Post this booking's money now?,تسجيل فلوس الحجز ده دلوقتي؟
+"The amount collected ({0}) goes into the cash box and is shared with the lecturer ({1}%). Make sure the attendees, the collected amount and the lecturer's share are right.",المبلغ المحصَّل ({0}) بيدخل الخزنة وبيتقسم مع المحاضر ({1}%). اتأكدي إن عدد الحضور والمبلغ المحصَّل ونسبة المحاضر صح.
+"Nothing is posted yet. Next, check the amounts and press {0}.",لسه مفيش حاجة اتسجلت في الحسابات. الخطوة الجاية: راجعي المبالغ واضغطي «{0}».
+Book This Hall,احجزي القاعة دي
+Book This Service,احجزي الخدمة دي
+Calendar,التقويم
+Capacity not set yet: the number of attendees is not checked until it is.,عدد الأماكن لسه ماتحددش: عدد الحضور مش هيتراجع لحد ما يتحدد.
+The renter or the lecturer's customer record. Not needed for a not-billable hall booking.,المستأجر، أو سجل الدكتور كعميل. مش مطلوب لحجز بدون رسوم.
+On when the end time is earlier than the start: the booking ends on the next day.,بيتعلّم لوحده لو لحد الساعة أبكر من من الساعة: الحجز بيخلص اليوم اللي بعده.
+The doctor's own customer record (group طبيب); never a second record for the same doctor.,سجل الدكتور نفسه كعميل (مجموعة طبيب)؛ مش سجل تاني لنفس الدكتور.
+"The course this session belongs to, when it is one of the app's courses.",الكورس اللي المحاضرة دي تبعه، لو كان من كورسات التطبيق.
+Checked against the hall's capacity.,بيتراجع مع عدد أماكن القاعة.
+"Floor, building, or how to find it.",الدور أو المبنى أو إزاي توصل لها.
+"Minutes kept free before and after each booking of this resource (set-up, cleaning). 0: back-to-back bookings are allowed.",دقايق بتتساب فاضية قبل وبعد كل حجز (تجهيز، تنظيف). 0: الحجوزات ورا بعض مسموحة.

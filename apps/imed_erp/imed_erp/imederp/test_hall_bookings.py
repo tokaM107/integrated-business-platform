@@ -319,3 +319,148 @@ class IntegrationTestHallBookings(IntegrationTestCase):
 		[row] = [r for r in rows if r["name"] == booking.name]
 		self.assertEqual((row["doctor"], row["hours"], row["rent"]), (self.doctor, 2, 600))
 		self.assertEqual(row["hall_booking_type"], frappe._("External Lecturer"))
+
+	# ---------- 27 Oct 2026: finalisation (explicit posting, availability, the sidebar, the labels, the halls) ----------
+
+	def test_a_completed_hall_booking_posts_nothing_until_asked_then_posts_once(self):
+		"""The requirements never say that completing a hall booking makes its invoice: Completed posts nothing; the
+		explicit action (Make Invoice) posts it, once."""
+		from imed_erp.imederp.booking_accounts import make_booking_invoice
+
+		before = self.counts()
+		booking = self.book(date=PAST, start="09:00", end="11:00")
+		booking.status = "Completed"
+		booking.save()
+		booking.reload()
+		self.assertEqual((booking.status, booking.sales_invoice, self.counts()), ("Completed", None, before))
+		result = make_booking_invoice(booking.name)
+		self.assertTrue(result.sales_invoice)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", result.sales_invoice, ["grand_total", "docstatus"]), (600, 1))
+		make_booking_invoice(booking.name)
+		self.assertEqual(frappe.db.count("Sales Invoice", {"custom_booking": booking.name, "docstatus": 1}), 1)
+		# The studio keeps the 20 Oct behaviour: its invoice is made on completion.
+		studio = self.book(resource=self.studio_room, kind=None, activity=None, responsible_name=None, responsible_phone=None, date=PAST, start="12:00", end="13:00")
+		studio.status = "Completed"
+		studio.save()
+		self.assertTrue(frappe.db.get_value("Booking", studio.name, "sales_invoice"))
+
+	def test_the_form_is_told_whether_the_hall_is_free_with_the_owner_s_words(self):
+		from imed_erp.imederp.doctype.booking.booking import check_availability
+
+		booking = self.book(start="10:00", end="12:00")
+		free = check_availability(self.hall, DAY, "12:00", "14:00")
+		taken = check_availability(self.hall, DAY, "11:00", "13:00")
+		self.assertEqual((free["free"], taken["free"], taken["booking"]), (1, 0, booking.name))
+		self.assertTrue(taken["message"].startswith(frappe._("This hall is already booked at the time you chose. Try another time.")))
+		self.assertEqual(frappe._("This hall is already booked at the time you chose. Try another time.", "ar"), "القاعة دي محجوزة بالفعل في الوقت اللي اخترته. جرّبي معاد تاني.")
+		# The same booking, edited, is not its own clash; another hall is free; across midnight is understood.
+		self.assertEqual(check_availability(self.hall, DAY, "10:00", "12:00", name=booking.name)["free"], 1)
+		self.assertEqual(check_availability(self.hall_b, DAY, "10:00", "12:00")["free"], 1)
+		self.assertEqual(check_availability(self.hall, DAY, "23:00", "01:00")["free"], 1)
+		self.assertEqual(check_availability(self.hall, DAY, "10:00", "10:00")["free"], 0)
+		# The save refuses the clash with the same first sentence.
+		self.assertRaisesRegex(frappe.ValidationError, "already booked at the time", self.book, start="11:00", end="13:00")
+		frappe.set_user(HR)
+		try:
+			self.assertRaises(frappe.PermissionError, check_availability, self.hall, DAY, "12:00", "14:00")
+		finally:
+			frappe.set_user("Administrator")
+
+	def test_a_lecture_is_billed_to_its_doctor_unless_a_renter_is_named(self):
+		lecture = self.book(kind="External Lecturer", rental_model="Fixed Rent", doctor=self.doctor, customer=None)
+		self.assertEqual(lecture.customer, self.doctor)
+		rented = self.book(kind="External Lecturer", rental_model="Fixed Rent", doctor=self.doctor, customer=self.renter, start="13:00", end="14:00")
+		self.assertEqual(rented.customer, self.renter)
+		block = self.book(kind="Maintenance Block", doctor=self.doctor, customer=None, start="15:00", end="16:00")
+		self.assertEqual((block.customer, block.doctor), (None, None))
+
+	def test_the_calendar_names_the_hall_the_purpose_and_the_doctor(self):
+		self.book(kind="External Lecturer", rental_model="Fixed Rent", doctor=self.doctor, start="10:00", end="12:00")
+		self.book(kind="Maintenance Block", customer=None, activity=None, start="13:00", end="14:00")
+		events = [e for e in get_events(f"{DAY} 00:00:00", f"{add_days(DAY, 1)} 00:00:00", filters={"resource": self.hall}) if e.resource == self.hall]
+		titles = [e.title for e in sorted(events, key=lambda e: e.start)]
+		status = f" ({frappe._('Tentative')})"
+		self.assertEqual(titles[0], f"{self.hall} · Pathology lecture · {self.doctor} · {frappe._('External Lecturer')}" + status)
+		self.assertEqual(titles[1], f"{self.hall} · {frappe._('Maintenance')} · {frappe._('Maintenance Block')}" + status)
+		self.assertEqual({e.hall_booking_type for e in events}, {"External Lecturer", "Maintenance Block"})
+
+	def test_the_sidebar_is_grouped_by_workflow_with_no_dead_link_and_no_duplicate(self):
+		"""The sidebar file (workspace_sidebar/imederp.json): the halls apart from the studio, every link to a page
+		that exists, each page once per filter, Arabic for every label, and the same items on the site."""
+		import json
+		import os
+
+		import imed_erp
+
+		path = os.path.join(os.path.dirname(imed_erp.__file__), "workspace_sidebar", "imederp.json")
+		items = json.load(open(path, encoding="utf-8"))["items"]
+		sections = [i["label"] for i in items if i["type"] == "Section Break"]
+		self.assertEqual(sections[:2], ["IMED Hall Bookings", "Photo Studio Bookings"])
+		self.assertEqual(sections[-2:], ["Reports", "Settings"])
+		labels = [i["label"] for i in items]
+		self.assertEqual(len(labels), len(set(labels)), "duplicate labels")
+		targets = []
+		for item in items:
+			if item["type"] != "Link":
+				continue
+			self.assertNotEqual(frappe._(item["label"], "ar"), item["label"], item["label"])
+			if item["link_type"] == "URL":
+				self.assertTrue(item["url"].startswith("/desk/booking/view/calendar/"), item["url"])
+				targets.append(item["url"])
+				continue
+			exists = {"DocType": lambda n: frappe.db.exists("DocType", n), "Report": lambda n: frappe.db.exists("Report", {"name": n, "disabled": 0}), "Workspace": lambda n: frappe.db.exists("Workspace", n)}
+			self.assertTrue(exists[item["link_type"]](item["link_to"]), f"{item['label']} -> {item['link_type']} {item['link_to']}")
+			targets.append((item["link_type"], item["link_to"], item.get("filters")))
+			if item.get("filters"):
+				[[doctype, field, operator, value]] = json.loads(item["filters"])
+				self.assertEqual(doctype, item["link_to"])
+				self.assertTrue(frappe.get_meta(doctype).has_field(field), field)
+		self.assertEqual(len(targets), len(set(targets)), "the same page twice with the same filter")
+		halls = [i["label"] for i in items[items.index(next(i for i in items if i["label"] == "IMED Hall Bookings")) + 1 :]][:4]
+		self.assertEqual(halls, ["Hall Calendar", "Hall Bookings List", "IMED Halls", "Hall Bookings Report"])
+		# The site carries the same sidebar (bench migrate syncs the file).
+		on_site = frappe.get_all("Workspace Sidebar Item", filters={"parent": "ImedERP"}, pluck="label", order_by="idx")
+		self.assertEqual(on_site, labels)
+
+	def test_the_arabic_labels_the_owner_asked_for(self):
+		wanted = {
+			"Hall Capacity": "عدد الأماكن",
+			"Start Time": "من الساعة",
+			"End Time": "لحد الساعة",
+			"Booking Type": "نوع الحجز",
+			"Expected Attendees": "العدد المتوقع",
+			"Fixed Rent": "إيجار ثابت",
+			"Revenue Share": "نسبة من الإيراد",
+			"Not Billable": "بدون رسوم",
+			"IMED Hall Bookings": "حجوزات قاعات IMED",
+			"Photo Studio Bookings": "حجوزات استوديو التصوير",
+		}
+		for english, arabic in wanted.items():
+			self.assertEqual(frappe._(english, "ar"), arabic, english)
+		meta = frappe.get_meta("Booking")
+		self.assertEqual((meta.get_label("from_time"), meta.get_label("to_time"), meta.get_label("hall_booking_type")), ("Start Time", "End Time", "Booking Type"))
+
+	def test_the_requirements_halls_are_seeded_by_name_only_and_never_twice(self):
+		from imed_erp.imederp import setup_halls
+
+		self.assertEqual(setup_halls.HALL_NAMES, ["قاعة 1", "قاعة 3", "قاعة 4", "قاعة 5", "قاعة 6", "قاعة 7", "قاعة 8"])
+		plan = setup_halls.plan()
+		self.assertEqual([p["resource_name"] for p in plan], setup_halls.HALL_NAMES)
+		for p in plan:
+			# Nothing invented: no capacity, no equipment, no location, no price of its own; and without a capacity
+			# (question 15) nothing is written.
+			self.assertEqual((p["record"]["capacity"], p["record"]["equipment"], p["record"]["location"], p["record"]["cost_center"]), (0, None, None, HALLS))
+			self.assertIn(p["action"], ("wait (capacity unknown)", "skip (exists)"))
+		before = frappe.db.count("Booking Resource")
+		self.assertEqual(setup_halls.run(), [])
+		self.assertEqual(frappe.db.count("Booking Resource"), before)
+		# With an answer (inside this test's savepoint, rolled back): that hall only, and never twice.
+		if plan[0]["action"] == "wait (capacity unknown)":
+			answered = {setup_halls.HALL_NAMES[0]: 40}
+			self.assertEqual(setup_halls.run(capacities=answered, dry_run=True), [setup_halls.HALL_NAMES[0]])
+			self.assertEqual(frappe.db.count("Booking Resource"), before)
+			frappe.get_doc(setup_halls.plan(answered)[0]["record"]).insert()
+			self.assertEqual(frappe.db.count("Booking Resource"), before + 1)
+			again = setup_halls.plan(answered)
+			self.assertEqual((again[0]["action"], again[1]["action"]), ("skip (exists)", "wait (capacity unknown)"))
+			self.assertEqual(setup_halls.run(capacities=answered, dry_run=True), [])

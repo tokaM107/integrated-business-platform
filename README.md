@@ -840,7 +840,32 @@ Review**: no Doctor Agreement defines a hall share, and none is assumed.
   this month's bookings, hours, cancellations, fixed rents not yet invoiced, revenue shares, and what needs action:
   past bookings neither completed nor cancelled, shares not agreed); the sidebar lists **IMED Halls** (the hall
   resources) and the **Hall Bookings** report, which now shows the type, the doctor and the hours.
-- Tests: `test_hall_bookings` (26), on top of `test_booking` and `test_booking_pricing`.
+- **Posting is explicit (27 Oct 2026)**: completing a hall booking posts nothing. The requirements (v1.2 §4.9,
+  v1.3 amendments) never say that completing a hall booking makes its invoice, so *Mark Completed* only records
+  that the session happened; the invoice (fixed rent, extras) or the revenue-share entry is posted by the *Make
+  Invoice* / *Post the Collected Amount* button, by someone who may write the booking, after the amounts were
+  checked (`booking_accounts.complete` runs for a hall only from `make_booking_invoice`). The studio keeps the 20 Oct
+  behaviour (its invoice on completion). Re-enabling automatic posting for halls is the owner's decision.
+- **The form asks only what the type needs** (`booking.js apply_layout`): the type first; then the purpose, the
+  responsible person and, per type, the doctor, the course, the expected attendees (and the capacity, once the hall
+  has one); the rental model only where the type leaves a choice (internal course, external lecturer); nothing about
+  money on an internal use or a maintenance block. A doctor named on a lecture is its customer unless a renter is
+  named. As the day and times are typed, the form says whether the hall is free (`booking.check_availability`, the
+  same rule as the save), and a clash is refused with the owner's words: «القاعة دي محجوزة بالفعل في الوقت اللي
+  اخترته. جرّبي معاد تاني.», followed by which booking has the time.
+- **The halls' master data**: the requirements' table names seven halls (قاعة 1, 3, 4, 5, 6, 7, 8) with their
+  capacity, equipment and hourly price left blank (question 15, Nour). `imederp/setup_halls.py` seeds the names,
+  idempotently, but writes a hall only once its capacity is given (`plan` shows the seven records and what is
+  missing; nothing is invented). No hall exists on the site yet.
+- The sidebar (`workspace_sidebar/imederp.json`, 27 Oct 2026) is grouped by workflow, in Egyptian Arabic through
+  `translations/ar.csv`: لوحة المالك; حجوزات قاعات IMED (the hall calendar, the hall bookings list, the halls, the
+  report); حجوزات استوديو التصوير (the studio calendar, list, hour packages, customers, services); المكتبات;
+  المخزن; الدكاترة والكتب; كورسات BA+; الحسابات والخزنة (the daily close, the hand-over, the weekly reconciliation,
+  discrepancies, expenses, transfers); التقارير; الإعدادات. Lists are filtered links (the hall list is the Booking
+  list on `resource_type = Hall`), so nothing is duplicated; Frappe shows each user only the pages they may read,
+  and `imed_desk_fixes.js` hides the calendar URLs from anyone who may not read bookings.
+- Tests: `test_hall_bookings` (33), on top of `test_booking` and `test_booking_pricing`; the browser journey
+  `tests/e2e/halls_27oct.js` (screenshots in `docs/hall-screens/`).
 
 #### Price and money (HAL-03, HAL-08, HAL-11, HAL-12, STU-03..05, ACC-04)
 

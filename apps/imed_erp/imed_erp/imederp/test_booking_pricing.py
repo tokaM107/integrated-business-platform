@@ -246,9 +246,13 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 			frappe.set_user("Administrator")
 
 	def complete(self, booking, **values):
+		"""Completed, then posted: the studio posts on completion; a hall posts only when asked (27 Oct 2026), so the
+		explicit action follows, as the button on the form does."""
 		booking.reload()
 		booking.update({"status": "Completed", **values})
 		booking.save()
+		if booking.resource_type == "Hall":
+			make_booking_invoice(booking.name)
 		booking.reload()
 		return booking
 

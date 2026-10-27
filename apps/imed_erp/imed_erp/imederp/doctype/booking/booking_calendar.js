@@ -6,8 +6,10 @@
 // Bookings list does, so each user sees only the bookings they may read; the list's filters (a resource, a status)
 // apply here too.
 //
-// Each booking shows its resource, customer and status, by colour: a booking that holds its time is solid, a
-// cancelled one or a no-show (which free their time) faded and struck through. Bookings at the same time sit side by
+// Each booking shows its hall, purpose, doctor or customer and type (booking.get_events), and its status by colour:
+// a booking that holds its time is solid, a cancelled one or a no-show (which free their time) faded and struck
+// through, a maintenance block hatched. The list's filters (hall, status, dates) apply here too, and the sidebar
+// opens it on the halls or on the studio (?resource_type=...). Bookings at the same time sit side by
 // side, so an occupied slot is seen at once; two of the same resource overlapping (refused on saving, so only from a
 // change made around it) are red. Bookings are moved on their form, where the overlap check runs, not by dragging.
 
@@ -42,8 +44,9 @@ frappe.views.calendar["Booking"] = {
 			event.editable = false;
 			event.classNames = [
 				event.holding ? "imed-booking-holding" : "imed-booking-free",
-				event.conflict ? "imed-booking-conflict" : "",
-			].filter(Boolean);
+					event.conflict ? "imed-booking-conflict" : "",
+					event.hall_booking_type === "Maintenance Block" ? "imed-booking-maintenance" : "",
+				].filter(Boolean);
 			return event;
 		});
 	},
@@ -86,9 +89,10 @@ frappe.views.calendar["Booking"] = {
 			eventsSet: () => me.show_state(),
 			eventDidMount(info) {
 				const p = info.event.extendedProps;
-				info.el.title = [
-					p.resource,
-					p.customer,
+					info.el.title = [
+						p.resource,
+						p.hall_booking_type ? __(p.hall_booking_type) : "",
+						p.doctor || p.customer,
 					frappe.datetime.str_to_user(info.event.startStr.slice(0, 10)),
 					`${info.event.startStr.slice(11, 16)} – ${info.event.endStr.slice(11, 16)}`,
 					__(p.status),
@@ -122,7 +126,8 @@ frappe.views.calendar["Booking"] = {
 						([status, color]) =>
 							`<span style="margin-inline-end: 0.75rem"><span class="indicator-pill ${color}">${__(status)}</span></span>`
 					)
-					.concat(`<span class="indicator-pill red">${__("Overlap")}</span>`)
+						.concat(`<span style="margin-inline-end: 0.75rem"><span class="indicator-pill gray imed-booking-maintenance">${__("Maintenance")}</span></span>`)
+						.concat(`<span class="indicator-pill red">${__("Overlap")}</span>`)
 					.join("")
 			)
 			.insertBefore(this.$cal);
@@ -130,7 +135,8 @@ frappe.views.calendar["Booking"] = {
 		if (!document.getElementById("imed-booking-calendar-css")) {
 			$(`<style id="imed-booking-calendar-css">
 				.imed-booking-free { opacity: 0.55; text-decoration: line-through; }
-				.imed-booking-conflict { border-inline-start: 3px solid var(--red-500); font-weight: 600; }
+					.imed-booking-conflict { border-inline-start: 3px solid var(--red-500); font-weight: 600; }
+					.imed-booking-maintenance { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(0,0,0,0.12) 6px 12px); }
 				.imed-booking-legend .indicator-pill { margin-bottom: 4px; }
 				@media (max-width: 767px) {
 					#fc-calendar-wrapper .fc-header-toolbar { flex-wrap: wrap; gap: 8px; }

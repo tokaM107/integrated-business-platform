@@ -1,0 +1,344 @@
+[
+ {
+  "area": "sidebar",
+  "check": "owner: Arabic, right to left",
+  "ok": true,
+  "evidence": "{\"lang\":\"ar\",\"dir\":\"rtl\",\"user\":\"owner@imed.local\"}"
+ },
+ {
+  "area": "sidebar",
+  "check": "owner: labels are Arabic (no English label left)",
+  "ok": true,
+  "evidence": "لوحة المالك | حجوزات قاعات IMED | تقويم القاعات | حجوزات القاعات | قاعات IMED | تقرير حجوزات القاعات | حجوزات استوديو التصوير | تقويم الاستوديو | حجوزات الاستوديو | باقات ساعات الاستوديو | عملاء الاستوديو | خدمات الاستوديو | المكتبات | عدادات اليوم | طباعة اليوم | عدادات الورق | المخزن | طلبات الخامات | صرف الخامات | تنبيهات إعادة الطلب | الجرد | فروقات الجرد (تقرير) | تسجيلات التالف | مبيعات التا"
+ },
+ {
+  "area": "sidebar",
+  "check": "owner: the halls and the studio are separate groups",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED … حجوزات استوديو التصوير"
+ },
+ {
+  "area": "sidebar",
+  "check": "owner: no duplicate label",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "ui",
+  "check": "owner: no script error",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "owner: screenshot",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/sidebar-owner.png"
+ },
+ {
+  "area": "dashboard",
+  "check": "owner: the hall card is on the dashboard, in Arabic",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/owner-dashboard-halls.png"
+ },
+ {
+  "area": "sidebar",
+  "check": "owner: all 61 sidebar links open",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "nour: Arabic, right to left",
+  "ok": true,
+  "evidence": "{\"lang\":\"ar\",\"dir\":\"rtl\",\"user\":\"nour@imed.local\"}"
+ },
+ {
+  "area": "sidebar",
+  "check": "nour: labels are Arabic (no English label left)",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED | تقويم القاعات | حجوزات القاعات | قاعات IMED | تقرير حجوزات القاعات | حجوزات استوديو التصوير | تقويم الاستوديو | حجوزات الاستوديو | باقات ساعات الاستوديو | عملاء الاستوديو | خدمات الاستوديو | المكتبات | عدادات اليوم | عدادات الورق | المخزن | الجرد | فروقات الجرد (تقرير) | تسجيلات التالف | مبيعات التالف بالوزن | الدكاترة والكتب | إصدارات الكتب | كورسات BA+ | الكورسات | اشتراكات ا"
+ },
+ {
+  "area": "sidebar",
+  "check": "nour: the halls and the studio are separate groups",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED … حجوزات استوديو التصوير"
+ },
+ {
+  "area": "sidebar",
+  "check": "nour: no duplicate label",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "ui",
+  "check": "nour: no script error",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "nour: screenshot",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/sidebar-nour.png"
+ },
+ {
+  "area": "sidebar",
+  "check": "gilan: Arabic, right to left",
+  "ok": true,
+  "evidence": "{\"lang\":\"ar\",\"dir\":\"rtl\",\"user\":\"gilan@imed.local\"}"
+ },
+ {
+  "area": "sidebar",
+  "check": "gilan: labels are Arabic (no English label left)",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED | تقويم القاعات | حجوزات القاعات | قاعات IMED | تقرير حجوزات القاعات | حجوزات استوديو التصوير | تقويم الاستوديو | حجوزات الاستوديو | باقات ساعات الاستوديو | عملاء الاستوديو | خدمات الاستوديو | المكتبات | عدادات اليوم | عدادات الورق | المخزن | الجرد | فروقات الجرد (تقرير) | تسجيلات التالف | مبيعات التالف بالوزن | الدكاترة والكتب | إصدارات الكتب | كورسات BA+ | الكورسات | اشتراكات ا"
+ },
+ {
+  "area": "sidebar",
+  "check": "gilan: the halls and the studio are separate groups",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED … حجوزات استوديو التصوير"
+ },
+ {
+  "area": "sidebar",
+  "check": "gilan: no duplicate label",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "ui",
+  "check": "gilan: no script error",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "gilan: screenshot",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/sidebar-gilan.png"
+ },
+ {
+  "area": "sidebar",
+  "check": "accountant: Arabic, right to left",
+  "ok": true,
+  "evidence": "{\"lang\":\"ar\",\"dir\":\"rtl\",\"user\":\"accountant@imed.local\"}"
+ },
+ {
+  "area": "sidebar",
+  "check": "accountant: labels are Arabic (no English label left)",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED | تقويم القاعات | حجوزات القاعات | قاعات IMED | تقرير حجوزات القاعات | حجوزات استوديو التصوير | تقويم الاستوديو | حجوزات الاستوديو | باقات ساعات الاستوديو | عملاء الاستوديو | خدمات الاستوديو | المكتبات | عدادات اليوم | طباعة اليوم | عدادات الورق | المخزن | الجرد | فروقات الجرد (تقرير) | تسجيلات التالف | مبيعات التالف بالوزن | الدكاترة والكتب | اتفاقيات الأطباء | إصدارات الكتب | ك"
+ },
+ {
+  "area": "sidebar",
+  "check": "accountant: the halls and the studio are separate groups",
+  "ok": true,
+  "evidence": "حجوزات قاعات IMED … حجوزات استوديو التصوير"
+ },
+ {
+  "area": "sidebar",
+  "check": "accountant: no duplicate label",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "ui",
+  "check": "accountant: no script error",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "accountant: screenshot",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/sidebar-accountant.png"
+ },
+ {
+  "area": "sidebar",
+  "check": "hr: Arabic, right to left",
+  "ok": true,
+  "evidence": "{\"lang\":\"ar\",\"dir\":\"rtl\",\"user\":\"hr@imed.local\"}"
+ },
+ {
+  "area": "sidebar",
+  "check": "hr: labels are Arabic (no English label left)",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "hr: sees neither the hall nor the studio booking groups' pages",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "hr: no duplicate label",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "ui",
+  "check": "hr: no script error",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "sidebar",
+  "check": "hr: screenshot",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/sidebar-hr.png"
+ },
+ {
+  "area": "demo",
+  "check": "a demo hall exists on the demo site (never on frontend)",
+  "ok": true,
+  "evidence": "قاعة تجريبية (تجريبي)"
+ },
+ {
+  "area": "halls",
+  "check": "the halls list shows capacity and location",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-halls-list.png"
+ },
+ {
+  "area": "halls",
+  "check": "a hall offers Book This Hall and Calendar",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-hall-form.png"
+ },
+ {
+  "area": "booking",
+  "check": "a new booking shows the steps",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-steps.png"
+ },
+ {
+  "area": "booking",
+  "check": "the form says the hall is free as the times are typed",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-free.png"
+ },
+ {
+  "area": "booking",
+  "check": "labels: من الساعة / لحد الساعة / نوع الحجز",
+  "ok": true,
+  "evidence": "القاعة أو الخدمة, تاريخ الحجز, من الساعة, لحد الساعة, الساعات, نوع الحجز, الباقة, خدمات إضافية, الحالة, ملاحظات"
+ },
+ {
+  "area": "booking",
+  "check": "before a type is chosen, the doctor/course/attendees and the rental model are not shown",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "booking",
+  "check": "an internal course shows the doctor, the course, the expected attendees and the capacity, and hides the price",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-internal-course.png"
+ },
+ {
+  "area": "booking",
+  "check": "saved: Tentative, not billable, no price, with the Confirm button",
+  "ok": true,
+  "evidence": "BOOK-2026-00006; ../../docs/hall-screens/demo-booking-saved.png"
+ },
+ {
+  "area": "booking",
+  "check": "Confirm Booking → مؤكد (no deposit)",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-confirmed.png"
+ },
+ {
+  "area": "money",
+  "check": "confirming posts no invoice",
+  "ok": true,
+  "evidence": "0"
+ },
+ {
+  "area": "booking",
+  "check": "an overlapping time is announced before saving, with the owner's words",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-clash-live.png"
+ },
+ {
+  "area": "booking",
+  "check": "the save is refused with the same message",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-clash-refused.png"
+ },
+ {
+  "area": "booking",
+  "check": "Reschedule opens a dialog with the date and times",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-reschedule.png"
+ },
+ {
+  "area": "booking",
+  "check": "rescheduled to 14:00–16:00, still confirmed",
+  "ok": true,
+  "evidence": "[\"14:00:00\",\"16:00:00\",\"Confirmed\"]"
+ },
+ {
+  "area": "booking",
+  "check": "cancelled with its reason",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-booking-cancelled.png"
+ },
+ {
+  "area": "booking",
+  "check": "a cancelled booking no longer occupies its time",
+  "ok": true,
+  "evidence": "{\"free\":1,\"message\":\"القاعة فاضية في الوقت ده.\"}"
+ },
+ {
+  "area": "money",
+  "check": "the whole journey posted nothing",
+  "ok": true,
+  "evidence": "[0,0,0]"
+ },
+ {
+  "area": "calendar",
+  "check": "the hall calendar shows the hall, the purpose, the doctor and the status, and the Arabic legend",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-hall-calendar.png"
+ },
+ {
+  "area": "list",
+  "check": "the hall bookings list (filtered from the sidebar)",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-hall-bookings-list.png"
+ },
+ {
+  "area": "ui",
+  "check": "nour: no script error through the journey",
+  "ok": true,
+  "evidence": ""
+ },
+ {
+  "area": "permissions",
+  "check": "gilan (studio) sees no hall booking in the halls' list",
+  "ok": true,
+  "evidence": "0 rows; ../../docs/hall-screens/demo-gilan-hall-list-empty.png"
+ },
+ {
+  "area": "permissions",
+  "check": "gilan may not book a hall",
+  "ok": true,
+  "evidence": "{\"ok\":false,\"exc\":\"[object Object]\"}"
+ },
+ {
+  "area": "dashboard",
+  "check": "owner: the hall card shows today's booking",
+  "ok": true,
+  "evidence": "../../docs/hall-screens/demo-owner-dashboard-halls.png"
+ },
+ {
+  "area": "ui",
+  "check": "the booking form fits a phone (390 px)",
+  "ok": true,
+  "evidence": "overflow 0px; ../../docs/hall-screens/demo-booking-phone.png"
+ }
+]

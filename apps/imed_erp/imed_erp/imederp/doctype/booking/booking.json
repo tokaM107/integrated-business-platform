@@ -137,7 +137,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Customer",
+   "label": "Customer / Renter",
    "options": "Customer",
    "reqd": 0,
    "mandatory_depends_on": "eval:!(doc.resource_type == 'Hall' && doc.rental_model == 'Not Billable')"
@@ -159,14 +159,14 @@
    "fieldname": "from_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "From",
+   "label": "Start Time",
    "reqd": 1
   },
   {
    "fieldname": "to_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "To",
+   "label": "End Time",
    "reqd": 1
   },
   {
@@ -192,28 +192,28 @@
   {
    "fieldname": "hall_booking_type",
    "fieldtype": "Select",
-   "label": "Hall Booking Type",
+   "label": "Booking Type",
    "options": "\nInternal Course or Lecture\nExternal Lecturer\nFixed-fee Rental\nRevenue Share\nInternal Meeting\nMaintenance Block",
    "depends_on": "eval:doc.resource_type == 'Hall'",
    "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
    "in_standard_filter": 1,
    "in_list_view": 1,
-   "description": "What the hall is used for. Fixed-fee Rental and Revenue Share set the rental model; an internal meeting or a maintenance block is never billed; an external lecturer is either rented the hall or shares the revenue."
+   "description": "What the hall is used for. It decides whether the booking is billed and which fields are needed."
   },
   {
-   "depends_on": "eval:doc.resource_type == 'Hall'",
-   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
+   "depends_on": "eval:doc.resource_type == 'Hall' && ['Internal Course or Lecture', 'External Lecturer'].includes(doc.hall_booking_type)",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall' && !doc.hall_booking_type",
    "fieldname": "rental_model",
    "fieldtype": "Select",
    "label": "Rental Model",
    "options": "\nFixed Rent\nRevenue Share\nNot Billable",
-   "description": "Fixed Rent: the hall's price. Revenue Share: a share of what is collected at the door. Not Billable: an internal course, meeting or maintenance; nothing is priced or invoiced."
+   "description": "An internal course is free unless chosen otherwise; an external lecturer rents the hall or shares the revenue."
   },
   {
    "description": "The lecture, course or event.",
    "fieldname": "activity",
    "fieldtype": "Data",
-   "label": "Activity",
+   "label": "Purpose",
    "mandatory_depends_on": "eval:doc.resource_type == 'Hall' && doc.hall_booking_type != 'Maintenance Block'"
   },
   {
@@ -843,7 +843,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-24 19:00:00.000000",
+ "modified": "2026-10-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",

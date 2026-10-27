@@ -25,7 +25,7 @@
    "fieldname": "resource_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Resource Name",
+   "label": "Name",
    "reqd": 1,
    "unique": 1
   },
@@ -72,7 +72,8 @@
    "fieldname": "capacity",
    "fieldtype": "Int",
    "label": "Capacity",
-   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
+   "in_list_view": 1
   },
   {
    "description": "What it is equipped with (HAL-01): screen, sound, smart board...",
@@ -84,7 +85,8 @@
    "fieldname": "location",
    "fieldtype": "Data",
    "label": "Location",
-   "description": "Floor, building, or how to find it."
+   "description": "Floor, building, or how to find it.",
+   "in_list_view": 1
   },
   {
    "fieldname": "buffer_minutes",
@@ -110,7 +112,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-18 14:00:00.000000",
+ "modified": "2026-10-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking Resource",
