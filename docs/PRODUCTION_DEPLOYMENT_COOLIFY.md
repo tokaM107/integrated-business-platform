@@ -29,7 +29,7 @@ the library's `.exe`, `.rar` and Generate-Scripts `.html` files and `tests/e2e/p
 
 **The development stack** is `frappe_docker/pwd.yml` (the app bind-mounted, passwords `admin`, port 8080 on every
 interface, `developer_mode` and `allow_tests` on). It stays what it is: the development stack. The production
-stack is `deploy/compose.coolify.yaml` (section 2).
+stack is `compose.coolify.yaml` (section 2).
 
 **The site `frontend`** (what is migrated): database 79 MB (1.7 MB compressed), files 5 MB. Business records:
 113 bookings (XStudio's, imported), 50 customers, 14 studio hour packages, 7 booking resources (XStudio's rooms
@@ -79,7 +79,7 @@ Already met: Ubuntu, Docker, Coolify, 4 vCPU, 16 GB, 193 GB. To do before the ER
 
 ## 2. Production container configuration (deliverable 2)
 
-`deploy/compose.coolify.yaml`: the official frappe_docker production layout (`frappe_docker/compose.yaml` with the
+`compose.coolify.yaml`: the official frappe_docker production layout (`frappe_docker/compose.yaml` with the
 `mariadb`, `redis` and `noproxy` overrides) flattened into one file, with:
 
 | Service | Image | Role | Health |
@@ -119,7 +119,7 @@ image's own.
 # on any machine with Docker, from the repository root (Coolify does the same on the server):
 docker build -f deploy/Containerfile -t imed-erp:test .
 # or exactly as Coolify runs it (project directory = repository root):
-DB_ROOT_PASSWORD=x docker compose --project-directory . -f deploy/compose.coolify.yaml build
+DB_ROOT_PASSWORD=x docker compose --project-directory . -f compose.coolify.yaml build
 ```
 
 Built on the Mac on 27 Oct 2026 in 10 seconds on top of the cached base (2.88 GB; arm64 there, amd64 on the server,
@@ -135,8 +135,8 @@ In Coolify (https://<the VPS>:8000, or the tunnel):
    for making it private later). **Branch**: `production` (section 11: created from the approved commit, never
    pushed by this preparation). **Automatic deployment on push: off** (deployments are started by hand, after a
    backup).
-3. **Build pack**: Docker Compose. **Base directory** `/`. **Docker Compose location** `/deploy/compose.coolify.yaml`.
-   Coolify runs `docker compose --project-directory <repo root> -f deploy/compose.coolify.yaml`, so the build
+3. **Build pack**: Docker Compose. **Base directory** `/`. **Docker Compose location** `/compose.coolify.yaml`.
+   Coolify runs `docker compose --project-directory <repo root> -f compose.coolify.yaml`, so the build
    context in the file is `.` (the repository root), not `..`; with `..` the first deploy of 27 Oct 2026 failed with
    `lstat /artifacts/deploy: no such file`. The file is flat (no YAML anchors) because Coolify parses it with its own reader; it was generated from the
    anchored version with `docker compose config --no-interpolate` and re-checked on the rehearsal stack.
@@ -346,7 +346,7 @@ Run on the server after the restore (steps 3–6 of section 5), then again after
 | Repository and branch state | `feature/imed-hall-bookings` = `ff1e6a6`, 12 ahead of `main`, 0 behind; working tree clean except untracked library binaries |
 | Versions read from the containers | Frappe 16.35.0, ERPNext 16.36.0, Python 3.14.7, Node 24.21.0, MariaDB 11.8.9, Redis 6.2.24 |
 | VPS read over SSH (read-only) | Coolify 4.5.0 healthy, Traefik v3.6, Docker 29.7.2, 4 vCPU / 16 GB / 193 GB, UFW inactive, five apps running |
-| `docker compose -f deploy/compose.coolify.yaml config` | valid; refuses to start without `DB_ROOT_PASSWORD`; no `ports:` anywhere |
+| `docker compose -f compose.coolify.yaml config` | valid; refuses to start without `DB_ROOT_PASSWORD`; no `ports:` anywhere |
 | Image build `deploy/Containerfile` | OK (10 s on the cached base; 2.88 GB); imed_erp 0.0.1 installed, assets built, apps.txt lists erpnext, frappe, imed_erp |
 | Rehearsal stack `imedprod` from the compose file and the built image | 9 containers; db, both redis, backend, frontend, websocket, scheduler healthy; `--wait` returned OK (after the health-check fix noted in section 2) |
 | Backup of the live local site | `20261027_145315-frontend`: database 1.7 MiB, files 10 KiB each, config 339 B; archives checked |
@@ -463,7 +463,7 @@ automatic revert (1.2), the session kept open (1.5). The five applications are n
 
 | # | Who | Action | Check | Undo |
 |---|---|---|---|---|
-| 3.1 | deployer | In Coolify: project **IMED ERP**, environment **validation**, application from `production`, Docker Compose, `/deploy/compose.coolify.yaml`, env from `deploy/coolify.env.example` with a fresh `DB_ROOT_PASSWORD`, domain `erp-test.<domain>` on `frontend`:8080 (or a `sslip.io` name) | Coolify builds the image on the VPS (amd64, first time 5–10 min) and reports every container healthy | Coolify → Delete the application (its volumes go with it; nothing else on the VPS is touched) |
+| 3.1 | deployer | In Coolify: project **IMED ERP**, environment **validation**, application from `production`, Docker Compose, `/compose.coolify.yaml`, env from `deploy/coolify.env.example` with a fresh `DB_ROOT_PASSWORD`, domain `erp-test.<domain>` on `frontend`:8080 (or a `sslip.io` name) | Coolify builds the image on the VPS (amd64, first time 5–10 min) and reports every container healthy | Coolify → Delete the application (its volumes go with it; nothing else on the VPS is touched) |
 | 3.2 | deployer | Copy the **cutover-rehearsal set** (a fresh backup of the Mac's site, taken that day; not yet the final one) to the VPS with `scp -i ~/.ssh/hostinger_vps`; run `deploy/restore_site.sh` against the validation backend | the script's last lines: passwords decrypt yes, counts equal the Mac's, scheduler disabled | delete the application |
 | 3.3 | deployer + owner | Essential workflows on `https://erp-test.<domain>`: login as the owner (password as on the Mac), nour, gilan, the accountant; the sidebar; the owner's page; the bookings list and calendar; one hall booking created, confirmed, rescheduled, cancelled on a test hall and then cancelled; Integration Status; a report; phone width | each works; no console error; nothing posted (Sales Invoice, GL Entry counts unchanged) | — |
 | 3.4 | deployer | `bench --site frontend execute imed_erp.imederp.xstudio.sync.dry_run` on the validation instance (reads XStudio from the VPS, writes nothing; the scheduler stays disabled there, so the Mac remains the only syncing site) | read ≈160 / insert 0 / skip ≈116 / 1 known failure | — |

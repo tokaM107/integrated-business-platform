@@ -1,7 +1,7 @@
 # IMED ERP production image: the official frappe/erpnext image of the exact version the ERP runs on today, with the
 # imed_erp app installed and its assets built into the image (docs/PRODUCTION_DEPLOYMENT_COOLIFY.md).
 #
-# Built by Coolify on the server from this repository (deploy/compose.coolify.yaml, build context = repo root):
+# Built by Coolify on the server from this repository (compose.coolify.yaml, build context = repo root):
 #   docker build -f deploy/Containerfile -t imed-erp:test .
 #
 # Layered on the published image, not rebuilt from source: Frappe 16.35.0 / ERPNext 16.36.0 / Python 3.14 / Node 24
