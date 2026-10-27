@@ -1,0 +1,6 @@
+# The production image (deploy/Containerfile) takes only the app from this repository.
+*
+!apps/imed_erp
+apps/imed_erp/**/__pycache__
+apps/imed_erp/**/*.pyc
+apps/imed_erp/**/node_modules

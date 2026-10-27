@@ -1,0 +1,29 @@
+# IMED ERP production image: the official frappe/erpnext image of the exact version the ERP runs on today, with the
+# imed_erp app installed and its assets built into the image (docs/PRODUCTION_DEPLOYMENT_COOLIFY.md).
+#
+# Built by Coolify on the server from this repository (deploy/compose.coolify.yaml, build context = repo root):
+#   docker build -f deploy/Containerfile -t imed-erp:test .
+#
+# Layered on the published image, not rebuilt from source: Frappe 16.35.0 / ERPNext 16.36.0 / Python 3.14 / Node 24
+# are exactly what frappe/erpnext:v16.36.0 ships, the versions verified on the development machine on 27 Oct 2026.
+ARG ERPNEXT_VERSION=v16.36.0
+FROM frappe/erpnext:${ERPNEXT_VERSION}
+
+USER frappe
+WORKDIR /home/frappe/frappe-bench
+
+# The app from this repository (never cloned from the internet at build time: the repository is what was reviewed).
+COPY --chown=frappe:frappe apps/imed_erp apps/imed_erp
+
+# Install it into the bench's environment, list it for every site, and build its assets into the image's asset
+# folder (the entrypoint links sites/assets to /home/frappe/frappe-bench/assets at start, as for frappe and erpnext).
+RUN env/bin/pip install --no-cache-dir -e apps/imed_erp \
+	&& ls -1 apps > sites/apps.txt \
+	&& ln -sfn /home/frappe/frappe-bench/assets sites/assets \
+	&& bench build --app imed_erp --production \
+	&& rm -f sites/assets \
+	&& env/bin/python -c "import imed_erp; print('imed_erp', imed_erp.__version__)" \
+	&& test -d assets/imed_erp/css && test -d assets/imed_erp/js
+
+# Keep the published image's entrypoint and command (gunicorn); the other roles (nginx, worker, scheduler,
+# socketio) override the command in the compose file.

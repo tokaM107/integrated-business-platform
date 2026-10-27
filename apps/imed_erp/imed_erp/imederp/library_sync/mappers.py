@@ -12,8 +12,8 @@ class MappingError(Exception):
 	pass
 
 
-def import_key(family, external_id):
-	return f"{c.SOURCE}:{family}:{external_id}"
+def import_key(library, family, external_id):
+	return f"{c.SOURCE}:{library}:{family}:{external_id}"
 
 
 def payload_hash(document):
@@ -84,7 +84,8 @@ def map_document(family, document, settings):
 		"source_system": c.SOURCE,
 		"family": family,
 		"external_id": str(document[spec["id"]]),
-		"import_key": import_key(family, document[spec["id"]]),
+		"library": settings["library"],
+		"import_key": import_key(settings["library"], family, document[spec["id"]]),
 		"document_kind": kind,
 		"operation_code": str(document.get(spec["operation_code"]) or ""),
 		"operation_name": str(document.get(spec["operation_name"]) or "") if spec["operation_name"] else "",

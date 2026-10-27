@@ -17,7 +17,8 @@ from imed_erp.imederp.doctype.integration_import_log.integration_import_log impo
 from imed_erp.imederp.library_sync import contract as c
 from imed_erp.imederp.library_sync.mappers import MappingError, map_document
 
-ROLES = ("System Manager", "Accounts Manager")
+# The connector's own user holds Library Connector and nothing else (setup/setup_library_connector.py).
+ROLES = ("System Manager", "Accounts Manager", "Library Connector")
 LOCK = "imed_library_sync"
 SAVEPOINT = "library_doc"
 
@@ -39,6 +40,11 @@ def import_batch(batch):
 	source = batch.get("source") or c.SOURCE
 	if source != c.SOURCE:
 		frappe.throw(_("Unknown source {0}.").format(source))
+	import re
+
+	library = str(batch.get(c.LIBRARY_KEY) or "").strip()
+	if not re.match(c.LIBRARY_SLUG, library):
+		frappe.throw(_("The batch names no library (a short slug such as 'pc1' in the connector's config.json): refused, so two libraries' documents are never mixed."))
 	if cint(frappe.db.sql("select get_lock(%s, 5)", LOCK)[0][0]) != 1:
 		frappe.throw(_("Another library batch is being imported. Try again in a moment."))
 	try:
@@ -49,10 +55,11 @@ def import_batch(batch):
 
 def _import(batch):
 	settings = {k: batch.get(k) or {} for k in ("branch_map", "operation_map")}
+	settings["library"] = str(batch.get(c.LIBRARY_KEY)).strip()
 	settings["issued_status_codes"] = batch.get("issued_status_codes") or []
 	settings["cancelled_status_codes"] = batch.get("cancelled_status_codes") or []
 	documents = batch.get("documents") or []
-	run = ImportRun(c.SOURCE, file_name=_("Library connector batch of {0} documents, read {1}").format(len(documents), batch.get("read_at") or "?"))
+	run = ImportRun(c.SOURCE, file_name=_("Library {0}: connector batch of {1} documents, read {2}").format(settings["library"], len(documents), batch.get("read_at") or "?"))
 	frappe.flags.library_sync = True
 	try:
 		for row_no, document in enumerate(documents, start=1):

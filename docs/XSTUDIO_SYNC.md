@@ -154,6 +154,15 @@ xstudioeg.com. Nothing else is needed on XStudio's side: XStudio is the server, 
 Until then, the sync runs whenever the Mac is on and Docker Desktop is running, and catches up on its first tick
 (the window is re-read in full on every run; nothing is missed by a pause shorter than 30 days).
 
+## 6e. Moving the ERP to the server: one site syncs at a time (prepared 27 Oct 2026)
+
+docs/PRODUCTION_DEPLOYMENT_COOLIFY.md, section 5: the Mac's scheduler is disabled first, the final backup taken,
+the site restored on the server with its encryption key (without it XStudio Settings' password cannot be read;
+verified), the dry run proves the login and the window from the server, the staff are switched, and only then
+is the server's scheduler enabled. The four paused Scheduled Job Types travel with the database and stay paused.
+Rehearsed locally in a production-shaped stack: the dry run from the restored copy read 160 rows, 0 to insert,
+116 to skip, 1 failing (the walk-in booking without a customer, the same as on the Mac).
+
 ## 7. Known limitations that need an XStudio change (not done in this sprint)
 
 | Gap | Why | File | Smallest future change |

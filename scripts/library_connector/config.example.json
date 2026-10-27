@@ -1,16 +1,28 @@
 {
-  "_comment": "Copy to config.json on the library PC. The queries are placeholders built from the names the Tanmya app reads; replace the physical column names after collect_metadata.ps1 confirmed them. SELECT only. Each heads query takes two parameters: the watermark id and the re-read date; each lines query takes the head ids as {ids}.",
+  "_comment": "Copy to config.json on the library PC. The queries are placeholders built from the names the Tanmya app reads; replace the physical column names after collect_metadata.ps1 confirmed them. SELECT only. Each heads query takes two parameters: the watermark id and the re-read date; each lines query takes the head ids as {ids}. `library` is this PC's short name (letters, digits, - or _): it is part of every document's id in the ERP, so the two libraries never mix.",
   "source": "tanmya",
+  "library": "<pc1 or azarita: this PC's short name, fixed once and never changed>",
   "odbc": "Driver={ODBC Driver 17 for SQL Server};Server=.;Database=Db2BDoctorNew;Trusted_Connection=yes;ApplicationIntent=ReadOnly;",
-  "erp": {"url": "https://erp.example.com", "api_key": "<api key of the integration user>", "api_secret": "<its secret>"},
+  "erp": {
+    "url": "https://erp.example.com",
+    "api_key": "<api key of the integration user>",
+    "api_secret": "<its secret>"
+  },
   "reread_days": 7,
   "batch_size": 200,
-  "branch_map": {"1": "مكتبة الأزاريطة", "2": "مكتبة المواساة"},
+  "branch_map": {
+    "1": "مكتبة الأزاريطة",
+    "2": "مكتبة المواساة"
+  },
   "operation_map": {
     "_comment": "TxtOperationCode -> document kind, filled from TblOperationInfo. Kinds: Retail Sale, Wholesale Sale, Retail Return, Wholesale Return, Purchase, Purchase Return, Opening Balance, Adjustment In, Adjustment Out, Transfer, Price Offer, Cash Receipt, Cash Payment"
   },
-  "issued_status_codes": ["<TxtStatusRefCode of the issued state, from TblStatusRefInfo>"],
-  "cancelled_status_codes": ["<TxtStatusRefCode of the cancelled state>"],
+  "issued_status_codes": [
+    "<TxtStatusRefCode of the issued state, from TblStatusRefInfo>"
+  ],
+  "cancelled_status_codes": [
+    "<TxtStatusRefCode of the cancelled state>"
+  ],
   "queries": {
     "stock": {
       "id_key": "TxtIdRefStock",

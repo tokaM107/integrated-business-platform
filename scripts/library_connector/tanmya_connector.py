@@ -12,6 +12,11 @@ a document held then issued, or issued then cancelled, is updated.
   python tanmya_connector.py --config config.json            one run (schedule it with Task Scheduler, every 10 min)
   python tanmya_connector.py --config config.json --dry-run  read and write batch_*.json, post nothing
   python tanmya_connector.py --config config.json --from-json batch.json   post a saved batch (tests)
+  python tanmya_connector.py --config config.json --check                  only check the config, read nothing
+
+Each PC names its library in config.json ("library": "pc1"): the ERP keys every document on it, so the first
+library (Db2BDoctorNew) and PC1 (Db2BDoctor) never share a document. A live run is refused while the config holds
+a placeholder.
 
 Needs: Python 3.9+, pyodbc, requests, "ODBC Driver 17 for SQL Server" (or 18) on the PC.
 """
@@ -80,6 +85,44 @@ def read_family(conn, cfg, family, since_id, since_date):
     return heads
 
 
+def config_problems(cfg, posting_only=False):
+    """What stops a live run: a missing library name, or any value still at its placeholder ('<...>'). The ERP
+    refuses a batch without a library name; the codes are read from the PC's own metadata ZIP, never guessed.
+    posting_only (--from-json): the database part is not needed, only the library name and the ERP access."""
+    import re
+
+    problems = []
+    if not re.match(r"^[a-z][a-z0-9_-]{1,29}$", str(cfg.get("library") or "")):
+        problems.append("library: a short lowercase name of this PC (pc1, azarita) is required")
+    if posting_only:
+        for k, v in (cfg.get("erp") or {}).items():
+            if isinstance(v, str) and v.strip().startswith("<"):
+                problems.append(f"erp.{k}: still a placeholder")
+        return problems
+    if "Db2BDoctor" not in cfg.get("odbc", ""):
+        problems.append("odbc: names no Db2BDoctor* database")
+    if "ApplicationIntent=ReadOnly" not in cfg.get("odbc", ""):
+        problems.append("odbc: add ApplicationIntent=ReadOnly;")
+
+    def walk(value, path):
+        if isinstance(value, dict):
+            for k, v in value.items():
+                if k == "_comment":
+                    continue
+                walk(v, f"{path}.{k}" if path else k)
+        elif isinstance(value, list):
+            for i, v in enumerate(value):
+                walk(v, f"{path}[{i}]")
+        elif isinstance(value, str) and value.strip().startswith("<"):
+            problems.append(f"{path}: still a placeholder ({value[:40]})")
+
+    walk({k: v for k, v in cfg.items() if k != "queries"}, "")
+    for family, q in (cfg.get("queries") or {}).items():
+        if "SELECT" not in q.get("heads", "").upper() or any(w in q.get("heads", "").upper() for w in ("INSERT ", "UPDATE ", "DELETE ", "EXEC ", "EXECUTE ")):
+            problems.append(f"queries.{family}: heads is not a plain SELECT")
+    return problems
+
+
 def post(cfg, batch):
     import requests
 
@@ -95,9 +138,18 @@ def main():
     ap.add_argument("--config", default=os.path.join(HERE, "config.json"))
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--from-json")
+    ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     cfg = load(args.config)
     state = load(STATE) if os.path.exists(STATE) else {}
+    problems = config_problems(cfg, posting_only=bool(args.from_json))
+    for problem in problems:
+        print("config:", problem)
+    if args.check:
+        sys.exit(2 if problems else 0)
+    if problems and not args.dry_run:
+        print("the config still holds placeholders or lacks its library name: fix config.json first (a dry run is allowed)")
+        sys.exit(2)
 
     if args.from_json:
         batch = load(args.from_json)
@@ -115,6 +167,7 @@ def main():
         return
     batch = {
         "source": cfg.get("source", "tanmya"),
+        "library": cfg["library"],
         "branch_map": cfg.get("branch_map", {}),
         "operation_map": cfg.get("operation_map", {}),
         "issued_status_codes": cfg.get("issued_status_codes", []),

@@ -57,6 +57,7 @@
   "remarks",
   "source_section",
   "source_system",
+  "library",
   "family",
   "external_id",
   "import_key",
@@ -387,6 +388,15 @@
    "read_only": 1
   },
   {
+   "fieldname": "library",
+   "fieldtype": "Data",
+   "label": "Library (PC)",
+   "read_only": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "The library PC the document came from (its connector's config.json): the first library or PC1. Two libraries never share a document id."
+  },
+  {
    "fieldname": "family",
    "fieldtype": "Data",
    "label": "Family",
@@ -432,7 +442,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-26 12:00:00.000000",
+ "modified": "2026-10-27 16:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Library Sales Document",

@@ -6,6 +6,13 @@
 
 SOURCE = "tanmya"
 
+# Each library PC runs its own copy of the Tanmya application on its own database (Db2BDoctorNew on the first
+# library's PC, Db2BDoctor on PC1), and their document ids overlap (both start at 1). So every batch names its
+# library, a short slug fixed in the PC's config.json, and the id of a mirrored document is
+# `tanmya:<library>:<family>:<id>`. Two libraries never share a key; the same library sending twice is one document.
+LIBRARY_KEY = "library"
+LIBRARY_SLUG = r"^[a-z][a-z0-9_-]{1,29}$"
+
 # Document families and the key names each one uses. "id" is the head's identity in the library's database.
 FAMILIES = {
 	"stock": {

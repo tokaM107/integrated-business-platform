@@ -577,6 +577,10 @@ fixed studio hours; two bookings of one resource still never overlap.
 
 ### The demo site
 
+**Production (prepared, not deployed)**: `deploy/` holds the Containerfile, the Coolify compose file, the
+environment template and the restore script; the whole procedure, the rehearsal results and the blockers are in
+docs/PRODUCTION_DEPLOYMENT_COOLIFY.md (27 Oct 2026).
+
 A separate site, **demo** (http://127.0.0.1:8081 on the development machine, container `imed-demo-web`), holds the
 demo transactions of 18 Oct restored from the backup of 21 Oct, plus sample cash closes, discrepancies and a
 weekly review made by `setup/seed_cash_demo.py`, and on 22 Oct BA Plus payments, counters read twice, a prepaid

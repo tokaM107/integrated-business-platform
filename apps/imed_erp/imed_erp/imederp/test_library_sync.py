@@ -18,6 +18,7 @@ def cost_center(name):
 def settings():
 	"""What the connector sends with every batch (its config.json); the cost centers are the site's own."""
 	return {
+		"library": "azarita",
 		"branch_map": {"1": cost_center("مكتبة الأزاريطة"), "2": cost_center("مكتبة المواساة")},
 		"operation_map": {"11": "Retail Sale", "12": "Wholesale Sale", "21": "Retail Return", "31": "Purchase"},
 		"issued_status_codes": ["2"],
@@ -75,7 +76,7 @@ class TestLibraryMappers(IntegrationTestCase):
 		self.assertEqual((fields["document_kind"], fields["number"], fields["is_final"], fields["is_cancelled"], fields["cost_center"]), ("Retail Sale", "A-1001", 1, 0, cost_center("مكتبة الأزاريطة")))
 		self.assertEqual((fields["total"], fields["qty_total"], fields["money_direction"], len(fields["lines"])), (150.0, 3.0, "In", 2))
 		self.assertEqual((fields["lines"][0]["product_code"], fields["lines"][0]["qty"], fields["lines"][0]["line_total"], fields["lines"][0]["doctor_name"]), ("P-1", 2.0, 100.0, "د. أحمد"))
-		self.assertEqual(fields["import_key"], "tanmya:stock:90001")
+		self.assertEqual(fields["import_key"], "tanmya:azarita:stock:90001")
 		self.assertEqual(notes, [])
 
 	def test_a_held_and_a_cancelled_document_are_not_final(self):
@@ -140,9 +141,9 @@ class TestLibraryReceive(IntegrationTestCase):
 	def test_a_batch_is_logged_and_its_documents_mirrored(self):
 		log = sync.import_batch(self.batch(sale(), receipt()))
 		self.assertEqual((log.source_system, self.counts(log)), ("tanmya", ("Completed", 2, 2, 0, 0, 0, 0)))
-		doc = self.doc("tanmya:stock:90001")
+		doc = self.doc("tanmya:azarita:stock:90001")
 		self.assertEqual((doc.document_kind, doc.total, len(doc.lines), doc.lines[0].product_name, doc.is_final), ("Retail Sale", 150.0, 2, "كتاب باثولوجي", 1))
-		self.assertEqual(self.doc("tanmya:cash_receipt:70001").document_kind, "Cash Receipt")
+		self.assertEqual(self.doc("tanmya:azarita:cash_receipt:70001").document_kind, "Cash Receipt")
 		# nothing financial came of it
 		self.assertEqual((frappe.db.count("Sales Invoice", {"creation": (">=", log.started_at)}), frappe.db.count("Payment Entry", {"creation": (">=", log.started_at)}), frappe.db.count("Journal Entry", {"creation": (">=", log.started_at)})), (0, 0, 0))
 
@@ -150,19 +151,19 @@ class TestLibraryReceive(IntegrationTestCase):
 		sync.import_batch(self.batch(sale()))
 		log = sync.import_batch(self.batch(sale()))
 		self.assertEqual(self.counts(log), ("Completed", 1, 0, 0, 1, 0, 0))
-		self.assertEqual(frappe.db.count("Library Sales Document", {"import_key": "tanmya:stock:90001"}), 1)
+		self.assertEqual(frappe.db.count("Library Sales Document", {"import_key": "tanmya:azarita:stock:90001"}), 1)
 
 	def test_a_document_changed_in_the_library_is_updated_and_listed(self):
 		sync.import_batch(self.batch(sale(status="1")))  # held
-		self.assertEqual(self.doc("tanmya:stock:90001").is_final, 0)
+		self.assertEqual(self.doc("tanmya:azarita:stock:90001").is_final, 0)
 		log = sync.import_batch(self.batch(sale(status="2")))  # issued later
 		self.assertEqual(self.counts(log), ("Completed with Errors", 1, 0, 1, 0, 1, 0))
 		self.assertEqual([r.kind for r in log.errors], ["Changed in Source"])
-		doc = self.doc("tanmya:stock:90001")
+		doc = self.doc("tanmya:azarita:stock:90001")
 		self.assertEqual((doc.is_final, len(doc.lines)), (1, 2))
 		# then cancelled there: kept, marked, never deleted
 		sync.import_batch(self.batch(sale(status="3")))
-		doc = self.doc("tanmya:stock:90001")
+		doc = self.doc("tanmya:azarita:stock:90001")
 		self.assertEqual((doc.is_final, doc.is_cancelled), (0, 1))
 
 	def test_a_bad_document_fails_alone(self):
@@ -171,16 +172,16 @@ class TestLibraryReceive(IntegrationTestCase):
 		log = sync.import_batch(self.batch(sale(), bad))
 		self.assertEqual(self.counts(log), ("Completed with Errors", 2, 1, 0, 0, 0, 1))
 		self.assertIn("TxtNumberRefStock", log.errors[0].reason)
-		self.assertEqual(frappe.db.count("Library Sales Document", {"import_key": "tanmya:stock:90002"}), 0)
+		self.assertEqual(frappe.db.count("Library Sales Document", {"import_key": "tanmya:azarita:stock:90002"}), 0)
 
 	def test_an_unknown_operation_is_kept_as_other_and_listed_for_review(self):
 		log = sync.import_batch(self.batch(sale(operation="99")))
 		self.assertEqual((self.counts(log)[2], [r.kind for r in log.errors]), (1, ["Needs Review"]))
-		self.assertEqual(self.doc("tanmya:stock:90001").document_kind, "Other")
+		self.assertEqual(self.doc("tanmya:azarita:stock:90001").document_kind, "Other")
 
 	def test_a_mirrored_document_is_not_changed_here(self):
 		sync.import_batch(self.batch(sale()))
-		doc = self.doc("tanmya:stock:90001")
+		doc = self.doc("tanmya:azarita:stock:90001")
 		doc.total = 1
 		self.assertRaises(frappe.ValidationError, doc.save)
 		self.assertRaises(frappe.ValidationError, doc.delete)
@@ -188,6 +189,21 @@ class TestLibraryReceive(IntegrationTestCase):
 	def test_the_endpoint_is_for_the_accounts_only(self):
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, sync.receive, self.batch(sale()))
+
+	def test_two_libraries_with_the_same_document_id_are_two_documents_and_a_nameless_batch_is_refused(self):
+		"""Db2BDoctorNew (the first library) and Db2BDoctor (PC1) both number their documents from 1."""
+		sync.import_batch(self.batch(sale()))
+		pc1 = self.batch(sale(number="B-7"))
+		pc1["library"] = "pc1"
+		log = sync.import_batch(pc1)
+		self.assertEqual(self.counts(log), ("Completed", 1, 1, 0, 0, 0, 0))
+		self.assertEqual((self.doc("tanmya:azarita:stock:90001").number, self.doc("tanmya:pc1:stock:90001").number), ("A-1001", "B-7"))
+		self.assertEqual(self.doc("tanmya:pc1:stock:90001").library, "pc1")
+		nameless = self.batch(sale())
+		del nameless["library"]
+		self.assertRaisesRegex(frappe.ValidationError, "names no library", sync.import_batch, nameless)
+		nameless["library"] = "PC 1"
+		self.assertRaisesRegex(frappe.ValidationError, "names no library", sync.import_batch, nameless)
 
 	def test_the_status_report_shows_the_source(self):
 		sync.import_batch(self.batch(sale()))
