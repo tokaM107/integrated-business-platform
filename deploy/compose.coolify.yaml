@@ -1,27 +1,293 @@
-# IMED ERP on Coolify (Hostinger VPS): the official frappe_docker production layout (frappe_docker/compose.yaml +
-# the mariadb, redis and noproxy overrides), flattened into one file that Coolify's "Docker Compose" build pack
-# understands, with the image built from this repository (deploy/Containerfile).
+# IMED ERP on Coolify (Hostinger VPS): the official frappe_docker production layout (compose.yaml + the mariadb,
+# redis and noproxy overrides) in one file for Coolify's Docker Compose build pack, with the image built from this
+# repository (deploy/Containerfile, context = the repository root). Flat on purpose (no YAML anchors): Coolify
+# parses the file itself. Read docs/PRODUCTION_DEPLOYMENT_COOLIFY.md before using it.
 #
-# Read docs/PRODUCTION_DEPLOYMENT_COOLIFY.md before using it. Nothing here is deployed by itself.
-#
-# What differs from the development setup (frappe_docker/pwd.yml) and why:
-#   - the app is inside the image, not mounted from the repository: the container is the release;
-#   - every password comes from Coolify's environment (${VAR:?} refuses to start without it); nothing is "admin";
-#   - MariaDB and Redis have no published ports: only the compose network reaches them;
-#   - the only service with a domain is `frontend` (nginx); Coolify's Traefik terminates HTTPS in front of it;
-#   - nginx serves the one site `frontend` whatever the Host header (FRAPPE_SITE_NAME_HEADER), so the site keeps
-#     the name it has in the backup and no rename is needed;
-#   - health checks on the database, the Redis services, the backend and nginx; workers and the scheduler start
-#     only after the configurator wrote common_site_config.json and the database is healthy.
+#   - the app is inside the image; every password comes from Coolify's environment (${VAR:?} refuses to start
+#     without it); MariaDB and Redis publish no port; only `frontend` (nginx, :8080) gets a domain;
+#   - nginx serves the one site `frontend` whatever the Host header (FRAPPE_SITE_NAME_HEADER), so the restored
+#     site keeps its name; the real client address is read from X-Forwarded-For sent by Coolify's proxy network;
+#   - container health checks only ask that the process answers (a fresh stack has no site until the restore);
+#   - without a site nothing runs: no scheduler job, no XStudio sync, until deploy/restore_site.sh and an explicit
+#     `bench --site frontend enable-scheduler`.
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: '3306'
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 60s
+      test:
+      - CMD-SHELL
+      - test "$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/method/ping)" != 000
+      timeout: 10s
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: unless-stopped
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  configurator:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    command:
+    - 'ls -1 apps > sites/apps.txt; bench set-config -g db_host $$DB_HOST; bench set-config -gp db_port $$DB_PORT; bench set-config
+      -g redis_cache "redis://$$REDIS_CACHE"; bench set-config -g redis_queue "redis://$$REDIS_QUEUE"; bench set-config -g
+      redis_socketio "redis://$$REDIS_QUEUE"; bench set-config -gp socketio_port $$SOCKETIO_PORT; bench set-config -g chromium_path
+      /usr/bin/chromium-headless-shell;
 
-x-image: &image
-  image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+      '
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    entrypoint:
+    - bash
+    - -c
+    environment:
+      DB_HOST: db
+      DB_PORT: '3306'
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      SOCKETIO_PORT: '9000'
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: on-failure
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  db:
+    command:
+    - --character-set-server=utf8mb4
+    - --collation-server=utf8mb4_unicode_ci
+    - --skip-character-set-client-handshake
+    - --skip-innodb-read-only-compressed
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+    healthcheck:
+      interval: 10s
+      retries: 10
+      start_period: 20s
+      test:
+      - CMD
+      - healthcheck.sh
+      - --connect
+      - --innodb_initialized
+      timeout: 5s
+    image: mariadb:11.8
+    restart: unless-stopped
+    volumes:
+    - db-data:/var/lib/mysql
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    command:
+    - nginx-entrypoint.sh
+    depends_on:
+      backend:
+        condition: service_healthy
+      websocket:
+        condition: service_started
+    environment:
+      BACKEND: backend:8000
+      CLIENT_MAX_BODY_SIZE: 50m
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME:-frontend}
+      NGINX_LISTEN_PORT: '8080'
+      PROXY_READ_TIMEOUT: '120'
+      SERVICE_FQDN_FRONTEND_8080: ${SERVICE_FQDN_FRONTEND_8080:-}
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-172.16.1.0/24}
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: 'off'
+    expose:
+    - '8080'
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 60s
+      test:
+      - CMD-SHELL
+      - test "$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/method/ping)" != 000
+      timeout: 10s
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: unless-stopped
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  queue-long:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    command:
+    - bench
+    - worker
+    - --queue
+    - long,default,short
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: '3306'
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: unless-stopped
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  queue-short:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    command:
+    - bench
+    - worker
+    - --queue
+    - short,default
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: '3306'
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: unless-stopped
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  redis-cache:
+    healthcheck:
+      interval: 10s
+      retries: 5
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      timeout: 5s
+    image: redis:6.2-alpine
+    restart: unless-stopped
+  redis-queue:
+    healthcheck:
+      interval: 10s
+      retries: 5
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      timeout: 5s
+    image: redis:6.2-alpine
+    restart: unless-stopped
+    volumes:
+    - redis-queue-data:/data
+  scheduler:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    command:
+    - bench
+    - schedule
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: '3306'
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: unless-stopped
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  websocket:
+    build:
+      context: ..
+      dockerfile: deploy/Containerfile
+    command:
+    - node
+    - /home/frappe/frappe-bench/apps/frappe/socketio.js
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: unless-stopped
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+volumes:
+  db-data:
+    name: scratchpad_db-data
+  logs:
+    name: scratchpad_logs
+  redis-queue-data:
+    name: scratchpad_redis-queue-data
+  sites:
+    name: scratchpad_sites
+x-backend:
   build:
     context: ..
     dockerfile: deploy/Containerfile
+  environment:
+    DB_HOST: db
+    DB_PORT: '3306'
+    MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+    MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+  image: imed-erp:${IMED_IMAGE_TAG:-coolify}
   restart: unless-stopped
-
-x-depends: &depends
+  volumes:
+  - sites:/home/frappe/frappe-bench/sites
+  - logs:/home/frappe/frappe-bench/logs
+x-depends:
   depends_on:
     configurator:
       condition: service_completed_successfully
@@ -31,163 +297,9 @@ x-depends: &depends
       condition: service_healthy
     redis-queue:
       condition: service_healthy
-
-x-backend: &backend
-  <<: *image
-  volumes:
-    - sites:/home/frappe/frappe-bench/sites
-    - logs:/home/frappe/frappe-bench/logs
-  environment: &backend-env
-    DB_HOST: db
-    DB_PORT: "3306"
-    MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
-    MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
-
-services:
-  # Writes the bench-wide settings (where the database and Redis are) into the sites volume, once per start.
-  configurator:
-    <<: *image
-    restart: on-failure
-    entrypoint: ["bash", "-c"]
-    command:
-      - >
-        ls -1 apps > sites/apps.txt;
-        bench set-config -g db_host $$DB_HOST;
-        bench set-config -gp db_port $$DB_PORT;
-        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
-        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
-        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
-        bench set-config -gp socketio_port $$SOCKETIO_PORT;
-        bench set-config -g chromium_path /usr/bin/chromium-headless-shell;
-    environment:
-      DB_HOST: db
-      DB_PORT: "3306"
-      REDIS_CACHE: redis-cache:6379
-      REDIS_QUEUE: redis-queue:6379
-      SOCKETIO_PORT: "9000"
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    depends_on:
-      db:
-        condition: service_healthy
-      redis-cache:
-        condition: service_healthy
-      redis-queue:
-        condition: service_healthy
-
-  backend:
-    <<: [*backend, *depends]
-    environment:
-      <<: *backend-env
-      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
-      GUNICORN_THREADS: ${GUNICORN_THREADS:-4}
-      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
-    healthcheck:
-      # Gunicorn answers HTTP (any status): a fresh stack has no site yet, and the site's own health is checked
-      # by the acceptance tests, not here, or a stack with no site would never come up.
-      test: ["CMD-SHELL", "test \"$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/api/method/ping)\" != 000"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 5
-
-  frontend:
-    <<: *image
-    command: ["nginx-entrypoint.sh"]
-    environment:
-      # Coolify fills this with the domain given to the application and routes HTTPS to port 8080 of this service.
-      SERVICE_FQDN_FRONTEND_8080: ${SERVICE_FQDN_FRONTEND_8080:-}
-      BACKEND: backend:8000
-      SOCKETIO: websocket:9000
-      NGINX_LISTEN_PORT: "8080"
-      # One site, served whatever the Host header: the backup's site name stays `frontend`.
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME:-frontend}
-      # Coolify's proxy network (172.16.1.0/24 on this VPS, read 27 Oct 2026): the client's address is taken from
-      # X-Forwarded-For only when the request comes from there.
-      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-172.16.1.0/24}
-      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
-      UPSTREAM_REAL_IP_RECURSIVE: "off"
-      PROXY_READ_TIMEOUT: "120"
-      CLIENT_MAX_BODY_SIZE: 50m
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-    expose:
-      - "8080"
-    depends_on:
-      backend:
-        condition: service_healthy
-      websocket:
-        condition: service_started
-    healthcheck:
-      test: ["CMD-SHELL", "test \"$$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/method/ping)\" != 000"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 5
-
-  websocket:
-    <<: [*image, *depends]
-    command: ["node", "/home/frappe/frappe-bench/apps/frappe/socketio.js"]
-    volumes:
-      - sites:/home/frappe/frappe-bench/sites
-      - logs:/home/frappe/frappe-bench/logs
-
-  queue-short:
-    <<: [*backend, *depends]
-    command: ["bench", "worker", "--queue", "short,default"]
-
-  queue-long:
-    <<: [*backend, *depends]
-    command: ["bench", "worker", "--queue", "long,default,short"]
-
-  scheduler:
-    <<: [*backend, *depends]
-    command: ["bench", "schedule"]
-
-  db:
-    image: mariadb:11.8
-    restart: unless-stopped
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-      - --skip-character-set-client-handshake
-      - --skip-innodb-read-only-compressed
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
-    volumes:
-      - db-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 20s
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  redis-cache:
-    image: redis:6.2-alpine
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis-queue:
-    image: redis:6.2-alpine
-    restart: unless-stopped
-    volumes:
-      - redis-queue-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  sites:
-  logs:
-  db-data:
-  redis-queue-data:
+x-image:
+  build:
+    context: ..
+    dockerfile: deploy/Containerfile
+  image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+  restart: unless-stopped

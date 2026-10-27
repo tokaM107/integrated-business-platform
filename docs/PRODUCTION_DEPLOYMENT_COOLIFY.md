@@ -134,6 +134,11 @@ In Coolify (https://<the VPS>:8000, or the tunnel):
    pushed by this preparation). **Automatic deployment on push: off** (deployments are started by hand, after a
    backup).
 3. **Build pack**: Docker Compose. **Base directory** `/`. **Docker Compose location** `/deploy/compose.coolify.yaml`.
+   The file is flat (no YAML anchors) because Coolify parses it with its own reader; it was generated from the
+   anchored version with `docker compose config --no-interpolate` and re-checked on the rehearsal stack.
+   **Not** Railpack/Nixpacks and **not** Dockerfile: the repository root has no Dockerfile, and a build pack that
+   guesses one produces an image whose command is `/bin/bash`, which exits at once and restarts forever (what
+   happened on 27 Oct 2026 with `main` at 6ebac7d: 14 restarts, empty logs).
    Coolify builds the image on the VPS from `deploy/Containerfile` (the compose `build:` entries) and creates the
    volumes with its own prefix.
 4. **Environment variables** (Developer view): the keys of `deploy/coolify.env.example`. `DB_ROOT_PASSWORD` is
