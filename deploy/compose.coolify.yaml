@@ -1,6 +1,6 @@
 # IMED ERP on Coolify (Hostinger VPS): the official frappe_docker production layout (compose.yaml + the mariadb,
 # redis and noproxy overrides) in one file for Coolify's Docker Compose build pack, with the image built from this
-# repository (deploy/Containerfile, context = the repository root). Flat on purpose (no YAML anchors): Coolify
+# repository (deploy/Containerfile; build context `.` = the project directory, which Coolify sets to the repository root). Flat on purpose (no YAML anchors): Coolify
 # parses the file itself. Read docs/PRODUCTION_DEPLOYMENT_COOLIFY.md before using it.
 #
 #   - the app is inside the image; every password comes from Coolify's environment (${VAR:?} refuses to start
@@ -13,7 +13,7 @@
 services:
   backend:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     depends_on:
       configurator:
@@ -47,7 +47,7 @@ services:
     - logs:/home/frappe/frappe-bench/logs
   configurator:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     command:
     - 'ls -1 apps > sites/apps.txt; bench set-config -g db_host $$DB_HOST; bench set-config -gp db_port $$DB_PORT; bench set-config
@@ -102,7 +102,7 @@ services:
     - db-data:/var/lib/mysql
   frontend:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     command:
     - nginx-entrypoint.sh
@@ -139,7 +139,7 @@ services:
     - logs:/home/frappe/frappe-bench/logs
   queue-long:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     command:
     - bench
@@ -167,7 +167,7 @@ services:
     - logs:/home/frappe/frappe-bench/logs
   queue-short:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     command:
     - bench
@@ -219,7 +219,7 @@ services:
     - redis-queue-data:/data
   scheduler:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     command:
     - bench
@@ -245,7 +245,7 @@ services:
     - logs:/home/frappe/frappe-bench/logs
   websocket:
     build:
-      context: ..
+      context: .
       dockerfile: deploy/Containerfile
     command:
     - node

@@ -118,6 +118,8 @@ image's own.
 ```bash
 # on any machine with Docker, from the repository root (Coolify does the same on the server):
 docker build -f deploy/Containerfile -t imed-erp:test .
+# or exactly as Coolify runs it (project directory = repository root):
+DB_ROOT_PASSWORD=x docker compose --project-directory . -f deploy/compose.coolify.yaml build
 ```
 
 Built on the Mac on 27 Oct 2026 in 10 seconds on top of the cached base (2.88 GB; arm64 there, amd64 on the server,
@@ -134,7 +136,9 @@ In Coolify (https://<the VPS>:8000, or the tunnel):
    pushed by this preparation). **Automatic deployment on push: off** (deployments are started by hand, after a
    backup).
 3. **Build pack**: Docker Compose. **Base directory** `/`. **Docker Compose location** `/deploy/compose.coolify.yaml`.
-   The file is flat (no YAML anchors) because Coolify parses it with its own reader; it was generated from the
+   Coolify runs `docker compose --project-directory <repo root> -f deploy/compose.coolify.yaml`, so the build
+   context in the file is `.` (the repository root), not `..`; with `..` the first deploy of 27 Oct 2026 failed with
+   `lstat /artifacts/deploy: no such file`. The file is flat (no YAML anchors) because Coolify parses it with its own reader; it was generated from the
    anchored version with `docker compose config --no-interpolate` and re-checked on the rehearsal stack.
    **Not** Railpack/Nixpacks and **not** Dockerfile: the repository root has no Dockerfile, and a build pack that
    guesses one produces an image whose command is `/bin/bash`, which exits at once and restarts forever (what
