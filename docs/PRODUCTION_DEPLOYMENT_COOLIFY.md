@@ -383,3 +383,113 @@ login, the Traefik security-header labels.
    login created.
 9. Authorise, explicitly and separately: the push, the first Coolify deploy, the restore on the server, the
    switch of the staff, enabling the scheduler. Nothing of these is done by this preparation.
+
+## 13. Runbook: the safe sequence, in order, with its checkpoints (prepared 27 Oct 2026, evening)
+
+Nothing below has been done. Each step says who does it, what it changes, how it is checked, and how it is undone.
+**No step starts before the checkpoint above it is approved in writing.** Steps marked *(read-only)* change nothing.
+
+### Phase 0: what was verified today without changing anything
+
+- VPS from outside: 22 (ssh), 80/443 (Traefik: four apps on `eduguide-eg.com` domains and two on `sslip.io`
+  names), **8000 answers with the Coolify login page**, 6001/6002 answer (Coolify realtime), **8080 answers
+  nothing** (published by the proxy, but Traefik's dashboard has no entrypoint on it: dead, not exposed).
+- VPS inside: `sshd` allows **password login and root login**; three authorised keys on root
+  (`ahmedabozaid.dev@gmail.com`, `coolify`, `hostinger-vps` = the Mac's); UFW installed but inactive; the
+  `DOCKER-USER` chain is empty (Docker's DNAT publishes ports around UFW); `fail2ban` not installed; Hostinger's
+  `monarx-agent` runs on localhost. Coolify: 2 users, registration off, API off, no instance domain (reached by
+  `http://72.62.36.46:8000`).
+- Git: no secret, key or connection string in any tracked file or in the history of any branch (patterns: AWS
+  keys, private keys, `postgres://user:pass@`, api secrets); the only hits are frappe_docker's documentation
+  examples. `.gitignore` now excludes the library binaries, the Generate-Scripts report and the e2e lock file.
+  The branch to ship is 13 commits over `main` (123 files).
+- The 12 test users (`setup/review_test_users.run`, read-only): all created on 15 Oct 2026 by Frappe's and
+  ERPNext's test fixtures (the three `@abc.com` names are ERPNext's support-ticket technicians; the rest Frappe's
+  `_Test` users), **never logged in, own or changed no document, no user permission, no session**. Three of them
+  hold **System Manager** (`test@example.com`, `testdelete@example.com`, `testpassword@example.com`): the ones
+  that matter. No questionable identity: nothing among them is a person. The developer's own account
+  (`toqamo031@gmail.com`) and the `@imed.local` staff are not in the list and are not touched.
+- Backups: `imed_erp/ops/backup_restic.sh` (runs inside the backend container; makes the set, checks every
+  archive, restic backup + check + retention) and `deploy/verify_backup.sh` (restores the latest snapshot into a
+  second site, compares the counts, drops it) were run against the rehearsal stack with a local restic repository:
+  two snapshots made and checked, the recovery restored and matched (section 10, last rows).
+
+### Phase 1: secure the VPS (reversible; nothing of the ERP yet)
+
+| # | Who | Action | Check | Undo |
+|---|---|---|---|---|
+| 1.1 | owner | Confirm from your own machine that `ssh -i <your key> root@72.62.36.46` works **by key** (it must, before passwords are turned off) | the login succeeds without a password prompt | — |
+| 1.2 | deployer, as root | `bash deploy/vps_harden.sh apply`: drops new connections from `eth0` to 8000, 8080, 6001, 6002 in `DOCKER-USER` (persisted in `/etc/ufw/after.rules`), enables UFW with 22/80/443; starts a **10-minute automatic revert** | from a *new* terminal: ssh works; `https://eduguide-eg.com` and the other four apps answer as before; `http://72.62.36.46:8000` no longer answers | automatic after 10 min, or `bash deploy/vps_harden.sh revert` |
+| 1.3 | deployer | `bash deploy/vps_harden.sh confirm` within the 10 minutes | `status` shows the rule and UFW active | `revert` |
+| 1.4 | owner | Reach Coolify from now on through `ssh -L 8000:localhost:8000 root@72.62.36.46` → `http://localhost:8000` (realtime 6001/6002 through the same tunnel: add `-L 6001:localhost:6001 -L 6002:localhost:6002`), **or** give Coolify a domain (Settings → Instance Domain, e.g. `coolify.<domain>`): then it is served by Traefik on 443 with a certificate and the tunnel is not needed | Coolify opens; deployments' live logs stream | — |
+| 1.5 | deployer, as root | `sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/; s/^#\?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config && sshd -t && systemctl reload ssh`, keeping the current session open | a *new* ssh by key works; `ssh -o PubkeyAuthentication=no root@...` is refused | revert the two lines and reload |
+| 1.6 | deployer, as root | `apt-get install -y fail2ban && systemctl enable --now fail2ban`; `fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile && echo '/swapfile none swap sw 0 0' >> /etc/fstab` | `fail2ban-client status sshd`; `free -m` shows swap | `swapoff`, remove the line |
+
+**Checkpoint 1 (approval to run 1.2–1.6).** Risk: a lock-out. Mitigations: the key login proven first (1.1), the
+automatic revert (1.2), the session kept open (1.5). The five applications are not touched: their traffic is
+80/443, which stays open; their containers, volumes and Coolify records are not in any command above.
+
+### Phase 2: the production branch (local until approved)
+
+| # | Who | Action | Check |
+|---|---|---|---|
+| 2.1 | deployer | `git branch production <approved commit>` locally; `git log main..production` reviewed: the XStudio sync, the library analysis and collector, the halls, the sidebar, this deployment preparation; nothing else | the list of 14 commits matches what the owner approved |
+| 2.2 | owner | Make the GitHub repository **private** (Settings → Danger zone → Change visibility), or accept that the code stays public (it holds no secret; the business rules and data structures are visible) | — |
+| 2.3 | owner | **Approve the push** of `production` | — |
+| 2.4 | deployer | `git push origin production` (the only push); in Coolify the source is this branch, auto-deploy off | Coolify shows the branch |
+
+**Checkpoint 2 (approval to push).**
+
+### Phase 3: an isolated validation instance on the VPS (no domain switch, no sync)
+
+| # | Who | Action | Check | Undo |
+|---|---|---|---|---|
+| 3.1 | deployer | In Coolify: project **IMED ERP**, environment **validation**, application from `production`, Docker Compose, `/deploy/compose.coolify.yaml`, env from `deploy/coolify.env.example` with a fresh `DB_ROOT_PASSWORD`, domain `erp-test.<domain>` on `frontend`:8080 (or a `sslip.io` name) | Coolify builds the image on the VPS (amd64, first time 5–10 min) and reports every container healthy | Coolify → Delete the application (its volumes go with it; nothing else on the VPS is touched) |
+| 3.2 | deployer | Copy the **cutover-rehearsal set** (a fresh backup of the Mac's site, taken that day; not yet the final one) to the VPS with `scp -i ~/.ssh/hostinger_vps`; run `deploy/restore_site.sh` against the validation backend | the script's last lines: passwords decrypt yes, counts equal the Mac's, scheduler disabled | delete the application |
+| 3.3 | deployer + owner | Essential workflows on `https://erp-test.<domain>`: login as the owner (password as on the Mac), nour, gilan, the accountant; the sidebar; the owner's page; the bookings list and calendar; one hall booking created, confirmed, rescheduled, cancelled on a test hall and then cancelled; Integration Status; a report; phone width | each works; no console error; nothing posted (Sales Invoice, GL Entry counts unchanged) | — |
+| 3.4 | deployer | `bench --site frontend execute imed_erp.imederp.xstudio.sync.dry_run` on the validation instance (reads XStudio from the VPS, writes nothing; the scheduler stays disabled there, so the Mac remains the only syncing site) | read ≈160 / insert 0 / skip ≈116 / 1 known failure | — |
+| 3.5 | deployer | Backups on the validation instance: the Scheduled Task with the real bucket's `RESTIC_*` values (entered by the owner in Coolify) run once by hand; then `deploy/verify_backup.sh` | "OFFSITE OK" in the task log; "RECOVERY OK" | — |
+| 3.6 | deployer | The library endpoint: `setup_library_connector.run`; keys generated on the validation site only; the mock PC1 batch posted from the Mac over HTTPS (`tanmya_connector.py --from-json`) twice; a wrong token | inserted 2 / skipped 2 / 401; no posting | the two `pc1` test documents deleted |
+
+**Checkpoint 3 (owner reviews 3.3–3.6 results on the validation instance).** Only after this is the production
+environment created. The validation instance is deleted after the cutover (or kept, renamed, as the monthly
+restore-check target).
+
+### Phase 4: production instance and cutover (one ERP syncs XStudio at every moment)
+
+| # | Who | Action | Check |
+|---|---|---|---|
+| 4.1 | deployer | Coolify environment **production**: the same application definition, its own `DB_ROOT_PASSWORD`, domain `erp.<domain>` (A record set by the owner beforehand), the backup task and `RESTIC_*` set | healthy, empty (no site) |
+| 4.2 | deployer, on the Mac | **Pause**: `bench --site frontend disable-scheduler`; wait for a running XStudio run to finish (Integration Import Log: none Running) | `scheduler status`: disabled |
+| 4.3 | deployer, on the Mac | **Final backup**: `scripts/backup_offsite.sh` → the set copied to the owner's drive (the independent copy, never touched again) and to the VPS | archives checked |
+| 4.4 | deployer, VPS | `deploy/restore_site.sh` with `HOST_NAME=https://erp.<domain>` against the production backend | passwords decrypt yes; counts equal 4.3's |
+| 4.5 | deployer, VPS | **Test users**: `bench --site frontend execute imed_erp.setup.review_test_users.run` (the same 12, still never logged in) then `...review_test_users.disable_users --kwargs "{'users': [...the 12...]}"` (reversible: User → Enabled) | 12 disabled; `@imed.local` users untouched |
+| 4.6 | owner, VPS | New passwords for `owner@imed.local` and `Administrator` (`bench --site frontend set-password <user>`, typed, never pasted); System Settings login rules (section 7) | logins work with the new passwords |
+| 4.7 | deployer, VPS | XStudio dry run from production | as in 3.4 |
+| 4.8 | owner | **Checkpoint 4: approve the switch** after seeing 4.4–4.7 | — |
+| 4.9 | deployer | Staff are told the new address; the Mac's stack is **stopped** (`docker compose -p frappe_docker -f frappe_docker/pwd.yml stop`; not removed) | the Mac answers nothing on 8080 |
+| 4.10 | deployer, VPS | `bench --site frontend enable-scheduler`; the four paused job types stay paused (they came with the database) | `scheduler status` enabled; `bench doctor` 2 workers |
+| 4.11 | deployer | Watch the first two scheduled XStudio runs (10 min each) | inserted 0 (or only bookings made in XStudio since 4.3), no duplicate `import_key`, Health Healthy |
+| 4.12 | deployer | The nightly backup task's first run, by hand; `verify_backup.sh` once | OFFSITE OK; RECOVERY OK |
+
+**At no moment do two sites sync**: the Mac's scheduler is off from 4.2; the server's is on from 4.10; the
+validation instance's never is. The XStudio credentials and the 113 imported bookings travel inside the
+database; the encryption key inside the backup's site config; the client stays read-only.
+
+### Phase 5: PC1 (separate, after cutover; never blocks it)
+
+Section 8. Its first live run needs: the collector ZIP from PC1, the read-only SQL login, the connector user's
+keys generated on production (4.5 is where the user exists), and the owner's word on which library PC1 is.
+
+### What I need from you, in the order it is needed
+
+1. Confirm your key login to the VPS (1.1), then **approval for Phase 1**.
+2. Decide: Coolify behind a domain (`coolify.<domain>`) or through the SSH tunnel (1.4).
+3. The ERP domain(s): `erp.<domain>` and `erp-test.<domain>` (A records to 72.62.36.46), and whether the GitHub
+   repository becomes private.
+4. **Approval to push** the `production` branch (Phase 2).
+5. The backup bucket (endpoint, bucket name) and its keys, and the restic password, entered by you in Coolify's
+   environment of the validation application (3.5), later copied to production (4.1). Not in chat.
+6. **Approval to create the validation instance** (Phase 3) and, after its review, **to create production and cut
+   over** (Phase 4), with the day and hour.
+7. At 4.6, your new passwords typed on the server.

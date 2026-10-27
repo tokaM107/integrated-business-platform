@@ -38,3 +38,10 @@ apps/imed_erp/imed_erp/setup/data/opening_stock.csv
 # with its version and checksum. Its approved changes are in docs/requirements/ as text.
 docs/*.docx
 docs/**/*.docx
+
+# The library vendor binaries and the SQL Server script report brought from the library PC (never committed)
+*.exe
+*.rar
+/Db2BDoctor*_GenerateScriptReport_*.html
+/library_metadata_*.zip
+/tests/e2e/package-lock.json

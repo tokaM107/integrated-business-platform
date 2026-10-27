@@ -77,8 +77,6 @@ docker exec "$BACKEND" rm -rf "$inside"
 echo "checks"
 bench --site "$SITE" execute frappe.utils.password.get_decrypted_password --args "['XStudio Settings','XStudio Settings','password']" >/dev/null \
 	&& echo "  stored passwords decrypt: yes" || echo "  stored passwords decrypt: NO (encryption key missing)"
-for t in Booking Customer "Studio Hour Package" "Integration Import Log" "Booking Resource" "Sales Invoice" "GL Entry" User; do
-	printf '  %s: ' "$t"; bench --site "$SITE" execute frappe.db.sql --args "[\"select count(*) from \`tab$t\`\"]"
-done
+bench --site "$SITE" execute imed_erp.setup.counts.run | tail -1
 bench --site "$SITE" scheduler status
 echo "done: the site is restored, the scheduler is disabled"
