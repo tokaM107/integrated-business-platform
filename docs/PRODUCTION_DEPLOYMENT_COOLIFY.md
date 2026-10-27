@@ -196,7 +196,7 @@ right after the restore (one command, reversible); (b) also delete the test comp
 rehearsal copy first, verify, and only then on the server (ERPNext's company deletion tool, a few hours of careful
 work, not rehearsed yet); (c) a clean site from the setup scripts with the business records re-imported (XStudio
 re-syncs its bookings and packages by itself; the 3 agreements, 3 editions and 3 material requests would be
-re-entered). The preparation assumes (a); (b) can be rehearsed on request.
+re-entered). **Decided by the owner on 27 Oct 2026: (a)**, after a backup and the review of each user (`setup/review_test_users.run`); the companies and accounts stay for now. (b) can be rehearsed later.
 
 ## 6. Domain and HTTPS (deliverable 6)
 
@@ -246,17 +246,22 @@ with the database, so this is a cutover step, not an option.
 - The encryption key is not rotated (that would re-encrypt every stored password); it stays in the two backup
   copies and in Coolify's volume only.
 
-**Backups off the server**: the image ships `restic`. In Coolify → the application → Scheduled Tasks, on the
-`backend` container, nightly at 02:30 (server time, UTC) :
+**Backups off the server**: the image ships `restic`, and the app ships the task. In Coolify → the application →
+Scheduled Tasks, on the `backend` container, nightly at 02:30 (server time, UTC):
 ```bash
-bench --site frontend backup --with-files && restic snapshots -q >/dev/null 2>&1 || restic init && restic backup --tag imed-erp /home/frappe/frappe-bench/sites/frontend/private/backups && restic forget --keep-daily 30 --keep-weekly 12 --prune
+bash /home/frappe/frappe-bench/apps/imed_erp/imed_erp/ops/backup_restic.sh
 ```
-with `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` in the environment
-(section 4). Each set holds the site config with the encryption key; the bucket must be private and the restic
-password kept with the owner (without it the backups are unreadable). **Restore test, monthly and before every
-version**: pull the latest set (`restic restore latest --target /tmp/r`) and run `deploy/restore_site.sh` against
-a second site name (`SITE=restore-check`) in the same stack, compare counts, drop the check site. The Mac keeps
-the independent copy of the cutover set.
+It makes the bench set (database, public and private files, site config with the encryption key), checks every
+archive, sends the four files to the restic repository (initialised on first use), runs `restic check`, keeps 30
+daily / 12 weekly / 12 monthly snapshots, and prints `OFFSITE OK <set> <snapshot>`: the line to look for in the task
+log; anything else is a failure. It needs `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` in the application's environment (section 4), entered by the owner in Coolify. The bucket
+must be private and the restic password kept with the owner (without it the backups are unreadable).
+**Recovery, not upload, is what is verified**: `deploy/verify_backup.sh` (on the host) pulls the latest snapshot,
+restores it with `restore_site.sh` into a second site `restore-check` in the same stack, compares the record
+counts with the live site, drops the check site, and prints `RECOVERY OK`. Monthly and before every version.
+Both were run on the rehearsal stack against a local repository (section 10). The Mac keeps the independent copy
+of the cutover set.
 
 **Monitoring**: Coolify shows container health and restarts; its notifications (Telegram or e-mail) are set in
 Coolify → Settings → Notifications: deployment failures and unhealthy containers. Inside the ERP: Integration
@@ -346,7 +351,12 @@ Run on the server after the restore (steps 3–6 of section 5), then again after
 | Library endpoint on the rehearsal stack, real HTTP through nginx | connector user created by `setup_library_connector.run` (role Library Connector only); keys generated on the rehearsal copy only; `tanmya_connector.py --from-json` posted a two-document PC1 batch with token auth: log IMP-2026-00039 Completed, read 2, inserted 2; the same batch again: IMP-2026-00040, read 2, skipped 2, inserted 0; both documents keyed `tanmya:pc1:stock:1` and `:2`, library `pc1`, cost center مكتبة المواساة; Sales Invoice, GL Entry, Payment Entry, Journal Entry counts unchanged (0) and Stock Ledger Entry unchanged (2); a wrong token → 401 |
 | Library tests | `test_library_sync`: 17 OK (incl. two libraries, same id → two documents; nameless batch refused) |
 | Connector config guard | `config.pc1.example.json --check` → exit 2 listing every placeholder; a config without `Db2BDoctor` / `ApplicationIntent=ReadOnly` → listed |
-| Full app test suite (earlier today, before the library change) | 748 OK; the library module re-run after the change: OK |
+| Full app test suite (after the library change) | 748 OK, 1 skipped |
+| Backup task `imed_erp/ops/backup_restic.sh` on the rehearsal stack, local restic repository | two runs: set made and checked, `snapshot d0e375f6 saved`, `no errors were found`, `OFFSITE OK 20261027_153459-frontend d0e375f6`; second run `OFFSITE OK 20261027_153509-frontend c95fecdf` (retention applied) |
+| Recovery `deploy/verify_backup.sh` on the rehearsal stack | latest snapshot restored into `restore-check` (encryption key carried, passwords decrypt), 18 doctype counts compared with the live rehearsal site: all `same` (Booking 113, Customer 50, ... User 24), check site dropped: `RECOVERY OK` |
+| Test users review `setup/review_test_users.run` on the live local site | 12 users, all Frappe/ERPNext fixtures of 15 Oct 2026, never logged in, own nothing, no permission, no session; 3 hold System Manager |
+| Repository secret scan (tracked files and the history of every branch) | nothing found (only frappe_docker's documentation examples) |
+| VPS port probe from outside | 8000 → Coolify login page; 6001/6002 → answer; 8080 → no answer (dead publish); 80/443 → Traefik; 22 → ssh |
 
 Not tested: the image on amd64 (built on arm64 here; Coolify builds it on the VPS), Let's Encrypt on the real
 domain, the restic job against a real bucket (no bucket yet), the connector against a SQL Server, two-factor
@@ -357,7 +367,7 @@ login, the Traefik security-header labels.
 1. **Domain name** for the ERP, and its DNS A record (owner).
 2. **Backup bucket** (S3-compatible) and its keys; the restic password chosen and kept by the owner.
 3. **Test records decision** (section 5): (a) disable the test users only, or (b) remove the test companies too.
-4. **Which library PC1 is** (Azarita or Mawasah) for its cost center, and the first library's name for its `library`
+4. (not blocking the ERP, owner's decision of 27 Oct) **Which library PC1 is** (Azarita or Mawasah) for its cost center, and the first library's name for its `library`
    slug; the PC1 metadata ZIP (`COLLECT_METADATA.bat` on PC1) before its first import.
 5. **Coolify access** for whoever runs the deploy (the owner's Coolify login or a member invited), and the GitHub
    source connected in Coolify.
