@@ -46,6 +46,8 @@ services:
     - sites:/home/frappe/frappe-bench/sites
     - logs:/home/frappe/frappe-bench/logs
   configurator:
+    # One-time job (writes the bench settings, exits 0). Coolify counts a mixed running+exited stack as
+    # "degraded:unhealthy" unless the service is excluded from its status: a service with restart "no" is.
     build:
       context: .
       dockerfile: deploy/Containerfile
@@ -73,7 +75,7 @@ services:
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: '9000'
     image: imed-erp:${IMED_IMAGE_TAG:-coolify}
-    restart: on-failure
+    restart: "no"
     volumes:
     - sites:/home/frappe/frappe-bench/sites
     - logs:/home/frappe/frappe-bench/logs
