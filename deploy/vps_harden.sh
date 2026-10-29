@@ -6,8 +6,9 @@
 #   1. Starts a dead-man's switch: in REVERT_MINUTES (10) the rules are removed again, unless `vps_harden.sh confirm`
 #      was run from a NEW SSH session that worked after the change. A lock-out undoes itself.
 #   2. Docker publishes ports around UFW, so the block is in iptables' DOCKER-USER chain (what Docker leaves to the
-#      administrator): new connections from the public interface to 8000 (Coolify), 8080 (Traefik's unused dashboard
-#      port), 6001 and 6002 (Coolify realtime) are dropped. 80, 443 (the apps, through Traefik) and 22 are untouched.
+#      administrator), matched on the ORIGINAL destination port (DOCKER-USER sees post-DNAT ports; Coolify's 8000 is
+#      8080 inside its container). Default: only Traefik's unused 8080. The owner chose on 29 Oct 2026 to keep
+#      Coolify's 8000 and its realtime 6001/6002 public; pass PORTS=8000,8080,6001,6002 to close them too.
 #   3. UFW for the host itself: 22, 80, 443 allowed, the rest denied (sshd is the only host service listening).
 #   4. Persists the DOCKER-USER rule as a systemd oneshot unit ordered after docker.service, so a reboot keeps it.
 #   Not here (separate, after the owner confirms their key works): sshd PasswordAuthentication no.
@@ -18,18 +19,18 @@
 #   bash vps_harden.sh status
 set -euo pipefail
 IFACE="${IFACE:-$(ip -o -4 route show default | awk '{print $5}' | head -1)}"
-PORTS="${PORTS:-8000,8080,6001,6002}"
+PORTS="${PORTS:-8080}"
 REVERT_MINUTES="${REVERT_MINUTES:-10}"
 MARK="imed-harden"
 STATE=/var/run/imed-harden-revert.pid
 
 rules_add() {
-	iptables -C DOCKER-USER -i "$IFACE" -p tcp -m multiport --dports "$PORTS" -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP 2>/dev/null \
-		|| iptables -I DOCKER-USER 1 -i "$IFACE" -p tcp -m multiport --dports "$PORTS" -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP
+	iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP 2>/dev/null \
+		|| iptables -I DOCKER-USER 1 -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP
 }
 rules_del() {
-	while iptables -C DOCKER-USER -i "$IFACE" -p tcp -m multiport --dports "$PORTS" -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP 2>/dev/null; do
-		iptables -D DOCKER-USER -i "$IFACE" -p tcp -m multiport --dports "$PORTS" -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP
+	while iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP 2>/dev/null; do
+		iptables -D DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP
 	done
 }
 persist() {
@@ -40,8 +41,8 @@ persist() {
 # Managed by deploy/vps_harden.sh: block new connections from the internet to the management ports that Docker
 # publishes around UFW (Coolify 8000, its realtime 6001/6002, Traefik's unused 8080).
 for i in \$(seq 1 30); do iptables -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 2; done
-iptables -C DOCKER-USER -i $IFACE -p tcp -m multiport --dports $PORTS -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP 2>/dev/null \
-	|| iptables -I DOCKER-USER 1 -i $IFACE -p tcp -m multiport --dports $PORTS -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP
+iptables -C DOCKER-USER -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport $PORTS -m comment --comment "$MARK" -j DROP 2>/dev/null \
+	|| iptables -I DOCKER-USER 1 -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport $PORTS -m comment --comment "$MARK" -j DROP
 SCRIPT
 	chmod 755 /usr/local/sbin/imed-docker-user.sh
 	cat > /etc/systemd/system/imed-docker-user.service <<UNIT
