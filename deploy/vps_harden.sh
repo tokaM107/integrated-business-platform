@@ -9,7 +9,7 @@
 #      administrator): new connections from the public interface to 8000 (Coolify), 8080 (Traefik's unused dashboard
 #      port), 6001 and 6002 (Coolify realtime) are dropped. 80, 443 (the apps, through Traefik) and 22 are untouched.
 #   3. UFW for the host itself: 22, 80, 443 allowed, the rest denied (sshd is the only host service listening).
-#   4. Persists the DOCKER-USER rules in /etc/ufw/after.rules so a reboot keeps them.
+#   4. Persists the DOCKER-USER rule as a systemd oneshot unit ordered after docker.service, so a reboot keeps it.
 #   Not here (separate, after the owner confirms their key works): sshd PasswordAuthentication no.
 #
 #   bash vps_harden.sh apply      # then open a NEW terminal, ssh in, open https://<an app domain>; if both work:
@@ -33,18 +33,39 @@ rules_del() {
 	done
 }
 persist() {
-	# UFW re-applies after.rules on boot; our chain rules go in a block of their own.
-	sed -i "/# $MARK start/,/# $MARK end/d" /etc/ufw/after.rules
-	cat >> /etc/ufw/after.rules <<RULES
-# $MARK start
-*filter
-:DOCKER-USER - [0:0]
--I DOCKER-USER 1 -i $IFACE -p tcp -m multiport --dports $PORTS -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP
-COMMIT
-# $MARK end
-RULES
+	# Re-applied after Docker starts on every boot (Docker rebuilds its chains at start, so a rule loaded by UFW
+	# before Docker would be lost): a small oneshot unit ordered after docker.service.
+	cat > /usr/local/sbin/imed-docker-user.sh <<SCRIPT
+#!/usr/bin/env bash
+# Managed by deploy/vps_harden.sh: block new connections from the internet to the management ports that Docker
+# publishes around UFW (Coolify 8000, its realtime 6001/6002, Traefik's unused 8080).
+for i in \$(seq 1 30); do iptables -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 2; done
+iptables -C DOCKER-USER -i $IFACE -p tcp -m multiport --dports $PORTS -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP 2>/dev/null \
+	|| iptables -I DOCKER-USER 1 -i $IFACE -p tcp -m multiport --dports $PORTS -m conntrack --ctstate NEW -m comment --comment "$MARK" -j DROP
+SCRIPT
+	chmod 755 /usr/local/sbin/imed-docker-user.sh
+	cat > /etc/systemd/system/imed-docker-user.service <<UNIT
+[Unit]
+Description=IMED: block public access to Docker-published management ports (DOCKER-USER)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/imed-docker-user.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+	systemctl daemon-reload
+	systemctl enable imed-docker-user.service >/dev/null 2>&1
 }
-unpersist() { sed -i "/# $MARK start/,/# $MARK end/d" /etc/ufw/after.rules; }
+unpersist() {
+	systemctl disable imed-docker-user.service >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/imed-docker-user.service /usr/local/sbin/imed-docker-user.sh
+	systemctl daemon-reload
+}
 
 case "${1:-status}" in
 apply)
