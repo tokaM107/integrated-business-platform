@@ -91,8 +91,31 @@ def money(day):
 		rows.append(money_row(business.label, business.name, totals, business.name in shared))
 	if totals.get((NO_COST_CENTER, "Income")) or totals.get((NO_COST_CENTER, "Expense")):
 		rows.append(money_row(_("No business on the entry"), NO_COST_CENTER, totals))
+	rows.append(xstudio_money_row(day))
 	total = {key: flt(sum(row[key] for row in rows), 2) for key in ("revenue", "expenses", "net")}
 	return {"rows": rows, "total": total}
+
+
+def xstudio_money_row(day):
+	"""The studio's money as XStudio reports it (owner's wish of 29 Oct 2026: the synced figures on the same table):
+	what XStudio says was paid on the bookings of the day that hold their time. Read from the mirrored bookings,
+	never posted to the ledger (owner's rule of 25 Oct 2026); the row is marked so the accountant knows."""
+	paid = frappe.db.sql(
+		"""select coalesce(sum(xstudio_amount_paid), 0), count(*) from `tabBooking`
+		where source_system = 'xstudio' and booking_date = %s and status not in ('Cancelled', 'No Show')""",
+		(day,),
+	)[0]
+	revenue = flt(paid[0], 2)
+	return {
+		"business": _("X Studio, as XStudio reports it (not posted)"),
+		"cost_center": None,
+		"revenue": revenue,
+		"expenses": 0,
+		"net": revenue,
+		"not_split": False,
+		"external": True,
+		"bookings": cint(paid[1]),
+	}
 
 
 def money_row(label, cost_center, totals, is_shared=False):

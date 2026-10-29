@@ -178,7 +178,7 @@
 				(row) => `<tr class="${row.revenue || row.expenses ? "" : "is-quiet"}">
 					<td>${esc(row.business)}${
 					row.not_split ? ` <span class="imed-yday-flag">${esc(__("not split"))}</span>` : ""
-				}</td>
+				}${row.external ? ` <span class="imed-yday-flag">${esc(__("from XStudio, {0} booking(s)", [row.bookings]))}</span>` : ""}</td>
 					<td class="is-num">${money(row.revenue, c)}</td>
 					<td class="is-num">${money(row.expenses, c)}</td>
 					<td class="is-num ${tone(row.net)}">${money(row.net, c)}</td>
@@ -197,7 +197,7 @@
 					<td class="is-num">${money(t.expenses, c)}</td><td class="is-num ${tone(t.net)}">${money(t.net, c)}</td></tr></tfoot>
 			</table>
 			<p class="imed-yday-note">${esc(
-				__("Invoiced revenue and approved expenses (submitted documents only). Money collected is not revenue.")
+				__("Invoiced revenue and approved expenses (submitted documents only). The X Studio line is what XStudio reports as paid on the day's bookings; it is shown, not posted.")
 			)}</p>`,
 			"is-wide"
 		);
