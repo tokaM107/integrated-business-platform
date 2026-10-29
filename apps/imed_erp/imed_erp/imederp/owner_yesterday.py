@@ -54,14 +54,16 @@ JOB_NAMES = {
 
 def check_owner():
 	if frappe.session.user != "Administrator" and OWNER_ROLE not in frappe.get_roles():
-		frappe.throw(_("Only the owner sees yesterday's figures."), frappe.PermissionError)
+		frappe.throw(_("Only the owner sees the day's figures."), frappe.PermissionError)
 
 
 def report_day(today=None):
-	"""Yesterday: the calendar day before `today` (the site's today by default), and its bounds as times."""
-	today = getdate(today or nowdate())
-	day = add_days(today, -1)
-	return frappe._dict(day=day, start=get_datetime(day), end=get_datetime(today))
+	"""The day the owner's band reports: today, as it stands now (the owner's wish of 29 Oct 2026: the live state,
+	not yesterday's closed day), from midnight up to this moment. With a date given (tests), the whole of that day."""
+	live = today is None
+	day = getdate(today or nowdate())
+	end = now_datetime() if live else get_datetime(add_days(day, 1))
+	return frappe._dict(day=day, start=get_datetime(day), end=end, as_of=end)
 
 
 @frappe.whitelist()
@@ -70,6 +72,7 @@ def get_yesterday():
 	period = report_day()
 	return {
 		"day": period.day,
+		"as_of": period.as_of,
 		"currency": frappe.get_cached_value("Company", company(), "default_currency"),
 		"money": money(period.day),
 		"printing": printing(period.day),

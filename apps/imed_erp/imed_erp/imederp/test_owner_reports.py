@@ -17,7 +17,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
-from frappe.utils import add_days, flt, getdate, today
+from frappe.utils import add_days, flt, getdate, now_datetime, today
 
 from imed_erp.imederp import owner_yesterday
 from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
@@ -271,12 +271,16 @@ class IntegrationTestOwnerYesterday(OwnerReportsTestCase):
 			("2028-03-01", "2028-02-29"),  # a leap day
 		):
 			with self.subTest(today=today_):
-				period = owner_yesterday.report_day(today_)
+				# A given day is reported whole (29 Oct 2026: the band shows the live day, not yesterday).
+				period = owner_yesterday.report_day(yesterday)
 				self.assertEqual(period.day, getdate(yesterday))
 				self.assertEqual(period.start, datetime.combine(getdate(yesterday), datetime.min.time()))
 				self.assertEqual(period.end, datetime.combine(getdate(today_), datetime.min.time()))
-		# Without a date, the site's today (System Settings time zone).
-		self.assertEqual(owner_yesterday.report_day().day, getdate(add_days(today(), -1)))
+		# Without a date: today, up to this moment.
+		live = owner_yesterday.report_day()
+		self.assertEqual(live.day, getdate(today()))
+		self.assertLessEqual(live.end, now_datetime())
+		self.assertGreaterEqual(live.end, live.start)
 
 	def money_of(self, day):
 		return {row["cost_center"]: row for row in owner_yesterday.money(day)["rows"]}
@@ -308,7 +312,7 @@ class IntegrationTestOwnerYesterday(OwnerReportsTestCase):
 
 	def test_bookings_by_their_day_not_the_day_they_were_made(self):
 		day = getdate("2028-01-20")
-		period = owner_yesterday.report_day(add_days(day, 1))
+		period = owner_yesterday.report_day(day)
 		before = owner_yesterday.bookings(period)
 		made = datetime(2028, 1, 20, 10, 0)
 		older = datetime(2028, 1, 2, 10, 0)

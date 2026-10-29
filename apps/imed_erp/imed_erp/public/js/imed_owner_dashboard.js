@@ -148,7 +148,7 @@
 	// ---------------- Yesterday (requirements 5.1; imederp/owner_yesterday.py) ----------------
 	// Under the welcome band: each business's money, the bookings, the app's fees, the printing and the systems, for
 	// the day before. Fetched when the dashboard opens, again after five minutes away.
-	const REFRESH_MS = 5 * 60 * 1000;
+	const REFRESH_MS = 30 * 1000; // the live state: fetched again on every visit after half a minute
 	let yesterday = null;
 	let fetched_at = 0;
 	let fetching = false;
@@ -235,7 +235,7 @@
 			<div class="imed-yday-stats">
 				${stat(__("Studio hours booked"), hours, "", list("Studio Service", HELD))}
 				${stat(__("Studio hours delivered"), delivered, "", list("Studio Service", "Completed"))}
-				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday), "", made)}
+				${stat(__("Booked today (any date)"), number(b.made_yesterday), "", made)}
 			</div>
 			<div class="imed-yday-sub">${esc(__("The studio's money, as XStudio says it (not posted here)"))}</div>
 			<div class="imed-yday-stats">
@@ -245,7 +245,7 @@
 			${
 				b.still_open
 					? `<p class="imed-yday-warn"><a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(open))}">${esc(
-							__("{0} booking(s) of yesterday are neither completed nor cancelled.", [b.still_open])
+							__("{0} booking(s) of today are neither completed nor cancelled.", [b.still_open])
 					  )}</a></p>`
 					: ""
 			}`
@@ -301,8 +301,8 @@
 			"smartphone",
 			__("Platform fees"),
 			`<div class="imed-yday-stats">
-				${stat(__("Charged yesterday"), money(a.charged, currency), "", ledger(["Accrual", "Adjustment"]))}
-				${stat(__("Collected yesterday"), money(a.collected, currency), a.collected ? "is-positive" : "", ledger(["Collection"]))}
+				${stat(__("Charged today"), money(a.charged, currency), "", ledger(["Accrual", "Adjustment"]))}
+				${stat(__("Collected today"), money(a.collected, currency), a.collected ? "is-positive" : "", ledger(["Collection"]))}
 				${stat(
 					__("Still owed by doctors"),
 					a.outstanding == null ? esc(__("Not configured")) : money(a.outstanding, currency),
@@ -391,7 +391,7 @@
 			.join("");
 		const $panel = $(`<div class="imed-yday">
 				<div class="imed-yday-head">
-					<h2>${frappe.utils.icon("calendar-check", "md")}<span>${esc(__("Yesterday, {0}", [day]))}</span></h2>
+					<h2>${frappe.utils.icon("calendar-check", "md")}<span>${esc(__("Today, {0}", [day]))}</span> <small class="text-muted">${esc(__("as of {0}", [d.as_of ? frappe.datetime.str_to_user(d.as_of).slice(11, 16) : ""]))}</small></h2>
 					<nav>${links}</nav>
 				</div>
 				<div class="imed-yday-grid">

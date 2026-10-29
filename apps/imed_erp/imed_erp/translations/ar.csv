@@ -2139,3 +2139,10 @@ The doctor's own customer record (group طبيب); never a second record for the
 Checked against the hall's capacity.,بيتراجع مع عدد أماكن القاعة.
 "Floor, building, or how to find it.",الدور أو المبنى أو إزاي توصل لها.
 "Minutes kept free before and after each booking of this resource (set-up, cleaning). 0: back-to-back bookings are allowed.",دقايق بتتساب فاضية قبل وبعد كل حجز (تجهيز، تنظيف). 0: الحجوزات ورا بعض مسموحة.
+"Today, {0}",النهاردة، {0}
+as of {0},لحد الساعة {0}
+Booked today (any date),اتحجز النهاردة (لأي يوم)
+{0} booking(s) of today are neither completed nor cancelled.,{0} حجز النهاردة لا اكتمل ولا اتلغى.
+Charged today,اتحسب النهاردة
+Collected today,اتحصل النهاردة
+Only the owner sees the day's figures.,أرقام اليوم للمالك بس.
