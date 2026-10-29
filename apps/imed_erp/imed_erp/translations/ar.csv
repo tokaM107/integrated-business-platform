@@ -2149,3 +2149,5 @@ Only the owner sees the day's figures.,أرقام اليوم للمالك بس.
 "X Studio, as XStudio reports it (not posted)",استوديو X حسب XStudio (مش مرحّل في الحسابات)
 "from XStudio, {0} booking(s)",من XStudio، {0} حجز
 "Invoiced revenue and approved expenses (submitted documents only). The X Studio line is what XStudio reports as paid on the day's bookings; it is shown, not posted.",الإيراد المفوتر والمصروفات المعتمدة (المستندات المعتمدة بس). سطر استوديو X هو اللي XStudio بيقول إنه اتدفع على حجوزات اليوم؛ معروض بس ومش مرحّل في الحسابات.
+"from XStudio: {0} booking(s), paid {1}, due {2}",من XStudio: {0} حجز، مدفوع {1}، مستحق {2}
+"Invoiced revenue and approved expenses (submitted documents only). The X Studio line is the price of the day's bookings as XStudio reports it (cancelled ones left out), with what was paid and what is due; it is shown, not posted.",الإيراد المفوتر والمصروفات المعتمدة (المستندات المعتمدة بس). سطر استوديو X هو قيمة حجوزات اليوم زي ما XStudio بيقول (من غير الملغي)، ومعاه المدفوع والمستحق؛ معروض بس ومش مرحّل في الحسابات.

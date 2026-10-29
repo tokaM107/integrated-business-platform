@@ -98,14 +98,16 @@ def money(day):
 
 def xstudio_money_row(day):
 	"""The studio's money as XStudio reports it (owner's wish of 29 Oct 2026: the synced figures on the same table):
-	what XStudio says was paid on the bookings of the day that hold their time. Read from the mirrored bookings,
-	never posted to the ledger (owner's rule of 25 Oct 2026); the row is marked so the accountant knows."""
-	paid = frappe.db.sql(
-		"""select coalesce(sum(xstudio_amount_paid), 0), count(*) from `tabBooking`
+	the price of the day's bookings that hold their time (cancelled and no-show left out), with what XStudio says
+	was paid and what is still due on them. Read from the mirrored bookings, never posted to the ledger (owner's
+	rule of 25 Oct 2026); the row is marked so the accountant knows."""
+	row = frappe.db.sql(
+		"""select coalesce(sum(xstudio_price_total), 0), coalesce(sum(xstudio_amount_paid), 0),
+			coalesce(sum(xstudio_amount_due), 0), count(*) from `tabBooking`
 		where source_system = 'xstudio' and booking_date = %s and status not in ('Cancelled', 'No Show')""",
 		(day,),
 	)[0]
-	revenue = flt(paid[0], 2)
+	revenue = flt(row[0], 2)
 	return {
 		"business": _("X Studio, as XStudio reports it (not posted)"),
 		"cost_center": None,
@@ -114,7 +116,9 @@ def xstudio_money_row(day):
 		"net": revenue,
 		"not_split": False,
 		"external": True,
-		"bookings": cint(paid[1]),
+		"bookings": cint(row[3]),
+		"paid": flt(row[1], 2),
+		"due": flt(row[2], 2),
 	}
 
 
