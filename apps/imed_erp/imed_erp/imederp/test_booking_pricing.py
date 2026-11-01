@@ -600,6 +600,73 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 			frappe.ValidationError, "rental model", self.book, start="13:00", end="14:00", rental_model=""
 		)
 
+	# ---------- HAL-03 by the length of the booking: Hall Price Tier (the center's price list of 1 Nov 2026) ----------
+
+	def tier(self, resource, price_list=STANDARD, first=800, two=1600, extra=600):
+		return frappe.get_doc(
+			{
+				"doctype": "Hall Price Tier",
+				"resource": resource,
+				"price_list": price_list,
+				"first_hour_rate": first,
+				"two_hour_rate": two,
+				"extra_hour_rate": extra,
+			}
+		).insert()
+
+	def test_a_hall_with_a_tier_is_priced_by_the_length_of_the_booking(self):
+		self.tier(self.hall)
+		for i, (start, end, expected) in enumerate((
+			("10:00", "11:00", 800),  # one hour: the first-hour price
+			("10:00", "10:30", 800),  # half an hour: still the first hour
+			("10:00", "12:00", 1600),  # two hours: the two-hour price
+			("10:00", "11:30", 1600),  # between one and two hours: the two-hour price (owner to confirm)
+			("10:00", "13:00", 2200),  # three hours: 1600 + 600
+			("10:00", "12:30", 1900),  # two and a half: 1600 + 0.5 x 600, by the minutes
+			("10:00", "14:20", 3000),  # 4 h 20 min: 1600 + 2.3333 x 600 = 3000.00
+		)):
+			with self.subTest(start=start, end=end):
+				booking = self.book(start=start, end=end, date=add_days(DAY, i))  # each on its own day: no overlap
+				self.assertEqual(booking.total_amount, expected)
+				self.assertEqual(booking.base_amount, expected)
+				self.assertEqual(booking.price_list, STANDARD)
+				self.assertIn(STANDARD, booking.pricing_note)
+
+	def test_tiers_differ_by_hall_and_by_customer_category(self):
+		# The small halls' list: 200 / 350 / 125; the students' list for the big hall is cheaper.
+		small = self.make("Booking Resource", resource_name="_Test Small Tiered Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
+		self.tier(small, first=200, two=350, extra=125)
+		self.tier(self.hall)
+		self.tier(self.hall, price_list=STUDENTS, first=500, two=1000, extra=400)
+		self.assertEqual(self.book(resource=small, start="10:00", end="13:00").total_amount, 475)
+		self.assertEqual(self.book(start="10:00", end="13:00").total_amount, 2200)
+		self.assertEqual(self.book(start="14:00", end="17:00", customer=self.student).total_amount, 1400)  # 1000 + 1 x 400
+		# A hall without a tier is priced by the hour from its item, as before (300 x 3 on the standard list).
+		plain = self.make("Booking Resource", resource_name="_Test Plain Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
+		self.assertEqual(self.book(resource=plain, start="10:00", end="13:00").total_amount, 900)
+		# A tier is never typed on a booking: a typed amount is replaced by the tier's.
+		booking = self.book(start="18:00", end="21:00", total_amount=5, base_amount=5)
+		self.assertEqual(booking.total_amount, 2200)
+
+	def test_a_tier_is_checked_and_a_tiered_booking_is_invoiced_only_by_the_explicit_action(self):
+		self.assertRaisesRegex(frappe.ValidationError, "not a hall", self.tier, self.sb75)
+		self.assertRaisesRegex(frappe.ValidationError, "cannot cost less", self.tier, self.hall, first=800, two=700)
+		self.tier(self.hall)
+		self.assertRaisesRegex(frappe.ValidationError, "already has a tier", self.tier, self.hall)
+		booking = self.book(start="10:00", end="12:30", date=PAST)
+		self.assertEqual(booking.total_amount, 1900)
+		booking.reload()
+		booking.update({"status": "Completed"})
+		booking.save()
+		# Completed: no invoice yet (a hall posts only when asked, 27 Oct 2026).
+		self.assertEqual(self.invoices(booking.name), [])
+		booking = self.complete(booking)
+		invoice = frappe.get_doc("Sales Invoice", booking.sales_invoice)
+		self.assertEqual((invoice.grand_total, invoice.items[0].income_account), (1900, HALL_INCOME))
+		# A revenue-share booking pays no rent, tier or not.
+		share = self.book(start="14:00", end="16:00", rental_model="Revenue Share", lecturer=self.lecturer, lecturer_share_percent=40)
+		self.assertEqual(share.total_amount, 0)
+
 	# ---------- HAL-08, HAL-12: revenue share ----------
 
 	def test_revenue_share(self):

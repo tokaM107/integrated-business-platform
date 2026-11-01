@@ -159,6 +159,12 @@ def set_base(doc, lists, reprice):
 			doc.pricing_note = _("Package {0}: {1} hours x {2} ({3}).").format(doc.package, flt(hours, 2), money(doc.rate), doc.price_list)
 		return
 
+	if doc.resource_type == HALL and (reprice or doc.get("pricing_key", "").startswith("tier:") or not flt(doc.rate)):
+		tier = hall_tier(doc.resource, lists)
+		if tier:
+			doc.base_amount, doc.rate, doc.pricing_note = hall_tier_amount(tier, hours)
+			doc.price_list = tier.price_list
+			return
 	if not resource.item:
 		frappe.throw(
 			_("{0} has no price by the hour. Choose one of its packages.").format(doc.resource),
@@ -168,6 +174,42 @@ def set_base(doc, lists, reprice):
 		doc.rate, doc.price_list = price_of(resource.item, lists, today(), doc.resource)
 	doc.base_amount = flt(flt(doc.rate) * hours, 2)
 	doc.pricing_note = _("{0} hours x {1} ({2}).").format(flt(hours, 2), money(doc.rate), doc.price_list)
+
+
+def hall_tier(resource, lists):
+	"""The hall's price tier (Hall Price Tier) on the first of the customer's price lists that has one; None when the
+	hall is priced by the hour. Tiers are the center's price list of 1 Nov 2026: a first hour, a two-hour price, and a
+	rate per hour after the second."""
+	for price_list in lists:
+		name = frappe.db.get_value("Hall Price Tier", {"resource": resource, "price_list": price_list, "disabled": 0}, "name")
+		if name:
+			return frappe.get_cached_doc("Hall Price Tier", name)
+	return None
+
+
+def hall_tier_amount(tier, hours):
+	"""(amount, rate shown, note) of a hall booking of `hours` under `tier`: up to one hour the first-hour price; more
+	than one and up to two hours the two-hour price; beyond two hours the two-hour price plus the extra-hour rate for
+	each hour after the second, in proportion to the minutes (QA-13: 2 h 30 min = 2 h + 0.5 x the extra rate). A
+	booking of between one and two hours pays the two-hour price: the price list names no rate for the part of the
+	second hour (owner to confirm, 1 Nov 2026)."""
+	hours = flt(hours)
+	if hours <= 0:
+		return 0, 0, ""
+	if hours <= 1:
+		amount = flt(tier.first_hour_rate, 2)
+		note = _("Up to one hour: {0} ({1}).").format(money(amount), tier.price_list)
+	elif hours <= 2:
+		amount = flt(tier.two_hour_rate, 2)
+		note = _("Up to two hours: {0} ({1}).").format(money(amount), tier.price_list)
+	else:
+		extra = hours - 2  # unrounded: 2 h 20 min beyond the second hour x 600 = 1,400.00, not 1,399.98
+		amount = flt(flt(tier.two_hour_rate) + extra * flt(tier.extra_hour_rate), 2)
+		note = _("Two hours {0} + {1} hours x {2} ({3}).").format(
+			money(tier.two_hour_rate), flt(extra, 2), money(tier.extra_hour_rate), tier.price_list
+		)
+	# The rate kept on the booking is the effective price per hour, for the invoice line (amount / hours).
+	return amount, flt(amount / hours, 4), note
 
 
 def set_extras(doc, lists, reprice):
