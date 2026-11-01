@@ -44,147 +44,109 @@ class IntegrationTestAssistant(IntegrationTestCase):
 				frappe.cache.delete_keys("rl:imed_erp.assistant.api.send_message")
 
 
-class FakeBlock:
-	def __init__(self, **kw):
-		self.__dict__.update(kw)
-
-
-class FakeResponse:
-	def __init__(self, content, stop_reason):
-		self.content, self.stop_reason = content, stop_reason
-
-
-class FakeClaude:
-	"""Stands in for anthropic.Anthropic: first asks for the tools the test scripts, then answers with text."""
-
-	def __init__(self, calls):
-		self.calls = list(calls)
-		self.requests = []
-		self.beta = self
-		self.messages = self
-
-	def create(self, **kwargs):
-		self.requests.append(kwargs)
-		step = self.calls.pop(0)
-		if step[0] == "tool":
-			return FakeResponse([FakeBlock(type="tool_use", id=f"t{len(self.requests)}", name=step[1], input=step[2])], "tool_use")
-		return FakeResponse([FakeBlock(type="text", text=step[1])], "end_turn")
-
-
-class IntegrationTestAssistantClaude(IntegrationTestCase):
-	"""The read-only Claude provider (assistant/claude.py): the tools read as the asking user, nothing is written,
-	the loop ends with the model's text. A fake model: nothing leaves the site."""
+class IntegrationTestAssistantAgent(IntegrationTestCase):
+	"""The Planner -> Executor -> Synthesizer agent with its short memory (assistant/agent.py), on a fake model:
+	nothing leaves the site. The tools read as the asking user; nothing is written."""
 
 	def setUp(self):
 		frappe.set_user("Administrator")
-		frappe.db.savepoint("assistant_claude")
+		frappe.db.savepoint("assistant_agent")
+		from imed_erp.assistant import agent
+
+		agent.forget("Administrator")
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
-		frappe.db.rollback(save_point="assistant_claude")
+		frappe.db.rollback(save_point="assistant_agent")
 
-	def provider(self, calls):
-		from imed_erp.assistant.claude import ClaudeProvider
+	def fake(self, plan, answers):
+		"""complete(): the plan first (JSON), then the answers in order; every call is recorded."""
+		calls = []
+		queue = [json.dumps(plan)] + list(answers)
 
-		p = ClaudeProvider()
-		p.api_key = "test"
-		p.client = lambda: FakeClaude(calls)
-		return p
+		def complete(system, prompt, json_schema=None):
+			calls.append({"system": system[:40], "prompt": prompt, "json": bool(json_schema)})
+			return queue.pop(0)
 
-	def test_the_loop_reads_then_answers_and_never_writes(self):
-		from imed_erp.assistant import tools as claude
+		return complete, calls
+
+	def context(self, user="Administrator"):
+		return {"user": user, "full_name": "x", "lang": "ar", "company": "Mohamed Mamdouh group"}
+
+	def test_two_calls_a_question_plan_then_answer_and_nothing_written(self):
+		from imed_erp.assistant import agent
 
 		before = (frappe.db.count("GL Entry"), frappe.db.count("Booking"))
-		p = self.provider([("tool", "dashboard_today", {}), ("tool", "count_records", {"doctype": "Booking", "filters": []}), ("text", "الإيراد النهارده صفر.")])
-		reply = p.reply([{"role": "user", "content": "إيه إيراد النهارده؟"}], {"user": "Administrator", "full_name": "Admin", "lang": "ar", "company": "Mohamed Mamdouh group"})
-		self.assertEqual(reply, "الإيراد النهارده صفر.")
+		plan = {"steps": [{"tool": "dashboard_today", "arguments": "{}"}, {"tool": "count_records", "arguments": json.dumps({"doctype": "Booking", "filters": []})}], "may_need_more": False, "answer_without_reading": ""}
+		complete, calls = self.fake(plan, ["الإيراد النهارده صفر، ومافيش قيود لسه."])
+		answer = agent.run("إيه إيراد النهارده؟", self.context(), complete)
+		self.assertEqual(answer, "الإيراد النهارده صفر، ومافيش قيود لسه.")
+		self.assertEqual(len(calls), 2)
+		self.assertTrue(calls[0]["json"]); self.assertFalse(calls[1]["json"])
+		# The synthesizer saw the compact results of both reads, not the raw dashboard JSON.
+		self.assertIn("[1] dashboard_today", calls[1]["prompt"]); self.assertIn("[2] count_records", calls[1]["prompt"])
+		self.assertIn('"cards"', calls[1]["prompt"]); self.assertNotIn('"machines"', calls[1]["prompt"])
 		self.assertEqual((frappe.db.count("GL Entry"), frappe.db.count("Booking")), before)
-		# The tool results went back to the model, as tool_result blocks on a user turn, not as errors.
-		text, is_error = claude.run_tool("dashboard_today", {})
-		self.assertFalse(is_error)
-		data = json.loads(text)
-		self.assertIn("cards", data)
-		self.assertIn("band", data)
-		self.assertIn("Revenue This Month", data["cards"])
 
-	def test_tools_refuse_what_is_not_allowed_and_say_so(self):
-		from imed_erp.assistant import tools as claude
+	def test_the_short_memory_carries_the_last_turns(self):
+		from imed_erp.assistant import agent
 
-		text, is_error = claude.run_tool("count_records", {"doctype": "User", "filters": []})
-		self.assertTrue(is_error)
-		self.assertIn("may not read", text)
-		text, is_error = claude.run_tool("run_report", {"report": "General Ledger", "filters": {}})
-		self.assertTrue(is_error)
-		text, is_error = claude.run_tool("no_such_tool", {})
-		self.assertTrue(is_error)
-		text, is_error = claude.run_tool("account_balance", {"account": "no such account", "date": ""})
-		self.assertTrue(is_error)
+		plan = {"steps": [{"tool": "account_balance", "arguments": json.dumps({"account": "خزينة مكتبة الأزاريطة - MMG", "date": ""})}], "may_need_more": False, "answer_without_reading": ""}
+		complete, calls = self.fake(plan, ["رصيد الأزاريطة صفر (مافيش قيود)."])
+		agent.run("رصيد الأزاريطة؟", self.context(), complete)
+		turns = agent.recall("Administrator")
+		self.assertEqual(len(turns), 1)
+		self.assertEqual(turns[0]["q"], "رصيد الأزاريطة؟")
+		self.assertIn("account_balance", turns[0]["facts"])
+		# The next question's planner sees the memory.
+		complete, calls = self.fake({"steps": [], "may_need_more": False, "answer_without_reading": "وفي المواساة برضه صفر."}, [])
+		answer = agent.run("وفي المواساة؟", self.context(), complete)
+		self.assertIn("رصيد الأزاريطة؟", calls[0]["prompt"])
+		self.assertEqual(answer, "وفي المواساة برضه صفر.")
+		self.assertEqual(len(agent.recall("Administrator")), 2)
+		# Another user has his own memory.
+		self.assertEqual(agent.recall("owner@imed.local"), [])
 
-	def test_tools_read_as_the_asking_user(self):
-		from imed_erp.assistant import tools as claude
+	def test_a_question_needing_no_data_costs_one_call(self):
+		from imed_erp.assistant import agent
 
-		# The owner reads the cash boxes report and an account's balance.
-		frappe.set_user("owner@imed.local")
-		text, is_error = claude.run_tool("run_report", {"report": "Cash Box Balances", "filters": {}})
-		self.assertFalse(is_error, text)
-		self.assertIn("rows", json.loads(text))
-		text, is_error = claude.run_tool("account_balance", {"account": "خزينة مكتبة الأزاريطة - MMG", "date": ""})
-		self.assertFalse(is_error, text)
-		self.assertIn("balance", json.loads(text))
-		# A branch manager (were the chat ever opened to her) is refused the owner's figures and sees only her records.
+		complete, calls = self.fake({"steps": [], "may_need_more": False, "answer_without_reading": "أقدر أجاوبك عن الأرقام من النظام."}, [])
+		self.assertEqual(agent.run("إنت بتعمل إيه؟", self.context(), complete), "أقدر أجاوبك عن الأرقام من النظام.")
+		self.assertEqual(len(calls), 1)
+
+	def test_one_re_plan_at_most_and_errors_are_passed_on(self):
+		from imed_erp.assistant import agent
+
+		plan = {"steps": [{"tool": "count_records", "arguments": json.dumps({"doctype": "User", "filters": []})}], "may_need_more": True, "answer_without_reading": ""}
+		more = 'NEED ' + json.dumps({"tool": "count_records", "arguments": {"doctype": "Booking", "filters": []}})
+		complete, calls = self.fake(plan, [more, "عدد الحجوزات موجود؛ المستخدمين ممنوع قراءتهم."])
+		answer = agent.run("كام مستخدم وكام حجز؟", self.context(), complete)
+		self.assertEqual(len(calls), 3)
+		self.assertIn("may not read", calls[1]["prompt"])  # the refused read reached the model as an error
+		self.assertIn("[2] count_records", calls[2]["prompt"])
+		self.assertEqual(answer, "عدد الحجوزات موجود؛ المستخدمين ممنوع قراءتهم.")
+
+	def test_reads_run_as_the_asking_user(self):
+		from imed_erp.assistant import agent
+
 		frappe.set_user("raghad@imed.local")
-		text, is_error = claude.run_tool("dashboard_today", {})
-		self.assertTrue(is_error)
-		text, is_error = claude.run_tool("run_report", {"report": "Cash Box Balances", "filters": {}})
-		self.assertTrue(is_error)
-		text, is_error = claude.run_tool("list_records", {"doctype": "Booking", "filters": [{"field": "status", "operator": "!=", "value": "Cancelled"}], "fields": ["name", "cost_center"], "order_by": "", "limit": 50})
-		self.assertFalse(is_error, text)
-		rows = json.loads(text)["rows"]
-		self.assertTrue(all(r.get("cost_center") == "مكتبة المواساة - MMG" for r in rows), rows[:3])
+		plan = {"steps": [{"tool": "dashboard_today", "arguments": "{}"}, {"tool": "list_records", "arguments": json.dumps({"doctype": "Booking", "filters": [], "fields": ["name", "cost_center"], "order_by": "", "limit": 50})}], "may_need_more": False, "answer_without_reading": ""}
+		complete, calls = self.fake(plan, ["ok"])
+		agent.run("x", self.context("raghad@imed.local"), complete)
+		prompt = calls[1]["prompt"]
+		self.assertIn("Only the owner", prompt)  # the dashboard refused her
+		self.assertNotIn("مكتبة الأزاريطة - MMG", prompt.split("[2] list_records")[1])  # only her branch's bookings
 
-	def test_the_gemini_provider_runs_the_same_loop(self):
+	def test_the_providers_route_through_the_agent(self):
 		from imed_erp.assistant.gemini import GeminiProvider, function_declarations
+		from imed_erp.assistant.claude import ClaudeProvider
 
-		declared = {d.name for d in function_declarations()}
-		self.assertEqual(declared, {"dashboard_today", "run_report", "list_records", "count_records", "account_balance"})
-
-		class Call:
-			def __init__(self, name, args):
-				self.name, self.args = name, args
-
-		class Part:
-			def __init__(self, text=None, function_call=None):
-				self.text, self.function_call = text, function_call
-
-		class Content:
-			def __init__(self, parts):
-				self.parts, self.role = parts, "model"
-
-		class Candidate:
-			def __init__(self, parts):
-				self.content, self.finish_reason = Content(parts), "STOP"
-
-		class Response:
-			def __init__(self, parts):
-				self.candidates = [Candidate(parts)]
-
-		class FakeGemini:
-			def __init__(self):
-				self.models = self
-				self.calls = [[Part(function_call=Call("count_records", {"doctype": "Booking", "filters": []}))], [Part(text="فيه حجوزات.")]]
-				self.seen = []
-
-			def generate_content(self, model, contents, config):
-				self.seen.append(len(contents))
-				return Response(self.calls.pop(0))
-
-		p = GeminiProvider()
-		p.api_key = "test"
-		fake = FakeGemini()
-		p.client = lambda: fake
-		reply = p.reply([{"role": "user", "content": "كام حجز؟"}], {"user": "Administrator", "full_name": "Admin", "lang": "ar", "company": "Mohamed Mamdouh group"})
-		self.assertEqual(reply, "فيه حجوزات.")
-		self.assertEqual(fake.seen, [1, 3])  # the question; then the question, the call and its result
+		self.assertEqual({d.name for d in function_declarations()}, {"dashboard_today", "run_report", "list_records", "count_records", "account_balance"})
+		for cls in (GeminiProvider, ClaudeProvider):
+			p = cls()
+			p.api_key = "test"
+			p.complete = lambda system, prompt, json_schema=None: json.dumps({"steps": [], "may_need_more": False, "answer_without_reading": "تمام"})
+			self.assertEqual(p.reply([{"role": "user", "content": "أهلًا"}], self.context()), "تمام")
 
 	def test_filters_from_the_model_are_turned_into_frappe_filters(self):
 		from imed_erp.assistant.tools import parse_filters
@@ -198,3 +160,10 @@ class IntegrationTestAssistantClaude(IntegrationTestCase):
 			]),
 			[["booking_date", ">=", "2026-11-01"], ["status", "in", ["Tentative", "Confirmed"]], ["hours", ">", 2], ["source_system", "is", "set"]],
 		)
+
+	def test_tools_refuse_what_is_not_allowed_and_say_so(self):
+		from imed_erp.assistant import tools
+
+		for name, args in (("count_records", {"doctype": "User", "filters": []}), ("run_report", {"report": "General Ledger", "filters": {}}), ("no_such_tool", {}), ("account_balance", {"account": "no such account", "date": ""})):
+			text, is_error = tools.run_tool(name, args)
+			self.assertTrue(is_error, name)

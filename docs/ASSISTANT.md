@@ -6,7 +6,14 @@ delete, submit or post anything, and every read runs as the user who asks, with 
 
 Who sees it: the owner (Super Admin) and the developers (System Manager) — `assistant/api.py`.
 
-How it answers (`assistant/tools.py`, used by both `assistant/gemini.py` and `assistant/claude.py`): the model gets five read tools and nothing else — the dashboard's
+How it answers (`assistant/agent.py`; the owner's choice of 1 Nov 2026 over a tool-calling loop, to spend fewer
+tokens): **Planner → Executor → Synthesizer with a short memory.** The planner (one model call, JSON out) lists the
+reads that answer the question; the executor (no model) runs them as the asking user and compacts the results; the
+synthesizer (one model call) writes the answer from those results. One re-plan at most. So a question costs two
+model calls, three at most, and a greeting one. The short memory keeps this user's last four turns (question, answer,
+the facts read) in the site's cache for 30 minutes, so a follow-up like "وفي المواساة؟" is understood.
+
+The reads (`assistant/tools.py`, shared by `assistant/gemini.py` and `assistant/claude.py`): the model gets five read tools and nothing else — the dashboard's
 figures, the ERP's reports (a fixed list), listing and counting records of a fixed list of DocTypes through
 `frappe.get_list` (permissions applied), and an account's ledger balance. After every tool the database transaction is
 rolled back, so even a mistaken read cannot leave anything behind. A permission refusal is returned to the model as an

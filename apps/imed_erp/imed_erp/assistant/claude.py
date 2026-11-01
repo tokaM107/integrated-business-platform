@@ -35,7 +35,23 @@ class ClaudeProvider(AssistantProvider):
 			raise frappe.ValidationError(_("The assistant has no API key (site config imed_assistant_api_key)."))
 		return anthropic.Anthropic(api_key=self.api_key, max_retries=2, timeout=120.0)
 
+	def complete(self, system, prompt, json_schema=None):
+		"""One model call for the agent (assistant/agent.py)."""
+		kwargs = {}
+		if json_schema:
+			kwargs["output_config"] = {"effort": "low", "format": {"type": "json_schema", "schema": json_schema}}
+		response = self.client().messages.create(
+			model=self.model, max_tokens=4000, system=system, messages=[{"role": "user", "content": prompt}], **kwargs
+		)
+		return "".join(b.text for b in response.content if b.type == "text")
+
 	def reply(self, messages, context):
+		from imed_erp.assistant import agent
+
+		return agent.run(messages[-1]["content"], context, self.complete)
+
+	def reply_react(self, messages, context):
+		"""The earlier tool-calling loop (one model call per read); kept for comparison, not used."""
 		client = self.client()
 		conversation = [dict(m) for m in messages]
 		# The first user turn carries who asks and the date; the system prompt stays byte-identical for the cache.

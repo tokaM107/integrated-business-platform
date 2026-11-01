@@ -21,6 +21,14 @@ from imed_erp.assistant.tools import MAX_TOOL_ROUNDS, SYSTEM, TOOLS, run_tool, u
 DEFAULT_MODEL = "gemini-3.5-flash"
 
 
+class QuotaExceeded(Exception):
+	pass
+
+
+class ModelOverloaded(Exception):
+	pass
+
+
 def function_declarations():
 	"""The tools as Gemini function declarations (OpenAPI-style schemas; no 'strict', no 'additionalProperties')."""
 	from google.genai import types
@@ -53,9 +61,44 @@ class GeminiProvider(AssistantProvider):
 
 		if not self.api_key:
 			raise frappe.ValidationError(_("The assistant has no API key (site config imed_assistant_api_key)."))
-		return genai.Client(api_key=self.api_key)
+		# One client per provider instance: a client made per call was garbage-collected between the agent's two
+		# calls and its HTTP session closed ("Cannot send a request, as the client has been closed").
+		if not getattr(self, "_client", None):
+			self._client = genai.Client(api_key=self.api_key)
+		return self._client
+
+	def complete(self, system, prompt, json_schema=None):
+		"""One model call for the agent (assistant/agent.py): text in, text out; JSON out when a schema is given."""
+		from google.genai import types
+
+		config = types.GenerateContentConfig(system_instruction=system, temperature=0.1, max_output_tokens=4000)
+		if json_schema:
+			config.response_mime_type = "application/json"
+			config.response_schema = json_schema
+		try:
+			response = self.client().models.generate_content(model=self.model, contents=prompt, config=config)
+		except Exception as e:
+			code = getattr(e, "code", None) or getattr(e, "status_code", None)
+			if code == 429:
+				raise QuotaExceeded()
+			if code == 503:
+				raise ModelOverloaded()
+			raise
+		return response.text or ""
 
 	def reply(self, messages, context):
+		"""Planner -> Executor -> Synthesizer with the short memory (two model calls a question, three at most)."""
+		from imed_erp.assistant import agent
+
+		try:
+			return agent.run(messages[-1]["content"], context, self.complete)
+		except QuotaExceeded:
+			return _("The model's quota for this key is used up for now (Google's limit). Try again in a minute, or raise the key's quota in Google AI Studio.")
+		except ModelOverloaded:
+			return _("The model is overloaded at Google's side right now. Try again in a moment.")
+
+	def reply_react(self, messages, context):
+		"""The earlier tool-calling loop (one model call per read); kept for comparison, not used."""
 		from google.genai import types
 
 		client = self.client()
