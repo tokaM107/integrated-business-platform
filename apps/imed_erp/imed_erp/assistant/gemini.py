@@ -3,7 +3,7 @@
 # Connect it (docs/ASSISTANT.md):
 #   bench --site frontend set-config imed_assistant_provider imed_erp.assistant.gemini.GeminiProvider
 #   bench --site frontend set-config imed_assistant_api_key AIza...            # a Gemini API key (Google AI Studio)
-#   bench --site frontend set-config imed_assistant_model gemini-3.1-pro-preview   # optional; this is the default
+#   bench --site frontend set-config imed_assistant_model gemini-3.5-flash          # optional; this is the default
 #
 # Package: google-genai (pyproject.toml). The model gets the same five read tools as any provider, as function
 # declarations; it calls, we run the tool as the asking user, we hand the result back, until it answers in text.
@@ -16,7 +16,9 @@ from frappe import _
 from imed_erp.assistant.providers import AssistantProvider
 from imed_erp.assistant.tools import MAX_TOOL_ROUNDS, SYSTEM, TOOLS, run_tool, user_context_line
 
-DEFAULT_MODEL = "gemini-3.1-pro-preview"
+# Tried on 1 Nov 2026 with the owner's key: gemini-3.1-pro-preview is over its quota (needs billing), gemini-3.8-flash
+# ran 70-170 s a call under "high demand"; gemini-3.5-flash answered correctly in 14 s. The site config may change it.
+DEFAULT_MODEL = "gemini-3.5-flash"
 
 
 def function_declarations():

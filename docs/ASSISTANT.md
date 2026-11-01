@@ -17,8 +17,8 @@ Connect it (production, once; the key is kept in the site's config, never in git
 ```
 bench --site frontend set-config imed_assistant_provider imed_erp.assistant.gemini.GeminiProvider
 bench --site frontend set-config imed_assistant_api_key AIza...                   # Google AI Studio key
-bench --site frontend set-config imed_assistant_model gemini-3.1-pro-preview       # optional; the default. Check the
-                                                                                   # current name on ai.google.dev/gemini-api/docs/models
+bench --site frontend set-config imed_assistant_model gemini-3.5-flash             # optional; the default (1 Nov 2026:
+                                   # 3.1 Pro Preview exceeded the key's quota; 3.8 Flash ran minutes under high demand)
 ```
 
 Or Claude, the same way with `imed_erp.assistant.claude.ClaudeProvider`, an `sk-ant-...` key and `claude-opus-5-5`.
