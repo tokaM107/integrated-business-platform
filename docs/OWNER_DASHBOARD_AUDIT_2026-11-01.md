@@ -233,3 +233,37 @@ component 19 (Revenue by Business) PASS on the server's figures; on the screen i
 renamed without parentheses, the setup script retires the old source records and their charts, and all four charts are
 now drawn (verified in the browser: four chart widgets with SVG). Component 19 is re-marked FAIL (fixed) in the counts
 below.
+
+## 11. Production verification after the deployment (1 Nov 2026, 13:47–14:05 Cairo)
+
+Deployed: Coolify deployment 247, commit **ae2162c**, image built 11:17 UTC; the eight dashboard files in the backend
+container hash identically to ae2162c. `bench migrate` ran (no schema change; it imported the two renamed chart sources).
+`setup_dashboard.py` ran once (a first run stopped at the retired source, which a Dashboard Chart Source refuses to
+delete outside developer mode; fixed in 526cbf5, local, and the fixed script completed: 15 cards, 4 charts, 6 shortcuts,
+old source removed). Scheduler enabled, 2 workers, HTTPS 200; the XStudio sync ran at 12:32, 12:52, 13:12, 13:32
+through the restart. No GL Entry, Stock Ledger Entry, invoice or payment was created (counts before and after: 0).
+
+Server side (read-only console as the owner): every card equals its independent recomputation; "Due on Studio
+Bookings" 2,250 = Σ(due − paid) of the month's 6 held studio bookings; today's X Studio line 400 = XStudio's amount due
+(list price 1,400 includes one package booking of 5 h, now shown apart); both custom chart sources find their JS;
+the stock source returns only the group's warehouses while the other companies' bins still hold 2,000; the band says
+"Not configured" for halls, "Not tracked in XStudio" for completion and payments, "no records yet" on the six ledger
+cards; paused jobs read as paused; the XStudio card names the failing booking. Accountant: cards allowed, band
+refused; four branch managers: everything refused.
+
+Browser (production, Administrator session link limited to 20 minutes, read-only mode): 91 checks pass, 0 fail,
+0 console errors; all four charts drawn; 53 links open the right list or report with the right filters; phone width
+without overflow. The owner's own account was not used (bench creates a session only for Administrator outside
+developer mode); the workspace and band are the same for both, and the owner-only rule is verified server side.
+
+| Status | Count | Components |
+|---|---|---|
+| PASS | 39 | 1–12, 14–26, 28, 30, 31, 33–43 |
+| FAIL | 0 | |
+| INCOMPLETE | 1 | 32: the XStudio sync's own counters do not add up (163 read vs 116 + 1 + 1); the band shows them as they are |
+| NOT CONNECTED | 3 | 13 and 29 (no hall resource yet), 27 (XStudio never records completion or payments) — each now says so instead of 0 |
+| NOT TESTABLE | 0 | |
+
+**Reliability score, verified on production: 88 / 100.** Every figure that has data is correct and traceable; the three
+not-connected components are stated as such on the screen and wait for the halls and for the studio's XStudio
+practice; the one incomplete item is a counter inside the sync log, not a dashboard figure.
