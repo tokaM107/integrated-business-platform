@@ -33,8 +33,11 @@ def check_reader():
 		)
 
 
-def balance(accounts, sign=1, from_date=None, to_date=None):
-	"""Debit minus credit of `accounts` (times `sign`), optionally between two dates."""
+def balance(accounts, sign=1, from_date=None, to_date=None, profit_and_loss=False):
+	"""Debit minus credit of `accounts` (times `sign`), optionally between two dates. For income and expense
+	accounts (`profit_and_loss`), an opening entry and a Period Closing Voucher are left out, as business_figures.ledger
+	and the owner's reports leave them out: the year's close moves the profit off these accounts and would otherwise
+	zero "Revenue This Month" on the day it is posted (audit of 1 Nov 2026)."""
 	if not accounts:
 		return 0.0
 	conditions, values = (
@@ -44,6 +47,8 @@ def balance(accounts, sign=1, from_date=None, to_date=None):
 			"accounts": tuple(accounts),
 		},
 	)
+	if profit_and_loss:
+		conditions += ["is_opening = 'No'", "voucher_type != 'Period Closing Voucher'"]
 	if from_date:
 		conditions.append("posting_date >= %(from_date)s")
 		values["from_date"] = from_date
@@ -77,8 +82,8 @@ def month():
 
 def revenue_and_expenses():
 	start, end = month()
-	revenue = balance(leaf_accounts(root_type="Income"), -1, start, end)
-	expenses = balance(leaf_accounts(root_type="Expense"), 1, start, end)
+	revenue = balance(leaf_accounts(root_type="Income"), -1, start, end, profit_and_loss=True)
+	expenses = balance(leaf_accounts(root_type="Expense"), 1, start, end, profit_and_loss=True)
 	return revenue, expenses
 
 

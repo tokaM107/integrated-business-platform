@@ -112,14 +112,17 @@ charts = [
     dict(label="Sales Trend", doc="Sales Invoice",
          based_on="posting_date", value_field="grand_total",
          ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
-         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
+         # The group's own sales: the site also holds ERPNext's _Test companies (audit of 1 Nov 2026).
+         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1], ["Sales Invoice", "company", "=", COMPANY]]),
     # QA-06: from the ledger's income accounts, this month to today, so revenue posted by journal entry is in.
     dict(label="Revenue by Business", source="Revenue by Business (Ledger)",
          ctype="Bar", color=TEAL_LIGHT),
     dict(label="Stock Value by Warehouse", doc="Bin",
          based_on="warehouse", value_field="stock_value",
          ctype="Donut", color=TEAL, timespan=None, time_interval=None,
-         parent_doc=None),
+         # A Bin has no company: the group's warehouses by their suffix (the _Test companies' bins showed on the
+         # production dashboard, 2,000 of test stock; audit of 1 Nov 2026).
+         parent_doc=None, filters=[["Bin", "warehouse", "like", f"% - {ABBR}"]]),
 ]
 
 created_charts = []

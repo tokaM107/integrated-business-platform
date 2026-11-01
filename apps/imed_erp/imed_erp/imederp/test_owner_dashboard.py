@@ -105,6 +105,34 @@ class IntegrationTestOwnerDashboard(IntegrationTestCase):
 			self.booking("Completed", today(), outstanding=500, sales_invoice=invoice[0])
 			self.assertEqual(dashboard.unpaid_on_bookings(), before + 300)
 
+	def test_the_month_s_revenue_leaves_out_the_year_s_closing_and_opening_entries(self):
+		"""Audit of 1 Nov 2026: a Period Closing Voucher moves the year's profit off the income accounts; the card
+		"Revenue This Month" would have read zero on the day it was posted, while the reports left it out."""
+		from imed_erp.imederp import owner_figures
+
+		before = owner_figures.revenue_and_expenses()
+		base = {
+			"doctype": "GL Entry",
+			"company": COMPANY,
+			"posting_date": today(),
+			"account": FEES,
+			"cost_center": APP,
+			"debit": 0,
+			"credit": 0,
+			"is_cancelled": 0,
+			"is_opening": "No",
+			"voucher_type": "Journal Entry",
+			"voucher_no": "_TEST-JV",
+			"fiscal_year": frappe.db.get_value("Fiscal Year", {"year_start_date": ["<=", today()], "year_end_date": [">=", today()]}, "name"),
+		}
+		frappe.get_doc({**base, "name": "_test_gl_income", "credit": 250}).db_insert()
+		# The year's close, and an opening entry: not this month's revenue.
+		frappe.get_doc({**base, "name": "_test_gl_pcv", "debit": 250, "voucher_type": "Period Closing Voucher", "voucher_no": "_TEST-PCV"}).db_insert()
+		frappe.get_doc({**base, "name": "_test_gl_opening", "credit": 900, "is_opening": "Yes", "voucher_no": "_TEST-OPEN"}).db_insert()
+		after = owner_figures.revenue_and_expenses()
+		self.assertEqual(after[0] - before[0], 250)
+		self.assertEqual(after[1] - before[1], 0)
+
 	def test_only_the_accounts_read_the_figures(self):
 		frappe.set_user(RAGHAD)
 		self.assertRaises(frappe.PermissionError, dashboard.revenue_this_month)

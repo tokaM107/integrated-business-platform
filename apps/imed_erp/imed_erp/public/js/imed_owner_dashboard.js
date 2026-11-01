@@ -95,7 +95,9 @@
 			case "We Owe":
 				return ["Purchase Invoice", { docstatus: 1, outstanding_amount: [">", 0] }];
 			case "Cash in the Cash Boxes":
-				return ["Treasury", {}];
+				// The report the chart under it draws, one row per cash box (there is no "Treasury" list: that route
+				// opened an empty "not found" page; audit of 1 Nov 2026).
+				return ["query-report", "Cash Box Balances"];
 			default:
 				return null;
 		}
@@ -155,6 +157,8 @@
 
 	const money = (value, currency) => format_currency(value || 0, currency);
 	const number = (value) => format_number(value || 0, null, 0);
+	// Hours keep their half (2.5 h was shown as "2 h"; audit of 1 Nov 2026).
+	const hours_text = (value) => __("{0} h", [format_number(value || 0, null, (value || 0) % 1 ? 1 : 0)]);
 	const tone = (value) => (value > 0 ? "is-positive" : value < 0 ? "is-negative" : "");
 	const STATES = {
 		ok: __("Working"),
@@ -178,7 +182,9 @@
 				(row) => `<tr class="${row.revenue || row.expenses ? "" : "is-quiet"}">
 					<td>${esc(row.business)}${
 					row.not_split ? ` <span class="imed-yday-flag">${esc(__("not split"))}</span>` : ""
-				}${row.external ? ` <span class="imed-yday-flag">${esc(__("from XStudio: {0} booking(s), paid {1}, due {2}", [row.bookings, money(row.paid, c), money(row.due, c)]))}</span>` : ""}</td>
+				}${row.external ? ` <span class="imed-yday-flag">${esc(__("from XStudio: {0} booking(s), paid {1}, still due {2}", [row.bookings, money(row.paid, c), money(row.due, c)]))}${
+					row.package_bookings ? " · " + esc(__("{0} on prepaid packages ({1} h, paid when bought)", [row.package_bookings, number(row.package_hours)])) : ""
+				}</span>` : ""}</td>
 					<td class="is-num">${money(row.revenue, c)}</td>
 					<td class="is-num">${money(row.expenses, c)}</td>
 					<td class="is-num ${tone(row.net)}">${money(row.net, c)}</td>
@@ -196,8 +202,13 @@
 				<tfoot><tr><td>${esc(__("Total"))}</td><td class="is-num">${money(t.revenue, c)}</td>
 					<td class="is-num">${money(t.expenses, c)}</td><td class="is-num ${tone(t.net)}">${money(t.net, c)}</td></tr></tfoot>
 			</table>
+			${
+				data.money.ledger_entries === 0
+					? `<p class="imed-yday-warn">${esc(__("Nothing has been posted to the ledger for this day yet: the zeros above mean no approved document, not no money."))}</p>`
+					: ""
+			}
 			<p class="imed-yday-note">${esc(
-				__("Invoiced revenue and approved expenses (submitted documents only). The X Studio line is the price of the day's bookings as XStudio reports it (cancelled ones left out), with what was paid and what is due; it is shown, not posted.")
+				__("Invoiced revenue and approved expenses (submitted documents only). The X Studio line is what XStudio bills for the day's bookings (cancelled ones left out; hours on prepaid packages were paid when the package was bought), with what was paid and what is still due; it is shown, not posted.")
 			)}</p>`,
 			"is-wide"
 		);
@@ -211,7 +222,8 @@
 			: `<div class="imed-yday-stat ${cls}">${inner}</div>`;
 	}
 
-	const open_route = (route) => frappe.set_route("List", route[0], route[1]);
+	const open_route = (route) =>
+		route[0] === "query-report" ? frappe.set_route("query-report", route[1]) : frappe.set_route("List", route[0], route[1]);
 	const HELD = ["not in", ["Cancelled", "No Show"]];
 
 	function bookings_card(b, day, currency) {
@@ -224,10 +236,11 @@
 				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "", list(resource_type, "Cancelled"))}
 				${stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "", list(resource_type, "No Show"))}
 			</div>`;
-		const hours = __("{0} h", [number(b.studio_hours_booked)]);
-		const delivered = __("{0} h", [number(b.studio_hours_delivered)]);
+		const hours = hours_text(b.studio_hours_booked);
+		const delivered = hours_text(b.studio_hours_delivered);
 		const made = ["Booking", { creation: ["Between", [`${day} 00:00:00`, `${day} 23:59:59`]] }];
-		const open = ["Booking", { booking_date: day, status: ["in", ["Tentative", "Confirmed with Deposit"]], source_system: ["is", "not set"] }];
+		// The same statuses the server counts (owner_yesterday.OPEN_STATUSES; "Confirmed" was missing: audit of 1 Nov 2026).
+		const open = ["Booking", { booking_date: day, status: ["in", ["Tentative", "Confirmed", "Confirmed with Deposit"]], source_system: ["is", "not set"] }];
 		return card(
 			"calendar-days",
 			__("Halls and studio"),
@@ -266,7 +279,7 @@
 				${stat(__("Booked"), number(h.today.held), "", hall({ booking_date: day, status: held }))}
 				${stat(__("Completed"), number(h.today.completed), "", hall({ booking_date: day, status: "Completed" }))}
 				${stat(__("Cancelled"), number(h.today.cancelled), h.today.cancelled ? "is-warning" : "", hall({ booking_date: day, status: "Cancelled" }))}
-				${stat(__("Hours today"), __("{0} h", [number(h.today_hours)]), "", hall({ booking_date: day, status: held }))}
+				${stat(__("Hours today"), hours_text(h.today_hours), "", hall({ booking_date: day, status: held }))}
 			</div>
 			<div class="imed-yday-stats">
 				${stat(__("Next 7 days"), number(h.upcoming), "", hall({ booking_date: ["Between", [frappe.datetime.add_days(day, 1), frappe.datetime.add_days(day, 7)]], status: held }))}
@@ -276,7 +289,7 @@
 			<div class="imed-yday-sub">${esc(__("This month"))}</div>
 			<div class="imed-yday-stats">
 				${stat(__("Bookings"), number(h.month_held), "", hall({ booking_date: month, status: held }))}
-				${stat(__("Hours"), __("{0} h", [number(h.month_hours)]), "", hall({ booking_date: month, status: held }))}
+				${stat(__("Hours"), hours_text(h.month_hours), "", hall({ booking_date: month, status: held }))}
 				${stat(__("Cancelled"), number(h.month_cancelled), h.month_cancelled ? "is-warning" : "", hall({ booking_date: month, status: "Cancelled" }))}
 				${stat(__("Fixed rents (not yet invoiced)"), money(h.month_fixed_rent, currency), "", hall({ booking_date: month, status: held, rental_model: "Fixed Rent" }))}
 				${stat(__("Revenue shares"), number(h.month_revenue_share), "", hall({ booking_date: month, status: held, rental_model: "Revenue Share" }))}
@@ -327,6 +340,9 @@
 		const libraries = p.libraries
 			.map((lib) => {
 				if (!lib.reading) return "";
+				// The figures are the library's submitted Daily Counter Reading of the day (owner_yesterday.printing),
+				// not a Printer Reading (audit of 1 Nov 2026: the links opened the wrong, empty list).
+				const reading = ["Daily Counter Reading", { name: lib.reading }];
 				const machines = lib.machines
 					.map(
 						(m) => `<tr><td>${esc(m.machine)}${m.fault ? ` <span class="imed-yday-flag">${esc(__("breakdown"))}</span>` : ""}</td>
@@ -341,9 +357,9 @@
 						<tbody>${machines}</tbody>
 					</table>
 					<div class="imed-yday-stats">
-						${stat(__("Sheets printed"), number(lib.consumed), "", ["Printer Reading", { reading_date: day }])}
-						${stat(__("Sheets sold"), number(lib.sold), "", ["Sales Invoice", { docstatus: 1, posting_date: day }])}
-						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "", ["Printer Reading", { reading_date: day }])}
+						${stat(__("Sheets printed"), number(lib.consumed), "", reading)}
+						${stat(__("Sheets sold"), number(lib.sold), "", reading)}
+						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "", reading)}
 					</div>`;
 			})
 			.join("");
@@ -354,7 +370,7 @@
 	function system_route(s) {
 		if (s.name === __("XStudio bookings")) return ["Integration Import Log", { source_system: "xstudio" }];
 		if (s.name === __("File imports")) return ["Data Import", {}];
-		if (s.name.startsWith(__("Daily job"))) return ["Scheduled Job Log", {}];
+		if (s.name.startsWith(__("Daily job")) || s.name.startsWith(__("Scheduled job"))) return ["Scheduled Job Log", {}];
 		return ["Error Log", {}];
 	}
 

@@ -466,6 +466,110 @@ class IntegrationTestOwnerYesterday(OwnerReportsTestCase):
 		self.assertEqual(imports["state"], "error")
 		self.assertEqual(imports["last_status"], "Error")
 
+	def test_xstudio_line_is_what_xstudio_bills_not_the_list_price(self):
+		"""Audit of 1 Nov 2026: a booking on a prepaid package carries its list price with nothing due (the package
+		was paid when bought); a settled one owes less than its price. The line is XStudio's amount due, what was
+		paid, and what is still to collect; the package hours are told apart."""
+		day = getdate("2028-01-22")
+		period = owner_yesterday.report_day(day)
+		before = owner_yesterday.xstudio_money_row(day)
+		before_due = owner_yesterday.bookings(period)["xstudio_due"]
+		common = dict(resource_type="Studio Service", cost_center=STUDIO, booking_date=day, source_system="xstudio")
+		# Paid with a package: price 1000, nothing due, 5 hours deducted.
+		self.booking("_TXS-1", status="Tentative", hours=5, xstudio_price_total=1000, xstudio_amount_due=0,
+			xstudio_amount_paid=0, xstudio_package_id="pkg-1", xstudio_hours_deducted=5, **common)
+		# A cash booking: price 400, 400 due, 100 paid so far.
+		self.booking("_TXS-2", status="Tentative", hours=2, xstudio_price_total=400, xstudio_amount_due=400,
+			xstudio_amount_paid=100, **common)
+		# Settled at a discount: price 600, 500 due, fully paid.
+		self.booking("_TXS-3", status="Completed", hours=3, xstudio_price_total=600, xstudio_amount_due=500,
+			xstudio_amount_paid=500, **common)
+		# Cancelled: left out whatever it says.
+		self.booking("_TXS-4", status="Cancelled", hours=3, xstudio_price_total=900, xstudio_amount_due=900,
+			xstudio_amount_paid=0, **common)
+		after = owner_yesterday.xstudio_money_row(day)
+		grew = lambda key: flt(after[key] - before[key], 2)  # noqa: E731
+		self.assertEqual(grew("revenue"), 900)  # 0 + 400 + 500, never 1000 + 400 + 600
+		self.assertEqual(grew("net"), 900)
+		self.assertEqual(grew("paid"), 600)
+		self.assertEqual(grew("due"), 300)  # still to collect: 400 - 100
+		self.assertEqual(grew("list_price"), 2000)
+		self.assertEqual((grew("bookings"), grew("package_bookings"), grew("package_hours")), (3, 1, 5))
+		self.assertTrue(after["external"])
+		# The band's "due in XStudio" is the same figure (and the card's: due less paid).
+		self.assertEqual(flt(owner_yesterday.bookings(period)["xstudio_due"] - before_due, 2), 300)
+		# The whole table's total carries the line, and says how many ledger entries the day has.
+		money = owner_yesterday.money(day)
+		self.assertIn("ledger_entries", money)
+		self.assertEqual(money["ledger_entries"], 0)
+		self.invoice(HALLS, 100, day)
+		self.assertGreater(owner_yesterday.money(day)["ledger_entries"], 0)
+
+	def test_a_paused_job_is_said_to_be_paused_not_a_scheduler_failure(self):
+		"""Audit of 1 Nov 2026: two jobs are paused on purpose; the band said "the scheduler is off" for them."""
+		frappe.get_doc(
+			{
+				"doctype": "Scheduled Job Type",
+				"name": "_test_owner_paused_job",
+				"method": "imed_erp.imederp.test_owner_reports.no_such_job",
+				"frequency": "Daily",
+				"stopped": 1,
+			}
+		).db_insert()
+		frappe.get_doc(
+			{
+				"doctype": "Scheduled Job Type",
+				"name": "_test_owner_cron_job",
+				"method": "imed_erp.imederp.xstudio.sync.run_scheduled_test_copy",
+				"frequency": "Cron",
+				"cron_format": "*/10 * * * *",
+				"stopped": 0,
+				"last_execution": now_datetime(),
+			}
+		).db_insert()
+		with patch("imed_erp.imederp.owner_yesterday.is_scheduler_disabled", return_value=False):
+			jobs = {job["name"]: job for job in owner_yesterday.daily_jobs()}
+		# A job not in JOB_NAMES is named after its module ("test_owner_reports", "sync").
+		paused_label = frappe._("Daily job: {0}").format("test owner reports")
+		paused = jobs[paused_label]
+		self.assertEqual(paused["state"], "warning")
+		self.assertIn("paused", paused["detail"])
+		self.assertNotIn("scheduler is off", paused["detail"])
+		# A cron job is not a daily one.
+		cron_label = frappe._("Scheduled job: {0}").format("sync")
+		self.assertIn(cron_label, jobs)
+		self.assertEqual(jobs[cron_label]["state"], "ok")
+		with patch("imed_erp.imederp.owner_yesterday.is_scheduler_disabled", return_value=True):
+			jobs = {job["name"]: job for job in owner_yesterday.daily_jobs()}
+		self.assertEqual(jobs[paused_label]["state"], "error")
+
+	def test_the_xstudio_card_names_the_first_failure(self):
+		"""Audit of 1 Nov 2026: "1 failed" every run for a week, without saying which booking or why."""
+		frappe.db.set_single_value("XStudio Settings", "enabled", 1)
+		frappe.clear_document_cache("XStudio Settings", "XStudio Settings")
+		log = frappe.get_doc(
+			{
+				"doctype": "Integration Import Log",
+				"source_system": "xstudio",
+				"status": "Completed with Errors",
+				"started_at": "2099-01-01 10:00:00",
+				"finished_at": "2099-01-01 10:00:05",
+				"rows_read": 10,
+				"inserted": 0,
+				"updated": 0,
+				"skipped": 9,
+				"changed": 0,
+				"failed": 1,
+				"errors": [{"row_no": 3, "external_id": "booking abc", "kind": "Failed", "reason": "The booking has no customer account in XStudio."}],
+			}
+		)
+		log.flags.from_import_run = True
+		log.insert(ignore_permissions=True)
+		card = owner_yesterday.booking_import()
+		self.assertIn("1 failed", card["detail"])
+		self.assertIn("booking abc", card["detail"])
+		self.assertIn("no customer account", card["detail"])
+
 	def test_only_the_owner_sees_yesterday(self):
 		for user in (ACCOUNTANT, RAGHAD):
 			with self.subTest(user=user):
