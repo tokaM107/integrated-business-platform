@@ -188,20 +188,26 @@ def hall_tier(resource, lists):
 
 
 def hall_tier_amount(tier, hours):
-	"""(amount, rate shown, note) of a hall booking of `hours` under `tier`: up to one hour the first-hour price; more
-	than one and up to two hours the two-hour price; beyond two hours the two-hour price plus the extra-hour rate for
-	each hour after the second, in proportion to the minutes (QA-13: 2 h 30 min = 2 h + 0.5 x the extra rate). A
-	booking of between one and two hours pays the two-hour price: the price list names no rate for the part of the
-	second hour (owner to confirm, 1 Nov 2026)."""
+	"""(amount, rate shown, note) of a hall booking of `hours` under `tier` (the owner's rule of 1 Nov 2026): time is
+	charged in proportion, never rounded up to the next hour. Up to two hours, the first-hour rate x the hours, but
+	never more than the two-hour price (the discounted tier: 1.9 h in a small hall is 350, not 380); exactly two hours
+	is the two-hour price; beyond two hours, the two-hour price plus the extra-hour rate x the time after the second
+	hour, by the minutes. 1.5 h at 800/1,600/600 = 1,200; 2.5 h = 1,900; 2.5 h at 200/350/125 = 412.50."""
 	hours = flt(hours)
 	if hours <= 0:
 		return 0, 0, ""
-	if hours <= 1:
-		amount = flt(tier.first_hour_rate, 2)
-		note = _("Up to one hour: {0} ({1}).").format(money(amount), tier.price_list)
-	elif hours <= 2:
+	if hours < 2:
+		proportional = flt(flt(tier.first_hour_rate) * hours, 2)
+		amount = min(proportional, flt(tier.two_hour_rate, 2))
+		if amount < proportional:
+			note = _("{0} hours at {1} an hour would be {2}: the two-hour price {3} applies ({4}).").format(
+				flt(hours, 2), money(tier.first_hour_rate), money(proportional), money(amount), tier.price_list
+			)
+		else:
+			note = _("{0} hours x {1} ({2}).").format(flt(hours, 2), money(tier.first_hour_rate), tier.price_list)
+	elif hours == 2:
 		amount = flt(tier.two_hour_rate, 2)
-		note = _("Up to two hours: {0} ({1}).").format(money(amount), tier.price_list)
+		note = _("Two hours: {0} ({1}).").format(money(amount), tier.price_list)
 	else:
 		extra = hours - 2  # unrounded: 2 h 20 min beyond the second hour x 600 = 1,400.00, not 1,399.98
 		amount = flt(flt(tier.two_hour_rate) + extra * flt(tier.extra_hour_rate), 2)

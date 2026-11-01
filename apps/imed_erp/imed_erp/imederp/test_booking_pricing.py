@@ -615,15 +615,17 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		).insert()
 
 	def test_a_hall_with_a_tier_is_priced_by_the_length_of_the_booking(self):
+		"""The owner's rule of 1 Nov 2026: time in proportion, the two-hour tier kept, extra time prorated."""
 		self.tier(self.hall)
 		for i, (start, end, expected) in enumerate((
-			("10:00", "11:00", 800),  # one hour: the first-hour price
-			("10:00", "10:30", 800),  # half an hour: still the first hour
+			("10:00", "11:00", 800),  # one hour
+			("10:00", "10:30", 400),  # half an hour: half the hourly rate (minimum charge: owner to confirm)
+			("10:00", "11:30", 1200),  # 1.5 h = 1.5 x 800, not rounded up to two hours
+			("10:00", "11:45", 1400),  # 1.75 h = 1,400 (equals the two-hour price)
 			("10:00", "12:00", 1600),  # two hours: the two-hour price
-			("10:00", "11:30", 1600),  # between one and two hours: the two-hour price (owner to confirm)
-			("10:00", "13:00", 2200),  # three hours: 1600 + 600
-			("10:00", "12:30", 1900),  # two and a half: 1600 + 0.5 x 600, by the minutes
-			("10:00", "14:20", 3000),  # 4 h 20 min: 1600 + 2.3333 x 600 = 3000.00
+			("10:00", "12:30", 1900),  # 2.5 h: 1,600 + 0.5 x 600
+			("10:00", "13:00", 2200),  # three hours: 1,600 + 600
+			("10:00", "14:20", 3000),  # 4 h 20 min: 1,600 + 2.3333 x 600 = 3,000.00 to the piastre
 		)):
 			with self.subTest(start=start, end=end):
 				booking = self.book(start=start, end=end, date=add_days(DAY, i))  # each on its own day: no overlap
@@ -631,6 +633,20 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 				self.assertEqual(booking.base_amount, expected)
 				self.assertEqual(booking.price_list, STANDARD)
 				self.assertIn(STANDARD, booking.pricing_note)
+
+	def test_the_small_halls_tier_and_the_two_hour_cap(self):
+		small = self.make("Booking Resource", resource_name="_Test Small Tiered Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
+		self.tier(small, first=200, two=350, extra=125)
+		for i, (start, end, expected) in enumerate((
+			("10:00", "11:00", 200),
+			("10:00", "11:30", 300),  # 1.5 x 200
+			("10:00", "11:54", 350),  # 1.9 h x 200 = 380 would exceed the two-hour price: capped at 350 (edge case, owner to confirm)
+			("10:00", "12:00", 350),
+			("10:00", "12:30", 412.5),  # 350 + 0.5 x 125, to the piastre
+			("10:00", "12:40", 433.33),  # 350 + 0.6667 x 125 = 433.33
+		)):
+			with self.subTest(start=start, end=end):
+				self.assertEqual(self.book(resource=small, start=start, end=end, date=add_days(DAY, i)).total_amount, expected)
 
 	def test_tiers_differ_by_hall_and_by_customer_category(self):
 		# The small halls' list: 200 / 350 / 125; the students' list for the big hall is cheaper.
@@ -641,6 +657,7 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		self.assertEqual(self.book(resource=small, start="10:00", end="13:00").total_amount, 475)
 		self.assertEqual(self.book(start="10:00", end="13:00").total_amount, 2200)
 		self.assertEqual(self.book(start="14:00", end="17:00", customer=self.student).total_amount, 1400)  # 1000 + 1 x 400
+		self.assertEqual(self.book(start="10:00", end="11:30", customer=self.student, date=add_days(DAY, 1)).total_amount, 750)  # 1.5 x 500
 		# A hall without a tier is priced by the hour from its item, as before (300 x 3 on the standard list).
 		plain = self.make("Booking Resource", resource_name="_Test Plain Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
 		self.assertEqual(self.book(resource=plain, start="10:00", end="13:00").total_amount, 900)
@@ -655,6 +672,7 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "already has a tier", self.tier, self.hall)
 		booking = self.book(start="10:00", end="12:30", date=PAST)
 		self.assertEqual(booking.total_amount, 1900)
+		self.assertEqual(booking.rate, 760)  # 1,900 / 2.5 h: the effective rate the invoice line carries
 		booking.reload()
 		booking.update({"status": "Completed"})
 		booking.save()
@@ -663,6 +681,12 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 		booking = self.complete(booking)
 		invoice = frappe.get_doc("Sales Invoice", booking.sales_invoice)
 		self.assertEqual((invoice.grand_total, invoice.items[0].income_account), (1900, HALL_INCOME))
+		# A piastre amount reaches the invoice unchanged (currency precision 2): 2.5 h in a small hall = 412.50.
+		small = self.make("Booking Resource", resource_name="_Test Small Invoiced Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
+		self.tier(small, first=200, two=350, extra=125)
+		odd = self.complete(self.book(resource=small, start="10:00", end="12:30", date=PAST))
+		self.assertEqual(odd.total_amount, 412.5)
+		self.assertEqual(frappe.db.get_value("Sales Invoice", odd.sales_invoice, "grand_total"), 412.5)
 		# A revenue-share booking pays no rent, tier or not.
 		share = self.book(start="14:00", end="16:00", rental_model="Revenue Share", lecturer=self.lecturer, lecturer_share_percent=40)
 		self.assertEqual(share.total_amount, 0)
