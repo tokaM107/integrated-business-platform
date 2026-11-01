@@ -66,9 +66,13 @@ class Context:
 		self.package_rows = {}  # XStudio package id -> its row (with usage), for the ledger step
 		self.row_no = 0
 
-	def next_row(self):
+	def next_row(self, counted=True):
+		"""The next row number; a counted row is one read from XStudio (a booking, a package): it is then inserted,
+		updated, unchanged, to look at or failed, so the log's counts add up. A customer is derived from the bookings
+		read, not a row of its own (audit of 1 Nov 2026: the customers made rows read exceed rows accounted for)."""
 		self.row_no += 1
-		self.run.read()
+		if counted:
+			self.run.read()
 		return self.row_no
 
 
@@ -302,11 +306,12 @@ def fetch_bookings(client, start, end):
 # ---------- each record its own savepoint ----------
 
 
-def each(context, items, work, label):
+def each(context, items, work, label, counted=True):
 	"""`work(item)` for each item, in its own savepoint: one that fails is listed, the others go on. A deadlock has
-	rolled the whole run back: it is stopped and said so."""
+	rolled the whole run back: it is stopped and said so. An uncounted item (a customer) is counted as read only when
+	it fails, so that a failure is always among the rows read."""
 	for item in items:
-		row_no = context.next_row()
+		row_no = context.next_row(counted)
 		frappe.db.savepoint(SAVEPOINT)
 		try:
 			work(item)
@@ -318,6 +323,8 @@ def each(context, items, work, label):
 					_("The run stopped at {0}: the database rolled it back (another save at the same moment). Nothing of this run was kept; the next run is safe.").format(label(item))
 				)
 			frappe.clear_messages()
+			if not counted:
+				context.run.read()
 			context.run.failed(row_no, label(item), cstr(getattr(e, "message", None) or e)[:500])
 
 
@@ -330,7 +337,7 @@ def import_customers(context, bookings):
 		customer = mappers.customer_from_booking(booking)
 		if customer["id"] and customer["id"] not in customers:
 			customers[customer["id"]] = customer
-	each(context, customers.values(), lambda c: upsert_customer(context, c), lambda c: f"customer {c['id']}")
+	each(context, customers.values(), lambda c: upsert_customer(context, c), lambda c: f"customer {c['id']}", counted=False)
 
 
 def upsert_customer(context, customer):
@@ -599,7 +606,8 @@ def upsert_booking(context, booking):
 
 def import_usage(context):
 	items = [(xid, customer, row) for xid, (customer, row) in context.package_rows.items() if xid in context.packages]
-	each(context, items, lambda item: append_usage(context, item[0], item[2]), lambda item: f"package {item[0]} usage")
+	# A package's usage ledger is part of the package row already read: not a row of its own.
+	each(context, items, lambda item: append_usage(context, item[0], item[2]), lambda item: f"package {item[0]} usage", counted=False)
 
 
 def append_usage(context, xid, package):

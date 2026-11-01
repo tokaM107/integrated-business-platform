@@ -275,7 +275,7 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		walk_in = self.x.booking(other, hall=1, start=(-3, 18), end=(-3, 19), status="completed", amount_paid=300, amount_due=300, payment_status="paid")
 
 		log = self.run_sync()
-		self.assertEqual(self.counts(log), ("Completed", 6, 3, 0, 0, 0, 0))  # read: 2 customers, 1 package, 2 bookings, 1 ledger; inserted: 1 package + 2 bookings
+		self.assertEqual(self.counts(log), ("Completed", 3, 3, 0, 0, 0, 0))  # read: 1 package + 2 bookings (customers and the ledger derive from them; 1 Nov 2026); inserted: the same 3
 		self.assertEqual((log.source_system, log.records_created), ("xstudio", 2 + 1))  # 2 customers made, 1 usage row
 
 		customer = frappe.get_doc("Customer", {"xstudio_customer_id": teacher})
@@ -313,7 +313,7 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		before = frappe.db.count("Booking", {"source_system": "xstudio"}), frappe.db.count("Customer", {"xstudio_customer_id": teacher})
 		second = self.run_sync()
 		self.assertEqual(self.counts(first)[2], 1)
-		self.assertEqual(self.counts(second), ("Completed", 2, 0, 0, 1, 0, 0))
+		self.assertEqual(self.counts(second), ("Completed", 1, 0, 0, 1, 0, 0))  # the one booking row, unchanged
 		self.assertEqual((frappe.db.count("Booking", {"source_system": "xstudio"}), frappe.db.count("Customer", {"xstudio_customer_id": teacher})), before)
 		self.assertEqual(frappe.db.count("Booking", {"import_key": mappers.import_key(list(self.x.bookings)[0])}), 1)
 
@@ -730,6 +730,24 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 
 		[row] = [r for r in get_data() if r["system"] == "xstudio"]
 		self.assertEqual((row["log"], row["status"], row["inserted"]), (log.name, "Completed", 1))
+
+	def test_the_log_s_counts_add_up_to_the_rows_read(self):
+		"""Audit of 1 Nov 2026: the production log read 163 rows and accounted for 118. Every row read (a booking, a
+		customer, a package) is inserted, updated, unchanged, to look at or failed: the counts always add up."""
+		a = self.x.customer("_Test Counted A", self.phone(1))
+		b = self.x.customer("_Test Counted B", self.phone(2))
+		self.x.booking(a)
+		self.x.booking(b, start=(2, 10), end=(2, 12))
+		self.x.booking(None, start=(3, 10), end=(3, 12), customer_name="Walk-in", customer_phone="")  # fails: no customer
+		for _run in range(2):  # the second run: everything unchanged, still accounted for
+			log = self.run_sync()
+			self.assertEqual(
+				log.rows_read,
+				log.inserted + log.updated + log.skipped + log.changed + log.failed,
+				(log.rows_read, log.inserted, log.updated, log.skipped, log.changed, log.failed),
+			)
+		self.assertEqual(log.failed, 1)
+		self.assertGreaterEqual(log.skipped, 2)  # the two bookings unchanged (customers are not rows of their own)
 
 	def test_who_may_sync_by_hand(self):
 		frappe.set_user("gilan@imed.local")  # the studio's branch manager: not an owner nor the accountant
