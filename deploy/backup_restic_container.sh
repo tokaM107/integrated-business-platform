@@ -2,7 +2,7 @@
 # Nightly backup of the ERP off the server with restic, run INSIDE the backend container (Coolify → the application
 # → Scheduled Tasks, container `backend`, e.g. "30 2 * * *"):
 #
-#   bash /home/frappe/frappe-bench/apps/imed_erp/imed_erp/ops/backup_restic.sh   (the script is inside the image, with the app)
+#   bash /home/frappe/frappe-bench/apps/imed_erp/deploy/backup_restic_container.sh   (the script is inside the image, with the app)
 #
 # Needs in the container's environment (Coolify, marked secret): RESTIC_REPOSITORY (s3:https://<endpoint>/<bucket>/imed-erp),
 # RESTIC_PASSWORD, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY. SITE defaults to frontend.

@@ -1,7 +1,7 @@
 // The hall bookings and the redesigned sidebar, 27 Oct 2026, through real browser sessions: the sidebar as each role
 // sees it (frontend, read-only), and the hall booking journey on the demo site (a demo hall, never on frontend).
 //
-//   IMED_E2E_SIDS=<json file {site: {user: sid}}> node halls_27oct.js
+//   IMED_E2E_SIDS=<json file {site: {user: sid}}> node halls.js
 //
 // Session ids come from bench (LoginManager.login_as); nothing is typed as a password. Screenshots go to
 // docs/halls/screens/ (IMED_E2E_SHOTS to change).

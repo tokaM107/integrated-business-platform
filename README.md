@@ -30,7 +30,7 @@ deploy/                            Production: Containerfile, Coolify compose, r
 scripts/                           Developer scripts: the guarded test runner, backups, the library connector
 tests/e2e/                         Browser tests (Playwright) and the owner-dashboard audit script
 docs/                              Documentation, by topic (see docs/README.md)
-frappe_docker/                     Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
+frappe_docker/                     pwd.yml only: the compose file that runs ERPNext locally with the app mounted
 compose.coolify.yaml               The compose file Coolify deploys (must stay at the root)
 local/                             Local-only material (vendor binaries, downloads); git-ignored
 ```
@@ -871,7 +871,7 @@ Review**: no Doctor Agreement defines a hall share, and none is assumed.
   list on `resource_type = Hall`), so nothing is duplicated; Frappe shows each user only the pages they may read,
   and `imed_desk_fixes.js` hides the calendar URLs from anyone who may not read bookings.
 - Tests: `test_hall_bookings` (33), on top of `test_booking` and `test_booking_pricing`; the browser journey
-  `tests/e2e/halls_27oct.js` (screenshots in `docs/halls/screens/`).
+  `tests/e2e/halls.js` (screenshots in `docs/halls/screens/`).
 
 #### Price and money (HAL-03, HAL-08, HAL-11, HAL-12, STU-03..05, ACC-04)
 

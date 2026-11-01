@@ -78,7 +78,7 @@ a DocType, Report or Workspace link only to a user who may read it; the two cale
 see both booking groups because both may read bookings; what they see inside is their own business's (user
 permissions on the cost center): the studio's manager sees no hall booking and may not book a hall.
 
-## E. Browser verification (`tests/e2e/halls_27oct.js`, 57 checks, all passing)
+## E. Browser verification (`tests/e2e/halls.js`, 57 checks, all passing)
 
 `docs/halls/screens/`: `sidebar-owner.png`, `sidebar-nour.png`, `sidebar-gilan.png`, `sidebar-accountant.png`,
 `sidebar-hr.png`, `owner-dashboard-halls.png` (frontend, read-only); `demo-halls-list.png`, `demo-hall-form.png`,

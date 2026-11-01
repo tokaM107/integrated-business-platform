@@ -258,7 +258,7 @@ with the database, so this is a cutover step, not an option.
 **Backups off the server**: the image ships `restic`, and the app ships the task. In Coolify → the application →
 Scheduled Tasks, on the `backend` container, nightly at 02:30 (server time, UTC):
 ```bash
-bash /home/frappe/frappe-bench/apps/imed_erp/imed_erp/ops/backup_restic.sh
+bash /home/frappe/frappe-bench/apps/imed_erp/deploy/backup_restic_container.sh
 ```
 It makes the bench set (database, public and private files, site config with the encryption key), checks every
 archive, sends the four files to the restic repository (initialised on first use), runs `restic check`, keeps 30
@@ -328,7 +328,7 @@ Run on the server after the restore (steps 3–6 of section 5), then again after
 
 - [ ] `https://erp.<domain>/login` opens with a valid certificate; `http://` redirects; `http://72.62.36.46:8080` does not answer.
 - [ ] `/api/method/ping` → `pong`; `/assets/imed_erp/css/imed_theme.css` → 200; `/socket.io/?EIO=4&transport=polling` → 200.
-- [ ] Login as the owner (new password), nour, gilan, the accountant: the sidebar in Arabic, each sees their own business's records; HR sees no booking page (`tests/e2e/halls_27oct.js` logic, by hand or with session ids on the server).
+- [ ] Login as the owner (new password), nour, gilan, the accountant: the sidebar in Arabic, each sees their own business's records; HR sees no booking page (`tests/e2e/halls.js` logic, by hand or with session ids on the server).
 - [ ] Counts equal the cutover backup's: Booking, Customer, Studio Hour Package, Integration Import Log, Booking Resource, Doctor Agreement, Book Edition, Material Request, User; Sales Invoice, GL Entry, Payment Entry, Journal Entry unchanged (0 today).
 - [ ] `docker compose ps`: db, redis-cache, redis-queue, backend, frontend healthy; `bench doctor`: 2 workers online.
 - [ ] `bench --site frontend scheduler status`: enabled after step 8; the four paused job types still `stopped`.
@@ -361,7 +361,7 @@ Run on the server after the restore (steps 3–6 of section 5), then again after
 | Library tests | `test_library_sync`: 17 OK (incl. two libraries, same id → two documents; nameless batch refused) |
 | Connector config guard | `config.pc1.example.json --check` → exit 2 listing every placeholder; a config without `Db2BDoctor` / `ApplicationIntent=ReadOnly` → listed |
 | Full app test suite (after the library change) | 748 OK, 1 skipped |
-| Backup task `imed_erp/ops/backup_restic.sh` on the rehearsal stack, local restic repository | two runs: set made and checked, `snapshot d0e375f6 saved`, `no errors were found`, `OFFSITE OK 20261027_153459-frontend d0e375f6`; second run `OFFSITE OK 20261027_153509-frontend c95fecdf` (retention applied) |
+| Backup task `deploy/backup_restic_container.sh` on the rehearsal stack, local restic repository | two runs: set made and checked, `snapshot d0e375f6 saved`, `no errors were found`, `OFFSITE OK 20261027_153459-frontend d0e375f6`; second run `OFFSITE OK 20261027_153509-frontend c95fecdf` (retention applied) |
 | Recovery `deploy/verify_backup.sh` on the rehearsal stack | latest snapshot restored into `restore-check` (encryption key carried, passwords decrypt), 18 doctype counts compared with the live rehearsal site: all `same` (Booking 113, Customer 50, ... User 24), check site dropped: `RECOVERY OK` |
 | Test users review `setup/review_test_users.run` on the live local site | 12 users, all Frappe/ERPNext fixtures of 15 Oct 2026, never logged in, own nothing, no permission, no session; 3 hold System Manager |
 | Repository secret scan (tracked files and the history of every branch) | nothing found (only frappe_docker's documentation examples) |
@@ -428,7 +428,7 @@ Nothing below has been done. Each step says who does it, what it changes, how it
   hold **System Manager** (`test@example.com`, `testdelete@example.com`, `testpassword@example.com`): the ones
   that matter. No questionable identity: nothing among them is a person. The developer's own account
   (`toqamo031@gmail.com`) and the `@imed.local` staff are not in the list and are not touched.
-- Backups: `imed_erp/ops/backup_restic.sh` (runs inside the backend container; makes the set, checks every
+- Backups: `deploy/backup_restic_container.sh` (runs inside the backend container; makes the set, checks every
   archive, restic backup + check + retention) and `deploy/verify_backup.sh` (restores the latest snapshot into a
   second site, compares the counts, drops it) were run against the rehearsal stack with a local restic repository:
   two snapshots made and checked, the recovery restored and matched (section 10, last rows).
@@ -555,7 +555,7 @@ Until the cutover the site stays in maintenance mode (503 after login), so no da
 | 10 | owner | **GO for the switch**: staff told the new address; Mac stack stopped: `docker compose -p frappe_docker -f frappe_docker/pwd.yml stop` (not removed) | the Mac answers nothing on 8080 |
 | 11 | VPS | `docker exec $B bench --site frontend enable-scheduler` | `scheduler status` enabled; `bench doctor` 2 workers; the four paused job types still `stopped` |
 | 12 | VPS | watch two XStudio runs (10 min apart): Integration Import Log | inserted only what XStudio got since step 2; no duplicate import_key; Health Healthy or Degraded-by-the-known-row |
-| 13 | VPS | Coolify Scheduled Task `bash /home/frappe/frappe-bench/apps/imed_erp/imed_erp/ops/backup_restic.sh` with the bucket's `RESTIC_*` values; run once; then `deploy/verify_backup.sh` from the Mac or the VPS | OFFSITE OK; RECOVERY OK |
+| 13 | VPS | Coolify Scheduled Task `bash /home/frappe/frappe-bench/apps/imed_erp/deploy/backup_restic_container.sh` with the bucket's `RESTIC_*` values; run once; then `deploy/verify_backup.sh` from the Mac or the VPS | OFFSITE OK; RECOVERY OK |
 
 Between 1 and 11 no site syncs XStudio; from 11 only the VPS does. Rollback at any point before 10: the Mac's
 scheduler back on, nothing else to undo. After 10: the Mac's stack started again and its scheduler on, the VPS
