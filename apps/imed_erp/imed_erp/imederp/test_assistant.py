@@ -92,7 +92,7 @@ class IntegrationTestAssistantClaude(IntegrationTestCase):
 		return p
 
 	def test_the_loop_reads_then_answers_and_never_writes(self):
-		from imed_erp.assistant import claude
+		from imed_erp.assistant import tools as claude
 
 		before = (frappe.db.count("GL Entry"), frappe.db.count("Booking"))
 		p = self.provider([("tool", "dashboard_today", {}), ("tool", "count_records", {"doctype": "Booking", "filters": []}), ("text", "الإيراد النهارده صفر.")])
@@ -108,7 +108,7 @@ class IntegrationTestAssistantClaude(IntegrationTestCase):
 		self.assertIn("Revenue This Month", data["cards"])
 
 	def test_tools_refuse_what_is_not_allowed_and_say_so(self):
-		from imed_erp.assistant import claude
+		from imed_erp.assistant import tools as claude
 
 		text, is_error = claude.run_tool("count_records", {"doctype": "User", "filters": []})
 		self.assertTrue(is_error)
@@ -121,7 +121,7 @@ class IntegrationTestAssistantClaude(IntegrationTestCase):
 		self.assertTrue(is_error)
 
 	def test_tools_read_as_the_asking_user(self):
-		from imed_erp.assistant import claude
+		from imed_erp.assistant import tools as claude
 
 		# The owner reads the cash boxes report and an account's balance.
 		frappe.set_user("owner@imed.local")
@@ -142,8 +142,52 @@ class IntegrationTestAssistantClaude(IntegrationTestCase):
 		rows = json.loads(text)["rows"]
 		self.assertTrue(all(r.get("cost_center") == "مكتبة المواساة - MMG" for r in rows), rows[:3])
 
+	def test_the_gemini_provider_runs_the_same_loop(self):
+		from imed_erp.assistant.gemini import GeminiProvider, function_declarations
+
+		declared = {d.name for d in function_declarations()}
+		self.assertEqual(declared, {"dashboard_today", "run_report", "list_records", "count_records", "account_balance"})
+
+		class Call:
+			def __init__(self, name, args):
+				self.name, self.args = name, args
+
+		class Part:
+			def __init__(self, text=None, function_call=None):
+				self.text, self.function_call = text, function_call
+
+		class Content:
+			def __init__(self, parts):
+				self.parts, self.role = parts, "model"
+
+		class Candidate:
+			def __init__(self, parts):
+				self.content, self.finish_reason = Content(parts), "STOP"
+
+		class Response:
+			def __init__(self, parts):
+				self.candidates = [Candidate(parts)]
+
+		class FakeGemini:
+			def __init__(self):
+				self.models = self
+				self.calls = [[Part(function_call=Call("count_records", {"doctype": "Booking", "filters": []}))], [Part(text="فيه حجوزات.")]]
+				self.seen = []
+
+			def generate_content(self, model, contents, config):
+				self.seen.append(len(contents))
+				return Response(self.calls.pop(0))
+
+		p = GeminiProvider()
+		p.api_key = "test"
+		fake = FakeGemini()
+		p.client = lambda: fake
+		reply = p.reply([{"role": "user", "content": "كام حجز؟"}], {"user": "Administrator", "full_name": "Admin", "lang": "ar", "company": "Mohamed Mamdouh group"})
+		self.assertEqual(reply, "فيه حجوزات.")
+		self.assertEqual(fake.seen, [1, 3])  # the question; then the question, the call and its result
+
 	def test_filters_from_the_model_are_turned_into_frappe_filters(self):
-		from imed_erp.assistant.claude import parse_filters
+		from imed_erp.assistant.tools import parse_filters
 
 		self.assertEqual(
 			parse_filters([
