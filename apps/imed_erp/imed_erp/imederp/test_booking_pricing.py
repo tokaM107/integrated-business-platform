@@ -634,6 +634,35 @@ class IntegrationTestBookingPricing(IntegrationTestCase):
 				self.assertEqual(booking.price_list, STANDARD)
 				self.assertIn(STANDARD, booking.pricing_note)
 
+	def test_every_boundary_from_30_to_150_minutes_on_both_tiers(self):
+		"""The confirmed rule (1 Nov 2026): minutes in proportion with no minimum, the two-hour price as a cap up to two
+		hours, the two-hour price plus the prorated extra rate beyond. Large: 800/1,600/600; small: 200/350/125."""
+		large = self.hall
+		small = self.make("Booking Resource", resource_name="_Test Boundary Small Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
+		self.tier(large)
+		self.tier(small, first=200, two=350, extra=125)
+		expected = {
+			# minutes: (large, small)
+			30: (400, 100),
+			45: (600, 150),
+			60: (800, 200),
+			90: (1200, 300),
+			105: (1400, 350),  # small: 1.75 x 200 = 350, exactly the cap
+			120: (1600, 350),
+			135: (1750, 381.25),  # 1,600 + 0.25 x 600; 350 + 0.25 x 125
+			150: (1900, 412.5),
+		}
+		for i, (minutes, (big, little)) in enumerate(expected.items()):
+			end = f"{10 + minutes // 60:02d}:{minutes % 60:02d}"
+			with self.subTest(minutes=minutes):
+				a = self.book(resource=large, start="10:00", end=end, date=add_days(DAY, i))
+				b = self.book(resource=small, start="10:00", end=end, date=add_days(DAY, i))
+				self.assertEqual((a.total_amount, b.total_amount), (big, little))
+				# Saved, confirmed or completed: nothing is invoiced until the explicit action.
+				self.assertEqual(self.invoices(a.name) + self.invoices(b.name), [])
+		# A nonsense length (115 minutes in the small hall: 1.9167 h x 200 = 383.33) is capped at the two-hour price.
+		self.assertEqual(self.book(resource=small, start="10:00", end="11:55", date=add_days(DAY, 9)).total_amount, 350)
+
 	def test_the_small_halls_tier_and_the_two_hour_cap(self):
 		small = self.make("Booking Resource", resource_name="_Test Small Tiered Hall", resource_type="Hall", cost_center=HALLS, capacity=40, item="_TEST-HALL-HOUR")
 		self.tier(small, first=200, two=350, extra=125)
