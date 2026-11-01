@@ -9,6 +9,7 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
+    "anthropic>=2.3,<3",  # the assistant's model (imed_erp/assistant/claude.py); read-only tools
 ]
 
 [build-system]
