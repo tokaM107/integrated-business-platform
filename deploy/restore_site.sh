@@ -10,7 +10,7 @@
 # <SET>-site_config_backup.json. The last one carries the encryption key that unlocks the stored passwords
 # (XStudio Settings' password): without it the restored site cannot read them (verified 27 Oct 2026 on a local
 # restore). The scheduler stays disabled on the restored site: enabling it is a separate, approved step
-# (docs/PRODUCTION_DEPLOYMENT_COOLIFY.md, section 5).
+# (docs/deployment/production-deployment-coolify.md, section 5).
 set -euo pipefail
 
 BACKEND="${BACKEND:?the backend container name}"

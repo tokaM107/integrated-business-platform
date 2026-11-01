@@ -16,7 +16,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_months, flt, getdate, today
 
-from imed_erp.imederp.testing import fund_cash_boxes
+from imed_erp.imederp.tests.testing import fund_cash_boxes
 
 # The linked records already exist on the site; without this Frappe would generate its own
 # "_Test ..." records for every linked doctype and commit them.

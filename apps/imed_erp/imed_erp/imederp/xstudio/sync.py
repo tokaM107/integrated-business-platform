@@ -20,7 +20,7 @@
 # Integration Import Log (source_system xstudio); XStudio unreachable, or a deadlock, aborts the run with a Failed
 # log, and what was imported before stays as it was.
 #
-# What the existing API cannot tell (kept honest in the log and docs/XSTUDIO_SYNC.md):
+# What the existing API cannot tell (kept honest in the log and docs/integrations/xstudio/sync.md):
 #   - a change is seen only when the booking is read again: bookings are read by their start, so one moved out of
 #     the window is found only through its customer's list (itself capped at 500);
 #   - payments carry no ids (routes.js:912): a booking shows what XStudio says was paid, a package a summary;

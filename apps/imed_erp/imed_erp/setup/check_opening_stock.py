@@ -4,7 +4,7 @@
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/check_opening_stock.py").read(), {"frappe": frappe})
 #
 # 1. Copy setup/data/opening_stock_template.csv to setup/data/opening_stock.csv and fill one row per item and store
-#    counted (columns in docs/OPENING_STOCK.md). Quantities are what was counted; costs are the approved ones.
+#    counted (columns in docs/finance/opening-stock.md). Quantities are what was counted; costs are the approved ones.
 # 2. Run with MAKE_DRAFTS = False (the default): every row is checked and printed with its errors and warnings,
 #    and the total per store. Nothing is written.
 # 3. Once no row has an error, set MAKE_DRAFTS = True and run again: one draft Stock Reconciliation (Opening

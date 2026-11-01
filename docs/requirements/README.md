@@ -28,5 +28,5 @@ shasum -a 256 "docs/وثيقة_متطلبات_نظام_ERP_v1.2.docx"
 or adds to v1.2, with its date. Until the Word document is reissued as v1.3, **v1.2 plus those amendments** is
 the specification; where they differ, the amendment wins.
 
-Where each requirement stands in the system: docs/production-readiness-2026-10-21.md (section *Requirements*) and
+Where each requirement stands in the system: docs/audits/production-readiness-2026-10-21.md (section *Requirements*) and
 docs/known-issues.md.

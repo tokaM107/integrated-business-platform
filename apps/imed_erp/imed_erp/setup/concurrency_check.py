@@ -7,7 +7,7 @@
 # payout, both students counted once, one day's screen, one booking, a cash box not below zero, one close.
 #
 # It COMMITS its records (a second connection sees only committed data), so it refuses to run on the main site:
-# run it on a throwaway copy, e.g. the site a backup was restored into (docs/production-hardening.md):
+# run it on a throwaway copy, e.g. the site a backup was restored into (docs/deployment/production-hardening.md):
 #   docker exec frappe_docker-backend-1 bench --site restore-test execute imed_erp.setup.concurrency_check.run
 #
 # Its records are named "_Conc ..." and made fresh on every run.

@@ -83,7 +83,7 @@ website_context = {
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# Screen design standard applied to a standard ERPNext doctype (see docs/SCREEN_DESIGN_STANDARD.md).
+# Screen design standard applied to a standard ERPNext doctype (see docs/standards/screen-design-standard.md).
 doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Material Request": "public/js/material_request.js",

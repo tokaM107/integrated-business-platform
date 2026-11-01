@@ -16,22 +16,23 @@ Project files: https://drive.google.com/drive/folders/1kYML83xHgfcTFBl0uctAHT_Ej
 ## Repository layout
 
 ```
-apps/imed_erp/          Custom Frappe app (doctypes, workspace, setup scripts)
-  imed_erp/imederp/     Module "ImedERP": Doctor Agreement, Academic Period, Book Edition,
-                        Doctor Ledger Entry, Printer Reading, App Subscription, Owner Dashboard,
-                        Expense, Expense Category, Expense Report, Recurring Expense,
-                        Expense Settings, Allocation Rule, Printing Cost Settings, Printing Machine,
-                        Damaged Stock Entry, Damaged Stock Sale,
-                        Inter Business Transfer (and its report), Material Issues report;
-                        shared rules: treasuries.py (each business's cash box), no_delete.py,
-                        period_lock.py (closed months), library_revenue.py, expense_reminders.py,
-                        stock_reorder.py (reorder levels), material_issue.py (branch requests),
-                        customers.py (one customer per phone), sales_cancellation.py (reason to cancel a sale),
-                        edition_sales.py (which edition each copy sold comes from)
-  imed_erp/assistant/   AI assistant (chat window; no model connected yet)
-  imed_erp/notification_service.py   Unified notifications (CORE-10)
-  imed_erp/setup/       One-off setup scripts run from bench console (see below)
-frappe_docker/          Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
+apps/imed_erp/                     The custom Frappe app (the only code deployed)
+  imed_erp/imederp/                Module "ImedERP": doctype/, report/, workspace/, dashboard_chart_source/,
+                                   xstudio/ (the XStudio sync), and the shared rules as flat modules
+                                   (treasuries.py, booking_pricing.py, owner_dashboard.py, ...)
+  imed_erp/imederp/tests/          Every automated test (test_*.py) and the test helpers (testing.py)
+  imed_erp/assistant/              The AI assistant: api.py, agent.py (planner/executor/synthesizer),
+                                   tools.py (the read-only tools), gemini.py and claude.py (the models)
+  imed_erp/setup/                  One-off setup and check scripts run from bench console; setup/data/ templates
+  imed_erp/public/                 Theme CSS, JS, fonts, icons (served at /assets/imed_erp)
+  imed_erp/translations/           Arabic strings
+deploy/                            Production: Containerfile, Coolify compose, restore, backups, hardening, cutover
+scripts/                           Developer scripts: the guarded test runner, backups, the library connector
+tests/e2e/                         Browser tests (Playwright) and the owner-dashboard audit script
+docs/                              Documentation, by topic (see docs/README.md)
+frappe_docker/                     Upstream frappe/frappe_docker, used to run ERPNext locally (pwd.yml)
+compose.coolify.yaml               The compose file Coolify deploys (must stay at the root)
+local/                             Local-only material (vendor binaries, downloads); git-ignored
 ```
 
 ## Versions
@@ -49,7 +50,7 @@ service in one commit, then run `bench --site frontend migrate`.
 ## Setup from scratch
 
 This is the **development** setup: `admin` passwords, the site open on every interface, developer mode and tests on.
-For the production server, follow [docs/production-hardening.md](docs/production-hardening.md) instead.
+For the production server, follow [docs/deployment/production-hardening.md](docs/deployment/production-hardening.md) instead.
 
 Prerequisites: Docker Desktop (with WSL 2 on Windows) and Git. Nothing else is needed on the host;
 Python and bench live inside the containers.
@@ -85,11 +86,11 @@ dated fiscal year as long as nothing has been posted in it.)
 Measured on 2026-09-29 on a new site: creating the site with ERPNext and imed_erp about 1.5 minutes,
 all setup scripts about 40 seconds, so the whole system is built in about 2.5 minutes.
 
-Problems met while setting up, and their fixes: [docs/setup-issues.md](docs/setup-issues.md).
+Problems met while setting up, and their fixes: [docs/deployment/setup-issues.md](docs/deployment/setup-issues.md).
 
-Going live: the opening stock ([docs/OPENING_STOCK.md](docs/OPENING_STOCK.md)), the daily import's data standard
-([docs/IMPORT_DATA_STANDARD.md](docs/IMPORT_DATA_STANDARD.md), sample files in `docs/import/`), and checking two
-doctor statements by hand ([docs/DOCTOR_STATEMENT_RECONCILIATION.md](docs/DOCTOR_STATEMENT_RECONCILIATION.md)).
+Going live: the opening stock ([docs/finance/opening-stock.md](docs/finance/opening-stock.md)), the daily import's data standard
+([docs/integrations/import-data-standard.md](docs/integrations/import-data-standard.md), sample files in `docs/integrations/import-samples/`), and checking two
+doctor statements by hand ([docs/finance/doctor-statement-reconciliation.md](docs/finance/doctor-statement-reconciliation.md)).
 
 ## How the imed_erp app is loaded
 
@@ -216,7 +217,7 @@ design tokens and refines a few components. It is loaded from `hooks.py` and nee
 | `js/imed_home.js` | Home screen: a greeting band (greeting, today's date, company) with quick actions, each shown only if the user has the permission for it. Hooks into Frappe's `desktop_screen` event and only adds elements; the app grid and its edit mode are Frappe's own. |
 | `js/imed_theme_toggle.js` | One-click light / dark switch next to the notifications (beside the bell on the home screen, under "Notification" in the sidebar). Uses Frappe's own theme setting, so the choice is saved to the user. |
 | `css/imed_fonts.css`, `fonts/` | IBM Plex Sans Arabic (SIL OFL, licence in `fonts/OFL.txt`), bundled so it works without internet. Only Arabic text uses it; Latin stays on Inter. |
-| `js/imed_form_standard.js` | Reusable screen design standard (`imed.screen.apply`): hide unused standard-ERPNext fields (tax / ZATCA / international), collapse technical sections. Each doctype's own `.js` calls it. See [docs/SCREEN_DESIGN_STANDARD.md](docs/SCREEN_DESIGN_STANDARD.md). |
+| `js/imed_form_standard.js` | Reusable screen design standard (`imed.screen.apply`): hide unused standard-ERPNext fields (tax / ZATCA / international), collapse technical sections. Each doctype's own `.js` calls it. See [docs/standards/screen-design-standard.md](docs/standards/screen-design-standard.md). |
 | `images/imed-mark.svg` | Logo and favicon. |
 | `icons/desktop_icons/{solid,subtle}/owner_dashboard.svg` | The Owner Dashboard icon on the home screen. |
 
@@ -226,19 +227,20 @@ design tokens and refines a few components. It is loaded from `hooks.py` and nee
 - **Arabic / RTL:** every left/right spacing uses logical properties (`inline-start` / `inline-end`), so the
   Arabic interface mirrors correctly.
 - **Dark mode** (user menu > Toggle Theme) is fully themed.
-- **New screens:** follow [docs/SCREEN_DESIGN_STANDARD.md](docs/SCREEN_DESIGN_STANDARD.md) — field order,
+- **New screens:** follow [docs/standards/screen-design-standard.md](docs/standards/screen-design-standard.md) — field order,
   which fields to hide, Arabic/RTL, fonts, buttons, status colours, and the reusable Client Script helper.
 - **Serving the files:** `pwd.yml` mounts `public/` at `/assets/imed_erp` in the frontend (nginx) and backend
   containers. Without that mount the browser gets 404 for the theme.
 - **After editing a CSS file:** reload the page (Ctrl+Shift+R). After changing `hooks.py`: restart the backend
   and run `bench --site frontend clear-cache`.
 
-## AI assistant (chat window, not connected to a model yet)
+## AI assistant (read-only, Gemini or Claude)
 
 The owner sees an animated character at the bottom corner of the home screen. Clicking it opens a chat
-panel at the side: type a question or record a voice message. Until a model is connected, an offline
-placeholder answers that the assistant is not connected yet, so the window, voice and permissions can
-already be used and tested.
+panel at the side: type a question or record a voice message. Since 1 Nov 2026 a model answers from the live
+figures through read-only tools (planner, executor, synthesizer, short memory): see
+[docs/assistant/assistant.md](docs/assistant/assistant.md) for the architecture and the setup. Without a key in
+the site config, an offline placeholder answers that the assistant is not connected.
 
 | File | What it is |
 |---|---|
@@ -329,7 +331,7 @@ without changing anything if they do not (so a user is never created without the
 | `setup_arabic_names.py` | Renames the company's accounts, cost centers, warehouses, item groups, UOMs (Ream, Box) and item names from English to Arabic, updating every link. `setup_core.py` runs it right after the company exists. Leaves the company name, the `All Item Groups` root and the `Nos` UOM in English (ERPNext uses them by name). Screen texts of the app's own doctypes and reports are translated in `imed_erp/translations/ar.csv`. |
 | `setup_coa.py` | Chart of accounts from the posting rules document (v2.0, section 2): treasuries (one per business, including the BA Plus app's), one revenue account per business, costs and expenses, doctors' and lecturers' balances, the inter business current account, and one stock account per library and kind, linked to its warehouse. Reuses the accounts ERPNext already ships (rent, salaries, utilities, ...) and deletes the old Books / Printing Revenue accounts. Can also be run on its own. |
 | `setup_library.py` | Libraries (LIB). The five inventory groups `ورق`, `أحبار`, `كتب وكشاكيل`, `مستهلكات` (ERPNext's own Consumable group) and `خامات تجليد`, with A4 paper in `ورق`; makes `منتجات المكتبات` a parent group with `كتب وكشاكيل` (holding `كتب` and `مذكرات`) and `خدمات المكتبات` under it; the Author field on Item; the non-stock services COPY-SVC, PRINT-SVC, BINDING-SVC (moved into `خدمات المكتبات`); the stock items BOOK and MEMO; item defaults (revenue `إيراد مكتبة المواساة`, cost center `مكتبة المواساة`, warehouse `إصدارات الأطباء — المواساة`); one POS Profile per library, which gives each sale its own warehouse and cost center; a cash payment method for the halls, the studio and the app, each into its own cash box; the stock count fields on Stock Reconciliation, Count Type and Counted By (LIB-03). The libraries' seven printing machines (PRN-01): `Epson الأزاريطة`, `Riso الأزاريطة 1-2`, `Epson المواساة`, `Riso المواساة 1-3`, each with its library, type and location warehouse; a machine already there is kept (an older one only gets its missing library and type). Each run says `ASSUME` while the Epson and Riso ink costs on Printing Cost Settings are still the assumed 0.05 and 0.10. Books and memos are listed in `LIBRARY_ITEMS` at the top (one generic item each until the catalogue is known). Creates no account, cost center or warehouse: a missing one is printed as `WAIT`. Idempotent. |
-| `check_opening_stock.py` | Opening stock (INT-08). Checks the libraries' count sheet (`setup/data/opening_stock.csv`, from `opening_stock_template.csv`) row by row and prints the total per store; with `MAKE_DRAFTS = True` and no errors, makes one **draft** Stock Reconciliation (Opening Stock) per branch, for the owner or the accountant to submit. Never submits, never posts twice to a store. See [docs/OPENING_STOCK.md](docs/OPENING_STOCK.md). |
+| `check_opening_stock.py` | Opening stock (INT-08). Checks the libraries' count sheet (`setup/data/opening_stock.csv`, from `opening_stock_template.csv`) row by row and prints the total per store; with `MAKE_DRAFTS = True` and no errors, makes one **draft** Stock Reconciliation (Opening Stock) per branch, for the owner or the accountant to submit. Never submits, never posts twice to a store. See [docs/finance/opening-stock.md](docs/finance/opening-stock.md). |
 | `setup_customer_phones.py` | One customer per phone number (CRM-04). Run once after `bench migrate` added the Phone Key field: gives each customer saved before it the key of its number, so a new customer with the same number is refused. Changes no phone number and merges nothing: invalid numbers and numbers already on several customers are listed (the oldest customer of a number gets its key). `FILL = False` only prints the report. Idempotent. |
 | `setup_dashboard.py` | Number Cards, Dashboard Charts and the Owner Dashboard workspace (deleted and recreated each run), in the theme's colours; they count only submitted documents (and enabled customers), never drafts, plus the branding settings the theme needs: app name, logo (Navbar Settings), launcher icon style, Owner Dashboard icon. The owner follows everything himself and mostly confirms (owner, 12 Oct 2026), so the dashboard is his home page (`default_workspace`), with Arabic section headers: what waits for him first, with counts (expenses waiting for approval, editions to approve, transfers to confirm), then the key numbers and charts, one click to every list of the staff's work (sales, expenses, purchases, counts, stock movements, branch requests, agreements, editions, counters, subscriptions, and All Changes, Frappe's change history), then the reports. |
 | `verify_setup.py` | Read-only. Prints found/expected counts and flags anything missing or misconfigured. |
@@ -529,7 +531,7 @@ Rules confirmed by the owner on 21 Oct 2026.
   *Ends On*): Friday is off, a close made on a Friday still shows in its week, and a Friday is never listed as a
   day without a close.
 - **Opening cash** on a new site: `imederp/opening_cash.py` checks every treasury and prepares the counted cash as
-  a draft opening entry (docs/production-hardening.md, section 7).
+  a draft opening entry (docs/deployment/production-hardening.md, section 7).
 - Owner's page: Cash Shortages This Month, Open Cash Discrepancies, and shortcuts to the closes, the discrepancies
   waiting, the weekly reviews and the report.
 
@@ -579,7 +581,7 @@ fixed studio hours; two bookings of one resource still never overlap.
 
 **Production (prepared, not deployed)**: `deploy/` holds the Containerfile, the Coolify compose file, the
 environment template and the restore script; the whole procedure, the rehearsal results and the blockers are in
-docs/PRODUCTION_DEPLOYMENT_COOLIFY.md (27 Oct 2026).
+docs/deployment/production-deployment-coolify.md (27 Oct 2026).
 
 A separate site, **demo** (http://127.0.0.1:8081 on the development machine, container `imed-demo-web`), holds the
 demo transactions of 18 Oct restored from the backup of 21 Oct, plus sample cash closes, discrepancies and a
@@ -780,7 +782,7 @@ capacities, equipment and prices are still blank in the requirements, so none is
 
 **Booking** (`imederp/doctype/booking`), by the hour (HAL-02, STU-01):
 
-The screen (docs/SCREEN_DESIGN_STANDARD.md, *Worked example — Booking*): a card on top with the three steps of a new
+The screen (docs/standards/screen-design-standard.md, *Worked example — Booking*): a card on top with the three steps of a new
 booking, or a saved booking's total, paid, remaining and what to do next; the actions as buttons (Record Deposit,
 Mark Completed, No Show, Cancel Booking); the worked-out and technical fields in collapsed sections.
 
@@ -869,7 +871,7 @@ Review**: no Doctor Agreement defines a hall share, and none is assumed.
   list on `resource_type = Hall`), so nothing is duplicated; Frappe shows each user only the pages they may read,
   and `imed_desk_fixes.js` hides the calendar URLs from anyone who may not read bookings.
 - Tests: `test_hall_bookings` (33), on top of `test_booking` and `test_booking_pricing`; the browser journey
-  `tests/e2e/halls_27oct.js` (screenshots in `docs/hall-screens/`).
+  `tests/e2e/halls_27oct.js` (screenshots in `docs/halls/screens/`).
 
 #### Price and money (HAL-03, HAL-08, HAL-11, HAL-12, STU-03..05, ACC-04)
 
@@ -949,7 +951,7 @@ and the halls map to studio services, never to the lecture halls. Setup once:
 `bench --site frontend execute imed_erp.setup.setup_xstudio.run`, then the URL, an `accountant` login and its
 password on XStudio Settings, **Test Connection**, enable, **Sync Now**. What the existing API can and cannot tell
 (500-row cap, no `updatedSince`, no payment ids), the coverage table and the staging setup on Supabase:
-`docs/XSTUDIO_SYNC.md`.
+`docs/integrations/xstudio/sync.md`.
 
 ### Point of sale, customers and cancelling a sale (LIB-01, CRM-01/02/04, ACC-06, SEC-06)
 
@@ -1437,7 +1439,7 @@ made in the group `طالب`, and the fee is counted and posted as for a subscri
 again adds nothing; a known record that changed in BA Plus is listed, not overwritten; a row that fails keeps
 nothing and the others go on. An imported course or subscription is changed only in BA Plus (`import_source.py`),
 except a course's status. A subscription is always on `تطبيق BA Plus`'s cost center, whoever made it. The columns
-and what still needs a real BA Plus export: docs/IMPORT_DATA_STANDARD.md, part 3.
+and what still needs a real BA Plus export: docs/integrations/import-data-standard.md, part 3.
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend execute imed_erp.imederp.app_import.import_file \
@@ -1669,7 +1671,7 @@ Each doctype has integration tests next to it; the expense reminders have their 
 
 ```bash
 docker exec frappe_docker-backend-1 bench --site frontend set-config allow_tests true
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_test_records  # first: catches a missing IGNORE entry before it commits _Test records
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_test_records  # first: catches a missing IGNORE entry before it commits _Test records
 # or, the guard first and the rest only if it passes:
 scripts/run_tests.sh --app imed_erp
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Expense"
@@ -1681,33 +1683,33 @@ docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "D
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "App Course"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "App Subscription"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Platform Fee Schedule"
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_statement
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_debts
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_requirements
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_stock
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_stock_count_variance
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_paper_use
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_treasuries
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_buying
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_expense_reminders
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_warehouses_items
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_material_issue
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_damaged_stock
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_customers
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_sales_cancellation
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_edition_sales
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_doctor_reports
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_app_import
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_opening_stock
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_booking_pricing
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_xstudio_sync  # XStudio read-only sync against a stand-in of its API (docs/XSTUDIO_SYNC.md)
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_doctor_accrual  # card A8: 3 copies at 80 -> 240, twice -> 240, cancelled -> 0, the balance follows
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_doctor_statement
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_doctor_debts
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_doctor_requirements
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_paper_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_stock_count
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_stock_count_variance
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_paper_use
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_treasuries
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_buying
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_expense_reminders
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_warehouses_items
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_material_issue
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_damaged_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_customers
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_sales_cancellation
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_edition_sales
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_doctor_reports
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_app_import
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_opening_stock
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_booking
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_booking_pricing
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_xstudio_sync  # XStudio read-only sync against a stand-in of its API (docs/integrations/xstudio/sync.md)
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Printing Machine"
 docker exec frappe_docker-backend-1 bench --site frontend run-tests --doctype "Daily Counter Reading"
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_daily_printing
-docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.test_owner_reports  # 5.1, RPT-01, RPT-02, RPT-05
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_daily_printing
+docker exec frappe_docker-backend-1 bench --site frontend run-tests --module imed_erp.imederp.tests.test_owner_reports  # 5.1, RPT-01, RPT-02, RPT-05
 ```
 
 They run on the company's real cost centers, accounts and categories, and everything they create is

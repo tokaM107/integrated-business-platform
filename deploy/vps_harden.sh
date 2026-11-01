@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Close the VPS's management ports to the internet, reversibly, without touching the five Coolify applications.
-# Read before running: docs/PRODUCTION_DEPLOYMENT_COOLIFY.md, section 13. NOT run by the preparation.
+# Read before running: docs/deployment/production-deployment-coolify.md, section 13. NOT run by the preparation.
 #
 # What it does (as root on the VPS):
 #   1. Starts a dead-man's switch: in REVERT_MINUTES (10) the rules are removed again, unless `vps_harden.sh confirm`

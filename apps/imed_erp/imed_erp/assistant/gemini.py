@@ -1,6 +1,6 @@
 # The Gemini provider of the assistant (assistant/tools.py holds the tools and the instructions; read-only).
 #
-# Connect it (docs/ASSISTANT.md):
+# Connect it (docs/assistant/assistant.md):
 #   bench --site frontend set-config imed_assistant_provider imed_erp.assistant.gemini.GeminiProvider
 #   bench --site frontend set-config imed_assistant_api_key AIza...            # a Gemini API key (Google AI Studio)
 #   bench --site frontend set-config imed_assistant_model gemini-3.5-flash          # optional; this is the default

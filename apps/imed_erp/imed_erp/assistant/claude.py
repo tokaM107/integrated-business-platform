@@ -1,6 +1,6 @@
 # The Claude provider of the assistant (assistant/tools.py holds the tools and the instructions; read-only).
 #
-# Connect it (docs/ASSISTANT.md):
+# Connect it (docs/assistant/assistant.md):
 #   bench --site frontend set-config imed_assistant_provider imed_erp.assistant.claude.ClaudeProvider
 #   bench --site frontend set-config imed_assistant_api_key sk-ant-...      # the site's config, never in git
 #   bench --site frontend set-config imed_assistant_model claude-opus-5-5   # optional

@@ -2,7 +2,7 @@
 // For license information, please see license.txt
 
 // Booking (HAL-02, STU-01, STU-08). The checks, the price and the money are on the server (booking.py,
-// booking_pricing.py, booking_accounts.py); this only helps the screen (docs/SCREEN_DESIGN_STANDARD.md):
+// booking_pricing.py, booking_accounts.py); this only helps the screen (docs/standards/screen-design-standard.md):
 //   - a card on top: on a new booking, the three steps; on a saved one, its total, paid and remaining, its status
 //     and what to do next;
 //   - the actions as buttons (Confirm Booking, Reschedule, Mark Completed, No Show, Cancel Booking), so nobody has

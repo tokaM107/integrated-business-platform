@@ -1,4 +1,4 @@
-# Opening cash on a new site (ACC-03; production initialization, docs/production-hardening.md).
+# Opening cash on a new site (ACC-03; production initialization, docs/deployment/production-hardening.md).
 #
 # A cash box never goes below zero (cash_balance.py), so on the first day each box must already hold the cash that is
 # really in it, or the first expense or payout out of it is refused. The cash is counted in each branch on the

@@ -45,3 +45,6 @@ docs/**/*.docx
 /Db2BDoctor*_GenerateScriptReport_*.html
 /library_metadata_*.zip
 /tests/e2e/package-lock.json
+
+# Local-only material (vendor binaries, downloads, scratch): never committed
+/local/

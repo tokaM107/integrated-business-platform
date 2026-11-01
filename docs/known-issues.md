@@ -67,7 +67,7 @@ sections of this file. Each row says what it needs before it can be built.
 
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
-| 7 | SEC-05 (Must) | Script ready on 20 Oct (`scripts/backup_offsite.sh`, docs/production-hardening.md): a nightly checked backup with files, copied out of the container and, with an rclone remote, off the server. Not scheduled yet, and no remote chosen. | Until the remote is set, a failed server loses the data. | Where the copy goes (cloud drive or a disk at the office), with the hosting decision. Owner. Then cron it and restore one backup once. |
+| 7 | SEC-05 (Must) | Script ready on 20 Oct (`scripts/backup_offsite.sh`, docs/deployment/production-hardening.md): a nightly checked backup with files, copied out of the container and, with an rclone remote, off the server. Not scheduled yet, and no remote chosen. | Until the remote is set, a failed server loses the data. | Where the copy goes (cloud drive or a disk at the office), with the hosting decision. Owner. Then cron it and restore one backup once. |
 | 8 | HR-01, HR-02, HR-04, HR-06 (Must); HR-03, HR-05 (Should) | HR is not built and HRMS (Frappe's HR app) is not installed: no payroll, attendance or salary split between businesses. Salaries are recorded as expenses. | The owner may expect payroll from the Must list. | Confirm HR is after go-live, and when HRMS is installed (an install and migrate on a live site). Owner. |
 | 9 | LIB-07 (Must) | Done on 24 Oct: `feature/buying` merged: the supplier group, payment terms, one purchase invoice that updates stock, the purchase screen, shipping in the paper's cost, the payables reports (`setup_buying.py`, `test_buying.py`). Suppliers are paid by the accountant or the owner only (owner, 12 Oct). | Run `setup_buying.py` on each site. | |
 | 10 | Owner's dashboard (5.1) | Done on 22 Oct: yesterday's revenue, expenses and net by business, paper and counters, halls and studio, platform fees and the integrations, on the owner's dashboard, the owner's alone (README, *Owner Dashboard: yesterday*). The cards (merged 24 Oct): the money from the ledger (cash in the boxes, revenue, expenses and net this month, owed to us, we owe), and, after audit QA-06, what is counted over time is this month to today, never all time, future or tentative bookings: platform fees and collected from doctors, studio and hall bookings and hours, unpaid on bookings, cash shortages and open discrepancies; revenue by business from the ledger's income accounts. | | |
@@ -90,7 +90,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 17 | INT-04, STU-06 (Must) | The booking import is written but nothing runs it (no job, no upload). | The file and its schedule (INT-02). |
 | 18 | INT-07 (Must) | Partly done on 22 Oct: *Integration Import Log* keeps each run and its failed and changed rows; the BA Plus import writes it. Not yet: the booking import writing it, an alert on a failed run, re-importing a period. | The alert's recipients; the booking import's runner. |
 | 19 | INT-09, RPT-12 (Must) | Done for BA Plus on 22 Oct: *Integration Status* shows each system's last good import, its counts and the last run, and imports a period again from the kept files; the libraries and the booking system show *not connected* until their imports write logs. The owner's dashboard's yesterday band shows file imports (Data Import), the app's daily jobs, the assistant and e-mail, with last success and failures; it does not read Integration Import Log yet. | Their imports; the band reading Integration Import Log. |
-| 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (IMPORT_DATA_STANDARD.md). |
+| 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (import-data-standard.md). |
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
@@ -110,12 +110,12 @@ sections of this file. Each row says what it needs before it can be built.
 
 ## Open questions: BA Plus import (INT-05, APP-13), 22 Oct 2026
 
-Built on synthetic rows (`imederp/test_app_import.py`); nothing has been imported on the site. Before the first real
+Built on synthetic rows (`imederp/tests/test_app_import.py`); nothing has been imported on the site. Before the first real
 file, from the BA Plus team:
 
 | # | Question | Until decided | Ask |
 |---|---|---|---|
-| 1 | **A real export**: the columns, the date format, and whether subscription and course ids are stable and unique. | The columns of IMPORT_DATA_STANDARD.md part 3. | BA Plus team |
+| 1 | **A real export**: the columns, the date format, and whether subscription and course ids are stable and unique. | The columns of import-data-standard.md part 3. | BA Plus team |
 | 2 | **Each doctor's id in BA Plus**, written on his app agreement (BA Plus Doctor ID). | A row whose doctor has no agreement with that id fails. | BA Plus team / Accountant |
 | 3 | **A cancelled subscription or a withdrawn student**: how does the file show it? (INT question 6) | Not read: a row that disappears from the file changes nothing here; a known one that changed is listed. | BA Plus team, owner (COUNT_WITHDRAWN) |
 | 4 | **The day's rows or the whole term** each time? | Either works: known ids are skipped. | BA Plus team |
@@ -168,9 +168,9 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 | 1 | **Platform fees in the doctor's ledger.** Decided 19 Oct 2026: posted automatically with every student (platform_fee_posting.py), so Doctor Debts shows them. | Done. | |
 | 2 | **Payouts by library.** RPT-08 asks for receivables by library. A payout made for the agreement as a whole has no library, so the libraries' rows do not each show what is still owed to them. Should a payout name its library? | Shown as *Not by branch*; the agreement's row is the balance. | Accountant / Taqa |
 | 3 | **Who sees the reports.** RPT-08 and RPT-10 are Super Admin reports. | The owner and the accountant (Accounts Manager, who may open the doctor's ledger). | Owner |
-| 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |
-| 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
-| 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |
+| 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/integrations/import-data-standard.md). | Libraries / app / studio teams |
+| 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/finance/opening-stock.md). | Libraries / Accountant / Owner |
+| 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/finance/doctor-statement-reconciliation.md). | Accountant |
 
 ## Open questions: platform fees (APP-02, APP-03)
 
@@ -255,7 +255,7 @@ Still open from the audit (updated 21 Oct 2026):
     The money is the doctor's (APP-05): held in مقبوضات الطلبة لحساب الأطباء — التطبيق. **Open (accountant and owner):**
     how it reaches the doctor: paid out, or set against his platform fees; until then it is held and listed (App
     Payments report).
-  - Opening cash on production: counted, signed and entered before the first sale (docs/production-hardening.md,
+  - Opening cash on production: counted, signed and entered before the first sale (docs/deployment/production-hardening.md,
     section 7); Mawasah's -936.50 on the development site came from the demo transactions of 18 Oct entered with no
     opening cash (two sales 1,800 + 605 in; a doctor payout 400, an expense 450 and two transfers 1,500 + 1,000
     out; a scrap payment 8.50 in). Those transactions were erased on 21 Oct at the owner's request (below).
@@ -284,4 +284,4 @@ Still open from the audit (updated 21 Oct 2026):
   above. BA Plus imports have their entry point (app_payment.import_payment, once per BA Plus id) but no connection.
 - **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on
   the copy site: the daily jobs are idempotent (a bill due today makes one draft; a second run makes none).
-- **Production (SEC-04..06)**: the settings and steps are in docs/production-hardening.md; nothing is deployed.
+- **Production (SEC-04..06)**: the settings and steps are in docs/deployment/production-hardening.md; nothing is deployed.

@@ -4,7 +4,7 @@
 //   IMED_E2E_SIDS=<json file {site: {user: sid}}> node halls_27oct.js
 //
 // Session ids come from bench (LoginManager.login_as); nothing is typed as a password. Screenshots go to
-// docs/hall-screens/ (IMED_E2E_SHOTS to change).
+// docs/halls/screens/ (IMED_E2E_SHOTS to change).
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");

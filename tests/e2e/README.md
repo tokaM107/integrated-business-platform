@@ -7,7 +7,7 @@ Arabic and right-to-left, phone width, and the main workflows through the forms.
 They create records, so they run on a **throwaway copy** of the site, never on `frontend`:
 
 ```bash
-# 1. A copy of the site, from a backup (docs/production-hardening.md, restore).
+# 1. A copy of the site, from a backup (docs/deployment/production-hardening.md, restore).
 docker exec frappe_docker-backend-1 bench new-site restore-test --mariadb-user-host-login-scope='%' --db-root-password <root> --admin-password <any>
 docker exec frappe_docker-backend-1 bench --site restore-test restore <set>-database.sql.gz --with-public-files <set>-files.tar --with-private-files <set>-private-files.tar --db-root-password <root>
 docker exec frappe_docker-backend-1 bench --site restore-test migrate

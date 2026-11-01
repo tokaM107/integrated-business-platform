@@ -6,7 +6,7 @@
 # branch manager, were the assistant ever opened to her, would see her branch only. The model gets no database access,
 # no SQL, no file system: only these tools, and the tools only read.
 #
-# Which model answers is the site's choice (docs/ASSISTANT.md); the tools are the same for all.
+# Which model answers is the site's choice (docs/assistant/assistant.md); the tools are the same for all.
 
 import json
 

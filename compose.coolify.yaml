@@ -1,7 +1,7 @@
 # IMED ERP on Coolify (Hostinger VPS): the official frappe_docker production layout (compose.yaml + the mariadb,
 # redis and noproxy overrides) in one file for Coolify's Docker Compose build pack, with the image built from this
 # repository (deploy/Containerfile; build context `.` = the project directory, which Coolify sets to the repository root). Flat on purpose (no YAML anchors): Coolify
-# parses the file itself. Read docs/PRODUCTION_DEPLOYMENT_COOLIFY.md before using it.
+# parses the file itself. Read docs/deployment/production-deployment-coolify.md before using it.
 #
 #   - the app is inside the image; every password comes from Coolify's environment (${VAR:?} refuses to start
 #     without it); MariaDB and Redis publish no port; only `frontend` (nginx, :8080) gets a domain;

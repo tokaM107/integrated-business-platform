@@ -1,6 +1,6 @@
 # Library connector (Tanmya Market, SQL Server → IMED ERP)
 
-Design and findings: `docs/LIBRARY_SQLSERVER_INTEGRATION_ANALYSIS.md`. Everything here is read-only toward the
+Design and findings: `docs/integrations/library/sqlserver-integration-analysis.md`. Everything here is read-only toward the
 library's database.
 
 | File | Purpose |
@@ -24,4 +24,4 @@ document on it: `tanmya:pc1:stock:90001` and `tanmya:azarita:stock:90001` are tw
 batch without a library name. Both PCs post as the same ERP user, `library-connector@imed.local` (role *Library
 Connector* only; `imed_erp.setup.setup_library_connector.run`), whose API key and secret are generated on the
 user's form and typed into each `config.json`. The schema in hand is Db2BDoctorNew's; PC1's collector run
-confirms Db2BDoctor's before its first import. The whole procedure: docs/PRODUCTION_DEPLOYMENT_COOLIFY.md, section 8.
+confirms Db2BDoctor's before its first import. The whole procedure: docs/deployment/production-deployment-coolify.md, section 8.

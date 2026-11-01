@@ -1,6 +1,6 @@
 # The contract between the Windows connector on the library PC (scripts/library_connector) and the ERP: one JSON
 # object per document, keyed by the names the Tanmya application itself reads from its procedures' result sets
-# (docs/LIBRARY_SQLSERVER_INTEGRATION_ANALYSIS.md, section 5). The physical column names are aliased to these in
+# (docs/integrations/library/sqlserver-integration-analysis.md, section 5). The physical column names are aliased to these in
 # the connector's SELECTs after they are confirmed on site, so nothing here is a guess at a column name: a key
 # that is missing fails the document with a clear reason instead of being invented.
 
