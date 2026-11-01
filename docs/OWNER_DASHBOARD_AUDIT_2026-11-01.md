@@ -218,3 +218,18 @@ notice described in section 5.
 studio's busy hours (a restart of a few minutes), run the read-only production verification right after, and do not
 touch the walk-in booking, the halls or XStudio's workflow (decisions 2 and 3 stay open and the dashboard now says so).
 No NO-GO item was found: no schema change, backups verified, sync untouched, rollback is a one-click redeploy.
+
+## 10. Pre-deployment mandatory check (owner's condition, 1 Nov 2026)
+
+**Stock Value chart restricted to the company — PASS after a further change.** A warehouse-name filter was not a
+company filter. The chart now has its own source (`Stock Value by Warehouse Company`): Bin joined to Warehouse on
+`Warehouse.company = Mohamed Mamdouh group`. Test `test_the_stock_chart_holds_only_the_company_s_warehouses` makes a
+warehouse of another company named with the group's suffix and a bin of 5,000 in it, and shows it stays out.
+
+**Defect found while checking: the two custom-source charts never drew, in production either.** Frappe reads a
+source's JS at `scrub(name)`, which keeps parentheses, so "Revenue by Business (Ledger)" looked for a file that does
+not exist, `get_config` returned an empty string, and the widget was never created. The first-pass table marked
+component 19 (Revenue by Business) PASS on the server's figures; on the screen it was absent. Corrected: both sources
+renamed without parentheses, the setup script retires the old source records and their charts, and all four charts are
+now drawn (verified in the browser: four chart widgets with SVG). Component 19 is re-marked FAIL (fixed) in the counts
+below.

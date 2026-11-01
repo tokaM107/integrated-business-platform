@@ -133,6 +133,31 @@ class IntegrationTestOwnerDashboard(IntegrationTestCase):
 		self.assertEqual(after[0] - before[0], 250)
 		self.assertEqual(after[1] - before[1], 0)
 
+	def test_the_stock_chart_holds_only_the_company_s_warehouses(self):
+		"""Audit of 1 Nov 2026: the owner's chart drew ERPNext's _Test companies' stock. The source goes by the
+		Warehouse's company, not the warehouse's name."""
+		from imed_erp.imederp.dashboard_chart_source.stock_value_by_warehouse_company import (
+			stock_value_by_warehouse_company as source,
+		)
+
+		other = frappe.get_all("Warehouse", filters={"company": ["!=", COMPANY], "is_group": 0}, pluck="name", limit=1)
+		ours = frappe.get_all("Warehouse", filters={"company": COMPANY, "is_group": 0}, pluck="name", limit=1)
+		item = frappe.get_all("Item", filters={"is_stock_item": 1}, pluck="name", limit=1)[0]
+		# A bin of another company, named with our suffix to defeat a name filter; and one of ours.
+		if other:
+			frappe.get_doc({"doctype": "Warehouse", "warehouse_name": "_Test Audit Lookalike - MMG", "company": frappe.db.get_value("Warehouse", other[0], "company"), "is_group": 0}).db_insert()
+			lookalike = frappe.db.get_value("Warehouse", {"warehouse_name": "_Test Audit Lookalike - MMG"}, "name")
+			frappe.get_doc({"doctype": "Bin", "name": "_test_audit_bin_other", "item_code": item, "warehouse": lookalike, "stock_value": 5000, "actual_qty": 1}).db_insert()
+		frappe.get_doc({"doctype": "Bin", "name": "_test_audit_bin_ours", "item_code": item, "warehouse": ours[0], "stock_value": 70, "actual_qty": 1}).db_insert()
+		values = source.stock_value_by_warehouse()
+		self.assertTrue(all(frappe.db.get_value("Warehouse", w, "company") == COMPANY for w in values))
+		self.assertGreaterEqual(values.get(ours[0], 0), 70)
+		if other:
+			self.assertNotIn(lookalike, values)
+		chart = source.get()
+		self.assertEqual(len(chart["labels"]), len(chart["datasets"][0]["values"]))
+		self.assertFalse(any("_Test" in label and "Lookalike" in label for label in chart["labels"]))
+
 	def test_only_the_accounts_read_the_figures(self):
 		frappe.set_user(RAGHAD)
 		self.assertRaises(frappe.PermissionError, dashboard.revenue_this_month)
