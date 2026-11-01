@@ -26,6 +26,8 @@
 		"Unpaid on Bookings": ["hourglass", "due"],
 		"Due on Studio Bookings (XStudio)": ["clapperboard", "due"],
 	};
+	// The cards read from the ledger (owner_figures.py): zero for lack of any record is said on them.
+	const LEDGER_CARDS = ["Cash in the Cash Boxes", "Revenue This Month", "Expenses This Month", "Net This Month", "Owed to Us", "We Owe"];
 	// The section headers are written in Arabic on the workspace (setup_dashboard.py).
 	const HEADERS = {
 		"محتاج موافقتك": "bell-ring",
@@ -121,6 +123,12 @@
 					});
 				}
 			}
+			// On a site with no ledger entry at all, each money card says "no records yet" next to its zero
+			// (decision of 1 Nov 2026); the badge is put back whenever Frappe redraws the card.
+			const is_ledger_card = LEDGER_CARDS.some((label) => __(label) === title);
+			if (ledger_empty && is_ledger_card && !$card.find(".imed-dash-norecords").length) {
+				$card.find(".widget-label, .widget-title").first().append(`<span class="imed-dash-norecords">${esc(__("no records yet"))}</span>`);
+			}
 			// A negative amount (cash short, a month at a loss) shows in red; it changes when the card reloads.
 			const value = $card.find(".number").first().text();
 			$card.toggleClass("is-negative", /-\s*[\d٠-٩]/.test(value));
@@ -152,6 +160,7 @@
 	// the day before. Fetched when the dashboard opens, again after five minutes away.
 	const REFRESH_MS = 30 * 1000; // the live state: fetched again on every visit after half a minute
 	let yesterday = null;
+	let ledger_empty = false; // no GL entry on the site at all: the money cards' zeros are "no records yet"
 	let fetched_at = 0;
 	let fetching = false;
 
@@ -228,32 +237,36 @@
 
 	function bookings_card(b, day, currency) {
 		const list = (resource_type, status) => ["Booking", { booking_date: day, resource_type, status }];
-		const kind = (title, s, resource_type) =>
+		// What XStudio never reported (a completed booking, a payment) is said so, never shown as 0 (decision of
+		// 1 Nov 2026): the studio's bookings come from XStudio, where the staff do not record these yet.
+		const tracks = b.xstudio_tracks || { completion: true, payments: true };
+		const untracked = `<span class="imed-yday-untracked">${esc(__("Not tracked in XStudio"))}</span>`;
+		const kind = (title, s, resource_type, studio = false) =>
 			`<div class="imed-yday-sub">${esc(title)}</div>
 			<div class="imed-yday-stats">
 				${stat(__("Held"), number(s.held), "", list(resource_type, HELD))}
-				${stat(__("Completed"), number(s.completed), "", list(resource_type, "Completed"))}
+				${studio && !tracks.completion ? stat(__("Completed"), untracked, "is-untracked") : stat(__("Completed"), number(s.completed), "", list(resource_type, "Completed"))}
 				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "", list(resource_type, "Cancelled"))}
-				${stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "", list(resource_type, "No Show"))}
+				${studio && !tracks.completion ? stat(__("No Show"), untracked, "is-untracked") : stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "", list(resource_type, "No Show"))}
 			</div>`;
 		const hours = hours_text(b.studio_hours_booked);
-		const delivered = hours_text(b.studio_hours_delivered);
+		const delivered = tracks.completion ? hours_text(b.studio_hours_delivered) : untracked;
 		const made = ["Booking", { creation: ["Between", [`${day} 00:00:00`, `${day} 23:59:59`]] }];
 		// The same statuses the server counts (owner_yesterday.OPEN_STATUSES; "Confirmed" was missing: audit of 1 Nov 2026).
 		const open = ["Booking", { booking_date: day, status: ["in", ["Tentative", "Confirmed", "Confirmed with Deposit"]], source_system: ["is", "not set"] }];
 		return card(
 			"calendar-days",
 			__("Halls and studio"),
-			`${kind(__("Halls"), b.halls, "Hall")}${kind(__("Studio"), b.studio, "Studio Service")}
+			`${kind(__("Halls"), b.halls, "Hall")}${kind(__("Studio"), b.studio, "Studio Service", true)}
 			<div class="imed-yday-stats">
 				${stat(__("Studio hours booked"), hours, "", list("Studio Service", HELD))}
-				${stat(__("Studio hours delivered"), delivered, "", list("Studio Service", "Completed"))}
+				${tracks.completion ? stat(__("Studio hours delivered"), delivered, "", list("Studio Service", "Completed")) : stat(__("Studio hours delivered"), untracked, "is-untracked")}
 				${stat(__("Booked today (any date)"), number(b.made_yesterday), "", made)}
 			</div>
 			<div class="imed-yday-sub">${esc(__("The studio's money, as XStudio says it (not posted here)"))}</div>
 			<div class="imed-yday-stats">
 				${stat(__("Due in XStudio"), money(b.xstudio_due, currency), b.xstudio_due ? "is-negative" : "", ["Booking", { booking_date: day, source_system: "xstudio", status: HELD, xstudio_amount_due: [">", 0] }])}
-				${stat(__("Paid in XStudio"), money(b.xstudio_paid, currency), b.xstudio_paid ? "is-positive" : "", ["Booking", { booking_date: day, source_system: "xstudio", xstudio_amount_paid: [">", 0] }])}
+				${tracks.payments ? stat(__("Paid in XStudio"), money(b.xstudio_paid, currency), b.xstudio_paid ? "is-positive" : "", ["Booking", { booking_date: day, source_system: "xstudio", xstudio_amount_paid: [">", 0] }]) : stat(__("Paid in XStudio"), untracked, "is-untracked")}
 			</div>
 			${
 				b.still_open
@@ -271,6 +284,15 @@
 		const held = ["not in", ["Cancelled", "No Show"]];
 		const hall = (extra) => ["Booking", Object.assign({ resource_type: "Hall" }, extra)];
 		const month = ["Between", [frappe.datetime.month_start(), frappe.datetime.month_end()]];
+		if (h.configured === false) {
+			// No hall of type Hall is set up yet (decision of 1 Nov 2026: say so, never zeros; XStudio's rooms are not halls).
+			return card(
+				"presentation",
+				__("IMED hall bookings"),
+				`<p class="imed-yday-warn">${esc(__("Not configured yet: no IMED hall is set up as a booking resource. The figures appear once the halls, their capacities and prices are entered."))}</p>
+				${stat(__("Hall resources"), number(h.active_halls), "", ["Booking Resource", { resource_type: "Hall" }])}`
+			);
+		}
 		return card(
 			"presentation",
 			__("IMED hall bookings"),
@@ -423,6 +445,12 @@
 			e.preventDefault();
 			open_route(JSON.parse($(this).attr("data-route")));
 		});
+		if (d.ledger_entries_all_time === 0) {
+			// The money cards read zero because the ledger holds nothing yet, not because the business made nothing.
+			$panel.prepend(`<p class="imed-yday-warn imed-yday-ledger-empty">${esc(__("No accounting record has been posted yet: the money cards (cash, revenue, expenses, owed) show zero for lack of records, not as a result."))}</p>`);
+		}
+		ledger_empty = d.ledger_entries_all_time === 0;
+		mark_cards($page);
 		const $welcome = $page.find(".imed-dash-welcome").first();
 		if ($welcome.length) $panel.insertAfter($welcome);
 		else $panel.insertBefore($page.find(".codex-editor").first());

@@ -137,3 +137,84 @@ verified correct, but one money figure was wrong (X Studio line), test data of a
 stock, two navigation targets were broken, three system messages were misleading, and the dashboard could not tell an
 empty ledger from a zero result. With the branch deployed and the setup script re-run: **82 / 100**; the rest depends
 on the three data decisions above.
+
+---
+
+## 9. Second pass, 1 Nov 2026 (after the owner's decisions)
+
+### 9.1 XStudio amount semantics, verified in XStudio's own code
+
+`routes.js` (xstudio-platform backend): `pay` adds to `amount_paid` and never touches `amount_due`; `settle=true` sets
+`amount_due = amount_paid` (an implicit discount); `amount-due` edits `amount_due` directly; attaching a package sets
+`amount_due` to what is left after the package hours. XStudio's own customer "outstanding" and "unsettled sessions"
+queries use `amount_due - amount_paid`. So in the ERP: **billed = xstudio_amount_due, paid = xstudio_amount_paid,
+remaining = due − paid**; `price_total` is the list price and is never money owed. The card "Due on Studio Bookings
+(XStudio)" and the band's "Due in XStudio" and X Studio line now all use these, no double subtraction (verified on the
+133 production bookings: 93 have due = price and 29 package bookings have due 0 with price > 0; paid is never above due).
+
+### 9.2 States instead of zeros (implemented and tested)
+
+- **Not tracked in XStudio**: Completed, No Show, Studio hours delivered and Paid in XStudio show this text (not 0)
+  while XStudio has never reported a completed booking or a payment (`owner_yesterday.xstudio_tracks`, read from every
+  mirrored booking; the figures appear by themselves the first time XStudio records one). Held bookings, booked hours,
+  packages and the due amounts stay, as asked.
+- **Not configured yet**: the IMED halls card says so while no Booking Resource of type Hall is active; no hall was
+  created. XStudio's rooms are Studio Service resources and are never counted as halls.
+- **No records yet**: when the group's ledger holds no entry at all, the band says so and each of the six ledger cards
+  (cash, revenue, expenses, net, owed to us, we owe) carries a "no records yet" badge next to its zero. The badge
+  goes by itself with the first posting.
+- Tests: `test_what_xstudio_never_reported_is_not_tracked_and_halls_say_not_configured`; browser audit checks the three states.
+
+### 9.3 The walk-in booking (decision needed, nothing changed)
+
+`sync.py` refuses a booking whose XStudio `customer_id` is null ("a walk-in without a phone"); the row fails every run
+and keeps the health "Degraded". XStudio keeps `customer_name` and `customer_phone` on the booking itself, and the ERP
+already mirrors them (`xstudio_customer_name`, `xstudio_customer_phone`, `external_id`). A safe integration-level
+option: a designated placeholder Customer chosen in XStudio Settings (for example "XStudio walk-in"), used only when
+XStudio has no customer account, with the walk-in's name and phone kept on the booking and the booking flagged for
+review. Nothing is invented: the placeholder is a known bucket, the real data stays on the booking. Alternative: keep
+refusing, and the band now names the booking so the studio can give it a customer in XStudio. **Owner's choice.**
+
+### 9.4 Review of `setup_dashboard.py` (what a re-run does)
+
+Idempotent by construction: it deletes and recreates, by name, the 15 Number Cards, the 4 Dashboard Charts and the
+"Owner Dashboard" workspace, and deletes 12 named retired cards if present. It touches nothing else: no business
+record, no other workspace, no other card or chart, no user apart from setting `default_workspace` for Super Admin
+users, and four branding settings (app name, logo, icon style, desktop icon) that it only sets when they differ.
+Production's workspace was created and last modified by the same script on 25 Oct 2026 (no manual customisation to
+lose). Re-run on production changes exactly two things: the Sales Trend and Stock Value chart filters. Nothing is
+posted; it commits only these definition records.
+
+### 9.5 Deployment compatibility
+
+- Production runs e44661a; the branch starts from it. The diff touches 8 files: 3 Python modules (no DocType JSON, no
+  schema change, **no migration needed**), the dashboard JS and CSS, the setup script, 2 test modules, the browser
+  audit and this report. `bench migrate` after the redeploy is harmless and is the documented step.
+- XStudio sync is untouched (sync.py not in the diff); the 10-minute cron keeps running through the redeploy, and a run
+  interrupted by the restart is repeated at the next tick (imports are idempotent per external id).
+- No code path in the diff inserts, submits, cancels or posts anything.
+
+### 9.6 Recovery point and rollback
+
+- Off-server backup: nightly cron 02:30 UTC on the host; last run **OK 2026-11-01 02:35 UTC**, restic snapshot
+  2e82f288 (daily, weekly and monthly tags), `status` verified.
+- Pre-deployment bench backup taken **2026-11-01 12:38 Cairo** in the backend container (`sites/frontend/private/backups/20261101_123854-frontend-*`):
+  database 1.7 MiB, public and private files, site config with the encryption key; `gzip -t` and `tar -t` pass.
+- Rollback, code: Coolify → the application → Deployments → "Redeploy" the previous successful deployment (image
+  of 29 Oct, e44661a). No schema change, so no database rollback is needed for the code.
+- Rollback, dashboard definitions: on the old image, re-run `setup_dashboard.py` once (it recreates the 25 Oct
+  definitions). If anything else is in doubt: `deploy/restore_site.sh` with the 12:38 set (`FORCE=1`), which restores
+  database and files as of that minute; the XStudio bookings synced after that minute are re-imported by the next sync.
+
+### 9.7 Tests, second pass
+
+test_owner_reports 38 OK, test_owner_dashboard 5 OK, test_booking 23 OK, test_hall_bookings 33 OK (1 skipped),
+test_xstudio_sync 37 OK; browser audit 89 checks pass, the one "failure" is the frappe-charts redraw console
+notice described in section 5.
+
+### 9.8 GO / NO-GO
+
+**GO** for the code deployment and the single `setup_dashboard.py` re-run, with these conditions: deploy outside the
+studio's busy hours (a restart of a few minutes), run the read-only production verification right after, and do not
+touch the walk-in booking, the halls or XStudio's workflow (decisions 2 and 3 stay open and the dashboard now says so).
+No NO-GO item was found: no schema change, backups verified, sync untouched, rollback is a one-click redeploy.

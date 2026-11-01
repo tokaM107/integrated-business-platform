@@ -76,6 +76,9 @@ def get_yesterday():
 		"as_of": period.as_of,
 		"currency": frappe.get_cached_value("Company", company(), "default_currency"),
 		"money": money(period.day),
+		# Whether the ledger holds anything at all: the money cards read zero on a site with no accounting records
+		# yet, and that is not a result (decision of 1 Nov 2026).
+		"ledger_entries_all_time": cint(frappe.db.count("GL Entry", {"company": company(), "is_cancelled": 0})),
 		"printing": printing(period.day),
 		"bookings": bookings(period),
 		"halls": halls(),
@@ -258,7 +261,20 @@ def bookings(period):
 		# one (XStudio) is closed there, and stays "pending" there as a rule: not counted.
 		"still_open": len([row for row in rows if row.status in OPEN_STATUSES and not row.source_system]),
 		"made_yesterday": made,
+		# What XStudio actually tracks (decision of 1 Nov 2026: never a zero for what is not recorded there). It is
+		# known from the mirror: has XStudio ever reported a completed booking, a payment, a no-show?
+		"xstudio_tracks": xstudio_tracks(),
 	}
+
+
+def xstudio_tracks():
+	"""Which operational facts XStudio has ever reported, from every mirrored booking: completion (its status
+	"completed"), payments (an amount paid above zero). A fact never reported is "not tracked" on the band, not 0."""
+	row = frappe.db.sql(
+		"""select count(*), sum(xstudio_status = 'completed'), sum(xstudio_amount_paid > 0)
+		from `tabBooking` where source_system = 'xstudio'"""
+	)[0]
+	return {"bookings": cint(row[0]), "completion": bool(cint(row[1])), "payments": bool(cint(row[2]))}
 
 
 def halls():
@@ -280,6 +296,9 @@ def halls():
 	past_open = frappe.db.count("Booking", filters=[hall, ("status", "in", OPEN_STATUSES), ("ends_at", "<", now), ("source_system", "is", "not set")])
 	review = frappe.db.count("Booking", filters=[hall, held, ("financial_review", "=", 1)])
 	return {
+		# No hall resource of type Hall: the halls are not set up yet, and the band says so instead of zeros
+		# (decision of 1 Nov 2026; XStudio's rooms are Studio Service resources, never counted here).
+		"configured": bool(active),
 		"today": summary({s: sum(1 for r in today_rows if r.status == s) for s in {r.status for r in today_rows}}),
 		"today_hours": flt(sum(flt(r.hours) for r in today_rows if r.status not in NOT_HELD), 2),
 		"upcoming": upcoming,

@@ -86,10 +86,23 @@ async function readCards(page) {
 	const band = await call(page, "imed_erp.imederp.owner_yesterday.get_yesterday");
 	rec("band", "get_yesterday answers the owner", band.ok, band.ok ? `day ${band.message.day}` : band.error);
 	const stats = await page.evaluate(() => [...document.querySelectorAll(".imed-yday-stat")].map((s) => ({ label: s.querySelector("span")?.textContent.trim(), value: s.querySelector("b")?.textContent.trim(), link: s.classList.contains("imed-yday-link") })));
-	rec("band", `${stats.length} figures drawn, ${stats.filter((s) => s.link).length} open a list`, stats.length > 20);
+	const hallsConfigured = band.ok && band.message.halls && band.message.halls.configured !== false;
+	rec("band", `${stats.length} figures drawn, ${stats.filter((s) => s.link).length} open a list`, stats.length > (hallsConfigured ? 20 : 12));
+	if (band.ok && !hallsConfigured) {
+		const text = await page.evaluate(() => [...document.querySelectorAll(".imed-yday-card")].find((c) => /IMED hall/.test(c.textContent))?.textContent || "");
+		rec("band", "halls not configured: the card says so instead of zeros", /Not configured yet/.test(text));
+	}
+	if (band.ok && band.message.bookings.xstudio_tracks && !band.message.bookings.xstudio_tracks.completion) {
+		const untracked = await page.evaluate(() => document.querySelectorAll(".is-untracked").length);
+		rec("band", `XStudio completion/payments never reported: ${untracked} figures say "Not tracked in XStudio"`, untracked >= 3);
+	}
+	if (band.ok && band.message.ledger_entries_all_time === 0) {
+		const badges = await page.evaluate(() => document.querySelectorAll(".imed-dash-norecords").length);
+		rec("band", `no ledger record at all: ${badges} money cards say "no records yet"`, badges === 6);
+	}
 	if (band.ok) {
 		const b = band.message;
-		const pairs = [["Held", b.bookings.halls.held], ["Studio hours booked", b.bookings.studio_hours_booked], ["Booked today (any date)", b.bookings.made_yesterday], ["Next 7 days", b.halls.upcoming], ["Active halls", b.halls.active_halls], ["Charged today", b.app.state === "ok" ? b.app.charged : null], ["New students", b.app.state === "ok" ? b.app.subscriptions : null]];
+		const pairs = [["Held", b.bookings.halls.held], ["Studio hours booked", b.bookings.studio_hours_booked], ["Booked today (any date)", b.bookings.made_yesterday], ["Next 7 days", hallsConfigured ? b.halls.upcoming : null], ["Active halls", hallsConfigured ? b.halls.active_halls : null], ["Charged today", b.app.state === "ok" ? b.app.charged : null], ["New students", b.app.state === "ok" ? b.app.subscriptions : null]];
 		for (const [label, expected] of pairs) {
 			if (expected == null) continue;
 			const s = stats.find((x) => x.label === label);

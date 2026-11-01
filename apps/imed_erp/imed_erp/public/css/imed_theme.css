@@ -2406,3 +2406,9 @@ a.imed-yday-stat:focus-visible,
 .imed-dash-card-link:hover {
 	box-shadow: 0 0 0 2px var(--primary, #1f6f5c) inset;
 }
+
+/* §26 Audit of 1 Nov 2026: what is not recorded is said, never shown as zero. */
+.imed-yday-stat.is-untracked b,
+.imed-yday-untracked { font-size: 0.78rem; font-weight: 500; color: #8a6d1d; }
+.imed-dash-norecords { display: inline-block; margin-inline-start: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff4e0; color: #8a6d1d; font-size: 0.68rem; font-weight: 600; }
+.imed-yday-ledger-empty { margin: 0 0 0.75rem; }

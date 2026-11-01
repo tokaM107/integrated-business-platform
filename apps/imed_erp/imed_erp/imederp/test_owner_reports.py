@@ -505,6 +505,29 @@ class IntegrationTestOwnerYesterday(OwnerReportsTestCase):
 		self.invoice(HALLS, 100, day)
 		self.assertGreater(owner_yesterday.money(day)["ledger_entries"], 0)
 
+	def test_what_xstudio_never_reported_is_not_tracked_and_halls_say_not_configured(self):
+		"""Decision of 1 Nov 2026: a fact XStudio never recorded (completion, payments) is "not tracked", never 0;
+		without a hall resource the halls are "not configured"; a site without ledger entries says so."""
+		day = getdate("2028-01-23")
+		frappe.db.delete("Booking", {"source_system": "xstudio"})
+		common = dict(resource_type="Studio Service", cost_center=STUDIO, booking_date=day, source_system="xstudio")
+		self.booking("_TXT-1", status="Tentative", xstudio_status="confirmed", xstudio_amount_paid=0, **common)
+		tracks = owner_yesterday.xstudio_tracks()
+		self.assertEqual(tracks, {"bookings": 1, "completion": False, "payments": False})
+		self.booking("_TXT-2", status="Completed", xstudio_status="completed", xstudio_amount_paid=300, **common)
+		tracks = owner_yesterday.xstudio_tracks()
+		self.assertEqual((tracks["completion"], tracks["payments"]), (True, True))
+		self.assertIn("xstudio_tracks", owner_yesterday.bookings(owner_yesterday.report_day(day)))
+		# Halls: configured only with an active hall resource.
+		frappe.db.set_value("Booking Resource", {"resource_type": "Hall"}, "disabled", 1)
+		self.assertFalse(owner_yesterday.halls()["configured"])
+		frappe.get_doc(
+			{"doctype": "Booking Resource", "name": "_Test Audit Hall", "resource_name": "_Test Audit Hall", "resource_type": "Hall", "disabled": 0, "cost_center": HALLS}
+		).db_insert()
+		self.assertTrue(owner_yesterday.halls()["configured"])
+		frappe.set_user(OWNER)
+		self.assertIn("ledger_entries_all_time", owner_yesterday.get_yesterday())
+
 	def test_a_paused_job_is_said_to_be_paused_not_a_scheduler_failure(self):
 		"""Audit of 1 Nov 2026: two jobs are paused on purpose; the band said "the scheduler is off" for them."""
 		frappe.get_doc(
