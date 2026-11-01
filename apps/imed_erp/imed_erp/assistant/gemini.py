@@ -75,7 +75,17 @@ class GeminiProvider(AssistantProvider):
 		)
 		rounds = 0
 		while True:
-			response = client.models.generate_content(model=self.model, contents=contents, config=config)
+			try:
+				response = client.models.generate_content(model=self.model, contents=contents, config=config)
+			except Exception as e:
+				# Said as it is: the model's quota or availability is not the ERP's fault, and the owner should know
+				# which (a 429 is the key's quota, a 503 the model's demand); anything else is logged by the API layer.
+				code = getattr(e, "code", None) or getattr(e, "status_code", None)
+				if code == 429:
+					return _("The model's quota for this key is used up for now (Google's limit). Try again in a minute, or raise the key's quota in Google AI Studio.")
+				if code == 503:
+					return _("The model is overloaded at Google's side right now. Try again in a moment.")
+				raise
 			candidate = response.candidates[0] if response.candidates else None
 			if not candidate or not candidate.content or not candidate.content.parts:
 				return _("I cannot answer that question.")
