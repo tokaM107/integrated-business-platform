@@ -131,8 +131,15 @@ for old_source in ("Revenue by Business (Ledger)", "Stock Value by Warehouse (Co
     if frappe.db.exists("Dashboard Chart Source", old_source):
         for chart_name in frappe.get_all("Dashboard Chart", filters={"source": old_source}, pluck="name"):
             frappe.delete_doc("Dashboard Chart", chart_name, force=1)
-        frappe.delete_doc("Dashboard Chart Source", old_source, force=1)
-        print("removed source:", old_source)
+        # A Dashboard Chart Source is deleted only in developer mode or by a migration (its on_trash); on the
+        # production site (developer_mode 0, 1 Nov 2026) this one-off removal of a misnamed record runs as the
+        # migration would. Its folder (scrub of the old name) never existed, so nothing on disk is touched.
+        in_migrate, frappe.flags.in_migrate = frappe.flags.in_migrate, True
+        try:
+            frappe.delete_doc("Dashboard Chart Source", old_source, force=1)
+            print("removed source:", old_source)
+        finally:
+            frappe.flags.in_migrate = in_migrate
 
 created_charts = []
 for ch in charts:
