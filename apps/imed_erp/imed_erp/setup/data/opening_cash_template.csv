@@ -1,0 +1,11 @@
+treasury,business,counted_amount,count_date,counted_by,signed_by,evidence,notes
+خزينة مكتبة الأزاريطة - MMG,مكتبة الأزاريطة - MMG,,,,,,"cash box of the Azarita library: the cash counted on the go-live morning"
+خزينة مكتبة المواساة - MMG,مكتبة المواساة - MMG,,,,,,"cash box of the Mawasah library"
+خزينة سنتر Imed - MMG,قاعات Imed - MMG,,,,,,"cash box of the IMED center (halls)"
+خزينة X Studio - MMG,استوديو X - MMG,,,,,,"cash box of X Studio; XStudio's own balances are never posted, only the cash physically in the box"
+الخزينة الرئيسية - MMG,مصروفات المقر المشتركة - MMG,,,,,,"the main treasury (owner's weekly hand-over pool)"
+عهدة المالك النقدية - MMG,,,,,,,"owner's cash custody: no business closes it; opening only if cash is really held"
+عهدة المحاسب النقدية - MMG,,,,,,,"accountant's cash custody: as above"
+خزينة تطبيق BA Plus - MMG,تطبيق BA Plus - MMG,,,,,,"a bank-type account (no daily close): opening = the app's collected balance held, if any"
+محفظة InstaPay - MMG,,,,,,,"wallet: opening = the wallet's balance on the go-live morning (screenshot as evidence)"
+محفظة Vodafone Cash - MMG,,,,,,,"wallet: as above"

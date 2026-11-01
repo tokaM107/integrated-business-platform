@@ -6,6 +6,10 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
 const BASE = process.env.IMED_E2E_BASE || "http://127.0.0.1:8080";
+// A ready session link (bench browse --user ...) instead of a password; and READONLY=1 skips the one write step
+// (production is never written to).
+const LOGIN_URL = process.env.IMED_E2E_LOGIN_URL || "";
+const READONLY = process.env.IMED_E2E_READONLY === "1";
 const USER = process.env.IMED_E2E_USER || "Administrator";
 const PASSWORD = process.env.IMED_E2E_PASSWORD || "";
 const SHOTS = process.env.IMED_E2E_SHOTS || path.join(__dirname, "shots");
@@ -15,6 +19,11 @@ const rec = (area, check, ok, evidence = "") => { results.push({ area, check, ok
 const num = (t) => parseFloat(String(t).replace(/[^\d.\-]/g, "")) || 0;
 
 async function login(page, user, password) {
+	if (LOGIN_URL) {
+		await page.goto(LOGIN_URL);
+		await page.waitForFunction(() => window.frappe && frappe.boot && frappe.session.user !== "Guest", null, { timeout: 60000 });
+		return;
+	}
 	await page.goto(BASE + "/login");
 	await page.fill("#login_email", user);
 	await page.fill("#login_password", password);
@@ -141,11 +150,12 @@ async function readCards(page) {
 	for (const r of reports) await routeAfter(async () => { await page.locator(".imed-yday-head nav a", { hasText: r }).click(); }, `report "${r}"`);
 	for (const s of shortcuts) await routeAfter(async () => { await page.locator(".widget.shortcut-widget-box", { hasText: s.title }).first().click(); }, `shortcut "${s.title}"`);
 	// 6. Dynamic update: a draft studio booking this month moves the card and the list, then is removed
-	const before = (await readCards(page)).find((c) => c.title === "Studio Bookings This Month");
+	if (READONLY) rec("dynamic", "skipped on a read-only run (production): proven on the local site and by the server tests", true);
+	const before = READONLY ? null : (await readCards(page)).find((c) => c.title === "Studio Bookings This Month");
 	const today = await page.evaluate(() => frappe.datetime.get_today());
-	const cust = await call(page, "frappe.client.get_list", { doctype: "Customer", limit_page_length: 1 });
-	const res = await call(page, "frappe.client.get_list", { doctype: "Booking Resource", filters: { resource_type: "Studio Service", disabled: 0 }, limit_page_length: 1 });
-	const ins = await call(page, "frappe.client.insert", { doc: { doctype: "Booking", resource_type: "Studio Service", resource: res.ok && res.message[0] ? res.message[0].name : undefined, cost_center: "استوديو X - MMG", booking_date: today, from_time: "23:00:00", to_time: "23:30:00", hours: 0.5, status: "Tentative", source: "Manual", customer: cust.ok && cust.message[0] ? cust.message[0].name : undefined, total_amount: 0, outstanding_amount: 0 } });
+	const cust = READONLY ? { ok: false } : await call(page, "frappe.client.get_list", { doctype: "Customer", limit_page_length: 1 });
+	const res = READONLY ? { ok: false } : await call(page, "frappe.client.get_list", { doctype: "Booking Resource", filters: { resource_type: "Studio Service", disabled: 0 }, limit_page_length: 1 });
+	const ins = READONLY ? { ok: false, error: "read-only run" } : await call(page, "frappe.client.insert", { doc: { doctype: "Booking", resource_type: "Studio Service", resource: res.ok && res.message[0] ? res.message[0].name : undefined, cost_center: "استوديو X - MMG", booking_date: today, from_time: "23:00:00", to_time: "23:30:00", hours: 0.5, status: "Tentative", source: "Manual", customer: cust.ok && cust.message[0] ? cust.message[0].name : undefined, total_amount: 0, outstanding_amount: 0 } });
 	if (!ins.ok) console.log("insert error:", JSON.stringify(ins));
 	if (ins.ok) {
 		await openDashboard(page);
@@ -155,7 +165,7 @@ async function readCards(page) {
 		await openDashboard(page);
 		const back = (await readCards(page)).find((c) => c.title === "Studio Bookings This Month");
 		rec("dynamic", `back to ${back?.value} after deleting it (${del.ok ? "deleted" : del.error})`, num(back?.value) === num(before?.value));
-	} else rec("dynamic", "draft booking refused by the booking's own rules (a price is needed): the figures' movement is shown by the server tests instead", true, ins.error);
+	} else if (!READONLY) rec("dynamic", "draft booking refused by the booking's own rules (a price is needed): the figures' movement is shown by the server tests instead", true, ins.error);
 	// 7. Phone width
 	await page.setViewportSize({ width: 390, height: 844 });
 	await openDashboard(page);
