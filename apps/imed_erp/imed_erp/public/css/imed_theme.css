@@ -3142,8 +3142,8 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
 	font-weight: 500;
 }
 
-/* The four figures: each card in a light tint of its own colour (green, blue, orange, violet), a soft circle of
-   that colour in its corner, its icon white on a square of the colour (the owner, 2 Nov 2026). */
+/* The four figures: each card wholly in a light tint of its own colour (green, blue, orange, violet), its icon
+   white on a square of the colour (the owner, 2 Nov 2026). */
 .imed-ov-kpis {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3152,20 +3152,9 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
 .imed-ov-kpi {
 	position: relative;
 	overflow: hidden;
-	border-color: var(--tone-line);
-	background: linear-gradient(155deg, var(--tone-soft) 0%, var(--card-bg) 78%);
-}
-.imed-ov-kpi::after {
-	content: "";
-	position: absolute;
-	inset-block-start: -46px;
-	inset-inline-end: -46px;
-	width: 130px;
-	height: 130px;
-	border-radius: 50%;
-	background: var(--tone-solid);
-	opacity: 0.08;
-	pointer-events: none;
+	border-color: color-mix(in srgb, var(--tone-solid) 28%, var(--card-bg));
+	/* The whole card in its colour, evenly (the owner, 2 Nov 2026: "not only a part of it"). */
+	background: color-mix(in srgb, var(--tone-solid) 11%, var(--card-bg));
 }
 .imed-ov-kpi__top {
 	position: relative;
@@ -3219,7 +3208,7 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
 	white-space: nowrap;
 	margin-top: 14px;
 	padding-top: 12px;
-	border-top: 1px dashed var(--tone-line);
+	border-top: 1px dashed color-mix(in srgb, var(--tone-solid) 35%, var(--card-bg));
 	color: var(--text-muted);
 	font-size: var(--text-xs);
 }
