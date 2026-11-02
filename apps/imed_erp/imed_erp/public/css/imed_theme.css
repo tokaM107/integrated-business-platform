@@ -3060,3 +3060,487 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	background: rgba(255, 255, 255, 0.08);
 	color: var(--gray-600);
 }
+
+/* ------------------------------------------------------------------ */
+/* 28. The Owner Dashboard's overview, as in the owner's picture       */
+/*     (imed_owner_dashboard.js, imederp/owner_overview.py)           */
+/* ------------------------------------------------------------------ */
+/* The owner's picture of 2 Nov 2026: a light welcome on top; four figures, each with its icon in a tinted square
+   and how it moved since last month; then the bookings' path (a funnel) beside the next bookings; then the
+   bookings' money (a ring) beside the reports. White cards, rounded, a soft shadow. The colours are the tones of
+   §27 (tone-green, tone-blue...), so the dark theme follows. */
+
+/* The welcome, light: the greeting large and dark, the note under it; the date a quiet pill. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome {
+	margin: 4px 0 18px;
+	padding: 4px 2px;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+	color: var(--heading-color);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome h1 {
+	margin: 10px 0 4px;
+	color: var(--heading-color);
+	font-size: var(--text-3xl);
+	font-weight: 800;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__note {
+	color: var(--text-muted);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__date {
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
+	display: none;
+}
+[data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__date {
+	background: rgba(64, 174, 161, 0.14);
+	color: var(--imed-teal-200);
+}
+
+.imed-ov {
+	display: grid;
+	gap: 18px;
+	margin: 0 0 22px;
+}
+.imed-ov-num {
+	direction: ltr;
+	unicode-bidi: isolate;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+.imed-ov-num.is-negative {
+	color: var(--red-600) !important;
+}
+.imed-ov-muted {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+
+/* A card */
+.imed-ov-card,
+.imed-ov-kpi {
+	min-width: 0;
+	padding: 20px 22px;
+	border: 1px solid var(--imed-border);
+	border-radius: 18px;
+	background: var(--card-bg);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 14px 32px -24px rgba(16, 34, 42, 0.35);
+}
+.imed-ov-card h3 {
+	margin: 0 0 16px;
+	color: var(--heading-color);
+	font-size: var(--text-lg);
+	font-weight: 700;
+}
+.imed-ov-card h3 small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 500;
+}
+
+/* The four figures: each card wholly in a light tint of its own colour (green, blue, orange, violet), its icon
+   white on a square of the colour (the owner, 2 Nov 2026). */
+.imed-ov-kpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 18px;
+}
+.imed-ov-kpi {
+	position: relative;
+	overflow: hidden;
+	border-color: color-mix(in srgb, var(--tone-solid) 28%, var(--card-bg));
+	/* The whole card in its colour, evenly (the owner, 2 Nov 2026: "not only a part of it"). */
+	background: color-mix(in srgb, var(--tone-solid) 11%, var(--card-bg));
+}
+.imed-ov-kpi__top {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.imed-ov-kpi__icon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background: var(--tone-solid);
+	color: #ffffff;
+	box-shadow: 0 10px 20px -10px var(--tone-solid);
+}
+.imed-ov-kpi__icon .icon {
+	width: 24px;
+	height: 24px;
+	stroke: currentColor;
+	stroke-width: 2px;
+}
+.imed-ov-kpi__label {
+	color: var(--tone-fg);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	line-height: 1.35;
+}
+/* The figure on its own line, so a long amount shows whole. */
+.imed-ov-kpi__value {
+	position: relative;
+	display: block;
+	margin-top: 18px;
+	color: var(--heading-color);
+	font-size: var(--text-3xl);
+	font-weight: 800;
+	line-height: 1.15;
+	letter-spacing: -0.01em;
+	text-align: start;
+}
+/* How it moved, and against what, on one line. */
+.imed-ov-kpi__foot {
+	position: relative;
+	display: flex;
+	flex-wrap: nowrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	white-space: nowrap;
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px dashed color-mix(in srgb, var(--tone-solid) 35%, var(--card-bg));
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+.imed-ov-kpi__foot > span:last-child {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.imed-ov-change {
+	flex: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 2px 9px;
+	border-radius: 999px;
+	font-size: var(--text-xs);
+	font-weight: 700;
+	line-height: 1.6;
+}
+.imed-ov-change .icon {
+	width: 13px;
+	height: 13px;
+	stroke: currentColor;
+	stroke-width: 2.5px;
+}
+.imed-ov-change.is-good {
+	background: var(--green-100);
+	color: var(--green-700);
+}
+.imed-ov-change.is-bad {
+	background: var(--red-100);
+	color: var(--red-700);
+}
+.imed-ov-change.is-flat {
+	background: var(--card-bg);
+	color: var(--text-muted);
+	box-shadow: 0 0 0 1px var(--tone-line);
+}
+[data-theme="dark"] .imed-ov-change.is-good {
+	background: color-mix(in srgb, var(--green-500) 18%, transparent);
+	color: var(--green-300);
+}
+[data-theme="dark"] .imed-ov-change.is-bad {
+	background: color-mix(in srgb, var(--red-500) 18%, transparent);
+	color: var(--red-300);
+}
+
+/* Two cards side by side */
+.imed-ov-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+	gap: 18px;
+}
+
+/* A legend: a coloured square, the name, the figure at the end. */
+.imed-ov-legend {
+	display: grid;
+	gap: 14px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-ov-legend li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	color: var(--text-color);
+	font-size: var(--text-sm);
+}
+.imed-ov-legend li span::before {
+	content: "";
+	display: inline-block;
+	width: 11px;
+	height: 11px;
+	margin-inline-end: 9px;
+	border-radius: 3px;
+	background: var(--tone-solid);
+	vertical-align: -1px;
+}
+.imed-ov-legend li b {
+	color: var(--heading-color);
+	font-weight: 700;
+}
+.imed-ov-legend li.is-total {
+	padding-top: 12px;
+	border-top: 1px solid var(--imed-border);
+	font-weight: 600;
+}
+.imed-ov-legend li.is-total span::before {
+	display: none;
+}
+
+/* The bookings' path: a funnel of four steps, then the legend and the share completed. */
+.imed-ov-pipeline__body {
+	display: grid;
+	grid-template-columns: minmax(150px, 0.9fr) minmax(0, 1fr);
+	align-items: center;
+	gap: 26px;
+}
+.imed-ov-funnel {
+	display: grid;
+	justify-items: center;
+	gap: 6px;
+}
+.imed-ov-funnel i {
+	display: block;
+	width: calc(100% - var(--step) * 16%);
+	height: 38px;
+	background: var(--tone-solid);
+	clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+}
+.imed-ov-funnel.is-empty i {
+	opacity: 0.25;
+}
+.imed-ov-pipeline__rate {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 16px;
+	padding-top: 14px;
+	border-top: 1px solid var(--imed-border);
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-ov-pipeline__rate b {
+	color: var(--green-600);
+	font-size: var(--text-lg);
+}
+.imed-ov-pipeline__side .imed-ov-muted {
+	margin-top: 8px;
+}
+
+/* The next bookings: a date chip, the hall or service, the customer and the time. */
+.imed-ov-upcoming ul {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-ov-upcoming li a {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	color: inherit;
+	text-decoration: none;
+}
+.imed-ov-upcoming li a:hover .imed-ov-upcoming__text b {
+	color: var(--imed-teal-700);
+}
+.imed-ov-date {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 52px;
+	height: 52px;
+	border: 1px solid var(--imed-border);
+	border-radius: 12px;
+	background: var(--subtle-fg);
+	line-height: 1.1;
+}
+.imed-ov-date b {
+	color: var(--heading-color);
+	font-size: var(--text-xl);
+	font-weight: 800;
+}
+.imed-ov-date small {
+	color: var(--text-muted);
+	font-size: var(--text-tiny);
+	font-weight: 600;
+	text-transform: uppercase;
+}
+.imed-ov-upcoming__text {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+.imed-ov-upcoming__text b {
+	overflow: hidden;
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.imed-ov-upcoming__text small {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+.imed-ov-more {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 16px;
+	color: var(--imed-teal-700);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	text-decoration: none;
+}
+.imed-ov-more .icon {
+	stroke: currentColor;
+}
+[data-theme="dark"] .imed-ov-more,
+[data-theme="dark"] .imed-ov-upcoming li a:hover .imed-ov-upcoming__text b {
+	color: var(--imed-teal-300);
+}
+.imed-ov-empty {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	padding: 18px 4px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-ov-empty .icon {
+	stroke: currentColor;
+}
+
+/* The bookings' money: a ring (collected, pending, overdue) and its legend. */
+.imed-ov-collection {
+	--ov-paid: var(--green-500);
+	--ov-pending: var(--amber-400);
+	--ov-overdue: var(--red-500);
+	--ov-empty: var(--gray-200);
+}
+.imed-ov-collection__body {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: 28px;
+}
+.imed-ov-ring {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 156px;
+	height: 156px;
+	border-radius: 50%;
+}
+.imed-ov-ring > div {
+	display: grid;
+	place-items: center;
+	align-content: center;
+	width: 118px;
+	height: 118px;
+	border-radius: 50%;
+	background: var(--card-bg);
+	line-height: 1.15;
+}
+.imed-ov-ring b {
+	color: var(--heading-color);
+	font-size: var(--text-4xl);
+	font-weight: 800;
+}
+.imed-ov-ring small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+/* The reports: four tiles, each with its icon in its colour. */
+.imed-ov-reports__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-auto-rows: 1fr;
+	gap: 12px;
+}
+.imed-ov-report {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 64px;
+	padding: 12px 14px;
+	border: 1px solid var(--imed-border);
+	border-radius: 14px;
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	line-height: 1.35;
+	text-decoration: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.imed-ov-report:hover {
+	border-color: var(--tone-line);
+	box-shadow: 0 10px 22px -16px rgba(16, 34, 42, 0.45);
+	color: var(--heading-color);
+	text-decoration: none;
+	transform: translateY(-1px);
+}
+.imed-ov-report__icon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 11px;
+	background: var(--tone-soft);
+	color: var(--tone-solid);
+}
+.imed-ov-report__icon .icon {
+	stroke: currentColor;
+	stroke-width: 2px;
+}
+
+/* Narrower screens */
+@media (max-width: 1199.98px) {
+	.imed-ov-kpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 991.98px) {
+	.imed-ov-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+@media (max-width: 575.98px) {
+	.imed-ov-kpis {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.imed-ov-card,
+	.imed-ov-kpi {
+		padding: 16px;
+	}
+	.imed-ov-pipeline__body,
+	.imed-ov-collection__body {
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: center;
+	}
+	.imed-ov-pipeline__side,
+	.imed-ov-collection .imed-ov-legend {
+		width: 100%;
+	}
+	.imed-ov-reports__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
