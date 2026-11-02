@@ -225,3 +225,64 @@ class IntegrationTestAssistantIsolation(IntegrationTestCase):
 		# Restored after the read.
 		self.assertNotEqual(frappe.enqueue.__name__, "no_job")
 
+	def test_every_company_scoped_report_holds_only_the_request_s_company(self):
+		"""Fail closed (review of 2 Nov 2026): each report the assistant runs with the company forced is run (1) for a
+		user of company A only, with company B's marked rows present, and (2) for a user who may read both A and B but
+		works in B: there user permissions alone would let A's rows through, so only the forced filter keeps them
+		out. Any other report is refused to both."""
+		frappe.set_user("Administrator")
+		category = frappe.get_all("Expense Category", pluck="name", limit=1)[0]
+		for name, company, box, amount in (("_iso_exp_a", A, self.box_a, MARK_A), ("_iso_exp_b", B, self.box_b, MARK_B)):
+			center = frappe.get_all("Cost Center", {"company": company, "is_group": 0}, pluck="name", limit=1)[0]
+			frappe.get_doc(
+				{"doctype": "Expense", "name": name, "company": company, "posting_date": today(), "amount": amount, "docstatus": 1,
+				 "activity": center, "treasury": box, "expense_type": "Operating", "expense_category": category}
+			).db_insert()
+		owner = self.context(OWNER)
+		reports = [r for i in business_registry.discover(owner) for r in i.reports(owner)]
+		tool = RunReportTool(reports)
+		day = today()
+		filters = {
+			"from_date": day, "to_date": day, "report_date": day, "period_start_date": day, "period_end_date": day,
+			"filter_based_on": "Date Range", "periodicity": "Monthly", "range": "30, 60, 90, 120", "ageing_based_on": "Due Date",
+			"group_by": "Group by Voucher (Consolidated)",
+		}
+		for user, other_mark, other_box, asked in ((ONLY_A, "222222", self.box_b, B), (A_AND_B, "111111", self.box_a, A)):
+			context = self.context(user)
+			ran = []
+			for report in reports:
+				name = report["name"]
+				if not takes_company(name):
+					self.assertRaises(frappe.PermissionError, tool.run, {"report": name, "filters": {}}, context)
+					continue
+				try:
+					# The model asks for the other company; the server forces the request's.
+					result = tool.run({"report": name, "filters": {**filters, "company": asked}}, context)
+				except (frappe.ValidationError, frappe.PermissionError):  # a filter the report needs and was not given
+					frappe.clear_messages()
+					continue
+				text = json.dumps(result, default=str)
+				self.assertNotIn(other_mark, text, f"{name} for {user}")
+				self.assertNotIn(other_box, text, f"{name} for {user}")
+				ran.append(name)
+			# Not vacuous: the ledger and the expenses, where the marks are, were read.
+			self.assertIn("General Ledger", ran, user)
+			self.assertIn("Expense Report", ran, user)
+		# And the marks are there to be found: the forced filter, not missing data, kept them out.
+		frappe.set_user("Administrator")
+		both = RunReportTool([{"name": "Expense Report", "ref_doctype": "Expense", "area": "x"}])
+		self.assertIn("111111", json.dumps(both.run({"report": "Expense Report", "filters": {**filters}}, self.context(OWNER)), default=str))
+
+	def test_nobody_claims_another_user_s_legacy_chat(self):
+		"""A chat saved before chats had a company is bound on first use: only by its own user."""
+		frappe.set_user(A_AND_B)
+		chat = ChatStore.new("legacy")
+		frappe.db.set_value("Assistant Chat", chat, "company", None)
+		frappe.set_user(ONLY_A)
+		self.assertRaises(frappe.PermissionError, ChatStore.check_company, chat, A)
+		self.assertRaises(frappe.PermissionError, api.send_message, chat=chat, text="hi")
+		self.assertIsNone(frappe.db.get_value("Assistant Chat", chat, "company"))
+		# Not in the other user's list, nor readable through the desk.
+		self.assertNotIn(chat, [c["name"] for c in ChatStore.list()])
+		self.assertFalse(frappe.has_permission("Assistant Chat", "read", doc=chat))
+

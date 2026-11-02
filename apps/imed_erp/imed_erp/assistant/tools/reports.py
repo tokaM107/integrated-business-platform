@@ -18,22 +18,32 @@ from imed_erp.assistant.tools.base import compact_rows
 COMPANY_FILTER = re.compile(r"""fieldname\s*:\s*["']company["']|\$\.extend\(\s*\{\s*\}\s*,\s*erpnext\.financial_statements\s*\)""")
 
 
+CODE_READS_COMPANY = re.compile(r"""filters\.company|filters\.get\(\s*["']company["']|filters\[\s*["']company["']|["']company["']\s*,""")
+
+
 def takes_company(report: str) -> bool:
 	"""Whether the report declares a company filter (its standard .js filters, or the Report's own filter rows).
 	Such a report is run with the request's company forced; any other report reads across companies."""
 	doc = frappe.get_cached_doc("Report", report)
-	if any(row.fieldname == "company" for row in doc.get("filters") or []):
-		return True
+	if doc.report_type == "Report Builder" and any(row.fieldname == "company" for row in doc.get("filters") or []):
+		return True  # a Report Builder report filters through get_list: a company filter there is always applied
 	if doc.is_standard != "Yes" or not doc.module:
 		return False
 	app = frappe.local.module_app.get(frappe.scrub(doc.module))
 	if not app:
 		return False
-	path = frappe.get_app_path(app, frappe.scrub(doc.module), "report", frappe.scrub(doc.name), frappe.scrub(doc.name) + ".js")
-	if not os.path.exists(path):
+	folder = frappe.get_app_path(app, frappe.scrub(doc.module), "report", frappe.scrub(doc.name))
+	script, code = (os.path.join(folder, frappe.scrub(doc.name) + ext) for ext in (".js", ".py"))
+	if not (os.path.exists(script) and os.path.exists(code)):
 		return False
-	with open(path, encoding="utf-8") as f:
-		return bool(COMPANY_FILTER.search(f.read()))
+	with open(script, encoding="utf-8") as f:
+		declared = bool(COMPANY_FILTER.search(f.read()))
+	with open(code, encoding="utf-8") as f:
+		# Fail closed (review of 2 Nov 2026): a filter the screen declares but the code never reads would be forced
+		# for nothing. The code must name it; tests/test_assistant_isolation.py runs each such report for one
+		# company with another company's rows present.
+		read = bool(CODE_READS_COMPANY.search(f.read()))
+	return declared and read
 
 
 class RunReportTool:

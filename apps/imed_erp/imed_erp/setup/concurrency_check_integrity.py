@@ -139,9 +139,13 @@ def check_two_daily_accruals():
 		return doctor_accrual.catch_up([invoice], doctor_accrual.accrue, "concurrency {0}")
 
 	outcome = at_once(daily, daily)
-	entries = frappe.db.count("Doctor Ledger Entry", {"sales_invoice": invoice, "docstatus": 1})
-	journals = frappe.db.count("Journal Entry", {"user_remark": ("like", f"%{invoice}%"), "docstatus": 1})
-	report("daily accrual run twice at once", entries == 1 and journals == 1, f"{outcome}; ledger entries {entries}, journal entries {journals}")
+	entries = frappe.get_all("Doctor Ledger Entry", filters={"sales_invoice": invoice, "docstatus": 1}, fields=["amount", "journal_entry"])
+	journals = frappe.get_all("Journal Entry", filters={"user_remark": ("like", f"%{invoice}%"), "docstatus": 1}, fields=["name", "total_debit"])
+	ledger_total = flt(sum(flt(e.amount) for e in entries), 2)
+	journal_total = flt(sum(flt(j.total_debit) for j in journals), 2)
+	linked = {e.journal_entry for e in entries} == {j.name for j in journals}
+	ok = len(entries) == 1 and len(journals) == 1 and ledger_total == journal_total and linked
+	report("daily accrual run twice at once", ok, f"{outcome}; ledger entries {len(entries)} ({ledger_total}), journal entries {len(journals)} ({journal_total}), linked {linked}")
 
 
 def check_two_printing_sales_on_the_last_paper():
