@@ -38,6 +38,23 @@ REVENUE_SHARE = "Revenue Share"
 NOT_BILLABLE = "Not Billable"
 
 
+# How each status looks on the form, the list and the calendar (sent to the browser at login: boot_session below).
+STATUS_COLORS = {
+	TENTATIVE: "orange",
+	CONFIRMED_NO_DEPOSIT: "green",
+	CONFIRMED_WITH_DEPOSIT: "green",
+	COMPLETED: "blue",
+	CANCELLED: "gray",
+	NO_SHOW: "gray",
+}
+
+
+def boot_session(bootinfo):
+	"""boot_session hook: the booking screens read their statuses and colours from here (review of 2 Nov 2026: three
+	scripts each carried their own copy)."""
+	bootinfo.imed_booking = {"colors": STATUS_COLORS, "open": list(OPEN), "not_held": list(NOT_HELD)}
+
+
 def is_held(status) -> bool:
 	return status in HOLDING
 

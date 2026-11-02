@@ -14,16 +14,10 @@
 // An IMED hall booking posts nothing when completed (27 Oct 2026): its invoice, or the collected amount of a
 // revenue share, is posted by the explicit button once the amounts were checked (booking_accounts.py).
 
-// The calendar's colours (booking_calendar.js), so a status looks the same everywhere.
-const BOOKING_STATUS_COLORS = {
-	Tentative: "orange",
-	Confirmed: "green",
-	"Confirmed with Deposit": "green",
-	Completed: "blue",
-	Cancelled: "gray",
-	"No Show": "gray",
-};
-const BOOKING_OPEN = ["Tentative", "Confirmed", "Confirmed with Deposit"];
+// The statuses' colours and which are still open, from the server (booking_rules.py, sent at login), so a status
+// looks the same on the form, the list and the calendar.
+const BOOKING_STATUS_COLORS = (frappe.boot.imed_booking || {}).colors || {};
+const BOOKING_OPEN = (frappe.boot.imed_booking || {}).open || [];
 
 // What each hall booking type fixes (booking.py FORCED_MODEL) and which of the optional fields it needs.
 const HALL_TYPES = {
@@ -270,7 +264,7 @@ function card_html(frm) {
 		tile(__("Total"), money(doc.total_amount), "is-total"),
 		tile(__("Paid"), money(doc.paid_amount)),
 		// QA-35: a cancelled booking or a no-show owes nothing more; what was paid is the deposit kept.
-		["Cancelled", "No Show"].includes(doc.status)
+		((frappe.boot.imed_booking || {}).not_held || []).includes(doc.status)
 			? tile(__("Deposit held"), flt(doc.paid_amount) ? money(doc.paid_amount) : __("Nothing paid"))
 			: tile(
 					__("Remaining"),

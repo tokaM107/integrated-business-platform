@@ -19,7 +19,7 @@ frappe.ui.form.on("Studio Hour Package", {
 						.then(() => frm.reload_doc())
 				);
 			}
-			if (frappe.user.has_role("Accounts Manager")) {
+			if (frappe.user.has_role(["Accounts Manager", "System Manager"])) {
 				frm.add_custom_button(__("Cancel with Reason"), () =>
 					frappe.prompt(
 						{ fieldname: "reason", fieldtype: "Small Text", label: __("Why is it cancelled?"), reqd: 1 },

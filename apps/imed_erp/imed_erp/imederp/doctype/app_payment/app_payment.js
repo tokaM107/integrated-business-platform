@@ -19,7 +19,7 @@ frappe.ui.form.on("App Payment", {
 		// Cancelled only with a reason, by the accountant (the server's CANCEL_ROLES: Accounts Manager or System
 		// Manager; audit of 2 Nov 2026: a System Manager was refused the button the server allows).
 		if (frm.doc.docstatus === 1) frm.page.clear_secondary_action();
-		if (frm.doc.docstatus === 1 && ["Accounts Manager", "System Manager"].some((role) => frappe.user.has_role(role))) {
+		if (frm.doc.docstatus === 1 && frappe.user.has_role(["Accounts Manager", "System Manager"])) {
 			frm.add_custom_button(__("Cancel with Reason"), () => {
 				frappe.prompt(
 					{ fieldname: "reason", fieldtype: "Small Text", label: __("Why is it cancelled?"), reqd: 1 },

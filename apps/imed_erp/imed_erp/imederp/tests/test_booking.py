@@ -445,3 +445,13 @@ class TestBookingRules(IntegrationTestCase):
 		self.assertEqual(booking.CONFIRMED, "Confirmed with Deposit")
 		self.assertEqual(booking.HOLDING[0], "Tentative")
 
+	def test_the_screens_get_every_status_s_colour_from_the_server(self):
+		"""booking.js, booking_list.js and booking_calendar.js read frappe.boot.imed_booking (review of 2 Nov 2026)."""
+		from imed_erp.imederp import booking_rules as rules
+
+		boot = frappe._dict()
+		rules.boot_session(boot)
+		self.assertEqual(set(boot.imed_booking["colors"]), set(rules.HOLDING) | set(rules.NOT_HELD))
+		self.assertEqual(boot.imed_booking["open"], list(rules.OPEN))
+		self.assertIn("imed_erp.imederp.booking_rules.boot_session", frappe.get_hooks("boot_session"))
+

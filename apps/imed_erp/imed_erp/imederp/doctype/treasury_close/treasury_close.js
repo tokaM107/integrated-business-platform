@@ -22,7 +22,7 @@ frappe.ui.form.on("Treasury Close", {
 		}
 		// A close is cancelled only by reopening it, with a reason.
 		if (frm.doc.docstatus === 1) frm.page.clear_secondary_action();
-		if (frm.doc.docstatus === 1 && frappe.user.has_role("Accounts Manager")) {
+		if (frm.doc.docstatus === 1 && frappe.user.has_role(["Accounts Manager", "System Manager"])) {
 			frm.add_custom_button(__("Reopen"), () => {
 				frappe.prompt(
 					{ fieldname: "reason", fieldtype: "Small Text", label: __("Why is it reopened?"), reqd: 1 },

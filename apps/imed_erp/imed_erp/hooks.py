@@ -411,6 +411,9 @@ after_migrate = [
 	"imed_erp.imederp.home_screen.tidy_home",
 ]
 
+# The booking screens' statuses and colours, from imederp/booking_rules.py.
+boot_session = "imed_erp.imederp.booking_rules.boot_session"
+
 # Scheduled Tasks
 # ---------------
 
