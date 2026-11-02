@@ -16,28 +16,41 @@
 	font-family: var(--font-stack);
 }
 
+/* The owner's picture over the whole page (2 Nov 2026): green smoke on black (images/login-bg, WebP with a JPEG
+   for older browsers). Change "?v=" when the picture changes, so browsers fetch the new one. The dark green
+   underneath shows while it loads. */
 body:has(#page-login) {
 	min-height: 100vh;
-	background:
-		radial-gradient(900px 420px at 50% -120px, rgba(15, 118, 110, 0.14), transparent 70%),
-		radial-gradient(600px 300px at 100% 100%, rgba(244, 185, 66, 0.1), transparent 70%),
-		#f3f6f7;
+	background-color: #06140f;
+	background-image: url("/assets/imed_erp/images/login-bg.jpg?v=1");
+	background-image: image-set(
+		url("/assets/imed_erp/images/login-bg.webp?v=1") type("image/webp"),
+		url("/assets/imed_erp/images/login-bg.jpg?v=1") type("image/jpeg")
+	);
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
 }
 
 #page-login .page-content-wrapper {
 	padding-top: min(12vh, 110px);
 }
 
+/* The card a little see-through (owner, 2 Nov 2026): the green shows faintly through it. */
 #page-login .login-content.page-card {
 	max-width: 400px;
 	margin-inline: auto;
 	padding: 36px 32px 28px;
-	background: #ffffff;
+	background: rgba(255, 255, 255, 0.72);
 	border: 0;
 	border-radius: 18px;
 	box-shadow:
-		0 24px 60px -28px rgba(16, 34, 42, 0.35),
-		0 0 0 1px var(--imed-border);
+		0 30px 70px -30px rgba(0, 0, 0, 0.7),
+		0 0 0 1px rgba(255, 255, 255, 0.45),
+		inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	backdrop-filter: blur(16px) saturate(1.2);
 }
 
 #page-login .page-card-head {
@@ -75,9 +88,10 @@ body:has(#page-login) {
 	unicode-bidi: plaintext;
 }
 
+/* The fields' names in the brand's green (owner, 2 Nov 2026). */
 #page-login .form-label {
-	color: #48565f;
-	font-weight: 500;
+	color: var(--imed-teal-700);
+	font-weight: 600;
 }
 #page-login .form-control {
 	height: 40px;
@@ -90,8 +104,11 @@ body:has(#page-login) {
 	border-color: var(--imed-teal-500);
 	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
 }
+/* The field's icon in the middle of the field's height, whatever it is (on a phone Frappe makes it taller). */
 #page-login .field-icon {
-	top: 12px;
+	top: calc(50% - 8px) !important;
+	/* Frappe also moves it up by 8px. */
+	transform: none !important;
 }
 
 #page-login .btn-login {
@@ -134,12 +151,25 @@ body:has(#page-login) {
 }
 #page-login ~ .web-footer .footer-powered,
 #page-login ~ .web-footer .footer-powered a {
-	color: #8795a0;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+/* No "login with an e-mail link" button (owner, 2 Nov 2026): signing in is by e-mail and password. Hidden
+   here only; the option itself is System Settings' "Login with email link". */
+#page-login .btn-login-with-email-link {
+	display: none !important;
 }
 
 @media (max-width: 480px) {
+	/* The card in the middle of the phone's screen, not stuck to its top (owner, 2 Nov 2026); on a short
+	   screen it still starts 24px down and the page scrolls. */
 	#page-login .page-content-wrapper {
-		padding-top: 24px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		min-height: 100vh;
+		min-height: 100svh;
+		padding-block: 24px;
 	}
 	#page-login .login-content.page-card {
 		/* The page container already pads 24px on each side. */
