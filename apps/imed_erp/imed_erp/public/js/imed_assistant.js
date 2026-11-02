@@ -110,8 +110,8 @@
 								placeholder="${esc(t("Ask about sales, stock, doctors…", "اسأل عن المبيعات، المخازن، الدكاترة…"))}"
 								aria-label="${esc(t("Message", "الرسالة"))}"></textarea>
 							<button type="button" class="imed-assistant-mic" aria-pressed="false"
-								aria-label="${esc(t("Record a voice message", "سجّل رسالة صوتية"))}"
-								title="${esc(t("Record a voice message", "سجّل رسالة صوتية"))}">
+								aria-label="${esc(t("Speak your question", "قول سؤالك"))}"
+								title="${esc(t("Speak your question: it is written out for you to send", "قول سؤالك: هيتكتب وانت تبعته"))}">
 								${frappe.utils.icon("mic", "md")}
 							</button>
 							<button type="submit" class="imed-assistant-send" aria-label="${esc(t("Send", "إرسال"))}"
