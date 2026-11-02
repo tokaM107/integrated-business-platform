@@ -97,10 +97,10 @@ class IntegrationTestWeeklyCashReconciliation(IntegrationTestCase):
 		locked = []
 		original = frappe.db.get_value
 
-		def spy(doctype, name=None, *args, **kwargs):
+		def spy(*args, **kwargs):
 			if kwargs.get("for_update"):
-				locked.append(doctype)
-			return original(doctype, name, *args, **kwargs)
+				locked.append(args[0] if args else kwargs.get("doctype"))
+			return original(*args, **kwargs)
 
 		with patch("imed_erp.imederp.doctype.weekly_cash_reconciliation.weekly_cash_reconciliation.frappe.db.get_value", side_effect=spy):
 			review_week(START, AZARITA, submit=False)

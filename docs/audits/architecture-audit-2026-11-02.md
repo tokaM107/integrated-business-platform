@@ -53,4 +53,4 @@ companies through reports.
 
 ## Tests
 
-Full suite before this pass: 809 OK, 1 skipped. Result after this pass is in the commit message of the last commit.
+Full suite after the accounting pass: 809 OK, 1 skipped. After the library, BA Plus and infrastructure pass: 812 OK, 1 skipped.

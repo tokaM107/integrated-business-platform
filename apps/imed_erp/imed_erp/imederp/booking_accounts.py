@@ -195,7 +195,7 @@ def refresh_booking(name):
 	booking = frappe.db.get_value(
 		"Booking", name, ["source", "status", "total_amount", "resource_type", "rental_model"], as_dict=True
 	)
-	if not booking or booking.source == "Imported":
+	if not booking or booking.source == IMPORTED:
 		return
 	paid = payments_total(name)
 	values = {
