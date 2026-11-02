@@ -7,6 +7,8 @@
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.tests.test_paper_use
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import flt, today
@@ -242,3 +244,24 @@ class IntegrationTestPaperUse(IntegrationTestCase):
 		self.receive(500, AZARITA_STORE)
 		frappe.get_doc("Stock Entry", issue.name).submit()
 		self.assertEqual(self.sheets(AZARITA_STORE), 500)
+
+	def test_the_paper_is_what_the_store_holds_now_read_with_a_lock(self):
+		"""Review of 2 Nov 2026: two printing sales at once each saw the paper for both; the second sale was
+		refused by ERPNext's negative-stock check (setup/concurrency_check_integrity.py reproduces it)."""
+		from imed_erp.imederp import paper_use
+
+		locked = []
+		original = frappe.db.get_value
+
+		def spy(*args, **kwargs):
+			if kwargs.get("for_update"):
+				locked.append(args[0] if args else kwargs.get("doctype"))
+			return original(*args, **kwargs)
+
+		with patch("imed_erp.imederp.paper_use.frappe.db.get_value", side_effect=spy):
+			paper_use.on_hand(MAWASAH_STORE, today(), "23:59:59")
+		self.assertIn("Bin", locked)
+		# Never more than the store holds now, whatever the balance at the sale's time says.
+		with patch("erpnext.stock.utils.get_stock_balance", return_value=10_000):
+			self.assertEqual(paper_use.on_hand(MAWASAH_STORE, today(), "23:59:59"), self.sheets())
+
