@@ -16,13 +16,20 @@
 	font-family: var(--font-stack);
 }
 
-/* The brand's green over the whole page (owner, 2 Nov 2026): the deep teal, a soft amber glow at the top. */
+/* The owner's picture over the whole page (2 Nov 2026): green smoke on black (images/login-bg, WebP with a JPEG
+   for older browsers). Change "?v=" when the picture changes, so browsers fetch the new one. The dark green
+   underneath shows while it loads. */
 body:has(#page-login) {
 	min-height: 100vh;
-	background:
-		radial-gradient(700px 480px at 85% -5%, rgba(244, 185, 66, 0.22), transparent 65%),
-		radial-gradient(800px 600px at 5% 105%, rgba(64, 174, 161, 0.4), transparent 65%),
-		linear-gradient(160deg, #0f766e 0%, #104e49 55%, #0f3f3b 100%);
+	background-color: #06140f;
+	background-image: url("/assets/imed_erp/images/login-bg.jpg?v=1");
+	background-image: image-set(
+		url("/assets/imed_erp/images/login-bg.webp?v=1") type("image/webp"),
+		url("/assets/imed_erp/images/login-bg.jpg?v=1") type("image/jpeg")
+	);
+	background-position: center;
+	background-size: cover;
+	background-repeat: no-repeat;
 	background-attachment: fixed;
 }
 
@@ -35,14 +42,15 @@ body:has(#page-login) {
 	max-width: 400px;
 	margin-inline: auto;
 	padding: 36px 32px 28px;
-	background: rgba(255, 255, 255, 0.9);
+	background: rgba(255, 255, 255, 0.72);
 	border: 0;
 	border-radius: 18px;
 	box-shadow:
-		0 30px 70px -30px rgba(3, 30, 28, 0.6),
-		0 0 0 1px rgba(255, 255, 255, 0.5);
-	-webkit-backdrop-filter: blur(12px);
-	backdrop-filter: blur(12px);
+		0 30px 70px -30px rgba(0, 0, 0, 0.7),
+		0 0 0 1px rgba(255, 255, 255, 0.45),
+		inset 0 1px 0 rgba(255, 255, 255, 0.5);
+	-webkit-backdrop-filter: blur(16px) saturate(1.2);
+	backdrop-filter: blur(16px) saturate(1.2);
 }
 
 #page-login .page-card-head {
