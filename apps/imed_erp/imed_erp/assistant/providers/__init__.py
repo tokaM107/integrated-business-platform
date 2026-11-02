@@ -1,5 +1,5 @@
 # Which model answers: `imed_assistant_provider` in the site config, a built-in name (gemini, claude, offline) or a
-# dotted path to a ModelProvider class. The offline placeholder answers until a model is configured.
+# dotted path to a ModelProvider class. Unset, the offline placeholder: the assistant says it is not connected.
 
 from __future__ import annotations
 

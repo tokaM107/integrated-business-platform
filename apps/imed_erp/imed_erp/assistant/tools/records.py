@@ -12,7 +12,17 @@ from frappe.utils import cint
 from imed_erp.assistant.core.context import RequestContext
 from imed_erp.assistant.tools.base import FILTERS_SCHEMA, MAX_ROWS_TO_MODEL, compact_rows, parse_filters
 
-MAX_LIMIT = 200
+# Never sent to a model, whatever the user's level: secrets and the raw payloads mirrored from other systems.
+NEVER_READ = ("Password", "Attach", "Attach Image", "Signature", "Code", "JSON")
+
+
+def readable_fields(doctype: str) -> set[str]:
+	"""The fields of `doctype` the asking user may read: at a permission level the user has, not a secret type."""
+	meta = frappe.get_meta(doctype)
+	levels = set(meta.get_permlevel_access("read"))
+	return {"name", "owner", "creation", "modified", "docstatus"} | {
+		df.fieldname for df in meta.fields if df.fieldtype not in NEVER_READ and (df.permlevel or 0) in levels and df.fieldname
+	}
 
 
 class _RecordsTool:
@@ -22,6 +32,14 @@ class _RecordsTool:
 	def check(self, doctype: str) -> None:
 		if doctype not in self.doctypes:
 			raise frappe.ValidationError(_("The assistant may not read {0} for this user.").format(doctype))
+
+	@staticmethod
+	def check_filters(filters: list | dict, allowed: set[str]) -> None:
+		"""A filter on a field the user may not read would leak it through the rows or the count it selects."""
+		names = filters.keys() if isinstance(filters, dict) else [f[0] for f in filters]
+		hidden = [f for f in names if f not in allowed]
+		if hidden:
+			raise frappe.PermissionError(_("Not allowed to filter on {0}.").format(", ".join(hidden)))
 
 
 class ListRecordsTool(_RecordsTool):
@@ -38,7 +56,7 @@ class ListRecordsTool(_RecordsTool):
 					"filters": FILTERS_SCHEMA,
 					"fields": {"type": "array", "items": {"type": "string"}, "description": "field names to return; [] for the name and the title"},
 					"order_by": {"type": "string", "description": "e.g. 'booking_date desc'; '' for the default"},
-					"limit": {"type": "integer", "minimum": 1, "maximum": MAX_LIMIT},
+					"limit": {"type": "integer", "minimum": 1, "maximum": MAX_ROWS_TO_MODEL},
 				},
 				"required": ["doctype", "filters", "fields", "order_by", "limit"],
 				"additionalProperties": False,
@@ -48,16 +66,19 @@ class ListRecordsTool(_RecordsTool):
 	def run(self, arguments: dict, context: RequestContext) -> dict:
 		doctype = arguments.get("doctype")
 		self.check(doctype)
-		meta = frappe.get_meta(doctype)
-		fields = [f for f in (arguments.get("fields") or []) if f == "name" or meta.get_field(f) or f in ("owner", "creation", "modified", "docstatus")]
+		allowed = readable_fields(doctype)
+		filters = parse_filters(arguments.get("filters"))
+		self.check_filters(filters, allowed)
+		fields = [f for f in (arguments.get("fields") or []) if f in allowed]
 		if not fields:
-			fields = ["name"] + ([meta.title_field] if meta.title_field else [])
+			title = frappe.get_meta(doctype).title_field
+			fields = ["name"] + ([title] if title in allowed else [])
 		rows = frappe.get_list(
 			doctype,
-			filters=parse_filters(arguments.get("filters")),
+			filters=filters,
 			fields=fields,
 			order_by=arguments.get("order_by") or None,
-			limit_page_length=min(cint(arguments.get("limit")) or 50, MAX_ROWS_TO_MODEL),
+			limit=min(cint(arguments.get("limit")) or 50, MAX_ROWS_TO_MODEL),
 		)
 		return compact_rows({"rows": rows, "count": len(rows)})
 
@@ -82,6 +103,8 @@ class CountRecordsTool(_RecordsTool):
 		self.check(doctype)
 		if not frappe.has_permission(doctype, "read"):
 			raise frappe.PermissionError(_("Not allowed to read {0}.").format(doctype))
+		filters = parse_filters(arguments.get("filters"))
+		self.check_filters(filters, readable_fields(doctype))
 		# get_list with a count keeps the user's permission conditions, which db.count would skip.
-		rows = frappe.get_list(doctype, filters=parse_filters(arguments.get("filters")), fields=["count(name) as n"])
+		rows = frappe.get_list(doctype, filters=filters, fields=[{"COUNT": "*", "as": "n"}])
 		return {"count": cint(rows[0].n) if rows else 0}

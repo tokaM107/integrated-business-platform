@@ -210,10 +210,20 @@ page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 # Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
 # branch's (imederp/stock_count.py).
-# The AI assistant's businesses: every section of this app's Workspace Sidebar is one (assistant/businesses/
-# sidebar.py). Another app, or a module with its own tools, registers more here: dotted paths to callables
-# `f(context) -> list[BusinessIntegration]` (assistant/core/interfaces.py). The assistant's core never changes.
-assistant_businesses = []
+# The AI assistant's integrations (assistant/core/interfaces.py, BusinessIntegration): dotted paths to callables
+# `f(context) -> list[BusinessIntegration]`. This app registers its own; another app adds its own in its hooks.py.
+# The assistant's core never changes for a new business.
+assistant_businesses = ["imed_erp.assistant.businesses.imed.integrations"]
+
+# Saved assistant chats are their user's alone, in the desk and the REST API too, not only in the chat window.
+has_permission = {
+	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.has_permission",
+	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.has_permission",
+}
+permission_query_conditions = {
+	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.query_conditions",
+	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.query_conditions",
+}
 
 doc_events = {
 	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).

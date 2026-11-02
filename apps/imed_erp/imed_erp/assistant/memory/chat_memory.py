@@ -41,7 +41,7 @@ class ChatStore:
 			filters={"user": frappe.session.user},
 			fields=["name", "title", "last_message_at", "message_count"],
 			order_by="last_message_at desc, creation desc",
-			limit_page_length=cint(limit) or 50,
+			limit=cint(limit) or 50,
 		)
 
 	@staticmethod
@@ -64,11 +64,15 @@ class ChatStore:
 	@classmethod
 	def messages(cls, chat: str, after: int = 0) -> list[dict]:
 		cls.own(chat)
-		return frappe.get_all("Assistant Message", filters={"chat": chat, "seq": [">", cint(after)]}, fields=["seq", "role", "content", "facts", "creation"], order_by="seq asc", limit_page_length=0)
+		return frappe.get_all("Assistant Message", filters={"chat": chat, "seq": [">", cint(after)]}, fields=["seq", "role", "content", "facts", "creation"], order_by="seq asc")
 
 	@classmethod
 	def append(cls, chat: str, role: str, content: str, facts: str = "") -> int:
-		doc = cls.own(chat)
+		"""The next message of the chat. The chat's row is locked first, so two requests on the same chat (two tabs,
+		a double click) number their messages one after the other, never twice the same (a unique index on
+		(chat, seq) backs this up)."""
+		cls.own(chat)
+		doc = frappe.get_doc("Assistant Chat", chat, for_update=True)
 		seq = cint(doc.message_count) + 1
 		frappe.get_doc({"doctype": "Assistant Message", "chat": chat, "seq": seq, "role": role, "content": content, "facts": facts or ""}).insert(ignore_permissions=True)
 		values = {"message_count": seq, "last_message_at": now_datetime()}
@@ -80,14 +84,15 @@ class ChatStore:
 
 class ChatMemory:
 	def state(self, chat: str) -> dict:
+		"""The summary, the window and what lies between them. Only the messages after the summary are read: the cost
+		of a request does not grow with the length of the chat."""
 		doc = ChatStore.own(chat)
-		rows = ChatStore.messages(chat)
-		window = rows[-WINDOW:] if rows else []
-		older = rows[: max(0, len(rows) - WINDOW)]
+		rows = ChatStore.messages(chat, after=cint(doc.summarized_upto))
+		window = rows[-WINDOW:]
 		return {
 			"summary": doc.summary or "",
 			"window": window,
-			"unsummarized": [r for r in older if r.seq > cint(doc.summarized_upto)],
+			"unsummarized": rows[: max(0, len(rows) - WINDOW)],
 			"summarized_upto": cint(doc.summarized_upto),
 		}
 

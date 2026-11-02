@@ -1,6 +1,6 @@
 # The chat window's endpoints (public/js/imed_assistant.js): thin. Who may use the assistant, the rate limit, the
-# message hygiene, the saved chats' CRUD, and the one call that answers. Everything else lives in core/, registry/,
-# tools/, memory/ and providers/.
+# message hygiene, the saved chats' CRUD, and the one call that answers (service.py). Everything else lives in
+# core/, registry/, businesses/, tools/, memory/ and providers/.
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ import frappe
 from frappe import _
 from frappe.rate_limiter import rate_limit
 
+from imed_erp.assistant import service
 from imed_erp.assistant.core.context import RequestContext, build_context
 from imed_erp.assistant.core.exceptions import ModelUnavailable
 from imed_erp.assistant.memory.chat_memory import ChatStore
@@ -147,10 +148,11 @@ def send_message(messages=None, audio=None, audio_type=None, chat=None, text=Non
 		frappe.throw(_("Write a message first."))
 	question = conversation[-1]["content"]
 
+	earlier = conversation[:-1]
 	if chat:
 		ChatStore.append(chat, "user", question)
 	try:
-		reply, _facts = provider.reply(question, context)
+		reply, _facts = service.answer(provider, question, context, earlier)
 	except ModelUnavailable as e:
 		reply = unavailable_text(e, context)
 		if chat:

@@ -1,10 +1,13 @@
-# What every read tool shares: a guarded run (the read as the asking user, in its own savepoint, rolled back
-# after; a failure returned as text the model can read, never hidden) and the compaction of a result to what an
-# answer needs (results go to a model that is paid by the token).
+# What every read tool shares: a guarded run and the compaction of a result to what an answer needs.
+#
+# The guard: the read runs as the asking user, inside its own savepoint, rolled back after; a commit attempted
+# inside it fails (a tool is a read, whatever code it calls); a refusal or a validation error is returned as text
+# the model can read; an unexpected error is logged before it is returned, never swallowed.
 
 from __future__ import annotations
 
 import json
+from contextlib import contextmanager
 from typing import Any
 
 import frappe
@@ -31,6 +34,10 @@ FILTERS_SCHEMA = {
 		"additionalProperties": False,
 	},
 }
+
+
+class WriteAttempted(Exception):
+	"""A tool tried to commit: refused, the tool's work is rolled back."""
 
 
 def parse_filters(filters: Any) -> list | dict:
@@ -67,16 +74,38 @@ def to_text(result: Any) -> str:
 	return text if len(text) <= MAX_CHARS_TO_MODEL else text[:MAX_CHARS_TO_MODEL] + " ...(cut: ask for a narrower filter)"
 
 
+def error_text(message: str) -> str:
+	return to_text({"error": message})
+
+
+@contextmanager
+def no_commit():
+	"""Inside, frappe.db.commit raises: a read tool never persists anything, whatever code it calls."""
+	original = frappe.db.commit
+
+	def refuse(*args, **kwargs):
+		raise WriteAttempted(_("A read tried to save to the database; refused."))
+
+	frappe.db.commit = refuse
+	try:
+		yield
+	finally:
+		frappe.db.commit = original
+
+
 def guarded(run, arguments: dict, context: RequestContext) -> tuple[str, bool]:
-	"""(text, is_error): the tool's result as text; read-only by contract, whatever happens inside."""
+	"""(text, is_error): the tool's result as text."""
 	frappe.db.savepoint(SAVEPOINT)
 	try:
-		return to_text(run(arguments, context)), False
+		with no_commit():
+			return to_text(run(arguments, context)), False
 	except frappe.PermissionError as e:
-		frappe.clear_messages()
-		return to_text({"error": _("Not allowed for this user: {0}").format(str(getattr(e, "message", None) or e)[:300])}), True
+		return error_text(_("Not allowed for this user: {0}").format(str(getattr(e, "message", None) or e)[:300])), True
+	except (frappe.ValidationError, WriteAttempted) as e:
+		return error_text(str(getattr(e, "message", None) or e)[:500]), True
 	except Exception as e:
-		frappe.clear_messages()
-		return to_text({"error": str(getattr(e, "message", None) or e)[:500]}), True
+		frappe.log_error(title="Assistant tool failed", message=frappe.get_traceback())
+		return error_text(_("The read failed: {0}").format(str(e)[:300])), True
 	finally:
+		frappe.clear_messages()
 		frappe.db.rollback(save_point=SAVEPOINT)

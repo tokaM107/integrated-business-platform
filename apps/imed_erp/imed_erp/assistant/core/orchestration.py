@@ -1,8 +1,8 @@
 # Planner -> Executor -> Synthesizer, the assistant's reasoning flow (the owner's choice of 1 Nov 2026 over a
 # tool-calling loop: two model calls a question, three at most).
 #
-# The orchestrator knows nothing of Gemini, of Frappe doctypes or of where memory lives: it takes a ModelProvider,
-# a ToolRegistry and a ConversationMemory (core.interfaces) and runs the flow. The container (registry.container)
+# The orchestrator knows nothing of a model vendor, of Frappe doctypes or of where memory lives: it takes a
+# Completer, a ToolCatalog and a ConversationMemory (core.interfaces) and runs the flow. The service (service.py)
 # assembles the three for a request.
 
 from __future__ import annotations
@@ -14,8 +14,7 @@ from frappe import _
 
 from imed_erp.assistant.core import prompts
 from imed_erp.assistant.core.context import RequestContext
-from imed_erp.assistant.core.interfaces import ConversationMemory, JsonSchema, ModelProvider
-from imed_erp.assistant.registry.tools import ToolRegistry
+from imed_erp.assistant.core.interfaces import Completer, ConversationMemory, JsonSchema, ToolCatalog
 
 MAX_PLAN_STEPS = 6
 
@@ -66,20 +65,20 @@ def parse_arguments(raw: Any) -> dict:
 
 
 class Orchestrator:
-	def __init__(self, provider: ModelProvider, tools: ToolRegistry, memory: ConversationMemory):
-		self.provider = provider
+	def __init__(self, complete: Completer, tools: ToolCatalog, memory: ConversationMemory):
+		self.complete = complete
 		self.tools = tools
 		self.memory = memory
 
 	def answer(self, question: str, context: RequestContext) -> tuple[str, str]:
 		"""(answer, facts) for `question`. The facts are the compact results the answer was built on."""
-		self.memory.fold(context, self.provider.complete)
+		self.memory.fold(context, self.complete)
 		memo = self.memory.context_text(context)
 		header = f"[{context.header()}]"
-		system = prompts.system_text(context, self.tools.business_labels())
+		system = prompts.system_text(context, self.tools.business_labels(), self.tools.prompt_notes())
 
 		plan_prompt = f"{header}\n\nTools:\n{self.tools.catalogue(context)}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}"
-		steps, may_need_more, direct = parse_plan(self.provider.complete(prompts.PLANNER, plan_prompt, plan_schema(self.tools.names(context))))
+		steps, may_need_more, direct = parse_plan(self.complete(prompts.PLANNER, plan_prompt, plan_schema(self.tools.names())))
 		if direct and not steps:
 			self.memory.record(context, question, direct, "")
 			return direct, ""
@@ -99,9 +98,9 @@ class Orchestrator:
 	def execute(self, steps: list[dict], context: RequestContext) -> list[dict]:
 		results = []
 		for step in steps:
-			name = step.get("tool")
-			text, is_error = self.tools.run(name, parse_arguments(step.get("arguments")), context)
-			results.append({"tool": name, "arguments": parse_arguments(step.get("arguments")), "error": is_error, "result": text})
+			name, arguments = step.get("tool"), parse_arguments(step.get("arguments"))
+			text, is_error = self.tools.run(name, arguments, context)
+			results.append({"tool": name, "arguments": arguments, "error": is_error, "result": text})
 		return results
 
 	def synthesize(self, system: str, header: str, memo: str, question: str, results: list[dict], may_need_more: bool) -> str:
@@ -109,4 +108,4 @@ class Orchestrator:
 		prompt = f"{header}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}\n\nResults of the reads:\n{shown}"
 		if may_need_more:
 			prompt += prompts.NEED_MORE
-		return (self.provider.complete(system + prompts.SYNTHESIZER_TAIL, prompt) or "").strip()
+		return (self.complete(system + prompts.SYNTHESIZER_TAIL, prompt) or "").strip()

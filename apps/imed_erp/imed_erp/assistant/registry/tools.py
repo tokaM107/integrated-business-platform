@@ -1,64 +1,79 @@
-# The tools of one request: the common reads (dashboard, reports, records, ledger), their scope set from what the
-# businesses expose to the asking user, plus any tool a business adds. Built per request (what a user may read
-# changes with permissions), kept nowhere between requests.
+# The tools of one request: the common reads, scoped to what the integrations expose to the asking user, plus the
+# integrations' own tools. Built per request (what a user may read changes with permissions), kept nowhere after.
 
 from __future__ import annotations
 
 from typing import Any
 
 from imed_erp.assistant.core.context import RequestContext
-from imed_erp.assistant.core.exceptions import ToolNotFound
+from imed_erp.assistant.core.exceptions import ToolConflict
 from imed_erp.assistant.core.interfaces import BusinessIntegration, Tool
-from imed_erp.assistant.tools.base import guarded
+from imed_erp.assistant.tools.base import error_text, guarded
 from imed_erp.assistant.tools.dashboard import DashboardTool
 from imed_erp.assistant.tools.ledger import AccountBalanceTool
 from imed_erp.assistant.tools.records import CountRecordsTool, ListRecordsTool
 from imed_erp.assistant.tools.reports import RunReportTool
 
 
+def _merge(target: list, items) -> None:
+	for item in items:
+		if item not in target:
+			target.append(item)
+
+
 class ToolRegistry:
-	def __init__(self, businesses: list[BusinessIntegration], context: RequestContext):
-		self.businesses = businesses
-		doctypes, reports, workspaces, tools = [], [], [], []
-		for business in businesses:
-			for dt in business.doctypes(context):
-				if dt not in doctypes:
-					doctypes.append(dt)
-			for report in business.reports(context):
-				if report["name"] not in {r["name"] for r in reports}:
-					reports.append(report)
-			for ws in getattr(business, "workspaces", []) or []:
-				if ws not in workspaces:
-					workspaces.append(ws)
-			tools.extend(business.tools(context))
-		common: list[Tool] = [DashboardTool(workspaces)]
+	def __init__(self, integrations: list[BusinessIntegration], context: RequestContext):
+		self.integrations = integrations
+		doctypes: list[str] = []
+		workspaces: list[str] = []
+		reports: dict[str, dict] = {}
+		own: list[Tool] = []
+		for integration in integrations:
+			_merge(doctypes, integration.doctypes(context))
+			_merge(workspaces, integration.workspaces(context))
+			for report in integration.reports(context):
+				reports.setdefault(report["name"], report)
+			own.extend(integration.tools(context))
+
+		common: list[Tool] = []
+		dashboard = DashboardTool(workspaces)
+		if dashboard.workspaces:  # only the workspaces this user may open; none, no dashboard tool
+			common.append(dashboard)
 		if reports:
-			common.append(RunReportTool(reports))
+			common.append(RunReportTool(list(reports.values())))
 		if doctypes:
 			common += [ListRecordsTool(doctypes), CountRecordsTool(doctypes)]
 		common.append(AccountBalanceTool())
-		self._tools: dict[str, Tool] = {t.name: t for t in common + tools}
 
-	def names(self, context: RequestContext) -> list[str]:
+		self._tools: dict[str, Tool] = {}
+		for tool in common + own:
+			if tool.name in self._tools:
+				raise ToolConflict(f"two tools are named {tool.name}")
+			self._tools[tool.name] = tool
+		self._labels = [label for i in integrations for label in i.businesses(context)]
+		self._notes = "\n".join(n for n in (i.prompt_notes(context) for i in integrations) if n)
+
+	def names(self) -> list[str]:
 		return list(self._tools)
-
-	def specs(self, context: RequestContext) -> list[dict[str, Any]]:
-		return [t.spec(context) for t in self._tools.values()]
 
 	def catalogue(self, context: RequestContext) -> str:
 		"""The tools, compact, for the planner."""
 		lines = []
-		for spec in self.specs(context):
+		for tool in self._tools.values():
+			spec = tool.spec(context)
 			args = ", ".join(spec["input_schema"].get("properties", {}).keys()) or "no arguments"
 			lines.append(f"- {spec['name']}({args}): {spec['description']}")
 		lines.append('Filters: [{"field": ..., "operator": "=|!=|>|<|>=|<=|like|in|between|is", "value": "text; a JSON list for in/between"}]')
 		return "\n".join(lines)
 
 	def business_labels(self) -> list[str]:
-		return [b.label for b in self.businesses]
+		return self._labels
 
-	def run(self, name: str, arguments: dict, context: RequestContext) -> tuple[str, bool]:
+	def prompt_notes(self) -> str:
+		return self._notes
+
+	def run(self, name: str, arguments: dict[str, Any], context: RequestContext) -> tuple[str, bool]:
 		tool = self._tools.get(name)
-		if not tool:
-			return guarded(lambda a, c: (_ for _ in ()).throw(ToolNotFound(f"Unknown tool {name}.")), arguments, context)
+		if tool is None:
+			return error_text(f"Unknown tool {name}."), True
 		return guarded(tool.run, arguments, context)

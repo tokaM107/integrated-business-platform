@@ -1,6 +1,6 @@
-# The contracts the assistant is built on. Each is a Protocol: anything with the right methods fits, no base class
-# needed. The orchestration depends on these only (dependency inversion), so a model, a memory or a business can be
-# swapped or added without touching it.
+# The contracts the assistant is built on. Each is a Protocol: anything with the right members fits, no base class
+# needed. The orchestration depends on these only (dependency inversion), so a model, a memory, a tool catalogue
+# or a business integration can be swapped or added without touching it.
 
 from __future__ import annotations
 
@@ -11,10 +11,14 @@ from imed_erp.assistant.core.context import RequestContext
 JsonSchema = dict[str, Any]
 
 
+class Completer(Protocol):
+	"""One model call: text in, text out; JSON of `json_schema`'s shape when one is given."""
+
+	def __call__(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str: ...
+
+
 @runtime_checkable
 class ModelProvider(Protocol):
-	"""One model call. `complete` returns text; with `json_schema` the text is JSON of that shape."""
-
 	name: str
 	connected: bool
 	supports_voice: bool
@@ -24,13 +28,9 @@ class ModelProvider(Protocol):
 	def transcribe(self, audio: bytes, mime_type: str, context: RequestContext) -> str | None: ...
 
 
-class Completer(Protocol):
-	def __call__(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str: ...
-
-
 @runtime_checkable
 class Tool(Protocol):
-	"""A read the model may ask for. The spec may depend on who asks (what they may read); `run` reads as that user."""
+	"""A read the model may ask for. The spec may depend on who asks; `run` reads as that user and must not write."""
 
 	name: str
 
@@ -41,17 +41,43 @@ class Tool(Protocol):
 
 @runtime_checkable
 class BusinessIntegration(Protocol):
-	"""A business area of the ERP: what it is called and what the assistant may read of it. The registry discovers
-	them from the system (the app's Workspace Sidebars) and from the `assistant_businesses` hook."""
+	"""An integration contributes a business domain to the assistant, independently of the core:
+
+	- `businesses`: the business units it covers, as the asking user may see them (for the prompt);
+	- `doctypes`, `reports`, `workspaces`: what the common read tools may reach for that user;
+	- `tools`: reads of its own (its own services, data sources, permission checks);
+	- `prompt_notes`: rules of meaning specific to its domain ("held" bookings, an external system's "due").
+
+	Integrations are registered in an app's hooks.py under `assistant_businesses` (registry/businesses.py)."""
 
 	key: str
 	label: str
+
+	def businesses(self, context: RequestContext) -> list[str]: ...
 
 	def doctypes(self, context: RequestContext) -> list[str]: ...
 
 	def reports(self, context: RequestContext) -> list[dict[str, str]]: ...
 
+	def workspaces(self, context: RequestContext) -> list[str]: ...
+
 	def tools(self, context: RequestContext) -> list[Tool]: ...
+
+	def prompt_notes(self, context: RequestContext) -> str: ...
+
+
+class ToolCatalog(Protocol):
+	"""What the orchestrator needs of the tools of a request."""
+
+	def names(self) -> list[str]: ...
+
+	def catalogue(self, context: RequestContext) -> str: ...
+
+	def business_labels(self) -> list[str]: ...
+
+	def prompt_notes(self) -> str: ...
+
+	def run(self, name: str, arguments: dict[str, Any], context: RequestContext) -> tuple[str, bool]: ...
 
 
 @runtime_checkable

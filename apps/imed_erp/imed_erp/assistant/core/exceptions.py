@@ -1,5 +1,4 @@
-# The assistant's own errors. Anything else that a tool or a model raises is wrapped here before it reaches the
-# user, so the API has one place to turn them into words.
+# The assistant's own errors. The API turns them into words for the user.
 
 
 class AssistantError(Exception):
@@ -7,17 +6,13 @@ class AssistantError(Exception):
 
 
 class ModelUnavailable(AssistantError):
-	"""The model could not be called: the key's quota is used up (`reason = "quota"`) or the service is overloaded
-	(`reason = "overload"`). Not the ERP's fault; said as such to the user."""
+	"""The model could not be called: `reason` is "quota" (the key's limit), "overload" (the provider's demand) or
+	"not_configured" (no key). Not the ERP's fault; said as such to the user."""
 
 	def __init__(self, reason: str, detail: str = ""):
 		super().__init__(detail or reason)
 		self.reason = reason
 
 
-class ToolNotFound(AssistantError):
-	"""The model asked for a tool the registry does not hold."""
-
-
-class NotAllowed(AssistantError):
-	"""A read the asking user may not make (a Frappe PermissionError, named)."""
+class ToolConflict(AssistantError):
+	"""Two integrations registered a tool under the same name: refused, so one can never replace another's read."""

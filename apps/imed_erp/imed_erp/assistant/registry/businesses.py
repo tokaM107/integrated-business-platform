@@ -1,17 +1,14 @@
-# Where the assistant learns which businesses exist: the app's Workspace Sidebars (every section is one), plus any
-# integration another app or module registers through the `assistant_businesses` hook (a dotted path to a callable
-# returning BusinessIntegration objects). Adding a business = a sidebar section, or one hook entry; the core
-# does not change.
+# Which integrations the assistant has: whatever the installed apps register under the `assistant_businesses` hook
+# (dotted paths to callables `f(context) -> list[BusinessIntegration]`). The registry knows no business, no sidebar
+# and no app: an integration is added or removed in its own app's hooks.py, and the core does not change.
 
 from __future__ import annotations
 
 import frappe
 
-from imed_erp.assistant.businesses.sidebar import from_sidebars
 from imed_erp.assistant.core.context import RequestContext
 from imed_erp.assistant.core.interfaces import BusinessIntegration
 
-APP = "imed_erp"
 HOOK = "assistant_businesses"
 
 
@@ -24,7 +21,10 @@ def load(path: str):
 
 
 def discover(context: RequestContext) -> list[BusinessIntegration]:
-	found: list[BusinessIntegration] = list(from_sidebars(APP))
+	found: list[BusinessIntegration] = []
 	for path in hooked_paths():
-		found.extend(load(path)(context) or [])
+		for integration in load(path)(context) or []:
+			if not isinstance(integration, BusinessIntegration):
+				raise TypeError(f"{path} returned {integration!r}, which does not fulfil BusinessIntegration")
+			found.append(integration)
 	return found
