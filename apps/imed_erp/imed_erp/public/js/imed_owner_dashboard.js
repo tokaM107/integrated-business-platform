@@ -492,37 +492,23 @@
 		const d = new Date(`${value}T00:00:00`);
 		return [d.toLocaleDateString(frappe.boot.lang || "en", { day: "numeric" }), d.toLocaleDateString(frappe.boot.lang || "en", { month: "short" })];
 	};
-	const span = (from, to) => __("{0} – {1}", [short_day(from).reverse().join(" "), short_day(to).reverse().join(" ")]);
-
-	// How a figure moved: good news green, bad news red. `up_is_good`: more revenue is good, more expenses is not.
-	function change(current, previous, up_is_good) {
-		const diff = flt(current - previous, 2);
-		if (!diff) return `<span class="imed-ov-change is-flat">${esc(__("No change"))}</span>`;
-		const good = diff > 0 === up_is_good;
-		const icon = frappe.utils.icon(diff > 0 ? "arrow-up" : "arrow-down", "xs");
-		const amount = previous ? pct((diff / Math.abs(previous)) * 100) : money(diff, overview.currency);
-		return `<span class="imed-ov-change ${good ? "is-good" : "is-bad"}">${icon}<b class="imed-ov-num">${esc(amount)}</b></span>`;
-	}
-
-	function kpi(tone, icon, label, value, moved, hint) {
+	// The four figures: icon, name and amount only (the owner, 2 Nov 2026: no "vs last month" line).
+	function kpi(tone, icon, label, value) {
 		return `<section class="imed-ov-kpi tone-${tone}">
 				<div class="imed-ov-kpi__top">
 					<span class="imed-ov-kpi__icon">${frappe.utils.icon(icon, "md")}</span>
 					<span class="imed-ov-kpi__label">${esc(label)}</span>
 				</div>
 				<b class="imed-ov-kpi__value imed-ov-num ${value < 0 ? "is-negative" : ""}">${esc(format_currency(value || 0, overview.currency, 0))}</b>
-				<div class="imed-ov-kpi__foot" title="${esc(hint)}">${moved}<span>${esc(__("vs last month"))}</span></div>
 			</section>`;
 	}
 
 	function kpis_html(k) {
-		const c = k.compare;
-		const versus = __("{0} against {1}", [span(c.current.from, c.current.to), span(c.previous.from, c.previous.to)]);
 		return `<div class="imed-ov-kpis">
-				${kpi("green", "scale", __("Net profit this month"), k.month.net, change(c.current.net, c.previous.net, true), versus)}
-				${kpi("blue", "trending-up", __("Revenue this month"), k.month.revenue, change(c.current.revenue, c.previous.revenue, true), versus)}
-				${kpi("orange", "trending-down", __("Expenses this month"), k.month.expenses, change(c.current.expenses, c.previous.expenses, false), versus)}
-				${kpi("violet", "wallet", __("In the cash boxes"), k.cash.now, change(k.cash.now, k.cash.previous, true), __("Against the end of {0}", [frappe.datetime.str_to_user(k.cash.previous_on)]))}
+				${kpi("green", "scale", __("Net profit this month"), k.month.net)}
+				${kpi("blue", "trending-up", __("Revenue this month"), k.month.revenue)}
+				${kpi("orange", "trending-down", __("Expenses this month"), k.month.expenses)}
+				${kpi("violet", "wallet", __("In the cash boxes"), k.cash)}
 			</div>`;
 	}
 

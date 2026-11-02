@@ -1,14 +1,12 @@
 # The Owner Dashboard's overview, drawn on top of it by public/js/imed_owner_dashboard.js (the owner's picture of
-# 2 Nov 2026: four figures with how they moved since last month, the bookings' path, what is coming, the
-# bookings' money and the reports). One call (get_overview); read only.
+# 2 Nov 2026: four figures, the bookings, what is coming, the bookings' money and the reports). One call
+# (get_overview); read only.
 #
 # Nothing is worked out in a new way: the money is owner_figures.balance over the same accounts as the dashboard's
 # cards (an opening entry and a Period Closing Voucher left out), the rest is the bookings as they are.
 #
-#   kpis        this month to today: net, revenue, expenses; and the cash in the boxes now. Each compared with
-#               last month over the same days (the 1st to the same day; when last month is shorter, both stop at
-#               its last day, so the two periods have the same length); the cash with its balance at the end of
-#               that same day last month. The dates compared are sent with the figures.
+#   kpis        this month to today: net, revenue, expenses; and the cash in the boxes now (no comparison with
+#               last month: the owner, 2 Nov 2026).
 #   pipeline    this month's bookings, the halls and the studio apart, each tentative or completed; cancelled and
 #               no-shows apart.
 #   upcoming    the next bookings from today, a week ahead, not cancelled.
@@ -18,7 +16,7 @@
 # The owner's alone, as the day's figures (owner_yesterday.check_owner).
 
 import frappe
-from frappe.utils import add_days, add_months, flt, get_first_day, get_last_day, getdate, nowdate
+from frappe.utils import add_days, flt, get_first_day, get_last_day, getdate, nowdate
 
 from imed_erp.imederp.owner_figures import balance, company, leaf_accounts
 from imed_erp.imederp.owner_yesterday import check_owner
@@ -49,18 +47,12 @@ def overview(today=None):
 
 
 def periods(today=None):
-	"""This month to `today`, and the two periods of the same length compared: from the 1st of this month and of the
-	one before, to the same day (or both to the last day of the shorter month)."""
+	"""Today and its month."""
 	today = getdate(today or nowdate())
-	month_start = getdate(get_first_day(today))
-	previous_start = getdate(add_months(month_start, -1))
-	days = min((today - month_start).days + 1, (month_start - previous_start).days)
 	return frappe._dict(
 		today=today,
-		month_start=month_start,
+		month_start=getdate(get_first_day(today)),
 		month_end=getdate(get_last_day(today)),
-		current=(month_start, getdate(add_days(month_start, days - 1))),
-		previous=(previous_start, getdate(add_days(previous_start, days - 1))),
 	)
 
 
@@ -71,22 +63,9 @@ def profit_and_loss(from_date, to_date):
 
 
 def kpis(period):
-	month = profit_and_loss(period.month_start, period.today)
-	current = month if period.current[1] == period.today else profit_and_loss(*period.current)
-	previous = profit_and_loss(*period.previous)
-	boxes = leaf_accounts(account_type=["in", ["Cash", "Bank"]])
 	return {
-		"month": month,
-		"compare": {
-			"current": {"from": period.current[0], "to": period.current[1], **current},
-			"previous": {"from": period.previous[0], "to": period.previous[1], **previous},
-		},
-		"cash": {
-			"now": balance(boxes),
-			# The boxes at the end of the same day last month.
-			"previous": balance(boxes, to_date=period.previous[1]),
-			"previous_on": period.previous[1],
-		},
+		"month": profit_and_loss(period.month_start, period.today),
+		"cash": balance(leaf_accounts(account_type=["in", ["Cash", "Bank"]])),
 	}
 
 

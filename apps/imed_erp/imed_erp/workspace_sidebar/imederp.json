@@ -8,6 +8,7 @@
  "items": [
   {
    "collapsible": 1,
+   "icon": "home",
    "label": "Owner Dashboard",
    "link_to": "Owner Dashboard",
    "link_type": "Workspace",
@@ -15,6 +16,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "presentation",
    "indent": 1,
    "label": "IMED Hall Bookings",
    "link_type": "DocType",
@@ -56,6 +58,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "clapperboard",
    "indent": 1,
    "label": "Photo Studio Bookings",
    "link_type": "DocType",
@@ -106,6 +109,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "store",
    "indent": 1,
    "label": "Libraries",
    "link_type": "DocType",
@@ -138,6 +142,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "package",
    "indent": 1,
    "label": "Store and Stock",
    "link_type": "DocType",
@@ -202,6 +207,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "stethoscope",
    "indent": 1,
    "label": "Doctors and Books",
    "link_type": "DocType",
@@ -274,6 +280,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "graduation-cap",
    "indent": 1,
    "label": "BA+ Courses",
    "link_type": "DocType",
@@ -306,6 +313,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "wallet",
    "indent": 1,
    "label": "Accounts and Cash",
    "link_type": "DocType",
@@ -370,6 +378,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "chart-column",
    "indent": 1,
    "label": "Reports",
    "link_type": "DocType",
@@ -458,6 +467,7 @@
   },
   {
    "collapsible": 1,
+   "icon": "settings",
    "indent": 1,
    "label": "Settings",
    "link_type": "DocType",
