@@ -5,14 +5,14 @@
 # change.
 #
 #   scripts/run_tests.sh --app imed_erp
-#   scripts/run_tests.sh --module imed_erp.imederp.test_doctor_statement
+#   scripts/run_tests.sh --module imed_erp.imederp.tests.test_doctor_statement
 #   scripts/run_tests.sh --doctype "Book Edition"
 
 set -uo pipefail
 CONTAINER="${CONTAINER:-frappe_docker-backend-1}"
 SITE="${SITE:-frontend}"
 
-guard=$(docker exec "$CONTAINER" bench --site "$SITE" run-tests --module imed_erp.imederp.test_test_records 2>&1)
+guard=$(docker exec "$CONTAINER" bench --site "$SITE" run-tests --module imed_erp.imederp.tests.test_test_records 2>&1)
 if ! printf '%s\n' "$guard" | grep -q "^OK"; then
 	echo "GUARD FAILED: not running the tests"
 	printf '%s\n' "$guard" | tail -30

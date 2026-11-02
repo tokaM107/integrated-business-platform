@@ -159,6 +159,12 @@ def set_base(doc, lists, reprice):
 			doc.pricing_note = _("Package {0}: {1} hours x {2} ({3}).").format(doc.package, flt(hours, 2), money(doc.rate), doc.price_list)
 		return
 
+	if doc.resource_type == HALL and (reprice or doc.get("pricing_key", "").startswith("tier:") or not flt(doc.rate)):
+		tier = hall_tier(doc.resource, lists)
+		if tier:
+			doc.base_amount, doc.rate, doc.pricing_note = hall_tier_amount(tier, hours)
+			doc.price_list = tier.price_list
+			return
 	if not resource.item:
 		frappe.throw(
 			_("{0} has no price by the hour. Choose one of its packages.").format(doc.resource),
@@ -168,6 +174,48 @@ def set_base(doc, lists, reprice):
 		doc.rate, doc.price_list = price_of(resource.item, lists, today(), doc.resource)
 	doc.base_amount = flt(flt(doc.rate) * hours, 2)
 	doc.pricing_note = _("{0} hours x {1} ({2}).").format(flt(hours, 2), money(doc.rate), doc.price_list)
+
+
+def hall_tier(resource, lists):
+	"""The hall's price tier (Hall Price Tier) on the first of the customer's price lists that has one; None when the
+	hall is priced by the hour. Tiers are the center's price list of 1 Nov 2026: a first hour, a two-hour price, and a
+	rate per hour after the second."""
+	for price_list in lists:
+		name = frappe.db.get_value("Hall Price Tier", {"resource": resource, "price_list": price_list, "disabled": 0}, "name")
+		if name:
+			return frappe.get_cached_doc("Hall Price Tier", name)
+	return None
+
+
+def hall_tier_amount(tier, hours):
+	"""(amount, rate shown, note) of a hall booking of `hours` under `tier` (the owner's rule of 1 Nov 2026): time is
+	charged in proportion, never rounded up to the next hour. Up to two hours, the first-hour rate x the hours, but
+	never more than the two-hour price (the discounted tier: 1.9 h in a small hall is 350, not 380); exactly two hours
+	is the two-hour price; beyond two hours, the two-hour price plus the extra-hour rate x the time after the second
+	hour, by the minutes. 1.5 h at 800/1,600/600 = 1,200; 2.5 h = 1,900; 2.5 h at 200/350/125 = 412.50."""
+	hours = flt(hours)
+	if hours <= 0:
+		return 0, 0, ""
+	if hours < 2:
+		proportional = flt(flt(tier.first_hour_rate) * hours, 2)
+		amount = min(proportional, flt(tier.two_hour_rate, 2))
+		if amount < proportional:
+			note = _("{0} hours at {1} an hour would be {2}: the two-hour price {3} applies ({4}).").format(
+				flt(hours, 2), money(tier.first_hour_rate), money(proportional), money(amount), tier.price_list
+			)
+		else:
+			note = _("{0} hours x {1} ({2}).").format(flt(hours, 2), money(tier.first_hour_rate), tier.price_list)
+	elif hours == 2:
+		amount = flt(tier.two_hour_rate, 2)
+		note = _("Two hours: {0} ({1}).").format(money(amount), tier.price_list)
+	else:
+		extra = hours - 2  # unrounded: 2 h 20 min beyond the second hour x 600 = 1,400.00, not 1,399.98
+		amount = flt(flt(tier.two_hour_rate) + extra * flt(tier.extra_hour_rate), 2)
+		note = _("Two hours {0} + {1} hours x {2} ({3}).").format(
+			money(tier.two_hour_rate), flt(extra, 2), money(tier.extra_hour_rate), tier.price_list
+		)
+	# The rate kept on the booking is the effective price per hour, for the invoice line (amount / hours).
+	return amount, flt(amount / hours, 4), note
 
 
 def set_extras(doc, lists, reprice):
@@ -204,11 +252,17 @@ def exact_hours(doc):
 
 	from frappe.utils import get_time
 
+	from datetime import timedelta
+
+	from frappe.utils import cint, getdate
+
 	if not (doc.from_time and doc.to_time):
 		return flt(doc.hours)
-	day = datetime.min
-	seconds = (datetime.combine(day, get_time(doc.to_time)) - datetime.combine(day, get_time(doc.from_time))).total_seconds()
-	return seconds / 3600
+	# A booking across midnight (ends_next_day) ends on the next day; the length is the exact gap between the two.
+	day = getdate(doc.booking_date) if doc.get("booking_date") else datetime.min
+	starts = datetime.combine(day, get_time(doc.from_time))
+	ends = datetime.combine(day + timedelta(days=cint(doc.get("ends_next_day"))), get_time(doc.to_time))
+	return (ends - starts).total_seconds() / 3600
 
 
 def revenue_share(collected, percent):

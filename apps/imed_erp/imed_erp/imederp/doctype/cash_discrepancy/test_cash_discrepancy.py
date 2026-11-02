@@ -19,7 +19,7 @@ from imed_erp.imederp.doctype.treasury_close.test_treasury_close import (
 )
 from imed_erp.imederp.doctype.weekly_cash_reconciliation.test_weekly_cash_reconciliation import closed
 from imed_erp.imederp.report.cash_discrepancies.cash_discrepancies import execute as report
-from imed_erp.imederp.testing import fund_cash_boxes
+from imed_erp.imederp.tests.testing import fund_cash_boxes
 
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Account", "Cost Center", "Journal Entry", "User", "Treasury Close", "Cash Discrepancy", "Weekly Cash Reconciliation", "Customer"]
 

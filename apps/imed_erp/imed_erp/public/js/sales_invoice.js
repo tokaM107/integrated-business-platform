@@ -3,7 +3,7 @@
 
 /*
  * Sales Invoice — worked example of the screen design standard on a standard ERPNext doctype.
- * See docs/SCREEN_DESIGN_STANDARD.md. Attached via hooks.py `doctype_js`.
+ * See docs/standards/screen-design-standard.md. Attached via hooks.py `doctype_js`.
  *
  * UI-only: fields are hidden, never deleted. Nothing here touches the database, the schema, or any
  * accounting/validation behaviour (e.g. library income account, set server-side, is untouched).

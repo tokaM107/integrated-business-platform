@@ -2381,8 +2381,40 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 	}
 }
 
+/* Every figure on the owner's dashboard opens the list behind it (imed_owner_dashboard.js, 25 Oct 2026). */
+a.imed-yday-stat,
+a.imed-yday-stat:hover,
+.imed-yday-warn a,
+.imed-yday-system b a {
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+}
+a.imed-yday-stat:hover b,
+.imed-yday-warn a:hover,
+.imed-yday-system b a:hover {
+	text-decoration: underline;
+}
+a.imed-yday-stat:focus-visible,
+.imed-dash-card-link:focus-visible {
+	outline: 2px solid var(--primary, #1f6f5c);
+	outline-offset: 2px;
+}
+.imed-dash-card-link {
+	cursor: pointer;
+}
+.imed-dash-card-link:hover {
+	box-shadow: 0 0 0 2px var(--primary, #1f6f5c) inset;
+}
+
+/* §26 Audit of 1 Nov 2026: what is not recorded is said, never shown as zero. */
+.imed-yday-stat.is-untracked b,
+.imed-yday-untracked { font-size: 0.78rem; font-weight: 500; color: #8a6d1d; }
+.imed-dash-norecords { display: inline-block; margin-inline-start: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff4e0; color: #8a6d1d; font-size: 0.68rem; font-weight: 600; }
+.imed-yday-ledger-empty { margin: 0 0 0.75rem; }
+
 /* ------------------------------------------------------------------ */
-/* 26. Colour: the sidebar, the dashboard, lists and forms             */
+/* 27. Colour: the sidebar, the dashboard, lists and forms             */
 /* ------------------------------------------------------------------ */
 /* The owner's request of 1 Nov 2026: "why are there no colours, the sidebar is not coloured". Look only: no field,
    figure or permission changes. Comes last, so it refines the sections above.
@@ -2755,7 +2787,7 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	color: var(--tone-fg);
 	font-weight: 600;
 }
-.imed-yday-stat[class*="tone-"] b {
+.imed-yday-stat[class*="tone-"]:not(.is-untracked) b {
 	color: var(--tone-fg);
 	font-size: var(--text-xl);
 }

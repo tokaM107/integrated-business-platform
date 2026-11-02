@@ -592,3 +592,7 @@ html[dir="rtl"] .imed-assistant-send .icon {
 		animation: none !important;
 	}
 }
+
+/* Read-aloud button on an answer (1 Nov 2026). */
+.imed-assistant-speak { margin-inline-start: 0.4rem; border: 0; background: transparent; cursor: pointer; font-size: 0.9rem; opacity: 0.6; vertical-align: middle; }
+.imed-assistant-speak:hover { opacity: 1; }

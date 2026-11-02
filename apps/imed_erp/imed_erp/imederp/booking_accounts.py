@@ -248,6 +248,8 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 		return frappe.db.get_value("Payment Entry", {"custom_booking_request": request_id}, "name")
 	if doc.source == "Imported":
 		frappe.throw(_("{0} was imported: its payments are recorded in the booking system.").format(doc.name))
+	if doc.resource_type == "Hall" and doc.rental_model == "Not Billable":
+		frappe.throw(_("{0} is not billable: nothing is paid on it.").format(doc.name), title=_("Not Billable"))
 	if doc.status in ("Cancelled", "No Show"):
 		frappe.throw(_("{0} is {1}: it takes no payment.").format(doc.name, _(doc.status)))
 	amount = flt(amount, 2)
@@ -511,8 +513,18 @@ def make_revenue_share_entry(doc):
 
 def complete(doc):
 	"""Post a completed booking, once: a booking that already has its invoice (or entry) gets no second one, however
-	often it is saved as completed."""
+	often it is saved as completed.
+
+	An IMED hall booking is posted only from make_booking_invoice (27 Oct 2026): the requirements do not say that
+	completing a hall booking makes its invoice, so nothing is posted until someone who may write the booking asks
+	for it after checking the amounts (booking.py, on_update). Studio bookings keep the 20 Oct 2026 behaviour."""
 	if doc.source == "Imported" or doc.status != "Completed":
+		return
+	if doc.resource_type == "Hall" and not doc.flags.post_requested:
+		return
+	if doc.resource_type == "Hall" and doc.rental_model == "Not Billable":
+		# An internal use of the hall: no invoice, no entry; the course's or the app's own fees are posted elsewhere.
+		refresh_booking(doc.name)
 		return
 	frappe.db.get_value("Booking", doc.name, "name", for_update=True)
 	if (
@@ -536,5 +548,6 @@ def make_booking_invoice(booking):
 	check_own_business(doc.cost_center)
 	if doc.status != "Completed":
 		frappe.throw(_("{0} is not completed yet.").format(doc.name))
+	doc.flags.post_requested = True
 	complete(doc)
 	return frappe.db.get_value("Booking", doc.name, ["sales_invoice", "journal_entry"], as_dict=True)

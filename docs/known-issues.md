@@ -67,7 +67,7 @@ sections of this file. Each row says what it needs before it can be built.
 
 | # | Requirement | Gap | Risk | Needs |
 |---|---|---|---|---|
-| 7 | SEC-05 (Must) | Script ready on 20 Oct (`scripts/backup_offsite.sh`, docs/production-hardening.md): a nightly checked backup with files, copied out of the container and, with an rclone remote, off the server. Not scheduled yet, and no remote chosen. | Until the remote is set, a failed server loses the data. | Where the copy goes (cloud drive or a disk at the office), with the hosting decision. Owner. Then cron it and restore one backup once. |
+| 7 | SEC-05 (Must) | Script ready on 20 Oct (`scripts/backup_offsite.sh`, docs/deployment/production-hardening.md): a nightly checked backup with files, copied out of the container and, with an rclone remote, off the server. Not scheduled yet, and no remote chosen. | Until the remote is set, a failed server loses the data. | Where the copy goes (cloud drive or a disk at the office), with the hosting decision. Owner. Then cron it and restore one backup once. |
 | 8 | HR-01, HR-02, HR-04, HR-06 (Must); HR-03, HR-05 (Should) | HR is not built and HRMS (Frappe's HR app) is not installed: no payroll, attendance or salary split between businesses. Salaries are recorded as expenses. | The owner may expect payroll from the Must list. | Confirm HR is after go-live, and when HRMS is installed (an install and migrate on a live site). Owner. |
 | 9 | LIB-07 (Must) | Done on 24 Oct: `feature/buying` merged: the supplier group, payment terms, one purchase invoice that updates stock, the purchase screen, shipping in the paper's cost, the payables reports (`setup_buying.py`, `test_buying.py`). Suppliers are paid by the accountant or the owner only (owner, 12 Oct). | Run `setup_buying.py` on each site. | |
 | 10 | Owner's dashboard (5.1) | Done on 22 Oct: yesterday's revenue, expenses and net by business, paper and counters, halls and studio, platform fees and the integrations, on the owner's dashboard, the owner's alone (README, *Owner Dashboard: yesterday*). The cards (merged 24 Oct): the money from the ledger (cash in the boxes, revenue, expenses and net this month, owed to us, we owe), and, after audit QA-06, what is counted over time is this month to today, never all time, future or tentative bookings: platform fees and collected from doctors, studio and hall bookings and hours, unpaid on bookings, cash shortages and open discrepancies; revenue by business from the ledger's income accounts. | | |
@@ -76,7 +76,7 @@ sections of this file. Each row says what it needs before it can be built.
 
 | # | Requirement | Gap | Needs |
 |---|---|---|---|
-| 11 | HAL-12 (Must), open question 1 | Done on 20 Oct: each hall booking names its model (Fixed Rent or Revenue Share); a revenue-share booking posts what was collected, the center's share to إيراد القاعات and the lecturer's to مستحقات للمحاضرين. The share % is agreed per booking until the owner sets one (bookings question 11). | |
+| 11 | HAL-12 (Must), open question 1 | Done on 20 Oct: each hall booking names its model (Fixed Rent or Revenue Share); a revenue-share booking posts what was collected, the center's share to إيراد القاعات and the lecturer's to مستحقات للمحاضرين. The share % is agreed per booking until the owner sets one (bookings question 11). **27 Oct 2026**: a hall booking no longer posts by itself on Completed (the requirements do not say it should); the invoice or the revenue-share entry is posted by the explicit button after the amounts are checked. | Owner: confirm explicit posting for halls, or ask for automatic posting back. |
 | 12 | HAL-08 (Must) | Done on 20 Oct: attendees, admission price, expected revenue and what was collected, on a revenue-share hall booking. | Nour: the attendees and admission price of a fixed-rent booking are not recorded (no use found for them there). |
 | 13 | HAL-06 (Must), STU-15 (Should) | HAL-06 done on 21 Oct: **Hall Bookings**. The studio has no fixed opening hours (owner, 22 Oct 2026), so occupancy against hours open does not apply; prepaid hour packages are built (Studio Hour Package). | A studio report of hours booked and package hours used, if wanted. Owner. |
 | 14 | HAL-10, STU-02 (Must) | Done on 19 Oct: the bookings calendar, by day and by week (Bookings > Calendar, `booking_calendar.js`). Frappe's calendar view, with each booking's start and end made from its date and times on the server (`booking.get_events`). | |
@@ -90,7 +90,7 @@ sections of this file. Each row says what it needs before it can be built.
 | 17 | INT-04, STU-06 (Must) | The booking import is written but nothing runs it (no job, no upload). | The file and its schedule (INT-02). |
 | 18 | INT-07 (Must) | Partly done on 22 Oct: *Integration Import Log* keeps each run and its failed and changed rows; the BA Plus import writes it. Not yet: the booking import writing it, an alert on a failed run, re-importing a period. | The alert's recipients; the booking import's runner. |
 | 19 | INT-09, RPT-12 (Must) | Done for BA Plus on 22 Oct: *Integration Status* shows each system's last good import, its counts and the last run, and imports a period again from the kept files; the libraries and the booking system show *not connected* until their imports write logs. The owner's dashboard's yesterday band shows file imports (Data Import), the app's daily jobs, the assistant and e-mail, with last success and failures; it does not read Integration Import Log yet. | Their imports; the band reading Integration Import Log. |
-| 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (IMPORT_DATA_STANDARD.md). |
+| 20 | INT-06, INT-14 | Bookings, app courses and app subscriptions have a source and a unique source id; sales and stock not yet. | With the libraries' import (import-data-standard.md). |
 | 21 | INT-11 (Must) | Store and forward is not addressed. With a daily file, a failed day is imported again from the same file. | Write it down when the import is built. |
 | 22 | INT-08 | Only opening stock has an import plan; customers, doctors' balances, past bookings and app history have none. | Open question 25. |
 | 23 | APP-09 (Must), open question 5 | The app's student count is not reconciled with an approved billing count; who approves the count (the doctor, before his statement?) is not answered. | Owner. |
@@ -110,12 +110,12 @@ sections of this file. Each row says what it needs before it can be built.
 
 ## Open questions: BA Plus import (INT-05, APP-13), 22 Oct 2026
 
-Built on synthetic rows (`imederp/test_app_import.py`); nothing has been imported on the site. Before the first real
+Built on synthetic rows (`imederp/tests/test_app_import.py`); nothing has been imported on the site. Before the first real
 file, from the BA Plus team:
 
 | # | Question | Until decided | Ask |
 |---|---|---|---|
-| 1 | **A real export**: the columns, the date format, and whether subscription and course ids are stable and unique. | The columns of IMPORT_DATA_STANDARD.md part 3. | BA Plus team |
+| 1 | **A real export**: the columns, the date format, and whether subscription and course ids are stable and unique. | The columns of import-data-standard.md part 3. | BA Plus team |
 | 2 | **Each doctor's id in BA Plus**, written on his app agreement (BA Plus Doctor ID). | A row whose doctor has no agreement with that id fails. | BA Plus team / Accountant |
 | 3 | **A cancelled subscription or a withdrawn student**: how does the file show it? (INT question 6) | Not read: a row that disappears from the file changes nothing here; a known one that changed is listed. | BA Plus team, owner (COUNT_WITHDRAWN) |
 | 4 | **The day's rows or the whole term** each time? | Either works: known ids are skipped. | BA Plus team |
@@ -168,9 +168,9 @@ question 1 is answered. Nothing here makes a Doctor Ledger Entry.
 | 1 | **Platform fees in the doctor's ledger.** Decided 19 Oct 2026: posted automatically with every student (platform_fee_posting.py), so Doctor Debts shows them. | Done. | |
 | 2 | **Payouts by library.** RPT-08 asks for receivables by library. A payout made for the agreement as a whole has no library, so the libraries' rows do not each show what is still owed to them. Should a payout name its library? | Shown as *Not by branch*; the agreement's row is the balance. | Accountant / Taqa |
 | 3 | **Who sees the reports.** RPT-08 and RPT-10 are Super Admin reports. | The owner and the accountant (Accounts Manager, who may open the doctor's ledger). | Owner |
-| 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/IMPORT_DATA_STANDARD.md). | Libraries / app / studio teams |
-| 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/OPENING_STOCK.md). | Libraries / Accountant / Owner |
-| 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/DOCTOR_STATEMENT_RECONCILIATION.md). | Accountant |
+| 4 | **Each system's identifiers, access and cancellations** (requirements questions 27, 28; INT questions 2, 6). | No import built; the data standard and the proposed source-ID fields wait for the answers (docs/integrations/import-data-standard.md). | Libraries / app / studio teams |
+| 5 | **Opening stock inputs**: the physical count, the approved cost of each item and who approves it, the full catalogue, the go-live date, and whether the test stock is cleared first. | Template and check ready; no opening made (docs/finance/opening-stock.md). | Libraries / Accountant / Owner |
+| 6 | **Two real doctor statements** to check by hand. | Template ready, empty (docs/finance/doctor-statement-reconciliation.md). | Accountant |
 
 ## Open questions: platform fees (APP-02, APP-03)
 
@@ -188,13 +188,13 @@ The two counting rules are constants at the top of `imederp/doctype/app_course/a
 |---|---|---|---|
 | 1 | **Halls and the studio share rooms**: 4 of the 8 halls are also the studio part of the time (allocation rule notes). Does a studio booking in a room block a hall booking of the same room, and the other way round? | Each resource is checked on its own; no sharing between resources. | Owner / Nour / Gilan |
 | 2 | **Studio services and the studio's rooms**: can two services (e.g. smart board and podcast) be booked at the same time, or do they use the same room? | Each service is checked on its own. | Gilan |
-| 3 | **Halls have no deposit** (HAL question 2), but STU-08's "Confirmed" is "confirmed with a deposit". How is a hall booking confirmed? | The STU-08 statuses apply to halls too; a hall takes no deposit (refused), so it stays Tentative until Completed, and is paid against its invoice. | Owner / Nour |
-| 4 | **The halls' data**: names, capacities, equipment and prices are blank in the requirements (HAL-01). | No resource made; entered by the owner or the accountant. | Nour |
+| 3 | **Halls have no deposit** (HAL question 2), but STU-08's "Confirmed" is "confirmed with a deposit". How is a hall booking confirmed? | Since 26 Oct: the halls' staff press *Confirm Booking* (status **Confirmed**, no deposit); the studio keeps *Confirmed with Deposit*. | — |
+| 4 | **The halls' data**: the requirements name seven halls (قاعة 1, 3, 4, 5, 6, 7, 8) and leave capacity, equipment and price blank (HAL-01, question 15). The same numbers are XStudio's room ids (X Studio — Hall 1, 3, 4, 5, 6, 8): are they the same rooms? | No hall resource exists. `setup_halls.py` seeds the seven names once each hall's capacity is given; nothing is written before. | Nour: the capacities (and equipment, prices). Owner: whether the halls are the studio's rooms (question 1 above). |
 | 5 | **The booking's total** (STU-05, HAL-03, HAL-12): priced since 20 Oct from the price lists (README, *Price and money*). Is a price ever agreed per booking (a discount, a special rent)? | Not possible: the price is the price list's; a different one is a price for the customer's category, or for the customer, in the price list (the owner's). | Owner |
 | 6 | **The booking's revenue: when** (ACC-05 says when collected; the owner said when the booking is completed). | The invoice is made when the booking is completed (revenue then); deposits before it are the customer's advances, not revenue. | Accountant |
 | 7 | **Status changes**: may a Completed, No Show or Cancelled booking be changed back? | Allowed, with the same checks as a new booking (a cancelled one taken back must not overlap); every change is in the history. | Owner |
 | 8 | **The booking system's import** (STU-11, STU-09, STU-10): its access, its status names, how changes and cancellations are taken over, and whether a customer not found is created. | Import ready for rows in this system's statuses; changes listed, never overwritten; an unknown customer fails the row. | Studio booking team |
-| 9 | **Bookings past midnight.** | Not possible: a booking ends on its own day. | Nour / Gilan |
+| 9 | **Bookings past midnight.** | Since 26 Oct: an end earlier than the start is the next day (Ends After Midnight). | — |
 | 10 | **Same resource, same moment, no overlap**: the second save is asked to save again (the protection against overlaps, see README). | Accepted: it happens only when two people save the same resource within the same second. | — |
 | 11 | **The lecturer's share %** in the revenue-share model (requirements question 33). | Typed on each booking; the booking is not completed without it. One rate for all, or per lecturer, is a field to add once decided. | Owner / Nour |
 | 12 | **Hall prices and categories** (HAL-01, HAL-03, question 15): each hall's price per hour, and which customer categories pay differently (students, doctors...). | No hall is priced: a hall booking is refused until its item has a price. A category's price is its customer group's price list. | Nour / Owner |
@@ -255,7 +255,7 @@ Still open from the audit (updated 21 Oct 2026):
     The money is the doctor's (APP-05): held in مقبوضات الطلبة لحساب الأطباء — التطبيق. **Open (accountant and owner):**
     how it reaches the doctor: paid out, or set against his platform fees; until then it is held and listed (App
     Payments report).
-  - Opening cash on production: counted, signed and entered before the first sale (docs/production-hardening.md,
+  - Opening cash on production: counted, signed and entered before the first sale (docs/deployment/production-hardening.md,
     section 7); Mawasah's -936.50 on the development site came from the demo transactions of 18 Oct entered with no
     opening cash (two sales 1,800 + 605 in; a doctor payout 400, an expense 450 and two transfers 1,500 + 1,000
     out; a scrap payment 8.50 in). Those transactions were erased on 21 Oct at the owner's request (below).
@@ -284,4 +284,4 @@ Still open from the audit (updated 21 Oct 2026):
   above. BA Plus imports have their entry point (app_payment.import_payment, once per BA Plus id) but no connection.
 - **Scheduler.** Off on the development site (turning it on would add drafts and entries to the demo data); tested on
   the copy site: the daily jobs are idempotent (a bill due today makes one draft; a second run makes none).
-- **Production (SEC-04..06)**: the settings and steps are in docs/production-hardening.md; nothing is deployed.
+- **Production (SEC-04..06)**: the settings and steps are in docs/deployment/production-hardening.md; nothing is deployed.

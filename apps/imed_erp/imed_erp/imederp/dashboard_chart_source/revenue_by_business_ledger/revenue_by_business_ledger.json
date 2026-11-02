@@ -6,8 +6,8 @@
  "modified": "2026-10-20 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
- "name": "Revenue by Business (Ledger)",
+ "name": "Revenue by Business Ledger",
  "owner": "Administrator",
- "source_name": "Revenue by Business (Ledger)",
+ "source_name": "Revenue by Business Ledger",
  "timeseries": 0
 }

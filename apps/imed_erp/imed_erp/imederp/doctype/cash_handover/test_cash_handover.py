@@ -13,7 +13,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, flt, today
 
 from imed_erp.imederp.doctype.cash_handover.cash_handover import cancel_handover, confirm_receipt
-from imed_erp.imederp.testing import fund_cash_boxes
+from imed_erp.imederp.tests.testing import fund_cash_boxes
 
 IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"Account", "Cash Handover", "Cost Center", "Journal Entry", "Treasury Close", "User", "Weekly Cash Reconciliation", "File",
