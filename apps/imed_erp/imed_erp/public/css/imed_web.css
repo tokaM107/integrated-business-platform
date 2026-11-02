@@ -88,9 +88,10 @@ body:has(#page-login) {
 	unicode-bidi: plaintext;
 }
 
+/* The fields' names in the brand's green (owner, 2 Nov 2026). */
 #page-login .form-label {
-	color: #48565f;
-	font-weight: 500;
+	color: var(--imed-teal-700);
+	font-weight: 600;
 }
 #page-login .form-control {
 	height: 40px;
@@ -103,8 +104,11 @@ body:has(#page-login) {
 	border-color: var(--imed-teal-500);
 	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
 }
+/* The field's icon in the middle of the field's height, whatever it is (on a phone Frappe makes it taller). */
 #page-login .field-icon {
-	top: 12px;
+	top: calc(50% - 8px) !important;
+	/* Frappe also moves it up by 8px. */
+	transform: none !important;
 }
 
 #page-login .btn-login {
@@ -157,8 +161,15 @@ body:has(#page-login) {
 }
 
 @media (max-width: 480px) {
+	/* The card in the middle of the phone's screen, not stuck to its top (owner, 2 Nov 2026); on a short
+	   screen it still starts 24px down and the page scrolls. */
 	#page-login .page-content-wrapper {
-		padding-top: 24px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		min-height: 100vh;
+		min-height: 100svh;
+		padding-block: 24px;
 	}
 	#page-login .login-content.page-card {
 		/* The page container already pads 24px on each side. */
