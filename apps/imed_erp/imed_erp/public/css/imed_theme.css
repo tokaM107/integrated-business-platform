@@ -2623,7 +2623,7 @@ a.imed-yday-stat:focus-visible,
 .body-sidebar .standard-sidebar-item .sidebar-item-label,
 .body-sidebar .standard-sidebar-item .item-anchor {
 	color: var(--sb-text);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 600;
 }
 /* Frappe draws these icons in currentColor and gives the svg itself a gray class: the colour goes on the svg. */
@@ -2670,7 +2670,7 @@ a.imed-yday-stat:focus-visible,
 }
 .body-sidebar .sidebar-child-item .sidebar-item-label {
 	color: rgba(255, 255, 255, 0.82);
-	font-size: 12px;
+	font-size: 12.5px;
 	font-weight: 500;
 }
 /* An open group: its links on a slightly lighter band. */
