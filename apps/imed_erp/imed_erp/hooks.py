@@ -57,6 +57,8 @@ app_include_js = [
 	# The Owner Dashboard's welcome band, card icons and colours.
 	asset("js/imed_owner_dashboard.js"),
 	asset("js/imed_theme_toggle.js"),
+	# "Log out" at the bottom of the sidebar.
+	asset("js/imed_sidebar.js"),
 	# Fixes to Frappe's desk seen in the browser (a broken icon in the sidebar menu).
 	asset("js/imed_desk_fixes.js"),
 ]
