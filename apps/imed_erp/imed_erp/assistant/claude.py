@@ -48,7 +48,7 @@ class ClaudeProvider(AssistantProvider):
 	def reply(self, messages, context):
 		from imed_erp.assistant import agent
 
-		return agent.run(messages[-1]["content"], context, self.complete)
+		return agent.run(messages[-1]["content"], context, self.complete, chat=context.get("chat"))
 
 	def reply_react(self, messages, context):
 		"""The earlier tool-calling loop (one model call per read); kept for comparison, not used."""

@@ -160,19 +160,28 @@ def parse_plan(text):
 	return steps, bool(plan.get("may_need_more")), (plan.get("answer_without_reading") or "").strip()
 
 
-def run(question, context, complete, history=None):
-	"""Plan, read, answer. `complete(system, prompt, json_schema=None)` is the provider's one model call."""
+def run(question, context, complete, history=None, chat=None):
+	"""Plan, read, answer. `complete(system, prompt, json_schema=None)` is the provider's one model call. With a
+	saved chat (chats.py) the memory is the chat's: its summary of the older turns and the last messages as said;
+	without one, the short cache memory of this user."""
 	user = context.get("user")
-	memory = recall(user)
+	if chat:
+		from imed_erp.assistant import chats
+
+		chats.fold(chat, complete)  # the older turns into the summary, when enough of them have left the window
+		memo = chats.memory_text(chat)
+	else:
+		memo = memory_text(recall(user))
 	header = f"[{user_context_line(context)}]"
-	plan_prompt = f"{header}\n\nTools:\n{catalogue()}\n\nMemory of this user's last turns:\n{memory_text(memory)}\n\nQuestion: {question}"
+	plan_prompt = f"{header}\n\nTools:\n{catalogue()}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}"
 	steps, may_need_more, direct = parse_plan(complete(PLANNER, plan_prompt, PLAN_SCHEMA))
 	if direct and not steps:
-		remember(user, question, direct, "")
+		if not chat:
+			remember(user, question, direct, "")
 		return direct
 
 	results = execute(steps)
-	answer_prompt = f"{header}\n\nMemory of this user's last turns:\n{memory_text(memory)}\n\nQuestion: {question}\n\nResults of the reads:\n{results_text(results)}"
+	answer_prompt = f"{header}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}\n\nResults of the reads:\n{results_text(results)}"
 	if may_need_more:
 		answer_prompt += '\n\nIf one more read is needed to answer, reply with exactly: NEED {"tool": ..., "arguments": {...}} and nothing else.'
 	answer = complete(SYNTHESIZER, answer_prompt).strip()
@@ -182,8 +191,12 @@ def run(question, context, complete, history=None):
 			results += execute([more])
 		except ValueError:
 			pass
-		answer_prompt = f"{header}\n\nMemory of this user's last turns:\n{memory_text(memory)}\n\nQuestion: {question}\n\nResults of the reads:\n{results_text(results)}"
+		answer_prompt = f"{header}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}\n\nResults of the reads:\n{results_text(results)}"
 		answer = complete(SYNTHESIZER, answer_prompt).strip()
 	facts = "; ".join(f"{r['tool']}: {r['result'][:200]}" for r in results)
-	remember(user, question, answer, facts)
-	return answer or _("I found nothing to say; try asking in another way.")
+	answer = answer or _("I found nothing to say; try asking in another way.")
+	if chat:
+		context["facts"] = facts  # the API saves the turn with its facts
+	else:
+		remember(user, question, answer, facts)
+	return answer

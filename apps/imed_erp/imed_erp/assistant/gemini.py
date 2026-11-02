@@ -91,7 +91,7 @@ class GeminiProvider(AssistantProvider):
 		from imed_erp.assistant import agent
 
 		try:
-			return agent.run(messages[-1]["content"], context, self.complete)
+			return agent.run(messages[-1]["content"], context, self.complete, chat=context.get("chat"))
 		except QuotaExceeded:
 			return _("The model's quota for this key is used up for now (Google's limit). Try again in a minute, or raise the key's quota in Google AI Studio.")
 		except ModelOverloaded:

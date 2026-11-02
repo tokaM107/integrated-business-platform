@@ -167,3 +167,87 @@ class IntegrationTestAssistantAgent(IntegrationTestCase):
 		for name, args in (("count_records", {"doctype": "User", "filters": []}), ("run_report", {"report": "General Ledger", "filters": {}}), ("no_such_tool", {}), ("account_balance", {"account": "no such account", "date": ""})):
 			text, is_error = tools.run_tool(name, args)
 			self.assertTrue(is_error, name)
+
+
+class IntegrationTestAssistantChats(IntegrationTestCase):
+	"""Saved chats (assistant/chats.py; owner's wish of 2 Nov 2026): a chat belongs to its user, the model sees the
+	last five messages as said and a folded summary of the rest, and every turn is stored with its facts."""
+
+	def setUp(self):
+		frappe.set_user("Administrator")
+		frappe.db.savepoint("assistant_chats")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="assistant_chats")
+
+	def test_a_chat_belongs_to_its_user(self):
+		from imed_erp.assistant import chats
+
+		frappe.set_user("owner@imed.local")
+		name = chats.new_chat()
+		self.assertEqual([c.name for c in chats.list_chats()], [name])
+		chats.append(name, "user", "إيه رصيد الخزنة؟")
+		self.assertEqual(frappe.db.get_value("Assistant Chat", name, "title"), "إيه رصيد الخزنة؟")
+		frappe.set_user("toqamo031@gmail.com")
+		self.assertEqual(chats.list_chats(), [])
+		self.assertRaises(frappe.PermissionError, chats.messages, name)
+		self.assertRaises(frappe.PermissionError, chats.append, name, "user", "x")
+		frappe.set_user("owner@imed.local")
+		chats.rename_chat(name, "الخزن")
+		chats.delete_chat(name)
+		self.assertFalse(frappe.db.exists("Assistant Chat", name))
+		self.assertEqual(frappe.db.count("Assistant Message", {"chat": name}), 0)
+
+	def test_the_model_sees_five_messages_as_said_and_a_summary_of_the_rest(self):
+		from imed_erp.assistant import chats
+
+		name = chats.new_chat()
+		for i in range(1, 13):  # 12 messages: 6 turns
+			chats.append(name, "user" if i % 2 else "assistant", f"m{i}")
+		mem = chats.memory(name)
+		self.assertEqual([r.content for r in mem["window"]], ["m8", "m9", "m10", "m11", "m12"])
+		self.assertEqual(len(mem["unsummarized"]), 7)  # m1..m7 left the window and are not folded yet
+		calls = []
+
+		def complete(system, prompt, json_schema=None):
+			calls.append(prompt)
+			return "The user asked m1 to m7; the answers were m2, m4, m6."
+
+		self.assertTrue(chats.fold(name, complete))
+		self.assertEqual(len(calls), 1)
+		self.assertIn("m7", calls[0]); self.assertNotIn("m8", calls[0])
+		mem = chats.memory(name)
+		self.assertEqual(mem["summarized_upto"], 7)
+		self.assertEqual(mem["unsummarized"], [])
+		self.assertIn("m1 to m7", mem["summary"])
+		# One more turn: nothing to fold yet (fewer than FOLD_EVERY beyond the window); no model call.
+		chats.append(name, "user", "m13"); chats.append(name, "assistant", "m14")
+		self.assertFalse(chats.fold(name, complete))
+		self.assertEqual(len(calls), 1)
+		text = chats.memory_text(name)
+		self.assertIn("Summary of the earlier conversation", text); self.assertIn("m14", text); self.assertNotIn("user: m3", text)
+
+	def test_send_message_in_a_chat_stores_both_turns_with_the_facts(self):
+		from imed_erp.assistant import api, chats
+		from imed_erp.assistant.providers import AssistantProvider
+
+		class Fake(AssistantProvider):
+			name, connected = "fake", True
+
+			def reply(self, messages, context):
+				from imed_erp.assistant import agent
+
+				plan = {"steps": [{"tool": "count_records", "arguments": json.dumps({"doctype": "Booking", "filters": []})}], "may_need_more": False, "answer_without_reading": ""}
+				queue = [json.dumps(plan), "فيه حجوزات."]
+				return agent.run(messages[-1]["content"], context, lambda s, p, j=None: queue.pop(0), chat=context.get("chat"))
+
+		name = chats.new_chat()
+		with patch("imed_erp.assistant.api.get_provider", return_value=Fake()):
+			r = api.send_message(chat=name, text="كام حجز؟")
+		self.assertEqual((r["reply"], r["chat"]), ("فيه حجوزات.", name))
+		rows = chats.messages(name)
+		self.assertEqual([(m.role, m.content) for m in rows], [("user", "كام حجز؟"), ("assistant", "فيه حجوزات.")])
+		self.assertIn("count_records", rows[1].facts)
+		self.assertEqual(frappe.db.get_value("Assistant Chat", name, "message_count"), 2)
+		self.assertEqual(api.get_chat(name)["messages"][1]["content"], "فيه حجوزات.")

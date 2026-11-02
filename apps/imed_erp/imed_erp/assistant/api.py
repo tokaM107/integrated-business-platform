@@ -85,19 +85,73 @@ def decode_audio(audio: str, audio_type: str) -> bytes:
 	return data
 
 
+# ---------------- saved chats (owner's wish of 2 Nov 2026) ----------------
+
+
+@frappe.whitelist()
+def list_chats():
+	check_access()
+	from imed_erp.assistant import chats
+
+	return chats.list_chats()
+
+
+@frappe.whitelist(methods=["POST"])
+def new_chat(title=None):
+	check_access()
+	from imed_erp.assistant import chats
+
+	return chats.new_chat(title)
+
+
+@frappe.whitelist()
+def get_chat(chat):
+	check_access()
+	from imed_erp.assistant import chats
+
+	doc = chats.own(chat)
+	return {"name": doc.name, "title": doc.title, "messages": [{"role": m.role, "content": m.content} for m in chats.messages(chat)]}
+
+
+@frappe.whitelist(methods=["POST"])
+def rename_chat(chat, title):
+	check_access()
+	from imed_erp.assistant import chats
+
+	return chats.rename_chat(chat, title)
+
+
+@frappe.whitelist(methods=["POST"])
+def delete_chat(chat):
+	check_access()
+	from imed_erp.assistant import chats
+
+	chats.delete_chat(chat)
+	return True
+
+
 @frappe.whitelist(methods=["POST"])
 # SEC-11: each message may reach a paid model; a script calling in a loop is stopped (per address, per minute).
 @rate_limit(limit=MESSAGES_PER_MINUTE, seconds=60)
-def send_message(messages=None, audio=None, audio_type=None):
-	"""Answer the last user message. With `audio` (base64) the last user turn is a voice message: it is
-	transcribed first, if the provider can, and the transcript becomes that turn's text.
+def send_message(messages=None, audio=None, audio_type=None, chat=None, text=None):
+	"""Answer the user's message. In a saved chat (`chat` + `text`): the turn is stored, the chat's memory (summary +
+	last messages) is the context, and the answer is stored with the facts it was built on. Without a chat the
+	browser sends the whole conversation (`messages`), as before. With `audio` (base64) the user turn is a voice
+	message: transcribed first, if the provider can, and the transcript becomes that turn's text.
 
-	Returns {"reply": str, "transcript": str | None}.
+	Returns {"reply": str, "transcript": str | None, "chat": str | None}.
 	"""
 	check_access()
 	provider = get_provider()
 	context = user_context()
-	conversation = clean_messages(messages)
+	if chat:
+		from imed_erp.assistant import chats
+
+		chats.own(chat)
+		context["chat"] = chat
+		conversation = [{"role": "user", "content": (text or "").strip()[:MAX_MESSAGE_CHARS]}] if text else []
+	else:
+		conversation = clean_messages(messages)
 
 	transcript = None
 	if audio:
@@ -111,6 +165,8 @@ def send_message(messages=None, audio=None, audio_type=None):
 	if not conversation or conversation[-1]["role"] != "user":
 		frappe.throw(_("Write a message first."))
 
+	if chat:
+		chats.append(chat, "user", conversation[-1]["content"])
 	try:
 		reply = provider.reply(conversation, context)
 	except Exception:
@@ -120,4 +176,6 @@ def send_message(messages=None, audio=None, audio_type=None):
 			if context["lang"].startswith("ar")
 			else "Something went wrong while preparing the answer. Please try again shortly."
 		)
-	return {"reply": reply, "transcript": transcript}
+	if chat:
+		chats.append(chat, "assistant", reply, context.get("facts", ""))
+	return {"reply": reply, "transcript": transcript, "chat": chat}

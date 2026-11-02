@@ -10,8 +10,13 @@ How it answers (`assistant/agent.py`; the owner's choice of 1 Nov 2026 over a to
 tokens): **Planner → Executor → Synthesizer with a short memory.** The planner (one model call, JSON out) lists the
 reads that answer the question; the executor (no model) runs them as the asking user and compacts the results; the
 synthesizer (one model call) writes the answer from those results. One re-plan at most. So a question costs two
-model calls, three at most, and a greeting one. The short memory keeps this user's last four turns (question, answer,
-the facts read) in the site's cache for 30 minutes, so a follow-up like "وفي المواساة؟" is understood.
+model calls, three at most, and a greeting one. Conversations are **saved chats** (2 Nov 2026, like ChatGPT): a
+list of the user's chats, a new chat any time, rename and delete; each chat belongs to its user alone. The memory the
+model sees for a chat is the **last five messages as they were said** plus a **running summary of everything older**
+(folded by one small model call once four or more messages have left the window, never per message), and the facts
+behind the last answers, so "وفي المواساة؟" or "وأكبرهم كام؟" is understood without resending the whole chat.
+DocTypes: Assistant Chat (title, summary, counters) and Assistant Message (role, content, facts). Without a chat
+(an API call that sends the whole conversation) a 30-minute cache memory of the user's last four turns is used instead.
 
 The reads (`assistant/tools.py`, shared by `assistant/gemini.py` and `assistant/claude.py`): the model gets five read tools and nothing else — the dashboard's
 figures, the ERP's reports (a fixed list), listing and counting records of a fixed list of DocTypes through
