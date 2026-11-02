@@ -977,6 +977,30 @@ class IntegrationTestOutstandingReceivables(OwnerReportsTestCase):
 		self.assertEqual(totals[frappe._("Total: {0}").format(rpt05.kind_label("Invoiced"))], 1000)
 		self.assertEqual(totals[frappe._("Total: {0}").format(rpt05.kind_label("Credit"))], -300)
 
+	def test_each_kind_shows_only_its_own_rows(self):
+		"""Audit of 2 Nov 2026: Kind = Invoiced listed an invoice's negative outstanding (a credit), and Kind =
+		Customer Credit listed the unpaid invoices."""
+		from erpnext.controllers.sales_and_purchase_return import make_return_doc
+
+		sale = self.invoice(HALLS, 1000, JAN_31)
+		credit = make_return_doc("Sales Invoice", sale.name)
+		credit.update({"set_posting_time": 1, "posting_date": FEB_01})
+		credit.items[0].qty = -1
+		credit.items[0].rate = 200
+		if not credit.meta.has_field("update_outstanding_for_self"):
+			self.skipTest("This ERPNext sets every return against its invoice.")
+		credit.update_outstanding_for_self = 1  # its own outstanding: a credit to the customer
+		credit.set(RETURN_REASON_FIELD, "Test")
+		credit.insert()
+		credit.submit()
+		self.assertLess(frappe.db.get_value("Sales Invoice", credit.name, "outstanding_amount"), 0)
+		self.assertIn(credit.name, self.by_reference())
+		invoiced, credits = set(self.by_reference(kind="Invoiced")), set(self.by_reference(kind="Credit"))
+		self.assertIn(sale.name, invoiced)
+		self.assertNotIn(credit.name, invoiced)
+		self.assertIn(credit.name, credits)
+		self.assertNotIn(sale.name, credits)
+
 	def test_a_status_filter_leaves_credits_out(self):
 		invoice = self.invoice(HALLS, 1000, JAN_31)
 		entry = self.advance(300, JAN_31)

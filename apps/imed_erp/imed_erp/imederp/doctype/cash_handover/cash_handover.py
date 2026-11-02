@@ -29,6 +29,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, get_datetime, now_datetime, today
 
+from imed_erp.imederp.roles import ACCOUNTANT, ACCOUNTS_ROLES
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import OWNER_ROLE
 from imed_erp.imederp.sales_cancellation import clean_reason
@@ -36,8 +37,7 @@ from imed_erp.imederp.treasuries import check_treasury
 
 CASH = "Cash"
 PENDING, RECEIVED, CANCELLED = "Pending Receipt", "Received", "Cancelled"
-ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
-RECEIVER_ROLE = {"Owner": OWNER_ROLE, "Accountant": "Accountant"}
+RECEIVER_ROLE = {"Owner": OWNER_ROLE, "Accountant": ACCOUNTANT}
 CUSTODY_FIELD = {"Owner": "owner_custody_account", "Accountant": "accountant_custody_account"}
 RECEIPT_TYPES = (".pdf", ".jpg", ".jpeg", ".png", ".webp", ".heic")
 
@@ -306,7 +306,9 @@ def keep_signed_receipt(doc, method=None):
 @frappe.whitelist()
 @frappe.validate_and_sanitize_search_inputs
 def receivers(doctype, txt, searchfield, start, page_len, filters):
-	"""For the Receiver field: the enabled users who are the owner, or the accountant."""
+	"""For the Receiver field: the enabled users who are the owner, or the accountant. Only to someone who may make a
+	hand-over (audit of 2 Nov 2026: any desk user could list them)."""
+	frappe.has_permission("Cash Handover", "create", throw=True)
 	role = RECEIVER_ROLE.get((filters or {}).get("receiver_kind"))
 	if not role:
 		return []

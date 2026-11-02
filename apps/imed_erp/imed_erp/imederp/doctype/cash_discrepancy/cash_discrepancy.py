@@ -29,10 +29,10 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
+from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import OWNER_ROLE, recovery_allowed
 from imed_erp.imederp.sales_cancellation import clean_reason
 
-ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
 CASH_DIFFERENCES = "فروقات الخزينة"
 OPEN = ("Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review")
 SETTLED = ("Recovery Approved", "Written Off", "Explained")
@@ -367,4 +367,7 @@ def surplus_counter_line(doc, company):
 
 @frappe.whitelist()
 def unresolved_count():
-	return frappe.db.count("Cash Discrepancy", {"status": ("in", OPEN)})
+	"""The open discrepancies the caller may read: through get_list, so the doctype's roles and a branch manager's
+	User Permissions apply (audit of 2 Nov 2026: db.count gave any logged-in user the whole group's count)."""
+	rows = frappe.get_list("Cash Discrepancy", filters={"status": ("in", OPEN)}, fields=[{"COUNT": "*", "as": "n"}])
+	return rows[0].n if rows else 0

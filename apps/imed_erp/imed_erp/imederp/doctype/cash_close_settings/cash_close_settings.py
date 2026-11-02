@@ -13,7 +13,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, now_datetime
 
-OWNER_ROLE = "Super Admin"
+from imed_erp.imederp.roles import OWNER as OWNER_ROLE
 
 
 class CashCloseSettings(Document):

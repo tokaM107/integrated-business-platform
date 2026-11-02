@@ -227,6 +227,12 @@ class IntegrationTestCashDiscrepancy(IntegrationTestCase):
 		doc = self.shortage(10)
 		self.assertRaises(frappe.ValidationError, frappe.delete_doc, "Cash Discrepancy", doc.name)
 		self.assertEqual(cd.unresolved_count(), frappe.db.count("Cash Discrepancy", {"status": ("in", cd.OPEN)}))
+		# Only to someone who may read the discrepancies (audit of 2 Nov 2026).
+		frappe.set_user("hr@imed.local")
+		try:
+			self.assertRaises(frappe.PermissionError, cd.unresolved_count)
+		finally:
+			frappe.set_user("Administrator")
 		rows = report({"view": "Discrepancies", "from_date": DAY1, "to_date": today(), "unresolved": 1})[1]
 		self.assertIn(doc.name, [r["name"] for r in rows])
 

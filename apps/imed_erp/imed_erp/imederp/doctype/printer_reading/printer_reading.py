@@ -3,13 +3,13 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, get_datetime, getdate
 
+from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.doctype.printing_machine.printing_machine import check_library
 
 # A machine's counter only goes up: each reading starts where the machine's last one ended (PRN-01, PRN-02).
 # Branch staff read the counters on the day's screen (Daily Counter Reading), which makes these readings; a reading
 # on its own, or a counter reset after a repair, is the owner's or the accountant's (QA-20, QA-21).
 
-ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
 
 
 class PrinterReading(Document):

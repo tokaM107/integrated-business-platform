@@ -111,6 +111,7 @@ class IntegrationTestOwnerDashboard(IntegrationTestCase):
 		from imed_erp.imederp import owner_figures
 
 		before = owner_figures.revenue_and_expenses()
+		before_dashboard = dashboard.revenue_this_month()["value"], dashboard.revenue_by_business(today(), today()).get(APP, 0)
 		base = {
 			"doctype": "GL Entry",
 			"company": COMPANY,
@@ -132,6 +133,17 @@ class IntegrationTestOwnerDashboard(IntegrationTestCase):
 		after = owner_figures.revenue_and_expenses()
 		self.assertEqual(after[0] - before[0], 250)
 		self.assertEqual(after[1] - before[1], 0)
+		# The dashboard's own ledger figures (month to date, by business) leave them out too: one rule, three readers.
+		self.assertEqual(dashboard.revenue_this_month()["value"] - before_dashboard[0], 250)
+		self.assertEqual(dashboard.revenue_by_business(today(), today()).get(APP, 0) - before_dashboard[1], 250)
+
+	def test_the_dashboard_reads_the_group_s_company_whatever_the_site_default(self):
+		from imed_erp.imederp import owner_figures
+
+		from unittest.mock import patch
+
+		with patch("frappe.defaults.get_global_default", return_value="_Test Company"):
+			self.assertEqual(dashboard.company(), owner_figures.COMPANY)
 
 	def test_the_stock_chart_holds_only_the_company_s_warehouses(self):
 		"""Audit of 1 Nov 2026: the owner's chart drew ERPNext's _Test companies' stock. The source goes by the

@@ -23,10 +23,10 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime
 
+from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.booking_rules import NOT_HELD, STUDIO_SERVICE
 from imed_erp.imederp.sales_cancellation import clean_reason
 
-ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
 ACTIVE, USED_UP, CANCELLED = "Active", "Used Up", "Cancelled"
 STUDIO = STUDIO_SERVICE
 PRECISION = 4

@@ -28,6 +28,7 @@ from frappe import _
 from frappe.utils import get_first_day, get_last_day, add_days, cint, flt, get_datetime, getdate, nowdate, now_datetime
 from frappe.utils.scheduler import is_scheduler_disabled
 
+from imed_erp.imederp.roles import OWNER as OWNER_ROLE
 from imed_erp.imederp.business_figures import (
 	NO_COST_CENTER,
 	activities,
@@ -41,7 +42,6 @@ from imed_erp.imederp.booking_rules import CANCELLED, COMPLETED, FIXED_RENT, HAL
 from imed_erp.imederp.booking_rules import OPEN as OPEN_STATUSES
 from imed_erp.imederp.booking_rules import STUDIO_SERVICE as STUDIO
 
-OWNER_ROLE = "Super Admin"
 PLATFORM_RECEIVABLE = "مستحقات على الأطباء — رسوم المنصة"
 # A daily job that has not run for this long is a warning.
 JOB_LATE_HOURS = 36
