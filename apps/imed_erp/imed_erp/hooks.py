@@ -7,22 +7,6 @@ app_description = "Custom app for Imed group"
 app_email = "academyimed11@gmail.com"
 app_license = "mit"
 
-# Apps
-# ------------------
-
-# required_apps = []
-
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "imed_erp",
-# 		"logo": "/assets/imed_erp/logo.png",
-# 		"title": "ImedERP",
-# 		"route": "/imed_erp",
-# 		"has_permission": "imed_erp.api.permission.has_app_permission"
-# 	}
-# ]
-
 # Includes in <head>
 # ------------------
 
@@ -78,13 +62,6 @@ website_context = {
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "imed_erp/public/scss/website"
 
-# include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
-# webform_include_css = {"doctype": "public/css/doctype.css"}
-
-# include js in page
-# page_js = {"page" : "public/js/file.js"}
-
 # include js in doctype views
 # Screen design standard applied to a standard ERPNext doctype (see docs/standards/screen-design-standard.md).
 doctype_js = {
@@ -98,113 +75,10 @@ doctype_js = {
 }
 # The point of sale (LIB-01): one-click buttons for the library services, added to ERPNext's own page.
 page_js = {"point-of-sale": "public/js/point_of_sale.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
-# doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
-# doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
-
-# Svg Icons
-# ------------------
-# include app icons in desk
-# app_include_icons = "imed_erp/public/icons.svg"
-
-# Home Pages
-# ----------
-
-# application home page (will override Website Settings)
-# home_page = "login"
-
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
-
-# Generators
-# ----------
-
-# automatically create page for each record of this doctype
-# website_generators = ["Web Page"]
-
-# automatically load and sync documents of this doctype from downstream apps
-# importable_doctypes = [doctype_1]
-
-# Jinja
-# ----------
-
-# add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "imed_erp.utils.jinja_methods",
-# 	"filters": "imed_erp.utils.jinja_filters"
-# }
-
-# Installation
-# ------------
-
-# before_install = "imed_erp.install.before_install"
-# after_install = "imed_erp.install.after_install"
-
-# Uninstallation
-# ------------
-
-# before_uninstall = "imed_erp.uninstall.before_uninstall"
-# after_uninstall = "imed_erp.uninstall.after_uninstall"
-
-# Integration Setup
-# ------------------
-# To set up dependencies/integrations with other apps
-# Name of the app being installed is passed as an argument
-
-# before_app_install = "imed_erp.utils.before_app_install"
-# after_app_install = "imed_erp.utils.after_app_install"
-
-# Integration Cleanup
-# -------------------
-# To clean up dependencies/integrations with other apps
-# Name of the app being uninstalled is passed as an argument
-
-# before_app_uninstall = "imed_erp.utils.before_app_uninstall"
-# after_app_uninstall = "imed_erp.utils.after_app_uninstall"
-
-# Build
-# ------------------
-# To hook into the build process
-
-# after_build = "imed_erp.build.after_build"
-
-# Desk Notifications
-# ------------------
-# See frappe.core.notifications.get_notification_config
-
-# notification_config = "imed_erp.notifications.get_notification_config"
-
-# Awesome Bar
-# -----------
-# Extra search results: list of dicts with label, description, route, index.
-# route: ["List", "ToDo"], "/desk/docs/some/page", or "https://example.com"
-# awesomebar_search = ["imed_erp.search.awesomebar_results"]
-
-# Permissions
-# -----------
-# Permissions evaluated in scripted ways
-
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
 
 # Document Events
 # ---------------
 # Hook on document methods and events
-
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
 
 # Every event of a doctype in one entry: two entries for the same doctype would replace each other.
 # on_trash: a submitted or cancelled financial document is never deleted (imederp/no_delete.py).
@@ -213,6 +87,21 @@ page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 # Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
 # branch's (imederp/stock_count.py).
+# The AI assistant's integrations (assistant/core/interfaces.py, BusinessIntegration): dotted paths to callables
+# `f(context) -> list[BusinessIntegration]`. This app registers its own; another app adds its own in its hooks.py.
+# The assistant's core never changes for a new business.
+assistant_businesses = ["imed_erp.assistant.businesses.imed.integrations"]
+
+# Saved assistant chats are their user's alone, in the desk and the REST API too, not only in the chat window.
+has_permission = {
+	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.has_permission",
+	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.has_permission",
+}
+permission_query_conditions = {
+	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.query_conditions",
+	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.query_conditions",
+}
+
 doc_events = {
 	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).
 	"*": {
@@ -312,6 +201,7 @@ doc_events = {
 		"validate": [
 			"imed_erp.imederp.treasuries.block_spending_without_approval",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.damaged_stock.guard_damaged_store",
 		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
@@ -345,6 +235,7 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Receipt": {
+		"validate": "imed_erp.imederp.damaged_stock.guard_damaged_store",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
 		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
@@ -506,7 +397,8 @@ period_closing_doctypes = [
 
 # The custom fields the app's code relies on: made when the app is installed (install-app does not run
 # after_migrate) and kept in step with the code on every migrate.
-after_install = [
+# (A name starting with "_" is not a hook: Frappe skips it.)
+_custom_fields = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
 	"imed_erp.imederp.booking_accounts.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
@@ -515,38 +407,18 @@ after_install = [
 	"imed_erp.imederp.edition_sales.make_custom_fields",
 	"imed_erp.imederp.xstudio.fields.make_custom_fields",
 ]
+after_install = [*_custom_fields]
 after_migrate = [
-	"imed_erp.imederp.material_issue.make_custom_fields",
-	"imed_erp.imederp.booking_accounts.make_custom_fields",
-	"imed_erp.imederp.damaged_stock.make_custom_fields",
-	"imed_erp.imederp.customers.make_custom_fields",
-	"imed_erp.imederp.sales_cancellation.make_custom_fields",
-	"imed_erp.imederp.edition_sales.make_custom_fields",
-	"imed_erp.imederp.xstudio.fields.make_custom_fields",
+	*_custom_fields,
 	# The home screen's tiles: what the group uses (imederp/home_screen.py).
 	"imed_erp.imederp.home_screen.tidy_home",
 ]
 
+# The booking screens' statuses and colours, from imederp/booking_rules.py.
+boot_session = "imed_erp.imederp.booking_rules.boot_session"
+
 # Scheduled Tasks
 # ---------------
-
-# scheduler_events = {
-# 	"all": [
-# 		"imed_erp.tasks.all"
-# 	],
-# 	"daily": [
-# 		"imed_erp.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"imed_erp.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"imed_erp.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"imed_erp.tasks.monthly"
-# 	],
-# }
 
 scheduler_events = {
 	"cron": {
@@ -560,93 +432,3 @@ scheduler_events = {
 		"imed_erp.imederp.doctor_accrual.run_daily",
 	],
 }
-
-# Testing
-# -------
-
-# before_tests = "imed_erp.install.before_tests"
-
-# Extend DocType Class
-# ------------------------------
-#
-# Specify custom mixins to extend the standard doctype controller.
-# extend_doctype_class = {
-# 	"Task": "imed_erp.custom.task.CustomTaskMixin"
-# }
-
-# Overriding Methods
-# ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "imed_erp.event.get_events"
-# }
-#
-# each overriding function accepts a `data` argument;
-# generated from the base implementation of the doctype dashboard,
-# along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "imed_erp.task.get_dashboard_data"
-# }
-
-# exempt linked doctypes from being automatically cancelled
-#
-# auto_cancel_exempted_doctypes = ["Auto Repeat"]
-
-# Ignore links to specified DocTypes when deleting documents
-# -----------------------------------------------------------
-
-# ignore_links_on_delete = ["Communication", "ToDo"]
-
-# Request Events
-# ----------------
-# before_request = ["imed_erp.utils.before_request"]
-# after_request = ["imed_erp.utils.after_request"]
-
-# Job Events
-# ----------
-# before_job = ["imed_erp.utils.before_job"]
-# after_job = ["imed_erp.utils.after_job"]
-
-# User Data Protection
-# --------------------
-
-# user_data_fields = [
-# 	{
-# 		"doctype": "{doctype_1}",
-# 		"filter_by": "{filter_by}",
-# 		"redact_fields": ["{field_1}", "{field_2}"],
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_2}",
-# 		"filter_by": "{filter_by}",
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_3}",
-# 		"strict": False,
-# 	},
-# 	{
-# 		"doctype": "{doctype_4}"
-# 	}
-# ]
-
-# Authentication and authorization
-# --------------------------------
-
-# auth_hooks = [
-# 	"imed_erp.auth.validate"
-# ]
-
-# Automatically update python controller files with type annotations for this app.
-# export_python_type_annotations = True
-
-# default_log_clearing_doctypes = {
-# 	"Logging DocType Name": 30  # days to retain logs
-# }
-
-# Translation
-# ------------
-# List of apps whose translatable strings should be excluded from this app's translations.
-# ignore_translatable_strings_from = []
-

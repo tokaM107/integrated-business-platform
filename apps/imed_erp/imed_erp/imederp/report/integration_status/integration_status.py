@@ -84,7 +84,7 @@ def get_data():
 	return rows
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def reimport_period(source_system, from_date, to_date):
 	"""Run again the files of `source_system` that came in from_date..to_date (by the day they were imported),
 	oldest first, each distinct file once. Returns the new logs. The owner and the accountant only, and the import
@@ -118,5 +118,14 @@ def reimport_period(source_system, from_date, to_date):
 			continue
 		done.add(log.file_hash)
 		new = importer(log.file_content.encode(), file_name=log.file_name)
+		# A run the database dropped (a deadlock) takes the whole transaction with it: the files run before it in
+		# this request are gone too. Say so and stop, rather than list them as imported (audit of 2 Nov 2026).
+		lost = [r for r in results if not frappe.db.exists("Integration Import Log", r["log"])]
+		if lost:
+			for r in lost:
+				r.update(status="Rolled Back", inserted=0, skipped=0, failed=0)
+			results.append({"from": log.name, "log": new.name, "status": new.status, "inserted": new.inserted, "skipped": new.skipped, "failed": new.failed})
+			frappe.msgprint(_("The database dropped the run of {0}; the files before it were not kept. Run the period again.").format(log.file_name or log.name))
+			return results
 		results.append({"from": log.name, "log": new.name, "status": new.status, "inserted": new.inserted, "skipped": new.skipped, "failed": new.failed})
 	return results

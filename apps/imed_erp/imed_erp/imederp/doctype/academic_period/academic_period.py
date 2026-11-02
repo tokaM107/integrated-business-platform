@@ -26,6 +26,8 @@ class AcademicPeriod(Document):
 		parent = frappe.db.get_value(
 			"Academic Period", self.parent_period, ["period_type", "start_date", "end_date"], as_dict=True
 		)
+		if not parent:
+			frappe.throw(_("Academic Period {0} was not found.").format(self.parent_period), frappe.DoesNotExistError)
 		if parent.period_type != expected:
 			frappe.throw(
 				_("A {0} must belong to a {1}, but {2} is a {3}.").format(

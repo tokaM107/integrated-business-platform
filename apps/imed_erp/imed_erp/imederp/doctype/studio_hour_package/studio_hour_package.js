@@ -12,14 +12,14 @@ frappe.ui.form.on("Studio Hour Package", {
 				frm.doc.hours_remaining > 0 ? "blue" : "orange"
 			);
 			frm.page.clear_secondary_action();
-			if (!frm.doc.sales_invoice) {
+			if (!frm.doc.sales_invoice && frm.doc.source !== "Imported") {
 				frm.add_custom_button(__("Make Invoice"), () =>
 					frappe
 						.call("imed_erp.imederp.doctype.studio_hour_package.studio_hour_package.make_invoice", { name: frm.doc.name })
 						.then(() => frm.reload_doc())
 				);
 			}
-			if (frappe.user.has_role("Accounts Manager")) {
+			if (frappe.user.has_role(["Accounts Manager", "System Manager"])) {
 				frm.add_custom_button(__("Cancel with Reason"), () =>
 					frappe.prompt(
 						{ fieldname: "reason", fieldtype: "Small Text", label: __("Why is it cancelled?"), reqd: 1 },

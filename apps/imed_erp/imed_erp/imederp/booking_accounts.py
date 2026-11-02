@@ -27,6 +27,7 @@ from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.utils import flt, getdate, today
 
 from imed_erp.imederp.booking_pricing import ONCE, PIECE_PER_HOUR, REVENUE_SHARE, revenue_share
+from imed_erp.imederp.booking_rules import COMPLETED, CONFIRMED_WITH_DEPOSIT, HALL, IMPORTED, NOT_BILLABLE, NOT_HELD, TENTATIVE
 from imed_erp.imederp.system_user import as_administrator
 from imed_erp.imederp.treasuries import BUSINESS_TREASURY, WALLETS, plain
 
@@ -194,7 +195,7 @@ def refresh_booking(name):
 	booking = frappe.db.get_value(
 		"Booking", name, ["source", "status", "total_amount", "resource_type", "rental_model"], as_dict=True
 	)
-	if not booking or booking.source == "Imported":
+	if not booking or booking.source == IMPORTED:
 		return
 	paid = payments_total(name)
 	values = {
@@ -204,10 +205,10 @@ def refresh_booking(name):
 		"journal_entry": posted("Journal Entry", name),
 	}
 	# A deposit makes a booking "confirmed with a deposit" (STU-08); without any left it is tentative again.
-	if booking.status == "Tentative" and paid > 0 and not values["sales_invoice"]:
-		values["status"] = "Confirmed with Deposit"
-	elif booking.status == "Confirmed with Deposit" and paid <= 0:
-		values["status"] = "Tentative"
+	if booking.status == TENTATIVE and paid > 0 and not values["sales_invoice"]:
+		values["status"] = CONFIRMED_WITH_DEPOSIT
+	elif booking.status == CONFIRMED_WITH_DEPOSIT and paid <= 0:
+		values["status"] = TENTATIVE
 	frappe.db.set_value("Booking", name, values, update_modified=False)
 
 
@@ -248,9 +249,9 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 		return frappe.db.get_value("Payment Entry", {"custom_booking_request": request_id}, "name")
 	if doc.source == "Imported":
 		frappe.throw(_("{0} was imported: its payments are recorded in the booking system.").format(doc.name))
-	if doc.resource_type == "Hall" and doc.rental_model == "Not Billable":
+	if doc.resource_type == HALL and doc.rental_model == NOT_BILLABLE:
 		frappe.throw(_("{0} is not billable: nothing is paid on it.").format(doc.name), title=_("Not Billable"))
-	if doc.status in ("Cancelled", "No Show"):
+	if doc.status in NOT_HELD:
 		frappe.throw(_("{0} is {1}: it takes no payment.").format(doc.name, _(doc.status)))
 	amount = flt(amount, 2)
 	if amount <= 0:
@@ -264,7 +265,7 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 	if request_id and frappe.db.exists("Payment Entry", {"custom_booking_request": request_id}):
 		return frappe.db.get_value("Payment Entry", {"custom_booking_request": request_id}, "name")
 	invoice = posted("Sales Invoice", doc.name)
-	if not invoice and doc.resource_type == "Hall":
+	if not invoice and doc.resource_type == HALL:
 		frappe.throw(
 			_("A hall booking takes no deposit. It is paid after it is completed, against its invoice."),
 			title=_("No Deposit for Halls"),
@@ -518,17 +519,17 @@ def complete(doc):
 	An IMED hall booking is posted only from make_booking_invoice (27 Oct 2026): the requirements do not say that
 	completing a hall booking makes its invoice, so nothing is posted until someone who may write the booking asks
 	for it after checking the amounts (booking.py, on_update). Studio bookings keep the 20 Oct 2026 behaviour."""
-	if doc.source == "Imported" or doc.status != "Completed":
+	if doc.source == IMPORTED or doc.status != COMPLETED:
 		return
-	if doc.resource_type == "Hall" and not doc.flags.post_requested:
+	if doc.resource_type == HALL and not doc.flags.post_requested:
 		return
-	if doc.resource_type == "Hall" and doc.rental_model == "Not Billable":
+	if doc.resource_type == HALL and doc.rental_model == NOT_BILLABLE:
 		# An internal use of the hall: no invoice, no entry; the course's or the app's own fees are posted elsewhere.
 		refresh_booking(doc.name)
 		return
 	frappe.db.get_value("Booking", doc.name, "name", for_update=True)
 	if (
-		doc.resource_type == "Hall"
+		doc.resource_type == HALL
 		and doc.rental_model == REVENUE_SHARE
 		and not posted("Journal Entry", doc.name)
 	):
@@ -546,7 +547,7 @@ def make_booking_invoice(booking):
 	doc = frappe.get_doc("Booking", booking)
 	doc.check_permission("write")
 	check_own_business(doc.cost_center)
-	if doc.status != "Completed":
+	if doc.status != COMPLETED:
 		frappe.throw(_("{0} is not completed yet.").format(doc.name))
 	doc.flags.post_requested = True
 	complete(doc)

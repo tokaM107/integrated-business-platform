@@ -90,6 +90,22 @@ class IntegrationTestWeeklyCashReconciliation(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "already reconciled", review_week, START, submit=False)
 		review_week(START, AZARITA, submit=False)
 
+	def test_the_business_is_locked_before_the_week_is_checked(self):
+		"""Audit of 2 Nov 2026: two reviews of one week saved at once both passed a plain read."""
+		from unittest.mock import patch
+
+		locked = []
+		original = frappe.db.get_value
+
+		def spy(*args, **kwargs):
+			if kwargs.get("for_update"):
+				locked.append(args[0] if args else kwargs.get("doctype"))
+			return original(*args, **kwargs)
+
+		with patch("imed_erp.imederp.doctype.weekly_cash_reconciliation.weekly_cash_reconciliation.frappe.db.get_value", side_effect=spy):
+			review_week(START, AZARITA, submit=False)
+		self.assertEqual(locked[:2], ["Cost Center", "Weekly Cash Reconciliation"])
+
 	def test_an_empty_week(self):
 		week = frappe.get_doc("Weekly Cash Reconciliation", review_week(add_days(START, -70), submit=False))
 		self.assertEqual((len(week.items), week.total_shortage, week.unresolved), (0, 0, 0))

@@ -6,7 +6,7 @@ import json
 import frappe
 from frappe.utils import get_first_day, today
 
-from imed_erp.imederp.owner_dashboard import check_access, revenue_by_business
+from imed_erp.imederp.owner_dashboard import check_access, company, revenue_by_business
 
 
 @frappe.whitelist()
@@ -17,7 +17,7 @@ def get(chart_name=None, chart=None, no_cache=None, filters=None, from_date=None
 		filters = json.loads(filters)
 	filters = frappe._dict(filters or {})
 	revenue = revenue_by_business(filters.from_date or get_first_day(today()), filters.to_date or today())
-	abbr = frappe.get_cached_value("Company", frappe.defaults.get_global_default("company"), "abbr")
+	abbr = frappe.get_cached_value("Company", company(), "abbr")
 	businesses = sorted(revenue, key=lambda name: -revenue[name])
 	return {
 		"labels": [name.removesuffix(f" - {abbr}") for name in businesses],

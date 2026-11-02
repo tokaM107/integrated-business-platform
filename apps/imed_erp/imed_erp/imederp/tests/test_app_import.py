@@ -349,6 +349,30 @@ class IntegrationTestAppImport(IntegrationTestCase):
 		self.assertEqual(len(hashes), len(set(hashes)))
 		self.assertEqual(hashes.count(frappe.db.get_value("Integration Import Log", first.name, "file_hash")), 1)
 
+	def test_a_period_whose_run_was_dropped_does_not_report_earlier_files_as_kept(self):
+		"""Audit of 2 Nov 2026: a deadlock in a later file rolled back the earlier files of the same request, which
+		were still listed as imported."""
+		from imed_erp.imederp.report.integration_status import integration_status
+
+		app_import.import_content(self.csv(self.rows(1, start=40)), file_name="first.csv")
+		app_import.import_content(self.csv(self.rows(1, start=50)), file_name="second.csv")
+		calls = []
+
+		def importer(content, file_name=None):
+			log = app_import.import_content(content, file_name=file_name)
+			calls.append(log.name)
+			if len(calls) == 2:
+				# As the database does on a deadlock: what this request wrote before is gone.
+				frappe.db.delete("Integration Import Log", {"name": calls[0]})
+			return log
+
+		today = frappe.utils.today()
+		with patch.object(integration_status, "importers", return_value={"ba_plus": importer}):
+			runs = integration_status.reimport_period("ba_plus", today, today)
+		self.assertEqual(len(runs), 2)
+		self.assertEqual((runs[0]["status"], runs[0]["inserted"]), ("Rolled Back", 0))
+		self.assertNotEqual(runs[1]["status"], "Rolled Back")
+
 	def test_who_may_import_a_period_again(self):
 		from imed_erp.imederp.report.integration_status.integration_status import reimport_period
 

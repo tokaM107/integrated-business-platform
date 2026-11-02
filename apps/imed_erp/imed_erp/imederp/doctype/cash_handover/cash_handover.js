@@ -43,8 +43,8 @@ frappe.ui.form.on("Cash Handover", {
 			}).addClass("btn-primary");
 		}
 		const canCancel =
-			(frm.doc.status === "Pending Receipt" && (frm.doc.handed_over_by === frappe.session.user || frappe.user.has_role("Accounts Manager"))) ||
-			(frm.doc.status === "Received" && frappe.user.has_role("Accounts Manager"));
+			(frm.doc.status === "Pending Receipt" && (frm.doc.handed_over_by === frappe.session.user || frappe.user.has_role(["Accounts Manager", "System Manager"]))) ||
+			(frm.doc.status === "Received" && frappe.user.has_role(["Accounts Manager", "System Manager"]));
 		if (frm.doc.docstatus === 1 && canCancel) {
 			frm.add_custom_button(__("Cancel with Reason"), () =>
 				frappe.prompt(

@@ -70,7 +70,7 @@ frappe.ui.form.on("Cash Discrepancy", {
 		if (frm.doc.kind === "Surplus" && frm.doc.status === "Pending Review") {
 			frm.set_intro(__("Under review until the accountant finds where the extra cash came from. It is not revenue."), "orange");
 		}
-		if (!frappe.user.has_role("Accounts Manager")) return;
+		if (!frappe.user.has_role(["Accounts Manager", "System Manager"])) return;
 		if (frm.doc.kind === "Shortage" && open) {
 			if (frm.doc.status !== "Recovery Recommended") {
 				frm.add_custom_button(__("Responsibility Determined"), () => act(frm, "determine_responsibility"), __("Review"));

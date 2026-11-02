@@ -13,14 +13,7 @@
 // side, so an occupied slot is seen at once; two of the same resource overlapping (refused on saving, so only from a
 // change made around it) are red. Bookings are moved on their form, where the overlap check runs, not by dragging.
 
-const BOOKING_COLORS = {
-	Tentative: "orange",
-	Confirmed: "green",
-	"Confirmed with Deposit": "green",
-	Completed: "blue",
-	Cancelled: "gray",
-	"No Show": "gray",
-};
+const BOOKING_COLORS = (frappe.boot.imed_booking || {}).colors || {}; // booking_rules.py, sent at login
 
 const aspect_ratio = () => (window.innerWidth < 768 ? 0.6 : 1.35);
 

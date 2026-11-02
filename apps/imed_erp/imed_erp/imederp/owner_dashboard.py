@@ -16,15 +16,12 @@
 import frappe
 from frappe.utils import add_days, flt, get_first_day, get_last_day, today
 
+from imed_erp.imederp.booking_rules import BUSINESS_DONE, COMPLETED, NOT_HELD
+from imed_erp.imederp.business_figures import company  # the group's company, as on the ledger cards of the same page
+
 STUDIO = "استوديو X"
 HALLS = "قاعات Imed"
-BUSINESS_DONE = ("Confirmed with Deposit", "Completed")
-NOT_HELD = ("Cancelled", "No Show")
 FEE_ACCOUNT = "إيراد رسوم المنصة"
-
-
-def company():
-	return frappe.defaults.get_global_default("company")
 
 
 def cost_center(name):
@@ -42,9 +39,18 @@ def check_access():
 
 
 def gl_total(root_type, from_date, to_date, account=None, by_cost_center=False):
-	"""Income (credit - debit) or expense (debit - credit) posted between two dates, cancelled entries left out."""
+	"""Income (credit - debit) or expense (debit - credit) posted between two dates, cancelled entries left out,
+	and so are opening entries and the year's Period Closing Voucher, as owner_figures.balance and
+	business_figures.ledger leave them out (audit of 2 Nov 2026: this one kept them, so the month's revenue here and
+	on the ledger card could differ)."""
 	amount = "gl.credit - gl.debit" if root_type == "Income" else "gl.debit - gl.credit"
-	conditions, values = ["gl.is_cancelled = 0", "gl.company = %(company)s", "gl.posting_date between %(from)s and %(to)s"], {
+	conditions, values = [
+		"gl.is_cancelled = 0",
+		"gl.is_opening = 'No'",
+		"gl.voucher_type != 'Period Closing Voucher'",
+		"gl.company = %(company)s",
+		"gl.posting_date between %(from)s and %(to)s",
+	], {
 		"company": company(),
 		"from": from_date,
 		"to": to_date,
@@ -164,15 +170,22 @@ def unpaid_on_bookings():
 	"""QA-18: owed on bookings dated up to today. A completed booking is paid on its invoice, whose outstanding is
 	what is left (a payment made on the invoice itself is counted there); one confirmed with a deposit owes its
 	Remaining. A tentative booking owes nothing yet; a cancelled one or a no-show keeps its deposit and owes nothing."""
-	total = 0
-	for booking in frappe.get_all(
+	bookings = frappe.get_all(
 		"Booking",
 		filters={"status": ("in", BUSINESS_DONE), "booking_date": ("<=", today())},
 		fields=["status", "sales_invoice", "outstanding_amount"],
-	):
-		if booking.status == "Completed" and booking.sales_invoice:
-			invoice = frappe.db.get_value("Sales Invoice", booking.sales_invoice, ["docstatus", "outstanding_amount"], as_dict=True)
-			total += flt(invoice.outstanding_amount) if invoice and invoice.docstatus == 1 else flt(booking.outstanding_amount)
+	)
+	invoiced = list({b.sales_invoice for b in bookings if b.status == COMPLETED and b.sales_invoice})
+	# The submitted invoices, read once (was one query a booking).
+	outstanding = dict(
+		frappe.get_all(
+			"Sales Invoice", filters={"name": ("in", invoiced), "docstatus": 1}, fields=["name", "outstanding_amount"], as_list=True
+		)
+	) if invoiced else {}
+	total = 0
+	for booking in bookings:
+		if booking.status == COMPLETED and booking.sales_invoice in outstanding:
+			total += flt(outstanding[booking.sales_invoice])
 		else:
 			total += flt(booking.outstanding_amount)
 	return flt(total, 2)

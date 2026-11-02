@@ -158,6 +158,11 @@ def paper_expense_account(company):
 
 
 def on_hand(store, posting_date, posting_time):
+	"""The sheets the sale may take: the store's balance at the sale's time, and never more than it holds now. The
+	store's Bin is read with a locking read first (review of 2 Nov 2026: two printing sales at once each saw the
+	paper for both, and the second sale was refused by ERPNext's negative-stock check, though a sale is never
+	refused for paper): the second sale waits for the first, sees its issue, and leaves its own as a draft."""
 	from erpnext.stock.utils import get_stock_balance
 
-	return flt(get_stock_balance(PAPER, store, posting_date, posting_time))
+	now = frappe.db.get_value("Bin", {"item_code": PAPER, "warehouse": store}, "actual_qty", for_update=True)
+	return min(flt(now), flt(get_stock_balance(PAPER, store, posting_date, posting_time)))

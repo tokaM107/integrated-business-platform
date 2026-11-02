@@ -140,3 +140,48 @@ class IntegrationTestCashBalance(IntegrationTestCase):
 		with patch("imed_erp.imederp.cash_balance.frappe.db.get_value", side_effect=spy):
 			self.move(-10)
 		self.assertIn(("lock", AZARITA_BOX), reads)
+
+
+class IntegrationTestCashBalanceReadings(IntegrationTestCase):
+	"""Review of 2 Nov 2026: the cash box's balance is read in five places, each for its own window (before a day
+	for the daily close, up to today for a hand-over, at a day for the treasury report, all time for the opening
+	cash check, from a day on for the never-below-zero check). On the same ledger rows they agree: a cancelled
+	row counts for nothing, an opening entry counts (it is the box's opening cash)."""
+
+	def setUp(self):
+		frappe.db.savepoint("cash_readings")
+
+	def tearDown(self):
+		frappe.db.rollback(save_point="cash_readings")
+
+	def row(self, name, day, debit=0, credit=0, cancelled=0, opening="No"):
+		frappe.get_doc(
+			{"doctype": "GL Entry", "name": name, "company": COMPANY, "account": AZARITA_BOX, "posting_date": day,
+			 "debit": debit, "credit": credit, "is_cancelled": cancelled, "is_opening": opening, "voucher_type": "Journal Entry", "voucher_no": name}
+		).db_insert()
+
+	def test_every_reading_of_a_box_agrees_on_the_same_rows(self):
+		from imed_erp.imederp.cash_balance import lowest_balance
+		from imed_erp.imederp.doctype.treasury_close.treasury_close import balance_before
+		from imed_erp.imederp.owner_figures import balance
+		from imed_erp.imederp.report.treasury_balances.treasury_balances import day_figures
+
+		day, earlier = add_days(today(), -1), add_days(today(), -3)
+		start = balance_before(AZARITA_BOX, add_days(day, 1))
+		self.row("_cash_r1", earlier, debit=1000, opening="Yes")
+		self.row("_cash_r2", day, debit=250)
+		self.row("_cash_r3", day, credit=400)
+		self.row("_cash_r4", day, debit=9999, cancelled=1)
+		expected = flt(start + 1000 + 250 - 400, 2)
+
+		close_reading = balance_before(AZARITA_BOX, add_days(day, 1))
+		opening, money_in, money_out = day_figures([AZARITA_BOX], day)[AZARITA_BOX]
+		owner_reading = balance([AZARITA_BOX], to_date=day)
+		all_time = flt(frappe.db.sql("select sum(debit - credit) from `tabGL Entry` where account = %s and is_cancelled = 0", AZARITA_BOX)[0][0], 2)
+		future = flt(frappe.db.sql("select sum(debit - credit) from `tabGL Entry` where account = %s and is_cancelled = 0 and posting_date > %s", (AZARITA_BOX, day))[0][0], 2)
+		self.assertEqual(close_reading, expected)
+		self.assertEqual(flt(opening + money_in - money_out, 2), expected)
+		self.assertEqual(owner_reading, expected)
+		self.assertEqual(flt(all_time - future, 2), expected)
+		# The never-below-zero check's lowest point from that day on is never above what the box holds after it.
+		self.assertLessEqual(lowest_balance(AZARITA_BOX, day)[1], flt(expected + future, 2))

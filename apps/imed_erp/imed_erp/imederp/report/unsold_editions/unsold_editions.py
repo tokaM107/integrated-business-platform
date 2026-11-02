@@ -3,9 +3,9 @@
 
 # Old editions not fully sold (DOC-21), to review before each module: approved editions still on sale whose
 # period (or the period they were carried to, DOC-15) ended before the date chosen, with copies left. The copies
-# left are split between the doctor's (sales count against his first) and the library's extra ones (DOC-14), since
-# the doctor's are charged to him when the period closes (DOC-18). get_list applies User Permissions, so a branch
-# manager sees her own library's.
+# left are split between the doctor's (sales count against his first) and the library's extra ones (DOC-14). Neither
+# is charged to the doctor: the library bears copies left unsold (owner, 21 Oct 2026, replacing DOC-18's charge).
+# get_list applies User Permissions, so a branch manager sees her own library's.
 
 import frappe
 from frappe import _

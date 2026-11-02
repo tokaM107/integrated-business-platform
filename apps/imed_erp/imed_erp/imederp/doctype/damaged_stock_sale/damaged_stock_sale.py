@@ -201,7 +201,8 @@ def update_sold_qty(sale):
 		sold = frappe.db.sql(
 			"""select coalesce(sum(i.qty), 0) from `tabDamaged Stock Sale Item` i
 			join `tabDamaged Stock Sale` s on s.name = i.parent
-			where s.docstatus = 1 and i.damage_entry = %s and i.item_code = %s""",
+			where s.docstatus = 1 and i.damage_entry = %s and i.item_code = %s
+			for update""",  # a locking read: sees a sale another user committed meanwhile (audit of 2 Nov 2026)
 			(entry, item_code),
 		)[0][0]
 		frappe.db.set_value("Damaged Stock Item", {"parent": entry, "item_code": item_code}, "sold_qty", flt(sold))

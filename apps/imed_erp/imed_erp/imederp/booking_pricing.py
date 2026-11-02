@@ -30,10 +30,10 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, fmt_money, getdate, today
 
-FIXED_RENT, REVENUE_SHARE = "Fixed Rent", "Revenue Share"
+from imed_erp.imederp.booking_rules import FIXED_RENT, HALL, REVENUE_SHARE, span
+
 ONCE, PER_HOUR = "Once", "Per Hour"
 PIECE_PER_HOUR, PIECE = "Per Piece per Hour", "Per Piece"
-HALL = "Hall"
 
 
 def money(value):
@@ -248,20 +248,10 @@ def set_extras(doc, lists, reprice):
 def exact_hours(doc):
 	"""QA-13: the booking's length in hours, unrounded (40 minutes = 2/3 hour), for working out money. Booking.hours
 	is rounded to 2 decimals for the screen; a price from it would be off (0.67 x 2,250 = 1,507.50, not 1,500)."""
-	from datetime import datetime
-
-	from frappe.utils import get_time
-
-	from datetime import timedelta
-
-	from frappe.utils import cint, getdate
-
 	if not (doc.from_time and doc.to_time):
 		return flt(doc.hours)
 	# A booking across midnight (ends_next_day) ends on the next day; the length is the exact gap between the two.
-	day = getdate(doc.booking_date) if doc.get("booking_date") else datetime.min
-	starts = datetime.combine(day, get_time(doc.from_time))
-	ends = datetime.combine(day + timedelta(days=cint(doc.get("ends_next_day"))), get_time(doc.to_time))
+	starts, ends = span(doc.get("booking_date"), doc.from_time, doc.to_time, doc.get("ends_next_day"))
 	return (ends - starts).total_seconds() / 3600
 
 
