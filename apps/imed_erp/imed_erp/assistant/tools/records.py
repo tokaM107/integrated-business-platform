@@ -16,13 +16,31 @@ from imed_erp.assistant.tools.base import FILTERS_SCHEMA, MAX_ROWS_TO_MODEL, com
 NEVER_READ = ("Password", "Attach", "Attach Image", "Signature", "Code", "JSON")
 
 
+def cost_center_field(doctype: str) -> str | None:
+	meta = frappe.get_meta(doctype)
+	for df in meta.fields:
+		if df.fieldtype == "Link" and df.options == "Cost Center":
+			return df.fieldname
+	return None
+
+
 def scoped(doctype: str, filters: list | dict, context: RequestContext) -> list | dict:
-	"""A DocType with a company field is read for the request's company only, whatever the user's wider rights."""
-	if not context.company or not frappe.get_meta(doctype).has_field("company"):
+	"""A DocType with a company field is read for the request's company only, whatever the user's wider rights. For
+	a user who may not read every company, a DocType with no company field but a cost center is read for that
+	company's cost centers only (a booking, a counter reading)."""
+	if not context.company:
+		raise frappe.PermissionError(_("No company for this request."))
+	extra = None
+	if frappe.get_meta(doctype).has_field("company"):
+		extra = ["company", "=", context.company]
+	elif not context.all_companies and (field := cost_center_field(doctype)):
+		centers = frappe.get_all("Cost Center", filters={"company": context.company}, pluck="name") or ["\0"]
+		extra = [field, "in", centers]
+	if extra is None:
 		return filters
 	if isinstance(filters, dict):
-		return {**filters, "company": context.company}
-	return [*filters, ["company", "=", context.company]]
+		return {**filters, extra[0]: (extra[1], extra[2])}
+	return [*filters, extra]
 
 
 def readable_fields(doctype: str) -> set[str]:

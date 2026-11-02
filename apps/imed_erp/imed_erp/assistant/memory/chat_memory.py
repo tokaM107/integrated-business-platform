@@ -47,7 +47,10 @@ class ChatStore:
 
 	@staticmethod
 	def new(title: str | None = None, company: str | None = None) -> str:
-		company = company or frappe.defaults.get_user_default("company") or frappe.defaults.get_global_default("company")
+		if not company:
+			from imed_erp.assistant.core.context import build_context
+
+			company = build_context().company  # a company the user may read, never a bare default
 		doc = frappe.get_doc({"doctype": "Assistant Chat", "user": frappe.session.user, "company": company, "title": (title or "").strip()[:TITLE_CHARS] or _("New chat")})
 		doc.insert(ignore_permissions=True)
 		return doc.name
@@ -55,8 +58,13 @@ class ChatStore:
 	@classmethod
 	def check_company(cls, chat: str, company: str) -> None:
 		"""A chat's memory holds figures of the company it was opened in: never carried into another company's."""
-		chat_company = cls.own(chat).company
-		if chat_company and company and chat_company != company:
+		doc = cls.own(chat)
+		if not doc.company:
+			# A chat saved before chats had a company: bound to the first company it is used in.
+			frappe.db.set_value("Assistant Chat", doc.name, "company", company, update_modified=False)
+			return
+		chat_company = doc.company
+		if chat_company != company:
 			frappe.throw(_("This chat belongs to {0}; you are working in {1}. Start a new chat.").format(chat_company, company), frappe.PermissionError)
 
 	@classmethod

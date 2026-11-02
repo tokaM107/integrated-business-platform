@@ -103,11 +103,18 @@ def read_only():
 			raise WriteAttempted(_("A read tried to write to the database; refused."))
 		return original(query, values)
 
+	def no_job(*args, **kwargs):
+		# A job queued now would run later, outside this guard and as whoever runs the worker (review of 2 Nov 2026).
+		raise WriteAttempted(_("A read tried to queue a background job; refused."))
+
 	db.execute_query = guard
+	saved = frappe.enqueue, frappe.enqueue_doc
+	frappe.enqueue = frappe.enqueue_doc = no_job
 	try:
 		yield
 	finally:
 		db.execute_query = original
+		frappe.enqueue, frappe.enqueue_doc = saved
 
 
 def guarded(run, arguments: dict, context: RequestContext) -> tuple[str, bool]:

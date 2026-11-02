@@ -37,7 +37,7 @@ class AccountBalanceTool:
 		doc = frappe.get_doc("Account", account)
 		if not frappe.has_permission("Account", "read", doc=doc):
 			raise frappe.PermissionError(_("Not allowed to read the account {0}.").format(account))
-		if context.company and doc.company != context.company:
+		if doc.company != context.company:
 			raise frappe.PermissionError(_("{0} is not an account of {1}.").format(account, context.company))
 		# The balance from the ledger rows the user may read (frappe.get_list applies the GL Entry user permissions,
 		# e.g. a cost center), so a restricted user never gets the whole account's balance.

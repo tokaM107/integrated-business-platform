@@ -66,6 +66,10 @@ not as the definition of the businesses. A test fails if a business, branch or r
 | `run_report` | the Report's own roles (`is_permitted`) and Frappe's report permission on its DocType; background (prepared) reports are not forced inline |
 | `list_records`, `count_records` | the DocType must be in the user's surface; `frappe.get_list` (roles, user permissions); only fields at a permlevel the user has, never Password/Attach/Code/JSON fields, no filter on a field the user may not read |
 | `account_balance` | GL Entry read; the Account itself readable (user permissions); of the request's company; the balance summed from the GL rows `get_list` returns, so a cost-center restriction applies |
+| The request's company | one the user may read (Company user permissions, through `get_list`): the user's default, else the site's, else the only one; a default naming another company is ignored; none readable, no answer (`core/context.py`) |
+| Reads not limited to one company | the app's reports (none takes a company filter), the dashboard's cards and the owner's band: only for a user who may read every company. A report that declares a company filter (its .js, or ERPNext's financial statements) runs with the request's company forced |
+| Records without a company field | for a user who may not read every company, those with a Cost Center link are read for the request's company's cost centers |
+| Background jobs | `frappe.enqueue` refused inside a read (a job would run later, outside the guard) |
 | Saved chats | the chat's user only, in the chat window and through the desk and REST API (`has_permission`, `permission_query_conditions` in hooks.py); Administrator excepted |
 
 ## Memory
@@ -94,4 +98,4 @@ the whole conversation if they are missing. Rolling back the code leaves the two
 
 Voice: the browser reads an answer aloud (🔊). Spoken questions are recorded, but no provider transcribes audio yet.
 
-Tests: `bench --site frontend run-tests --module imed_erp.imederp.tests.test_assistant` (a fake model; nothing is sent).
+Tests: `bench --site frontend run-tests --module imed_erp.imederp.tests.test_assistant` and `...tests.test_assistant_isolation` (two companies, five kinds of user; a fake model; nothing is sent).

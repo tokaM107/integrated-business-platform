@@ -37,7 +37,9 @@ class ToolRegistry:
 
 		common: list[Tool] = []
 		dashboard = DashboardTool(workspaces)
-		if dashboard.workspaces:  # only the workspaces this user may open; none, no dashboard tool
+		# Only the workspaces this user may open, and only for a user who may read every company: the cards are not
+		# limited to one company.
+		if dashboard.workspaces and context.all_companies:
 			common.append(dashboard)
 		if reports:
 			common.append(RunReportTool(list(reports.values())))

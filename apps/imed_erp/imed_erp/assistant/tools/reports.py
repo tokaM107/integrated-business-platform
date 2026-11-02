@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import os
+import re
 from typing import Any
 
 import frappe
@@ -10,6 +12,28 @@ from frappe import _
 
 from imed_erp.assistant.core.context import RequestContext
 from imed_erp.assistant.tools.base import compact_rows
+
+
+# A company filter in the report's own filters, or ERPNext's shared financial-statement filters (company, required).
+COMPANY_FILTER = re.compile(r"""fieldname\s*:\s*["']company["']|\$\.extend\(\s*\{\s*\}\s*,\s*erpnext\.financial_statements\s*\)""")
+
+
+def takes_company(report: str) -> bool:
+	"""Whether the report declares a company filter (its standard .js filters, or the Report's own filter rows).
+	Such a report is run with the request's company forced; any other report reads across companies."""
+	doc = frappe.get_cached_doc("Report", report)
+	if any(row.fieldname == "company" for row in doc.get("filters") or []):
+		return True
+	if doc.is_standard != "Yes" or not doc.module:
+		return False
+	app = frappe.local.module_app.get(frappe.scrub(doc.module))
+	if not app:
+		return False
+	path = frappe.get_app_path(app, frappe.scrub(doc.module), "report", frappe.scrub(doc.name), frappe.scrub(doc.name) + ".js")
+	if not os.path.exists(path):
+		return False
+	with open(path, encoding="utf-8") as f:
+		return bool(COMPANY_FILTER.search(f.read()))
 
 
 class RunReportTool:
@@ -41,9 +65,17 @@ class RunReportTool:
 		if frappe.get_cached_value("Report", report, "prepared_report"):
 			# A heavy report runs in the background for the desk; the assistant does not force it to run inline.
 			raise frappe.ValidationError(_("{0} runs in the background: open it in the ERP.").format(report))
+		filters = dict(arguments.get("filters") or {})
+		if takes_company(report):
+			# The request's company, whatever the model or a retrieved record asked for.
+			filters["company"] = context.company
+		elif not context.all_companies:
+			raise frappe.PermissionError(
+				_("{0} is not limited to one company, and you may not read every company: open it in the ERP.").format(report)
+			)
 		from frappe.desk.query_report import run
 
-		result = run(report, filters=arguments.get("filters") or {})
+		result = run(report, filters=filters)
 		columns = [c.get("fieldname") or c.get("label") if isinstance(c, dict) else str(c) for c in result.get("columns") or []]
 		rows = [row if isinstance(row, dict) else dict(zip(columns, row)) for row in result.get("result") or []]
 		return compact_rows({"columns": columns, "rows": rows})

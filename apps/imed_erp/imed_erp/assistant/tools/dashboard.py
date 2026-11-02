@@ -57,6 +57,9 @@ class DashboardTool:
 		raise frappe.ValidationError(f"card type {doc.type} is not read by the assistant")
 
 	def run(self, arguments: dict, context: RequestContext) -> dict:
+		if not context.all_companies:
+			# The cards are the group's figures, not limited to the request's company.
+			raise frappe.PermissionError("The dashboard's figures are for users who may read every company.")
 		values: dict[str, Any] = {}
 		for card in self.cards():
 			try:

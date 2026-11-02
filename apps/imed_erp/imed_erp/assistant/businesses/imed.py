@@ -34,6 +34,8 @@ class OwnerBandTool:
 		}
 
 	def run(self, arguments: dict, context: RequestContext) -> dict:
+		if not context.all_companies:
+			raise frappe.PermissionError("The owner's band is the group's, not limited to one company.")
 		from imed_erp.imederp import owner_yesterday
 
 		band = owner_yesterday.get_yesterday()  # raises PermissionError for anyone but the owner
@@ -80,7 +82,7 @@ class ImedIntegration:
 		return list(self._surface.workspaces)
 
 	def tools(self, context: RequestContext) -> list[Tool]:
-		return [OwnerBandTool()]
+		return [OwnerBandTool()] if context.all_companies else []
 
 	def prompt_notes(self, context: RequestContext) -> str:
 		return NOTES
