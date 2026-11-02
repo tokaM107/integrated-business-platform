@@ -475,8 +475,9 @@
 		}
 		ledger_empty = d.ledger_entries_all_time === 0;
 		mark_cards($page);
-		const $welcome = $page.find(".imed-dash-welcome").first();
-		if ($welcome.length) $panel.insertAfter($welcome);
+		// Under the overview when it is there (it may come first or second), else under the welcome band.
+		const $above = $page.find(".imed-ov").first().length ? $page.find(".imed-ov").first() : $page.find(".imed-dash-welcome").first();
+		if ($above.length) $panel.insertAfter($above);
 		else $panel.insertBefore($page.find(".codex-editor").first());
 	}
 
@@ -505,11 +506,184 @@
 			.finally(() => (fetching = false));
 	}
 
+	// ---------------- The overview (imederp/owner_overview.py; the owner's picture of 2 Nov 2026) ----------------
+	// Under the welcome band, above the day's figures: four figures with how they moved since last month, the
+	// bookings' path this month, the next bookings, the bookings' money and the reports. Every figure is the
+	// server's; only a difference and a percentage between two of them are worked out here. Styles: §28.
+	let overview = null;
+	let overview_at = 0;
+	let overview_busy = false;
+	// "Go there" points forward: left in Arabic, right in English.
+	const forward = () => (frappe.utils.is_rtl() ? "arrow-left" : "arrow-right");
+	const pct = (value) => `${format_number(Math.abs(value), null, Math.abs(value) < 10 ? 1 : 0)}%`;
+	const short_day = (value) => {
+		const d = new Date(`${value}T00:00:00`);
+		return [d.toLocaleDateString(frappe.boot.lang || "en", { day: "numeric" }), d.toLocaleDateString(frappe.boot.lang || "en", { month: "short" })];
+	};
+	const span = (from, to) => __("{0} – {1}", [short_day(from).reverse().join(" "), short_day(to).reverse().join(" ")]);
+
+	// How a figure moved: good news green, bad news red. `up_is_good`: more revenue is good, more expenses is not.
+	function change(current, previous, up_is_good) {
+		const diff = flt(current - previous, 2);
+		if (!diff) return `<span class="imed-ov-change is-flat">${esc(__("No change"))}</span>`;
+		const good = diff > 0 === up_is_good;
+		const icon = frappe.utils.icon(diff > 0 ? "arrow-up" : "arrow-down", "xs");
+		const amount = previous ? pct((diff / Math.abs(previous)) * 100) : money(diff, overview.currency);
+		return `<span class="imed-ov-change ${good ? "is-good" : "is-bad"}">${icon}<b class="imed-ov-num">${esc(amount)}</b></span>`;
+	}
+
+	function kpi(tone, icon, label, value, moved, hint) {
+		return `<section class="imed-ov-kpi tone-${tone}">
+				<div class="imed-ov-kpi__top">
+					<span class="imed-ov-kpi__icon">${frappe.utils.icon(icon, "md")}</span>
+					<span class="imed-ov-kpi__label">${esc(label)}</span>
+				</div>
+				<b class="imed-ov-kpi__value imed-ov-num ${value < 0 ? "is-negative" : ""}">${esc(format_currency(value || 0, overview.currency, 0))}</b>
+				<div class="imed-ov-kpi__foot" title="${esc(hint)}">${moved}<span>${esc(__("vs last month"))}</span></div>
+			</section>`;
+	}
+
+	function kpis_html(k) {
+		const c = k.compare;
+		const versus = __("{0} against {1}", [span(c.current.from, c.current.to), span(c.previous.from, c.previous.to)]);
+		return `<div class="imed-ov-kpis">
+				${kpi("green", "scale", __("Net profit this month"), k.month.net, change(c.current.net, c.previous.net, true), versus)}
+				${kpi("blue", "trending-up", __("Revenue this month"), k.month.revenue, change(c.current.revenue, c.previous.revenue, true), versus)}
+				${kpi("orange", "trending-down", __("Expenses this month"), k.month.expenses, change(c.current.expenses, c.previous.expenses, false), versus)}
+				${kpi("violet", "wallet", __("In the cash boxes"), k.cash.now, change(k.cash.now, k.cash.previous, true), __("Against the end of {0}", [frappe.datetime.str_to_user(k.cash.previous_on)]))}
+			</div>`;
+	}
+
+	const STAGES = { Tentative: "blue", Confirmed: "green", "Confirmed with Deposit": "amber", Completed: "violet" };
+
+	function pipeline_html(p) {
+		const total = p.stages.reduce((sum, s) => sum + s.count, 0);
+		const completed = (p.stages.find((s) => s.status === "Completed") || {}).count || 0;
+		const shapes = p.stages.map((s, i) => `<i class="tone-${STAGES[s.status]}" style="--step:${i}"></i>`).join("");
+		const legend = p.stages
+			.map((s) => `<li class="tone-${STAGES[s.status]}"><span>${esc(__(s.status))}</span><b class="imed-ov-num">${esc(number(s.count))}</b></li>`)
+			.join("");
+		const apart = p.cancelled || p.no_show
+			? `<p class="imed-ov-muted">${esc(__("Cancelled {0} · No show {1}", [number(p.cancelled), number(p.no_show)]))}</p>`
+			: "";
+		return `<section class="imed-ov-card imed-ov-pipeline">
+				<h3>${esc(__("Bookings this month"))}</h3>
+				<div class="imed-ov-pipeline__body">
+					<div class="imed-ov-funnel ${total ? "" : "is-empty"}" aria-hidden="true">${shapes}</div>
+					<div class="imed-ov-pipeline__side">
+						<ul class="imed-ov-legend">${legend}</ul>
+						<div class="imed-ov-pipeline__rate">
+							<span>${esc(__("Completed"))}</span>
+							<b class="imed-ov-num">${total ? esc(pct((completed / total) * 100)) : "—"}</b>
+						</div>
+						${apart}
+					</div>
+				</div>
+			</section>`;
+	}
+
+	function upcoming_html(u) {
+		const rows = u.rows
+			.map((r) => {
+				const [day, month] = short_day(r.booking_date);
+				const time = r.from_time ? `${r.from_time.slice(0, 5)}${r.to_time ? " – " + r.to_time.slice(0, 5) : ""}` : "";
+				return `<li><a href="/desk/booking/${encodeURIComponent(r.name)}">
+						<span class="imed-ov-date"><b>${esc(day)}</b><small>${esc(month)}</small></span>
+						<span class="imed-ov-upcoming__text"><b>${esc(r.resource || r.name)}</b>
+							<small>${r.customer_name ? `<bdi>${esc(r.customer_name)}</bdi>` : ""}${r.customer_name && time ? " · " : ""}${time ? `<bdi dir="ltr">${esc(time)}</bdi>` : ""}</small></span>
+					</a></li>`;
+			})
+			.join("");
+		return `<section class="imed-ov-card imed-ov-upcoming">
+				<h3>${esc(__("Upcoming bookings"))}</h3>
+				${rows ? `<ul>${rows}</ul>` : `<p class="imed-ov-empty">${frappe.utils.icon("calendar-days", "md")}<span>${esc(__("No booking in the next {0} days.", [u.days]))}</span></p>`}
+				<a class="imed-ov-more" href="/desk/booking/view/calendar">${esc(__("View calendar"))}${frappe.utils.icon(forward(), "xs")}</a>
+			</section>`;
+	}
+
+	function collection_html(c) {
+		const pending = Math.max(flt(c.outstanding - c.overdue, 2), 0);
+		const share = (v) => (c.total ? Math.max(0, Math.min(100, (v / c.total) * 100)) : 0);
+		const paid = share(c.paid);
+		const due = share(pending);
+		const ring = c.total
+			? `conic-gradient(var(--ov-paid) 0 ${paid}%, var(--ov-pending) ${paid}% ${paid + due}%, var(--ov-overdue) ${paid + due}% 100%)`
+			: "conic-gradient(var(--ov-empty) 0 100%)";
+		const line = (cls, label, value) => `<li class="${cls}"><span>${esc(label)}</span><b class="imed-ov-num">${esc(money(value, overview.currency))}</b></li>`;
+		return `<section class="imed-ov-card imed-ov-collection">
+				<h3>${esc(__("Bookings' money"))} <small>${esc(__("(This month)"))}</small></h3>
+				<div class="imed-ov-collection__body">
+					<div class="imed-ov-ring" style="background:${ring}">
+						<div><b class="imed-ov-num">${c.total ? esc(pct(paid)) : "—"}</b><small>${esc(__("Collected"))}</small></div>
+					</div>
+					<ul class="imed-ov-legend">
+						${line("tone-green", __("Collected"), c.paid)}
+						${line("tone-amber", __("Pending"), pending)}
+						${line("tone-red", __("Overdue"), c.overdue)}
+						<li class="is-total"><span>${esc(__("Total"))}</span><b class="imed-ov-num">${esc(money(c.total, overview.currency))}</b></li>
+					</ul>
+				</div>
+			</section>`;
+	}
+
+	const REPORTS = [
+		["Revenue by Period", "chart-column", "blue"],
+		["Profit Before and After Shared Costs", "scale", "green"],
+		["Outstanding Receivables", "hand-coins", "amber"],
+		["Cash Box Balances", "wallet", "violet"],
+	];
+
+	function reports_html() {
+		const tiles = REPORTS.map(
+			([report, icon, tone]) => `<a class="imed-ov-report tone-${tone}" href="/desk/query-report/${encodeURIComponent(report)}">
+					<span class="imed-ov-report__icon">${frappe.utils.icon(icon, "md")}</span><span>${esc(__(report))}</span>
+				</a>`
+		).join("");
+		return `<section class="imed-ov-card imed-ov-reports">
+				<h3>${esc(__("Reports"))}</h3>
+				<div class="imed-ov-reports__grid">${tiles}</div>
+			</section>`;
+	}
+
+	function render_overview($page) {
+		if (!overview) return;
+		$page.find(".imed-ov").remove();
+		const $panel = $(`<div class="imed-ov">
+				${kpis_html(overview.kpis)}
+				<div class="imed-ov-row">${pipeline_html(overview.pipeline)}${upcoming_html(overview.upcoming)}</div>
+				<div class="imed-ov-row">${collection_html(overview.collection)}${reports_html()}</div>
+			</div>`);
+		const $welcome = $page.find(".imed-dash-welcome").first();
+		if ($welcome.length) $panel.insertAfter($welcome);
+		else $panel.insertBefore($page.find(".codex-editor").first());
+	}
+
+	function add_overview($page) {
+		if (!is_owner()) return;
+		if (Date.now() - overview_at < REFRESH_MS) {
+			if (overview && !$page.find(".imed-ov").length) render_overview($page);
+			return;
+		}
+		if (overview_busy) return;
+		overview_busy = true;
+		frappe
+			.xcall("imed_erp.imederp.owner_overview.get_overview")
+			.then((data) => {
+				overview = data;
+				overview_at = Date.now();
+				if (on_dashboard()) render_overview($(".page-container:visible .layout-main-section, .page-container:visible").first());
+			})
+			// Shown by Frappe; asked again on the next visit after the wait, not on every redraw.
+			.catch(() => (overview_at = Date.now()))
+			.finally(() => (overview_busy = false));
+	}
+
 	function decorate() {
 		if (!on_dashboard()) return;
 		const $page = $(".page-container:visible .layout-main-section, .page-container:visible").first();
 		if (!$page.length) return;
 		add_welcome($page);
+		add_overview($page);
 		add_yesterday($page);
 		mark_headers($page);
 		mark_cards($page);
