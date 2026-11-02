@@ -79,7 +79,8 @@ ACCOUNTANT_RIGHTS = {**FULL_RIGHTS, "delete": 0}
 # Mawasah (or the center's office supplies) for her.
 # "enabled" defaults to 1.
 USERS = [
-	{"email": "owner", "first_name": "المالك", "roles": ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"]},
+	# The owner by his name (owner, 2 Nov 2026): the dashboard greets him by it.
+	{"email": "owner", "first_name": "محمد ممدوح", "roles": ["Super Admin", "System Manager", "Accounts Manager", "Expense Approver"]},
 	{"email": "nour", "first_name": "نور", "roles": BRANCH_ROLES, "cost_centers": ["قاعات Imed"]},
 	{"email": "gilan", "first_name": "جيلان", "roles": BRANCH_ROLES, "cost_centers": ["استوديو X"]},
 	{"email": "menna", "first_name": "منة", "roles": BRANCH_ROLES, "cost_centers": ["تطبيق BA Plus"]},

@@ -177,8 +177,31 @@
 		not_configured: __("Not configured"),
 	};
 
+	// Each card and figure in its colour (imed_theme.css §27): a card by its icon, a figure by what it counts. A
+	// figure not named here takes the brand's teal.
+	const CARD_TONES = {
+		"chart-column": "tone-green",
+		"calendar-days": "tone-blue",
+		presentation: "tone-violet",
+		smartphone: "tone-cyan",
+		printer: "tone-amber",
+		plug: "tone-purple",
+	};
+	const STAT_TONES = Object.fromEntries(
+		[
+			["tone-blue", ["Held", "Booked", "Bookings", "Studio hours booked"]],
+			["tone-cyan", ["Hours today", "Hours", "Charged today"]],
+			["tone-green", ["Completed", "Studio hours delivered", "Paid in XStudio", "Occupied now", "Collected today", "Sheets sold"]],
+			["tone-red", ["Cancelled"]],
+			["tone-amber", ["No Show", "Due in XStudio", "Fixed rents (not yet invoiced)", "Still owed by doctors", "Difference"]],
+			["tone-violet", ["Booked today (any date)", "Next 7 days", "Revenue shares", "New students"]],
+			["tone-blue", ["Sheets printed"]],
+			["tone-gray", ["Hall resources", "Active halls"]],
+		].flatMap(([tone, labels]) => labels.map((label) => [__(label), tone]))
+	);
+
 	function card(icon, title, body, extra_class = "") {
-		return `<section class="imed-yday-card ${extra_class}">
+		return `<section class="imed-yday-card ${CARD_TONES[icon] || "tone-teal"} ${extra_class}">
 				<h3>${frappe.utils.icon(icon, "sm")}<span>${esc(title)}</span></h3>
 				${body}
 			</section>`;
@@ -225,6 +248,7 @@
 
 	// Every figure opens the list behind it: route = [doctype, filters] (a Frappe list view with those filters).
 	function stat(label, value, cls = "", route = null) {
+		cls = `${STAT_TONES[label] || "tone-teal"} ${cls}`;
 		const inner = `<span>${esc(label)}</span><b>${value}</b>`;
 		return route
 			? `<a class="imed-yday-stat imed-yday-link ${cls}" href="#" data-route="${esc(JSON.stringify(route))}" title="${esc(__("Open the list"))}">${inner}</a>`

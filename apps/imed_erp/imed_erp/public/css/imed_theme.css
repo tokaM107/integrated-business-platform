@@ -2412,3 +2412,572 @@ a.imed-yday-stat:focus-visible,
 .imed-yday-untracked { font-size: 0.78rem; font-weight: 500; color: #8a6d1d; }
 .imed-dash-norecords { display: inline-block; margin-inline-start: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff4e0; color: #8a6d1d; font-size: 0.68rem; font-weight: 600; }
 .imed-yday-ledger-empty { margin: 0 0 0.75rem; }
+
+/* ------------------------------------------------------------------ */
+/* 27. Colour: the sidebar, the dashboard, lists and forms             */
+/* ------------------------------------------------------------------ */
+/* The owner's request of 1 Nov 2026: "why are there no colours, the sidebar is not coloured". Look only: no field,
+   figure or permission changes. Comes last, so it refines the sections above.
+     - The sidebar is the brand's deep teal; each activity has its own colour, on its icon and on its open group.
+     - On the dashboard each card and tile is tinted by what it is (tone-*), each figure by its meaning.
+     - Lists and reports get a tinted header row, forms a coloured mark on each section's title.
+   Colours come from Frappe's palette (--green-500...), so the dark theme only changes the shades (end of section). */
+
+/* Tones: a colour for a kind of thing. --tone-solid a bar or a chip, --tone-soft a tinted background,
+   --tone-fg text and icons on a light background, --tone-line a border. */
+.tone-teal,
+.imed-act-teal {
+	--tone-solid: var(--imed-teal-500);
+	--tone-soft: var(--imed-teal-50);
+	--tone-fg: var(--imed-teal-700);
+	--tone-line: var(--imed-teal-200);
+	--tone-on-dark: var(--imed-teal-200);
+}
+.tone-blue,
+.imed-act-blue {
+	--tone-solid: var(--blue-500);
+	--tone-soft: var(--blue-50);
+	--tone-fg: var(--blue-700);
+	--tone-line: var(--blue-200);
+	--tone-on-dark: var(--blue-200);
+}
+.tone-cyan,
+.imed-act-cyan {
+	--tone-solid: var(--cyan-500);
+	--tone-soft: var(--cyan-50);
+	--tone-fg: var(--cyan-700);
+	--tone-line: var(--cyan-200);
+	--tone-on-dark: var(--cyan-200);
+}
+.tone-green,
+.imed-act-green {
+	--tone-solid: var(--green-500);
+	--tone-soft: var(--green-50);
+	--tone-fg: var(--green-700);
+	--tone-line: var(--green-200);
+	--tone-on-dark: var(--green-200);
+}
+.tone-amber,
+.imed-act-amber {
+	--tone-solid: var(--amber-500);
+	--tone-soft: var(--amber-50);
+	--tone-fg: var(--amber-700);
+	--tone-line: var(--amber-200);
+	--tone-on-dark: var(--amber-200);
+}
+.tone-orange,
+.imed-act-orange {
+	--tone-solid: var(--orange-500);
+	--tone-soft: var(--orange-50);
+	--tone-fg: var(--orange-700);
+	--tone-line: var(--orange-200);
+	--tone-on-dark: var(--orange-200);
+}
+.tone-red,
+.imed-act-red {
+	--tone-solid: var(--red-500);
+	--tone-soft: var(--red-50);
+	--tone-fg: var(--red-600);
+	--tone-line: var(--red-200);
+	--tone-on-dark: var(--red-200);
+}
+.tone-violet,
+.imed-act-violet {
+	--tone-solid: var(--violet-500);
+	--tone-soft: var(--violet-50);
+	--tone-fg: var(--violet-700);
+	--tone-line: var(--violet-200);
+	--tone-on-dark: var(--violet-200);
+}
+.tone-purple,
+.imed-act-purple {
+	--tone-solid: var(--purple-500);
+	--tone-soft: var(--purple-50);
+	--tone-fg: var(--purple-700);
+	--tone-line: var(--purple-200);
+	--tone-on-dark: var(--purple-200);
+}
+.tone-gray,
+.imed-act-gray {
+	--tone-solid: var(--gray-500);
+	--tone-soft: var(--gray-100);
+	--tone-fg: var(--gray-700);
+	--tone-line: var(--gray-300);
+	--tone-on-dark: #dfe7ea;
+}
+
+/* ---------------- The sidebar ---------------- */
+/* Each activity's colour, by its icon (workspace_sidebar/imederp.json), which is the same in every language (the
+   item's name is translated); a group's links take its colour.
+   --act-solid: the icon's chip; --act: lighter, for a dot or a mark on the dark teal. */
+.body-sidebar .sidebar-item-container {
+	--act: var(--imed-teal-300);
+	--act-solid: var(--imed-teal-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="home"]) {
+	--act: var(--imed-amber-400);
+	--act-solid: linear-gradient(135deg, var(--imed-amber-400), #e8892b);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="calendar-days"]) {
+	--act: var(--blue-300);
+	--act-solid: var(--blue-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="store"]) {
+	--act: var(--amber-300);
+	--act-solid: var(--amber-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="package"]) {
+	--act: var(--orange-300);
+	--act-solid: var(--orange-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="book-open"]) {
+	--act: var(--violet-300);
+	--act-solid: var(--violet-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="smartphone"]) {
+	--act: var(--cyan-300);
+	--act-solid: var(--cyan-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="wallet"]) {
+	--act: var(--red-300);
+	--act-solid: var(--red-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="chart-column"]) {
+	--act: var(--green-300);
+	--act-solid: var(--green-500);
+}
+.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="settings"]) {
+	--act: #dfe7ea;
+	--act-solid: var(--gray-500);
+}
+/* A link inside a group keeps its group's colour (it is nested in the group's container). */
+.body-sidebar .sidebar-child-item .sidebar-item-container {
+	--act: inherit;
+	--act-solid: inherit;
+}
+
+/* The brand's deep teal, a little lighter at the top. */
+.body-sidebar {
+	--sb-text: rgba(255, 255, 255, 0.9);
+	--sb-muted: rgba(255, 255, 255, 0.62);
+	--sb-hover: rgba(255, 255, 255, 0.09);
+	background:
+		radial-gradient(320px 220px at 50% -60px, rgba(244, 185, 66, 0.14), transparent 70%),
+		linear-gradient(180deg, var(--imed-teal-700) 0%, var(--imed-teal-800) 55%, var(--imed-teal-900) 100%);
+	border-inline-end: 0;
+	color: var(--sb-text);
+}
+.body-sidebar .sidebar-header .header-title {
+	color: #ffffff;
+}
+.body-sidebar .sidebar-header .header-subtitle,
+.body-sidebar .sidebar-header .drop-icon .icon {
+	color: var(--sb-muted);
+	--icon-stroke: var(--sb-muted);
+}
+.body-sidebar .sidebar-header .header-logo {
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+.body-sidebar .standard-sidebar-item .sidebar-item-label,
+.body-sidebar .standard-sidebar-item .item-anchor {
+	color: var(--sb-text);
+}
+/* Frappe draws these icons in currentColor and gives the svg itself a gray class: the colour goes on the svg. */
+.body-sidebar .standard-sidebar-item svg.icon {
+	color: var(--sb-muted) !important;
+	--icon-stroke: currentColor;
+	stroke: currentColor;
+}
+/* The search's keyboard hint and the like. */
+.body-sidebar .standard-items-sections .text-muted,
+.body-sidebar .standard-items-sections kbd,
+.body-sidebar .standard-items-sections .keyboard-shortcut {
+	color: var(--sb-muted) !important;
+	background: transparent;
+	border-color: rgba(255, 255, 255, 0.2);
+}
+/* Each activity's icon in a chip of its colour. */
+.body-sidebar .sidebar-items > .sidebar-item-container > .standard-sidebar-item .sidebar-item-icon {
+	display: inline-grid;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border-radius: 8px;
+	background: var(--act-solid);
+	box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.45);
+}
+.body-sidebar .sidebar-items > .sidebar-item-container > .standard-sidebar-item .sidebar-item-icon svg.icon {
+	color: #ffffff !important;
+	stroke-width: 2px;
+}
+/* A link in a group: a dot of the group's colour where it has no icon. */
+.body-sidebar .sidebar-child-item .sidebar-item-icon:not(:has(svg)) {
+	display: inline-block;
+	flex: none;
+	width: 7px;
+	height: 7px;
+	padding: 0 !important;
+	margin-inline: 10px 8px;
+	border-radius: 50%;
+	background: var(--act);
+	opacity: 0.85;
+}
+.body-sidebar .sidebar-child-item .sidebar-item-label {
+	color: rgba(255, 255, 255, 0.8);
+}
+/* An open group: its links on a band of its colour. */
+.body-sidebar .sidebar-item-container.section-item > .sidebar-child-item:not(.hidden) {
+	margin: 2px 0 6px;
+	padding: 4px 0;
+	border-radius: 10px;
+	background: color-mix(in srgb, var(--act) 9%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--act) 18%, transparent);
+}
+/* The page open now: a white pill, its label in the brand's dark teal, its activity's mark at the edge. */
+.body-sidebar .standard-sidebar-item.active-sidebar {
+	background: #ffffff;
+	box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.45);
+}
+.body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label {
+	color: var(--imed-teal-800);
+	font-weight: 700;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar::before {
+	background: var(--act);
+	inset-inline-start: -6px;
+	width: 4px;
+}
+/* Under the pointer, or an opened group's own line (Frappe lights it white): its words dark, so they read on the
+   white (owner, 2 Nov 2026). */
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover,
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar),
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):focus-within {
+	background: #ffffff !important;
+	box-shadow: none;
+}
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover .sidebar-item-label,
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar) .sidebar-item-label,
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):focus-within .sidebar-item-label,
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover .item-anchor,
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar) .item-anchor {
+	color: var(--imed-teal-900) !important;
+}
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover .sidebar-item-control svg.icon,
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar) .sidebar-item-control svg.icon,
+.body-sidebar .standard-items-sections .standard-sidebar-item:not(.active-sidebar):hover svg.icon {
+	color: var(--imed-teal-800) !important;
+}
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar)::before {
+	display: none;
+}
+.body-sidebar .sidebar-child-item .standard-sidebar-item.active-sidebar .sidebar-item-icon:not(:has(svg)) {
+	background: var(--imed-teal-600);
+	opacity: 1;
+}
+/* The signed-in user at the bottom */
+.body-sidebar .sidebar-user-button .avatar-name-email .d-block:first-child {
+	color: #ffffff;
+}
+.body-sidebar .sidebar-user-button .avatar-name-email,
+.body-sidebar .sidebar-user-button .text-muted {
+	color: var(--sb-muted) !important;
+}
+.body-sidebar .sidebar-user-button .avatar {
+	box-shadow: 0 0 0 2px var(--imed-teal-800), 0 0 0 3.5px var(--imed-amber-400);
+}
+.body-sidebar .sidebar-user-button:hover {
+	background: var(--sb-hover);
+}
+/* What opens out of the sidebar (notifications, menus) stays a normal light panel. */
+.body-sidebar .dropdown-notifications,
+.body-sidebar .dropdown-menu {
+	color: var(--text-color);
+}
+.body-sidebar .dropdown-notifications .sidebar-item-label,
+.body-sidebar .dropdown-menu .sidebar-item-label {
+	color: var(--text-color);
+}
+
+/* ---------------- The Owner Dashboard ---------------- */
+/* The money and booking cards: the whole card tinted by its meaning, its icon in a solid chip. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card {
+	background: linear-gradient(160deg, var(--kind-bg) 0%, var(--card-bg) 72%);
+	border-color: color-mix(in srgb, var(--kind-fg) 22%, transparent);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	background: var(--kind-fg);
+	color: #ffffff;
+	box-shadow: 0 8px 18px -10px var(--kind-fg);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-title {
+	color: var(--heading-color) !important;
+	font-weight: 600 !important;
+}
+/* "Net this month" and the cash: the brand's own blue-teal, a negative one red (above). */
+.imed-dash-card[data-imed-kind="net"],
+.imed-dash-card[data-imed-kind="cash"]:not(.is-negative) {
+	--kind-bg: var(--blue-50);
+	--kind-fg: var(--blue-700);
+}
+.imed-dash-card[data-imed-kind="count"] {
+	--kind-bg: var(--violet-50);
+	--kind-fg: var(--violet-700);
+}
+/* Approvals: green when nothing waits, amber when something does (§22), with a coloured edge. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-approval {
+	border-inline-start: 4px solid var(--green-500) !important;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-approval.is-waiting {
+	border-inline-start-color: var(--amber-500) !important;
+}
+/* The section headers' icons in the brand's chip, a little bolder. */
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-dash-head-icon,
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-dash-head-icon * {
+	color: #ffffff !important;
+}
+.imed-dash-head-icon {
+	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
+}
+
+/* Yesterday's cards: each with its colour on top and on its title's icon. */
+.imed-yday-card[class*="tone-"] {
+	border-top: 4px solid var(--tone-solid);
+	background: linear-gradient(180deg, var(--tone-soft) 0, var(--fg-color) 90px);
+}
+.imed-yday-card[class*="tone-"] h3 .icon {
+	box-sizing: content-box;
+	padding: 6px;
+	border-radius: 9px;
+	background: var(--tone-solid);
+	stroke: #ffffff;
+}
+/* Revenue green, expenses red, net blue: on the column headers (an amount's own colour is its sign's, §25). */
+.imed-yday-table:not(.is-compact) thead th:nth-child(2) {
+	color: var(--green-700);
+}
+.imed-yday-table:not(.is-compact) thead th:nth-child(3) {
+	color: var(--red-600);
+}
+.imed-yday-table:not(.is-compact) thead th:nth-child(4) {
+	color: var(--blue-700);
+}
+.imed-yday-table thead th {
+	background: var(--gray-50);
+}
+.imed-yday-table tbody tr:hover td {
+	background: var(--imed-teal-50);
+}
+/* Each figure's tile in its colour. */
+.imed-yday-stat[class*="tone-"] {
+	position: relative;
+	overflow: hidden;
+	background: var(--tone-soft);
+	box-shadow: inset 0 0 0 1px var(--tone-line);
+}
+.imed-yday-stat[class*="tone-"]::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 0;
+	width: 3px;
+	background: var(--tone-solid);
+}
+.imed-yday-stat[class*="tone-"] span {
+	color: var(--tone-fg);
+	font-weight: 600;
+}
+.imed-yday-stat[class*="tone-"]:not(.is-untracked) b {
+	color: var(--tone-fg);
+	font-size: var(--text-xl);
+}
+.imed-yday-stat.is-negative b {
+	color: var(--red-600);
+}
+/* The links to the reports as coloured chips. */
+.imed-yday-head nav a {
+	border-color: transparent;
+	background: var(--imed-teal-600);
+	color: #ffffff;
+}
+.imed-yday-head nav a:hover {
+	background: var(--imed-teal-700);
+	color: #ffffff;
+}
+
+/* ---------------- Lists, reports and forms ---------------- */
+/* A list's or a report's header row in the brand's tint. */
+.list-row-head,
+.report-wrapper .dt-header .dt-row,
+.report-wrapper .dt-header .dt-cell {
+	background: var(--imed-teal-50) !important;
+}
+.list-row-head .list-row-col,
+.list-row-head .level-left,
+.list-row-head .list-subject,
+.report-wrapper .dt-header .dt-cell__content {
+	color: var(--imed-teal-800) !important;
+	font-weight: 600;
+}
+.frappe-list .list-row-container:hover .list-row {
+	background: color-mix(in srgb, var(--imed-teal-50) 70%, var(--card-bg));
+}
+/* Status pills: a little stronger, with a dot. */
+.indicator-pill {
+	font-weight: 600;
+}
+.indicator-pill.green {
+	background: var(--green-100);
+	color: var(--green-800);
+}
+.indicator-pill.orange,
+.indicator-pill.yellow {
+	background: var(--amber-100);
+	color: var(--amber-800);
+}
+.indicator-pill.red {
+	background: var(--red-100);
+	color: var(--red-700);
+}
+.indicator-pill.blue,
+.indicator-pill.light-blue {
+	background: var(--blue-100);
+	color: var(--blue-800);
+}
+.indicator-pill.purple {
+	background: var(--purple-100);
+	color: var(--purple-800);
+}
+.indicator-pill.gray,
+.indicator-pill.grey {
+	background: var(--gray-100);
+	color: var(--gray-700);
+}
+/* A form's section title: a coloured mark before it. */
+.std-form-layout .form-section .section-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--heading-color);
+}
+.std-form-layout .form-section .section-head::before {
+	content: "";
+	flex: none;
+	width: 4px;
+	height: 18px;
+	border-radius: 4px;
+	background: linear-gradient(180deg, var(--imed-teal-400), var(--imed-teal-700));
+}
+/* The main action: the brand's gradient. */
+.btn-primary,
+.btn-primary:focus {
+	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
+	border-color: var(--imed-teal-700);
+	box-shadow: 0 6px 14px -8px rgba(15, 98, 91, 0.75);
+}
+.btn-primary:hover {
+	background: linear-gradient(135deg, var(--imed-teal-600), var(--imed-teal-800));
+}
+
+/* ---------------- Dark theme ---------------- */
+[data-theme="dark"] .tone-teal,
+[data-theme="dark"] .tone-blue,
+[data-theme="dark"] .tone-cyan,
+[data-theme="dark"] .tone-green,
+[data-theme="dark"] .tone-amber,
+[data-theme="dark"] .tone-orange,
+[data-theme="dark"] .tone-red,
+[data-theme="dark"] .tone-violet,
+[data-theme="dark"] .tone-purple,
+[data-theme="dark"] .tone-gray {
+	--tone-soft: color-mix(in srgb, var(--tone-solid) 15%, transparent);
+	--tone-fg: var(--tone-on-dark);
+	--tone-line: color-mix(in srgb, var(--tone-solid) 34%, transparent);
+}
+[data-theme="dark"] .body-sidebar {
+	background:
+		radial-gradient(320px 220px at 50% -60px, rgba(244, 185, 66, 0.08), transparent 70%),
+		linear-gradient(180deg, #0f4b46 0%, #0c3633 55%, #0a2523 100%);
+	box-shadow: inset -1px 0 0 rgba(64, 174, 161, 0.18);
+}
+[data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar {
+	background: rgba(255, 255, 255, 0.92);
+}
+[data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label {
+	color: var(--imed-teal-900);
+}
+[data-theme="dark"] .imed-dash-card[data-imed-kind="net"],
+[data-theme="dark"] .imed-dash-card[data-imed-kind="cash"]:not(.is-negative) {
+	--kind-bg: color-mix(in srgb, var(--blue-500) 16%, transparent);
+	--kind-fg: var(--blue-300);
+}
+[data-theme="dark"] .imed-dash-card[data-imed-kind="count"] {
+	--kind-bg: color-mix(in srgb, var(--violet-500) 16%, transparent);
+	--kind-fg: var(--violet-300);
+}
+[data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	background: color-mix(in srgb, var(--kind-fg) 30%, transparent);
+	color: var(--kind-fg);
+}
+[data-theme="dark"] .imed-yday-card[class*="tone-"] h3 .icon {
+	background: color-mix(in srgb, var(--tone-solid) 70%, transparent);
+}
+[data-theme="dark"] .imed-yday-table:not(.is-compact) thead th:nth-child(2) {
+	color: var(--green-300);
+}
+[data-theme="dark"] .imed-yday-table:not(.is-compact) thead th:nth-child(3) {
+	color: var(--red-300);
+}
+[data-theme="dark"] .imed-yday-table:not(.is-compact) thead th:nth-child(4) {
+	color: var(--blue-300);
+}
+[data-theme="dark"] .imed-yday-table thead th {
+	background: rgba(255, 255, 255, 0.03);
+}
+[data-theme="dark"] .imed-yday-table tbody tr:hover td {
+	background: rgba(64, 174, 161, 0.08);
+}
+[data-theme="dark"] .imed-yday-stat.is-negative b {
+	color: var(--red-300);
+}
+[data-theme="dark"] .list-row-head,
+[data-theme="dark"] .report-wrapper .dt-header .dt-row,
+[data-theme="dark"] .report-wrapper .dt-header .dt-cell {
+	background: rgba(64, 174, 161, 0.12) !important;
+}
+[data-theme="dark"] .list-row-head .list-row-col,
+[data-theme="dark"] .list-row-head .level-left,
+[data-theme="dark"] .list-row-head .list-subject,
+[data-theme="dark"] .report-wrapper .dt-header .dt-cell__content {
+	color: var(--imed-teal-200) !important;
+}
+[data-theme="dark"] .frappe-list .list-row-container:hover .list-row {
+	background: rgba(64, 174, 161, 0.07);
+}
+[data-theme="dark"] .indicator-pill.green {
+	background: color-mix(in srgb, var(--green-500) 18%, transparent);
+	color: var(--green-300);
+}
+[data-theme="dark"] .indicator-pill.orange,
+[data-theme="dark"] .indicator-pill.yellow {
+	background: color-mix(in srgb, var(--amber-500) 18%, transparent);
+	color: var(--amber-300);
+}
+[data-theme="dark"] .indicator-pill.red {
+	background: color-mix(in srgb, var(--red-500) 18%, transparent);
+	color: var(--red-300);
+}
+[data-theme="dark"] .indicator-pill.blue,
+[data-theme="dark"] .indicator-pill.light-blue {
+	background: color-mix(in srgb, var(--blue-500) 18%, transparent);
+	color: var(--blue-300);
+}
+[data-theme="dark"] .indicator-pill.purple {
+	background: color-mix(in srgb, var(--purple-500) 18%, transparent);
+	color: var(--purple-300);
+}
+[data-theme="dark"] .indicator-pill.gray,
+[data-theme="dark"] .indicator-pill.grey {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--gray-600);
+}
