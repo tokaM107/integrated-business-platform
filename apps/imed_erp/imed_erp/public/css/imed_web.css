@@ -1,230 +1,76 @@
 /*
  * IMED ERP login page. Everything is scoped to #page-login so other web pages (print view, web
  * forms) are not affected. Loaded by hooks.py (web_include_css) after imed_fonts.css.
- *
- * The owner's request of 2 Nov 2026: the card in the middle as before, a little see-through (frosted glass), on
- * the brand's green over the whole page; no "login with an e-mail link" button. CSS only, on Frappe's own page
- * (no template override, so an upgrade keeps working). The page's words are Frappe's, translated in
- * translations/ar.csv.
  */
 
-body:has(#page-login) {
+#page-login,
+#page-login ~ .web-footer {
 	--imed-teal-50: #effaf8;
-	--imed-teal-200: #ade2d9;
-	--imed-teal-400: #40aea1;
 	--imed-teal-500: #1d9386;
 	--imed-teal-600: #0f766e;
 	--imed-teal-700: #0f625b;
-	--imed-teal-800: #104e49;
-	--imed-teal-900: #0f3f3b;
-	--imed-amber-400: #f4b942;
-	--imed-ink: #15222a;
-	--imed-ink-soft: #3a4a52;
-	--imed-muted: #55656e;
-	--imed-border: rgba(255, 255, 255, 0.65);
-	--imed-field: rgba(255, 255, 255, 0.7);
+	--imed-border: #e3e9ec;
+	--imed-border-strong: #d2dbe0;
 	--font-stack: "InterVariable", "Inter", "IMED Arabic", -apple-system, BlinkMacSystemFont, "Segoe UI",
 		"Noto Sans Arabic", "Tahoma", sans-serif;
+	font-family: var(--font-stack);
+}
+
+/* The brand's green over the whole page (owner, 2 Nov 2026): the deep teal, a soft amber glow at the top. */
+body:has(#page-login) {
 	min-height: 100vh;
-	/* The brand's green over the whole page: an amber glow at the top, a lighter teal at the bottom, a fine
-	   dotted grid. Fixed, so it stays put on a long page. */
 	background:
-		radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.09) 1.5px, transparent 0) 0 0 / 26px 26px,
-		radial-gradient(700px 480px at 85% -5%, rgba(244, 185, 66, 0.28), transparent 65%),
-		radial-gradient(800px 600px at 5% 105%, rgba(64, 174, 161, 0.45), transparent 65%),
-		linear-gradient(160deg, var(--imed-teal-600) 0%, var(--imed-teal-800) 55%, var(--imed-teal-900) 100%);
+		radial-gradient(700px 480px at 85% -5%, rgba(244, 185, 66, 0.22), transparent 65%),
+		radial-gradient(800px 600px at 5% 105%, rgba(64, 174, 161, 0.4), transparent 65%),
+		linear-gradient(160deg, #0f766e 0%, #104e49 55%, #0f3f3b 100%);
 	background-attachment: fixed;
-	font-family: var(--font-stack);
-}
-#page-login,
-#page-login ~ .web-footer {
-	font-family: var(--font-stack);
-}
-#page-login {
-	background: transparent;
 }
 
 #page-login .page-content-wrapper {
-	padding-top: min(11vh, 100px);
+	padding-top: min(12vh, 110px);
 }
 
-/* The card: frosted glass, so the green shows through a little. */
+/* The card a little see-through (owner, 2 Nov 2026): the green shows faintly through it. */
 #page-login .login-content.page-card {
-	max-width: 420px;
+	max-width: 400px;
 	margin-inline: auto;
-	padding: 36px 32px 30px;
-	background: rgba(255, 255, 255, 0.78);
-	border: 1px solid var(--imed-border);
-	border-radius: 22px;
-	box-shadow: 0 30px 70px -30px rgba(3, 30, 28, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-	-webkit-backdrop-filter: blur(18px) saturate(1.3);
-	backdrop-filter: blur(18px) saturate(1.3);
+	padding: 36px 32px 28px;
+	background: rgba(255, 255, 255, 0.9);
+	border: 0;
+	border-radius: 18px;
+	box-shadow:
+		0 30px 70px -30px rgba(3, 30, 28, 0.6),
+		0 0 0 1px rgba(255, 255, 255, 0.5);
+	-webkit-backdrop-filter: blur(12px);
+	backdrop-filter: blur(12px);
 }
 
 #page-login .page-card-head {
-	margin-bottom: 22px;
 	text-align: center;
+	margin-bottom: 20px;
 }
 #page-login .page-card-head .app-logo {
 	/* Frappe fixes the login logo at 32px high. */
-	width: 58px !important;
-	height: 58px !important;
+	width: 52px !important;
+	height: 52px !important;
 	max-height: none;
-	margin-inline: auto;
-	margin-bottom: 16px;
 	object-fit: contain;
-	border-radius: 16px;
-	box-shadow: 0 10px 22px -10px rgba(15, 98, 91, 0.7), 0 0 0 4px rgba(255, 255, 255, 0.6);
+	border-radius: 14px;
+	margin-inline: auto;
+	margin-bottom: 14px;
+	box-shadow: 0 8px 18px -8px rgba(15, 118, 110, 0.55);
 }
 #page-login .page-card-head h4 {
-	margin: 0 0 6px;
-	color: var(--imed-ink);
-	font-size: 24px;
-	font-weight: 750;
+	font-size: 22px;
+	font-weight: 650;
 	letter-spacing: -0.02em;
+	color: #15222a;
 	text-align: center;
 }
 #page-login .page-card-head .page-card-subtitle {
-	margin: 0;
-	color: var(--imed-muted);
-	font-size: 14.5px;
+	color: #677680;
 	text-align: center;
 }
-
-/* Fields: a little see-through too, white when typed in. */
-#page-login .form-group {
-	margin-bottom: 16px;
-}
-#page-login .form-label {
-	margin-bottom: 7px;
-	color: var(--imed-ink-soft);
-	font-size: 13.5px;
-	font-weight: 600;
-}
-#page-login .form-control {
-	height: 46px;
-	padding-inline: 42px 14px;
-	background: var(--imed-field);
-	border: 1px solid rgba(16, 78, 73, 0.16);
-	border-radius: 12px;
-	color: var(--imed-ink);
-	font-size: 15px;
-	transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-}
-#page-login .form-control::placeholder {
-	color: #8a979f;
-}
-#page-login .form-control:hover {
-	border-color: rgba(16, 78, 73, 0.3);
-}
-#page-login .form-control:focus {
-	background: #ffffff;
-	border-color: var(--imed-teal-500);
-	box-shadow: 0 0 0 4px rgba(29, 147, 134, 0.18);
-}
-/* The field's icon at its start, the password's eye at its end, both centred in the field. */
-#page-login .email-field,
-#page-login .password-field {
-	position: relative;
-}
-#page-login .field-icon {
-	top: calc(50% - 8px) !important;
-	inset-inline-start: 15px;
-	right: auto;
-	transform: none !important;
-	color: #6f7f88;
-	stroke: currentColor;
-}
-html[dir="rtl"] #page-login .field-icon {
-	left: auto;
-	right: 15px;
-}
-#page-login .form-control:focus ~ .field-icon {
-	color: var(--imed-teal-600);
-}
-#page-login .password-field .form-control {
-	padding-inline-end: 42px;
-}
-#page-login .toggle-password {
-	top: calc(50% - 8px) !important;
-	transform: none !important;
-}
-#page-login .forgot-password-message {
-	margin-top: 10px;
-	text-align: end;
-}
-#page-login .forgot-password-message a {
-	font-size: 13.5px;
-	font-weight: 600;
-}
-
-/* The main action: the brand's gradient. */
-#page-login .page-card-actions {
-	margin-top: 6px;
-}
-#page-login .btn-login,
-#page-login .btn-forgot,
-#page-login .btn-signup {
-	height: 46px;
-	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
-	border: 0;
-	border-radius: 12px;
-	color: #ffffff;
-	font-size: 15px;
-	font-weight: 700;
-	box-shadow: 0 10px 22px -12px rgba(15, 98, 91, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-	transition: filter 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
-}
-#page-login .btn-login:hover,
-#page-login .btn-login:focus,
-#page-login .btn-forgot:hover,
-#page-login .btn-signup:hover {
-	filter: brightness(1.06);
-	color: #ffffff;
-	transform: translateY(-1px);
-	box-shadow: 0 14px 26px -12px rgba(15, 98, 91, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-}
-#page-login .btn-login:focus-visible {
-	outline: none;
-	box-shadow: 0 0 0 4px rgba(29, 147, 134, 0.3);
-}
-#page-login .btn-login:disabled,
-#page-login .btn-forgot:disabled {
-	filter: grayscale(0.4);
-	opacity: 0.7;
-	transform: none;
-}
-/* No "login with an e-mail link" button (owner, 2 Nov 2026): signing in is by e-mail and password. Hidden
-   here only; the option itself is System Settings' "Login with email link". */
-#page-login .btn-login-with-email-link {
-	display: none !important;
-}
-/* Any other way in (a social login, if one is ever set up): a quiet outlined button. */
-#page-login .btn-login-option {
-	height: 44px;
-	margin-top: 12px;
-	background: rgba(255, 255, 255, 0.7);
-	border: 1px solid rgba(16, 78, 73, 0.16);
-	border-radius: 12px;
-	color: var(--imed-ink-soft);
-	font-weight: 600;
-}
-#page-login .btn-login-option:hover {
-	background: #ffffff;
-	color: var(--imed-teal-700);
-}
-#page-login a {
-	color: var(--imed-teal-700);
-}
-#page-login .sign-up-message {
-	margin-top: 20px;
-	color: var(--imed-muted);
-}
-#page-login .login-error-banner,
-#page-login .login-success-banner {
-	border-radius: 12px;
-}
-
 /* Untranslated English lines inside the Arabic page take their direction from their own text, so
    their punctuation stays at the end ("?Forgot password" shows as "Forgot password?"). */
 #page-login .page-card-head h4,
@@ -234,7 +80,59 @@ html[dir="rtl"] #page-login .field-icon {
 	unicode-bidi: plaintext;
 }
 
-/* Frappe's footer, light on the green. */
+#page-login .form-label {
+	color: #48565f;
+	font-weight: 500;
+}
+#page-login .form-control {
+	height: 40px;
+	background: #ffffff;
+	border: 1px solid var(--imed-border-strong);
+	border-radius: 10px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+#page-login .form-control:focus {
+	border-color: var(--imed-teal-500);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+}
+#page-login .field-icon {
+	top: 12px;
+}
+
+#page-login .btn-login {
+	height: 40px;
+	background: var(--imed-teal-600);
+	border: 1px solid var(--imed-teal-600);
+	border-radius: 10px;
+	color: #ffffff;
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+#page-login .btn-login:hover,
+#page-login .btn-login:focus {
+	background: var(--imed-teal-700);
+	border-color: var(--imed-teal-700);
+	color: #ffffff;
+}
+#page-login .btn-login:focus-visible {
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.25);
+}
+#page-login .btn-login-option {
+	height: 40px;
+	background: #ffffff;
+	border: 1px solid var(--imed-border-strong);
+	border-radius: 10px;
+	color: #2c3940;
+	font-weight: 500;
+}
+#page-login .btn-login-option:hover {
+	background: #f7f9fa;
+}
+#page-login .forgot-password-message a,
+#page-login a {
+	color: var(--imed-teal-600);
+}
+
 #page-login ~ .web-footer {
 	background: transparent;
 	border-top: 0;
@@ -244,23 +142,22 @@ html[dir="rtl"] #page-login .field-icon {
 	color: rgba(255, 255, 255, 0.6);
 }
 
-/* A browser without frosted glass: a plain white card, so the words stay easy to read. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	#page-login .login-content.page-card {
-		background: rgba(255, 255, 255, 0.95);
-	}
+/* No "login with an e-mail link" button (owner, 2 Nov 2026): signing in is by e-mail and password. Hidden
+   here only; the option itself is System Settings' "Login with email link". */
+#page-login .btn-login-with-email-link {
+	display: none !important;
 }
 
 @media (max-width: 480px) {
 	#page-login .page-content-wrapper {
-		padding-top: 28px;
+		padding-top: 24px;
 	}
 	#page-login .login-content.page-card {
 		/* The page container already pads 24px on each side. */
 		width: auto;
 		max-width: none;
 		margin-inline: 0;
-		padding: 28px 20px 24px;
+		padding: 28px 20px 22px;
 		/* Frappe stretches the card to the screen height on phones; let it fit its content. */
 		min-height: 0;
 		height: auto;
