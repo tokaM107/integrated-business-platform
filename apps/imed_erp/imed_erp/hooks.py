@@ -324,6 +324,7 @@ doc_events = {
 		"validate": [
 			"imed_erp.imederp.treasuries.block_spending_without_approval",
 			"imed_erp.imederp.treasuries.check_entry_treasuries",
+			"imed_erp.imederp.damaged_stock.guard_damaged_store",
 		],
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
@@ -357,6 +358,7 @@ doc_events = {
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
 	"Purchase Receipt": {
+		"validate": "imed_erp.imederp.damaged_stock.guard_damaged_store",
 		"on_submit": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",
 		"before_cancel": "imed_erp.imederp.stock_reorder.remember_stock_before_cancel",
 		"on_cancel": "imed_erp.imederp.stock_reorder.alert_on_reorder_level",

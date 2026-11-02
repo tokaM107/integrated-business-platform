@@ -15,6 +15,8 @@ from imed_erp.imederp.doctype.printing_machine.printing_machine import check_lib
 class PrinterReading(Document):
     def validate(self):
         machine = frappe.db.get_value("Printing Machine", self.machine, ["cost_center", "disabled"], as_dict=True)
+        if not machine:
+            frappe.throw(_("Printing Machine {0} was not found.").format(self.machine), frappe.DoesNotExistError)
         if machine.disabled:
             frappe.throw(_("{0} is out of service and takes no counter readings.").format(self.machine))
         # The library is the machine's, never typed.
