@@ -9,7 +9,7 @@
 #               last month over the same days (the 1st to the same day; when last month is shorter, both stop at
 #               its last day, so the two periods have the same length); the cash with its balance at the end of
 #               that same day last month. The dates compared are sent with the figures.
-#   pipeline    this month's bookings by status: tentative, confirmed, with a deposit, completed; cancelled and
+#   pipeline    this month's bookings, the halls and the studio apart, each tentative or completed; cancelled and
 #               no-shows apart.
 #   upcoming    the next bookings from today, a week ahead, not cancelled.
 #   collection  this month's bookings (not cancelled, not a no-show): their total, what was paid and what is still
@@ -24,7 +24,8 @@ from imed_erp.imederp.owner_figures import balance, company, leaf_accounts
 from imed_erp.imederp.owner_yesterday import check_owner
 
 NOT_HELD = ("Cancelled", "No Show")
-PIPELINE = ("Tentative", "Confirmed", "Confirmed with Deposit", "Completed")
+# A booking's resource type (Booking.resource_type, as owner_yesterday reads it) and how the page names it.
+KINDS = {"Hall": "halls", "Studio Service": "studio"}
 UPCOMING_DAYS = 7
 UPCOMING_LIMIT = 5
 
@@ -90,19 +91,32 @@ def kpis(period):
 
 
 def pipeline(period):
+	"""This month's bookings, the halls apart from the studio, each as tentative or completed (the owner, 2 Nov 2026:
+	a booking is tentative or completed). A booking in another state that still holds its time (confirmed, with a
+	deposit) is counted as tentative, not completed yet, so none is left out; cancelled and no-shows apart."""
 	rows = frappe.get_all(
 		"Booking",
 		filters={"booking_date": ["between", [period.month_start, period.month_end]]},
-		fields=["status", {"COUNT": "*", "as": "count"}],
-		group_by="status",
+		fields=["resource_type", "status", {"COUNT": "*", "as": "count"}],
+		group_by="resource_type, status",
 	)
-	counts = {row.status: row.count for row in rows}
+	kinds = {kind: {"tentative": 0, "completed": 0, "cancelled": 0, "no_show": 0} for kind in KINDS}
+	for row in rows:
+		kind = kinds.get(row.resource_type)
+		if kind is None:
+			continue
+		if row.status == "Completed":
+			kind["completed"] += row.count
+		elif row.status == "Cancelled":
+			kind["cancelled"] += row.count
+		elif row.status == "No Show":
+			kind["no_show"] += row.count
+		else:
+			kind["tentative"] += row.count
 	return {
 		"from": period.month_start,
 		"to": period.month_end,
-		"stages": [{"status": status, "count": counts.get(status, 0)} for status in PIPELINE],
-		"cancelled": counts.get("Cancelled", 0),
-		"no_show": counts.get("No Show", 0),
+		"kinds": [{"kind": KINDS[kind], **counts} for kind, counts in kinds.items()],
 	}
 
 

@@ -20,6 +20,10 @@
 		"Net This Month": ["scale", "net"],
 		"Owed to Us": ["hand-coins", "due"],
 		"We Owe": ["receipt", "owe"],
+		"Platform Fees This Month": ["smartphone", "in"],
+		"Collected from Doctors This Month": ["hand-coins", "in"],
+		"Cash Shortages This Month": ["triangle-alert", "out"],
+		"Open Cash Discrepancies": ["scale", "due"],
 		"Studio Bookings This Month": ["clapperboard", "count"],
 		"Studio Hours This Month": ["clock", "count"],
 		"Hall Bookings This Month": ["presentation", "count"],
@@ -169,13 +173,6 @@
 	// Hours keep their half (2.5 h was shown as "2 h"; audit of 1 Nov 2026).
 	const hours_text = (value) => __("{0} h", [format_number(value || 0, null, (value || 0) % 1 ? 1 : 0)]);
 	const tone = (value) => (value > 0 ? "is-positive" : value < 0 ? "is-negative" : "");
-	const STATES = {
-		ok: __("Working"),
-		warning: __("Needs attention"),
-		error: __("Failed"),
-		unknown: __("Unknown"),
-		not_configured: __("Not configured"),
-	};
 
 	// Each card and figure in its colour (imed_theme.css §27): a card by its icon, a figure by what it counts. A
 	// figure not named here takes the brand's teal.
@@ -412,32 +409,8 @@
 		return card("printer", __("Paper and counters"), libraries + warnings(p.warnings));
 	}
 
-	// Where a system's figures live: the XStudio sync and the file imports in the import logs, the jobs in theirs.
-	function system_route(s) {
-		if (s.name === __("XStudio bookings")) return ["Integration Import Log", { source_system: "xstudio" }];
-		if (s.name === __("File imports")) return ["Data Import", {}];
-		if (s.name.startsWith(__("Daily job")) || s.name.startsWith(__("Scheduled job"))) return ["Scheduled Job Log", {}];
-		return ["Error Log", {}];
-	}
-
-	function systems_card(list) {
-		const rows = list
-			.map(
-				(s) => `<li class="imed-yday-system is-${esc(s.state)}">
-					<span class="imed-yday-dot"></span>
-					<div><b><a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(system_route(s)))}">${esc(s.name)}</a></b> <span class="imed-yday-state">${esc(STATES[s.state] || s.state)}</span>
-						${s.detail ? `<div class="imed-yday-detail">${esc(s.detail)}</div>` : ""}
-						${
-							s.last_success
-								? `<div class="imed-yday-detail">${esc(__("Last success: {0}", [frappe.datetime.str_to_user(s.last_success)]))}</div>`
-								: ""
-						}
-					</div>
-				</li>`
-			)
-			.join("");
-		return card("plug", __("Integrations and imports"), `<ul class="imed-yday-systems">${rows}</ul>`);
-	}
+	// The integrations and imports are not on the owner's page (the owner, 2 Nov 2026): their state is on the
+	// Integration Status screen, in the sidebar.
 
 	function render_yesterday($page) {
 		if (!yesterday) return;
@@ -462,7 +435,6 @@
 					${d.halls ? halls_card(d.halls, d.currency) : ""}
 					${app_card(d.app, d.currency, d.day)}
 					${printing_card(d.printing, d.day)}
-					${systems_card(d.systems)}
 				</div>
 			</div>`);
 		$panel.on("click", ".imed-yday-link", function (e) {
@@ -554,31 +526,41 @@
 			</div>`;
 	}
 
-	const STAGES = { Tentative: "blue", Confirmed: "green", "Confirmed with Deposit": "amber", Completed: "violet" };
+	// The halls and the studio apart (the owner, 2 Nov 2026), each booking tentative or completed.
+	const KINDS = {
+		halls: ["presentation", "tone-blue", __("Halls")],
+		studio: ["clapperboard", "tone-violet", __("Studio")],
+	};
 
 	function pipeline_html(p) {
-		const total = p.stages.reduce((sum, s) => sum + s.count, 0);
-		const completed = (p.stages.find((s) => s.status === "Completed") || {}).count || 0;
-		const shapes = p.stages.map((s, i) => `<i class="tone-${STAGES[s.status]}" style="--step:${i}"></i>`).join("");
-		const legend = p.stages
-			.map((s) => `<li class="tone-${STAGES[s.status]}"><span>${esc(__(s.status))}</span><b class="imed-ov-num">${esc(number(s.count))}</b></li>`)
+		const blocks = p.kinds
+			.map((k) => {
+				const [icon, tone, name] = KINDS[k.kind];
+				const total = k.tentative + k.completed;
+				const done = total ? (k.completed / total) * 100 : 0;
+				const apart = k.cancelled || k.no_show
+					? `<span class="imed-ov-muted">${esc(__("Cancelled {0} · No show {1}", [number(k.cancelled), number(k.no_show)]))}</span>`
+					: "";
+				return `<div class="imed-ov-kind ${tone}">
+						<div class="imed-ov-kind__head">
+							<span class="imed-ov-kind__icon">${frappe.utils.icon(icon, "sm")}</span>
+							<b>${esc(name)}</b>
+							<span class="imed-ov-kind__total"><b class="imed-ov-num">${esc(number(total))}</b><small>${esc(__("Total"))}</small></span>
+						</div>
+						<div class="imed-ov-kind__bar ${total ? "" : "is-empty"}" role="img" aria-label="${esc(`${__("Completed")} ${number(k.completed)} / ${number(total)}`)}">
+							<i class="is-done" style="inline-size:${done}%"></i><i class="is-open" style="inline-size:${total ? 100 - done : 0}%"></i>
+						</div>
+						<div class="imed-ov-kind__counts">
+							<span class="is-open">${esc(__("Tentative"))} <b class="imed-ov-num">${esc(number(k.tentative))}</b></span>
+							<span class="is-done">${esc(__("Completed"))} <b class="imed-ov-num">${esc(number(k.completed))}</b></span>
+							${apart}
+						</div>
+					</div>`;
+			})
 			.join("");
-		const apart = p.cancelled || p.no_show
-			? `<p class="imed-ov-muted">${esc(__("Cancelled {0} · No show {1}", [number(p.cancelled), number(p.no_show)]))}</p>`
-			: "";
 		return `<section class="imed-ov-card imed-ov-pipeline">
 				<h3>${esc(__("Bookings this month"))}</h3>
-				<div class="imed-ov-pipeline__body">
-					<div class="imed-ov-funnel ${total ? "" : "is-empty"}" aria-hidden="true">${shapes}</div>
-					<div class="imed-ov-pipeline__side">
-						<ul class="imed-ov-legend">${legend}</ul>
-						<div class="imed-ov-pipeline__rate">
-							<span>${esc(__("Completed"))}</span>
-							<b class="imed-ov-num">${total ? esc(pct((completed / total) * 100)) : "—"}</b>
-						</div>
-						${apart}
-					</div>
-				</div>
+				<div class="imed-ov-kinds">${blocks}</div>
 			</section>`;
 	}
 
