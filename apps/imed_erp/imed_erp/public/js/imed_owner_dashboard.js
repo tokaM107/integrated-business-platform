@@ -163,7 +163,7 @@
 			<p class="imed-yday-note">${esc(
 				__("Invoiced revenue and approved expenses (submitted documents only). Money collected is not revenue.")
 			)}</p>`,
-			"is-wide"
+			"is-wide tone-green"
 		);
 	}
 
@@ -175,10 +175,10 @@
 		const kind = (title, s) =>
 			`<div class="imed-yday-sub">${esc(title)}</div>
 			<div class="imed-yday-stats">
-				${stat(__("Held"), number(s.held))}
-				${stat(__("Completed"), number(s.completed))}
-				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "")}
-				${stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "")}
+				${stat(__("Held"), number(s.held), "tone-blue")}
+				${stat(__("Completed"), number(s.completed), "tone-green")}
+				${stat(__("Cancelled"), number(s.cancelled), `tone-red ${s.cancelled ? "is-warning" : ""}`)}
+				${stat(__("No Show"), number(s.no_show), `tone-amber ${s.no_show ? "is-warning" : ""}`)}
 			</div>`;
 		const hours = __("{0} h", [number(b.studio_hours_booked)]);
 		const delivered = __("{0} h", [number(b.studio_hours_delivered)]);
@@ -187,9 +187,9 @@
 			__("Halls and studio"),
 			`${kind(__("Halls"), b.halls)}${kind(__("Studio"), b.studio)}
 			<div class="imed-yday-stats">
-				${stat(__("Studio hours booked"), hours)}
-				${stat(__("Studio hours delivered"), delivered)}
-				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday))}
+				${stat(__("Studio hours booked"), hours, "tone-blue")}
+				${stat(__("Studio hours delivered"), delivered, "tone-green")}
+				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday), "tone-violet")}
 			</div>
 			${
 				b.still_open
@@ -197,27 +197,29 @@
 							__("{0} booking(s) of yesterday are neither completed nor cancelled.", [b.still_open])
 					  )}</p>`
 					: ""
-			}`
+			}`,
+			"tone-blue"
 		);
 	}
 
 	function app_card(a, currency) {
 		if (a.state !== "ok") {
-			return card("smartphone", __("Platform fees"), `<p class="imed-yday-warn">${esc(__("No app agreement yet."))}</p>`);
+			return card("smartphone", __("Platform fees"), `<p class="imed-yday-warn">${esc(__("No app agreement yet."))}</p>`, "tone-cyan");
 		}
 		return card(
 			"smartphone",
 			__("Platform fees"),
 			`<div class="imed-yday-stats">
-				${stat(__("Charged yesterday"), money(a.charged, currency))}
-				${stat(__("Collected yesterday"), money(a.collected, currency), a.collected ? "is-positive" : "")}
+				${stat(__("Charged yesterday"), money(a.charged, currency), "tone-cyan")}
+				${stat(__("Collected yesterday"), money(a.collected, currency), `tone-green ${a.collected ? "is-positive" : ""}`)}
 				${stat(
 					__("Still owed by doctors"),
 					a.outstanding == null ? esc(__("Not configured")) : money(a.outstanding, currency),
-					a.outstanding > 0 ? "is-negative" : ""
+					`tone-amber ${a.outstanding > 0 ? "is-negative" : ""}`
 				)}
-				${stat(__("New students"), number(a.subscriptions))}
-			</div>`
+				${stat(__("New students"), number(a.subscriptions), "tone-violet")}
+			</div>`,
+			"tone-cyan"
 		);
 	}
 
@@ -229,7 +231,7 @@
 
 	function printing_card(p) {
 		if (p.state !== "ok") {
-			return card("printer", __("Paper and counters"), `<p class="imed-yday-warn">${esc(__("No printing machine is set up."))}</p>`);
+			return card("printer", __("Paper and counters"), `<p class="imed-yday-warn">${esc(__("No printing machine is set up."))}</p>`, "tone-amber");
 		}
 		const libraries = p.libraries
 			.map((lib) => {
@@ -248,13 +250,13 @@
 						<tbody>${machines}</tbody>
 					</table>
 					<div class="imed-yday-stats">
-						${stat(__("Sheets printed"), number(lib.consumed))}
-						${stat(__("Sheets sold"), number(lib.sold))}
-						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "")}
+						${stat(__("Sheets printed"), number(lib.consumed), "tone-blue")}
+						${stat(__("Sheets sold"), number(lib.sold), "tone-green")}
+						${stat(__("Difference"), number(lib.variance), `tone-amber ${lib.variance ? "is-warning" : ""}`)}
 					</div>`;
 			})
 			.join("");
-		return card("printer", __("Paper and counters"), libraries + warnings(p.warnings));
+		return card("printer", __("Paper and counters"), libraries + warnings(p.warnings), "tone-amber");
 	}
 
 	function systems_card(list) {
@@ -273,7 +275,7 @@
 				</li>`
 			)
 			.join("");
-		return card("plug", __("Integrations and imports"), `<ul class="imed-yday-systems">${rows}</ul>`);
+		return card("plug", __("Integrations and imports"), `<ul class="imed-yday-systems">${rows}</ul>`, "tone-violet");
 	}
 
 	function render_yesterday($page) {
