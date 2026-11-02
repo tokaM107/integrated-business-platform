@@ -1,6 +1,6 @@
 // IMED ERP assistant: an animated character in the corner of every page that opens a chat panel at the side.
 // Text and voice messages go to imed_erp.assistant.api.send_message; which AI answers is decided on
-// the server (imed_erp/assistant/providers.py), so this file does not change when a model is connected.
+// the server (imed_erp/assistant/providers/), so this file does not change when a model is connected.
 //
 // Shown only to users the server allows (the owner; see ALLOWED_ROLES in assistant/api.py). Mounted on
 // the page once Frappe has started; the conversation is kept in memory for the browser tab.

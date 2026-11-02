@@ -210,6 +210,11 @@ page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # on_submit on stock documents, and Item validate: reorder levels per item and warehouse (LIB-04).
 # Stock Reconciliation validate: an opening count is ERPNext's Opening Stock; the difference is the
 # branch's (imederp/stock_count.py).
+# The AI assistant's businesses: every section of this app's Workspace Sidebar is one (assistant/businesses/
+# sidebar.py). Another app, or a module with its own tools, registers more here: dotted paths to callables
+# `f(context) -> list[BusinessIntegration]` (assistant/core/interfaces.py). The assistant's core never changes.
+assistant_businesses = []
+
 doc_events = {
 	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).
 	"*": {
