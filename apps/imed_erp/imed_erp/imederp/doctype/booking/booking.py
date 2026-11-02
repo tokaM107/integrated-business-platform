@@ -469,6 +469,9 @@ def check_availability(resource, booking_date, from_time, to_time, name=None):
 	frappe.has_permission("Booking", "read", throw=True)
 	if not frappe.db.exists("Booking Resource", resource):
 		frappe.throw(_("Resource {0} not found.").format(resource))
+	# Only one's own business's resources: the answer names the clashing booking, its times and its status
+	# (audit of 2 Nov 2026: a branch manager could probe another business's schedule).
+	check_own_business(frappe.db.get_value("Booking Resource", resource, "cost_center"))
 	starts, ends = get_time(from_time), get_time(to_time)
 	if starts == ends:
 		return {"free": 0, "message": _("The booking ends at {0}, the moment it starts: it has no length.").format(to_time)}
