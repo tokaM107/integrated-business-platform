@@ -2,10 +2,10 @@
  * IMED ERP login page. Everything is scoped to #page-login so other web pages (print view, web
  * forms) are not affected. Loaded by hooks.py (web_include_css) after imed_fonts.css.
  *
- * The owner's request of 2 Nov 2026: a professional sign-in. CSS only, on Frappe's own page (no template
- * override, so an upgrade keeps working): on a wide screen the brand's panel on one side (the logo and the
- * name, the deep teal with an amber glow) and the form on white on the other; on a phone the panel is a band
- * on top and the form a card over it. The page's words are Frappe's, translated in translations/ar.csv.
+ * The owner's request of 2 Nov 2026: the card in the middle as before, a little see-through (frosted glass), on
+ * the brand's green over the whole page; no "login with an e-mail link" button. CSS only, on Frappe's own page
+ * (no template override, so an upgrade keeps working). The page's words are Frappe's, translated in
+ * translations/ar.csv.
  */
 
 body:has(#page-login) {
@@ -19,134 +19,81 @@ body:has(#page-login) {
 	--imed-teal-900: #0f3f3b;
 	--imed-amber-400: #f4b942;
 	--imed-ink: #15222a;
-	--imed-ink-soft: #48565f;
-	--imed-muted: #677680;
-	--imed-border: #e3e9ec;
-	--imed-border-strong: #d2dbe0;
-	--imed-field: #f7f9fa;
-	/* How wide the brand's panel is on a wide screen. */
-	--imed-panel: min(46vw, 640px);
+	--imed-ink-soft: #3a4a52;
+	--imed-muted: #55656e;
+	--imed-border: rgba(255, 255, 255, 0.65);
+	--imed-field: rgba(255, 255, 255, 0.7);
 	--font-stack: "InterVariable", "Inter", "IMED Arabic", -apple-system, BlinkMacSystemFont, "Segoe UI",
 		"Noto Sans Arabic", "Tahoma", sans-serif;
 	min-height: 100vh;
-	background: #ffffff;
+	/* The brand's green over the whole page: an amber glow at the top, a lighter teal at the bottom, a fine
+	   dotted grid. Fixed, so it stays put on a long page. */
+	background:
+		radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.09) 1.5px, transparent 0) 0 0 / 26px 26px,
+		radial-gradient(700px 480px at 85% -5%, rgba(244, 185, 66, 0.28), transparent 65%),
+		radial-gradient(800px 600px at 5% 105%, rgba(64, 174, 161, 0.45), transparent 65%),
+		linear-gradient(160deg, var(--imed-teal-600) 0%, var(--imed-teal-800) 55%, var(--imed-teal-900) 100%);
+	background-attachment: fixed;
 	font-family: var(--font-stack);
 }
 #page-login,
 #page-login ~ .web-footer {
 	font-family: var(--font-stack);
 }
-
-/* ---------------- The brand's panel ---------------- */
-/* The panel: the deep teal, an amber glow in one corner, a light one in the other, and a fine dotted grid. */
-body:has(#page-login)::before {
-	content: "";
-	position: fixed;
-	z-index: 0;
-	inset-block: 0;
-	inset-inline-start: 0;
-	width: var(--imed-panel);
-	background:
-		radial-gradient(circle at 1.5px 1.5px, rgba(255, 255, 255, 0.11) 1.5px, transparent 0) 0 0 / 26px 26px,
-		radial-gradient(520px 420px at 85% 8%, rgba(244, 185, 66, 0.3), transparent 65%),
-		radial-gradient(620px 520px at 10% 100%, rgba(64, 174, 161, 0.42), transparent 65%),
-		linear-gradient(160deg, var(--imed-teal-600) 0%, var(--imed-teal-800) 55%, var(--imed-teal-900) 100%);
-}
-/* The logo and the name, in the middle of the panel; two soft rings behind them. */
-body:has(#page-login)::after {
-	content: "IMED ERP";
-	position: fixed;
-	z-index: 1;
-	inset-block-start: 50%;
-	inset-inline-start: calc(var(--imed-panel) / 2);
-	translate: -50% -50%;
-	display: block;
-	width: 360px;
-	padding-top: 132px;
-	background:
-		url("/assets/imed_erp/images/imed-mark.svg") center 0 / 104px 104px no-repeat;
-	color: #ffffff;
-	font-family: var(--font-stack);
-	font-size: 44px;
-	font-weight: 800;
-	letter-spacing: 0.01em;
-	line-height: 1.1;
-	text-align: center;
-	text-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-	filter: drop-shadow(0 18px 30px rgba(6, 40, 37, 0.35));
-	pointer-events: none;
-}
-html[dir="rtl"] body:has(#page-login)::after {
-	translate: 50% -50%;
-}
-
-/* ---------------- The form's side ---------------- */
 #page-login {
-	position: relative;
-	z-index: 2;
-	margin-inline-start: var(--imed-panel);
 	background: transparent;
 }
-/* The form in the middle of its side, across and down. */
+
 #page-login .page-content-wrapper {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	min-height: calc(100vh - 64px);
-	padding-top: 0;
-}
-#page-login main.container {
-	width: 100%;
-	max-width: 480px;
-	margin-inline: auto;
+	padding-top: min(11vh, 100px);
 }
 
-/* The card: on white, no frame; its own logo is shown only where the panel is not (phones). */
+/* The card: frosted glass, so the green shows through a little. */
 #page-login .login-content.page-card {
-	width: 100%;
 	max-width: 420px;
 	margin-inline: auto;
-	padding: 8px 4px;
-	background: transparent;
-	border: 0;
-	border-radius: 0;
-	box-shadow: none;
+	padding: 36px 32px 30px;
+	background: rgba(255, 255, 255, 0.78);
+	border: 1px solid var(--imed-border);
+	border-radius: 22px;
+	box-shadow: 0 30px 70px -30px rgba(3, 30, 28, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	-webkit-backdrop-filter: blur(18px) saturate(1.3);
+	backdrop-filter: blur(18px) saturate(1.3);
 }
+
 #page-login .page-card-head {
-	margin-bottom: 28px;
-	text-align: start;
+	margin-bottom: 22px;
+	text-align: center;
 }
 #page-login .page-card-head .app-logo {
-	display: none;
+	/* Frappe fixes the login logo at 32px high. */
+	width: 58px !important;
+	height: 58px !important;
+	max-height: none;
+	margin-inline: auto;
+	margin-bottom: 16px;
+	object-fit: contain;
+	border-radius: 16px;
+	box-shadow: 0 10px 22px -10px rgba(15, 98, 91, 0.7), 0 0 0 4px rgba(255, 255, 255, 0.6);
 }
 #page-login .page-card-head h4 {
-	margin: 0 0 8px;
+	margin: 0 0 6px;
 	color: var(--imed-ink);
-	font-size: 30px;
+	font-size: 24px;
 	font-weight: 750;
 	letter-spacing: -0.02em;
-	text-align: start;
-}
-/* A short line of the brand's colour under the title. */
-#page-login .page-card-head h4::after {
-	content: "";
-	display: block;
-	width: 44px;
-	height: 4px;
-	margin-top: 14px;
-	border-radius: 4px;
-	background: linear-gradient(90deg, var(--imed-teal-500), var(--imed-amber-400));
+	text-align: center;
 }
 #page-login .page-card-head .page-card-subtitle {
 	margin: 0;
 	color: var(--imed-muted);
-	font-size: 15px;
-	text-align: start;
+	font-size: 14.5px;
+	text-align: center;
 }
 
-/* Fields */
+/* Fields: a little see-through too, white when typed in. */
 #page-login .form-group {
-	margin-bottom: 18px;
+	margin-bottom: 16px;
 }
 #page-login .form-label {
 	margin-bottom: 7px;
@@ -155,27 +102,27 @@ html[dir="rtl"] body:has(#page-login)::after {
 	font-weight: 600;
 }
 #page-login .form-control {
-	height: 48px;
+	height: 46px;
 	padding-inline: 42px 14px;
 	background: var(--imed-field);
-	border: 1px solid var(--imed-border);
+	border: 1px solid rgba(16, 78, 73, 0.16);
 	border-radius: 12px;
 	color: var(--imed-ink);
 	font-size: 15px;
 	transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 #page-login .form-control::placeholder {
-	color: #9aa7b0;
+	color: #8a979f;
 }
 #page-login .form-control:hover {
-	border-color: var(--imed-border-strong);
+	border-color: rgba(16, 78, 73, 0.3);
 }
 #page-login .form-control:focus {
 	background: #ffffff;
 	border-color: var(--imed-teal-500);
-	box-shadow: 0 0 0 4px rgba(29, 147, 134, 0.14);
+	box-shadow: 0 0 0 4px rgba(29, 147, 134, 0.18);
 }
-/* The field's icon at its start, the password's eye at its end, both centred in the taller field. */
+/* The field's icon at its start, the password's eye at its end, both centred in the field. */
 #page-login .email-field,
 #page-login .password-field {
 	position: relative;
@@ -185,7 +132,7 @@ html[dir="rtl"] body:has(#page-login)::after {
 	inset-inline-start: 15px;
 	right: auto;
 	transform: none !important;
-	color: #8795a0;
+	color: #6f7f88;
 	stroke: currentColor;
 }
 html[dir="rtl"] #page-login .field-icon {
@@ -213,12 +160,12 @@ html[dir="rtl"] #page-login .field-icon {
 
 /* The main action: the brand's gradient. */
 #page-login .page-card-actions {
-	margin-top: 8px;
+	margin-top: 6px;
 }
 #page-login .btn-login,
 #page-login .btn-forgot,
 #page-login .btn-signup {
-	height: 48px;
+	height: 46px;
 	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
 	border: 0;
 	border-radius: 12px;
@@ -239,7 +186,7 @@ html[dir="rtl"] #page-login .field-icon {
 }
 #page-login .btn-login:focus-visible {
 	outline: none;
-	box-shadow: 0 0 0 4px rgba(29, 147, 134, 0.25);
+	box-shadow: 0 0 0 4px rgba(29, 147, 134, 0.3);
 }
 #page-login .btn-login:disabled,
 #page-login .btn-forgot:disabled {
@@ -247,25 +194,27 @@ html[dir="rtl"] #page-login .field-icon {
 	opacity: 0.7;
 	transform: none;
 }
-/* Other ways in (an e-mail link): a quiet outlined button, after a thin line. */
+/* No "login with an e-mail link" button (owner, 2 Nov 2026): signing in is by e-mail and password. Hidden
+   here only; the option itself is System Settings' "Login with email link". */
+#page-login .btn-login-with-email-link {
+	display: none !important;
+}
+/* Any other way in (a social login, if one is ever set up): a quiet outlined button. */
 #page-login .btn-login-option {
-	height: 46px;
+	height: 44px;
 	margin-top: 12px;
-	background: #ffffff;
-	border: 1px solid var(--imed-border-strong);
+	background: rgba(255, 255, 255, 0.7);
+	border: 1px solid rgba(16, 78, 73, 0.16);
 	border-radius: 12px;
 	color: var(--imed-ink-soft);
-	font-size: 14px;
 	font-weight: 600;
-	line-height: 30px;
 }
 #page-login .btn-login-option:hover {
-	background: var(--imed-teal-50);
-	border-color: var(--imed-teal-200);
+	background: #ffffff;
 	color: var(--imed-teal-700);
 }
 #page-login a {
-	color: var(--imed-teal-600);
+	color: var(--imed-teal-700);
 }
 #page-login .sign-up-message {
 	margin-top: 20px;
@@ -285,72 +234,33 @@ html[dir="rtl"] #page-login .field-icon {
 	unicode-bidi: plaintext;
 }
 
-/* Frappe's footer, quiet under the form. */
+/* Frappe's footer, light on the green. */
 #page-login ~ .web-footer {
-	position: relative;
-	z-index: 2;
-	margin-inline-start: var(--imed-panel);
 	background: transparent;
 	border-top: 0;
 }
 #page-login ~ .web-footer .footer-powered,
 #page-login ~ .web-footer .footer-powered a {
-	color: #8795a0;
+	color: rgba(255, 255, 255, 0.6);
 }
 
-/* ---------------- Narrower screens: the panel as a band on top ---------------- */
-@media (max-width: 991.98px) {
-	body:has(#page-login) {
-		background: #f3f6f7;
-	}
-	body:has(#page-login)::before {
-		position: absolute;
-		inset-inline: 0;
-		inset-block-end: auto;
-		width: auto;
-		height: 260px;
-		border-radius: 0 0 28px 28px;
-	}
-	body:has(#page-login)::after {
-		position: absolute;
-		inset-block-start: 34px;
-		inset-inline-start: 50%;
-		translate: -50% 0;
-		width: 260px;
-		padding-top: 74px;
-		background-size: 60px 60px;
-		font-size: 30px;
-	}
-	html[dir="rtl"] body:has(#page-login)::after {
-		translate: 50% 0;
-	}
-	#page-login,
-	#page-login ~ .web-footer {
-		margin-inline-start: 0;
-	}
-	#page-login .page-content-wrapper {
-		display: block;
-		min-height: 0;
-		padding-top: 170px;
-	}
+/* A browser without frosted glass: a plain white card, so the words stay easy to read. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	#page-login .login-content.page-card {
-		max-width: 440px;
-		padding: 30px 26px 26px;
-		background: #ffffff;
-		border-radius: 22px;
-		box-shadow: 0 24px 60px -28px rgba(16, 34, 42, 0.4), 0 0 0 1px var(--imed-border);
-	}
-	#page-login .page-card-head h4 {
-		font-size: 25px;
+		background: rgba(255, 255, 255, 0.95);
 	}
 }
+
 @media (max-width: 480px) {
+	#page-login .page-content-wrapper {
+		padding-top: 28px;
+	}
 	#page-login .login-content.page-card {
 		/* The page container already pads 24px on each side. */
 		width: auto;
 		max-width: none;
 		margin-inline: 0;
-		padding: 26px 20px 22px;
+		padding: 28px 20px 24px;
 		/* Frappe stretches the card to the screen height on phones; let it fit its content. */
 		min-height: 0;
 		height: auto;
