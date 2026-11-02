@@ -62,7 +62,8 @@ app_include_js = [
 ]
 
 # include js, css files in header of web template (the theme there only touches the login page)
-web_include_css = ["/assets/imed_erp/css/imed_fonts.css", "/assets/imed_erp/css/imed_web.css"]
+# Versioned like the desk's (asset()): the sign-in page's look changed on 2 Nov 2026 and browsers kept the old copy.
+web_include_css = [asset("css/imed_fonts.css"), asset("css/imed_web.css")]
 # web_include_js = "/assets/imed_erp/js/imed_erp.js"
 
 # Branding: logo on the home screen and the login page, and the browser tab icon.
