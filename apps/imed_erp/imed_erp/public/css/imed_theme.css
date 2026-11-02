@@ -2595,7 +2595,7 @@ a.imed-yday-stat:focus-visible,
 }
 .body-sidebar .sidebar-user-button .avatar-name-email .d-block:first-child {
 	color: #ffffff;
-	font-size: 15px;
+	font-size: 14px;
 	font-weight: 700;
 	text-transform: none;
 }
@@ -2603,7 +2603,7 @@ a.imed-yday-stat:focus-visible,
 .body-sidebar .sidebar-user-button .avatar-name-email .text-muted,
 .body-sidebar .sidebar-user-button .avatar-name-email .d-block + * {
 	color: var(--sb-muted) !important;
-	font-size: 12px;
+	font-size: 11.5px;
 }
 .body-sidebar .sidebar-user-button .icon {
 	--icon-stroke: var(--sb-muted);
@@ -2623,13 +2623,13 @@ a.imed-yday-stat:focus-visible,
 .body-sidebar .standard-sidebar-item .sidebar-item-label,
 .body-sidebar .standard-sidebar-item .item-anchor {
 	color: var(--sb-text);
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 600;
 }
 /* Frappe draws these icons in currentColor and gives the svg itself a gray class: the colour goes on the svg. */
 .body-sidebar .standard-sidebar-item svg.icon {
-	width: 18px;
-	height: 18px;
+	width: 17px;
+	height: 17px;
 	color: #ffffff !important;
 	--icon-stroke: currentColor;
 	stroke: currentColor;
@@ -2670,7 +2670,7 @@ a.imed-yday-stat:focus-visible,
 }
 .body-sidebar .sidebar-child-item .sidebar-item-label {
 	color: rgba(255, 255, 255, 0.82);
-	font-size: 13px;
+	font-size: 12.5px;
 	font-weight: 500;
 }
 /* An open group: its links on a slightly lighter band. */
