@@ -120,6 +120,63 @@ def unavailable_text(error: ModelUnavailable, context: RequestContext) -> str:
 	return "المساعد غير مربوط بنموذج بعد." if ar else "The assistant is not connected to a model yet."
 
 
+MAX_SPOKEN_CHARS = 1500
+
+
+def speakable(text: str) -> str:
+	"""An answer as it is said: no emoji or markdown marks for the voice to read out."""
+	import re
+
+	text = re.sub(r"[*_#`>|~]+", " ", text or "")
+	text = re.sub(r"[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F]", "", text)
+	return re.sub(r"\s+", " ", text).strip()[:MAX_SPOKEN_CHARS]
+
+
+@frappe.whitelist(methods=["POST"])
+@rate_limit(limit=MESSAGES_PER_MINUTE, seconds=60)
+def transcribe(audio=None, audio_type=None):
+	"""A recorded question as text, put in the message box for the user to read, correct and send (2 Nov 2026: the
+	voice went straight to the model, unseen). Returns {"text": str}, or {"text": "", "message": why}."""
+	check_access()
+	provider = get_provider()
+	context = build_context()
+	data = decode_audio(audio, audio_type)
+	try:
+		text = provider.transcribe(data, (audio_type or "").split(";")[0].strip(), context)
+	except ModelUnavailable as e:
+		return {"text": "", "message": unavailable_text(e, context)}
+	except Exception:
+		frappe.log_error(title=f"Assistant transcription by {provider.name} failed")
+		return {"text": "", "message": "ما قدرتش أكتب التسجيل، جرّب تاني أو اكتب سؤالك." if context.is_arabic else "The recording could not be written out. Try again or type your question."}
+	if text is None:
+		return {"text": "", "message": "المساعد مش متوصل بنموذج يكتب الصوت." if context.is_arabic else "No model is connected that can write out speech."}
+	return {"text": text[:MAX_MESSAGE_CHARS]}
+
+
+@frappe.whitelist(methods=["POST"])
+@rate_limit(limit=MESSAGES_PER_MINUTE, seconds=60)
+def speak(text=None):
+	"""An answer read aloud by the model's Egyptian voice. Returns {"audio": base64, "mime": str}, or {"audio": None}
+	when the provider has no voice (the browser reads it then)."""
+	check_access()
+	words = speakable(text)
+	if not words:
+		frappe.throw(_("Nothing to read."))
+	provider = get_provider()
+	context = build_context()
+	try:
+		spoken = provider.speak(words, context)
+	except ModelUnavailable as e:
+		return {"audio": None, "message": unavailable_text(e, context)}
+	except Exception:
+		frappe.log_error(title=f"Assistant speech by {provider.name} failed")
+		return {"audio": None}
+	if not spoken:
+		return {"audio": None}
+	data, mime = spoken
+	return {"audio": base64.b64encode(data).decode(), "mime": mime}
+
+
 @frappe.whitelist(methods=["POST"])
 # SEC-11: each message may reach a paid model; a script calling in a loop is stopped (per address, per minute).
 @rate_limit(limit=MESSAGES_PER_MINUTE, seconds=60)

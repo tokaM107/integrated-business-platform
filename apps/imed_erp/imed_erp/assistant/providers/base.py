@@ -21,6 +21,10 @@ class AssistantProvider:
 	def transcribe(self, audio: bytes, mime_type: str, context: RequestContext) -> str | None:
 		return None
 
+	def speak(self, text: str, context: RequestContext) -> tuple[bytes, str] | None:
+		"""(audio, its mime type) for an answer read aloud, or None when the provider has no voice."""
+		return None
+
 	@staticmethod
 	def api_key() -> str:
 		return frappe.conf.get("imed_assistant_api_key") or ""

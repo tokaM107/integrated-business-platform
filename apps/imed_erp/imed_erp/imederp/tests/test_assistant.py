@@ -555,3 +555,81 @@ class IntegrationTestAssistantMemory(AssistantCase):
 		with patch("imed_erp.assistant.api.get_provider", return_value=Down()):
 			api.send_message(chat=name, text="سؤال")
 		self.assertEqual([m.role for m in ChatStore.messages(name)], ["user", "assistant"])
+
+
+# ---------------------------------------------------------------- voice: dictation and reading aloud
+
+
+class VoiceModel(FakeModel):
+	supports_voice = True
+
+	def __init__(self, heard="عندنا كام حجز النهارده؟", audio=(b"RIFF....WAVEfmt ", "audio/wav")):
+		super().__init__()
+		self.heard, self.audio, self.spoken = heard, audio, []
+
+	def transcribe(self, audio, mime_type, context):
+		self.calls.append({"transcribe": mime_type, "bytes": len(audio)})
+		return self.heard
+
+	def speak(self, text, context):
+		self.spoken.append(text)
+		return self.audio
+
+
+class IntegrationTestAssistantVoice(AssistantCase):
+	RECORDING = __import__("base64").b64encode(b"\x1aE\xdf\xa3 fake webm").decode()
+
+	def test_a_recording_is_written_out_for_the_user_to_send_not_sent(self):
+		frappe.set_user(OWNER)
+		model = VoiceModel()
+		before = frappe.db.count("Assistant Message")
+		with patch.object(api, "get_provider", return_value=model):
+			result = api.transcribe(audio=self.RECORDING, audio_type="audio/webm;codecs=opus")
+		self.assertEqual(result, {"text": "عندنا كام حجز النهارده؟"})
+		self.assertEqual(model.calls[0]["transcribe"], "audio/webm")
+		# Only written out: nothing asked of the planner, nothing stored in a chat.
+		self.assertEqual(len([c for c in model.calls if "system" in c]), 0)
+		self.assertEqual(frappe.db.count("Assistant Message"), before)
+
+	def test_dictation_says_why_when_it_cannot(self):
+		frappe.set_user(OWNER)
+		with patch.object(api, "get_provider", return_value=FakeModel()):  # a model with no ears
+			self.assertEqual(api.transcribe(audio=self.RECORDING, audio_type="audio/webm")["text"], "")
+		self.assertRaises(frappe.ValidationError, api.transcribe, audio=self.RECORDING, audio_type="video/mp4")
+
+	def test_an_answer_is_read_by_the_model_s_voice_cleaned_of_marks(self):
+		frappe.set_user(OWNER)
+		model = VoiceModel()
+		with patch.object(api, "get_provider", return_value=model):
+			result = api.speak(text="**عندنا** ٣ حجوزات 👋 في # الاستوديو")
+		self.assertEqual(result["mime"], "audio/wav")
+		self.assertEqual(__import__("base64").b64decode(result["audio"]), model.audio[0])
+		self.assertEqual(model.spoken, ["عندنا ٣ حجوزات في الاستوديو"])
+		# No voice on the server: the browser reads it.
+		with patch.object(api, "get_provider", return_value=FakeModel()):
+			self.assertEqual(api.speak(text="تمام")["audio"], None)
+
+	def test_voice_is_the_owner_s_like_the_rest_of_the_assistant(self):
+		frappe.set_user(RAGHAD)
+		self.assertRaises(frappe.PermissionError, api.transcribe, audio=self.RECORDING, audio_type="audio/webm")
+		self.assertRaises(frappe.PermissionError, api.speak, text="x")
+
+	def test_the_speech_model_s_raw_pcm_becomes_a_wav_a_browser_plays(self):
+		import io
+		import wave
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers import gemini
+
+		pcm = b"\x01\x00" * 2400
+		part = SimpleNamespace(inline_data=SimpleNamespace(data=pcm, mime_type="audio/L16;codec=pcm;rate=24000"))
+		response = SimpleNamespace(candidates=[SimpleNamespace(content=SimpleNamespace(parts=[part]))])
+		provider = gemini.GeminiProvider()
+		provider.key = "test"
+		fake_client = SimpleNamespace(models=SimpleNamespace(generate_content=lambda **kw: response))
+		with patch.object(provider, "client", return_value=fake_client):
+			data, mime = provider.speak("عندنا ٣ حجوزات", build_context())
+		self.assertEqual(mime, "audio/wav")
+		with wave.open(io.BytesIO(data)) as w:
+			self.assertEqual((w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()), (1, 2, 24000, 2400))
+

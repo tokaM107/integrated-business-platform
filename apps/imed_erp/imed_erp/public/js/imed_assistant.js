@@ -249,9 +249,9 @@
 					${item.transcript ? `<div class="imed-assistant-msg__transcript" dir="auto">${esc(item.transcript)}</div>` : ""}
 				</div>`;
 		}
-		// An answer can be read aloud by the browser's own voice (no server, no model): the owner asked for the
-		// figures to be read to him (1 Nov 2026).
-		const speak = item.role === "assistant" && !item.error && window.speechSynthesis
+		// An answer is read aloud by the model's Egyptian voice (api.speak); the browser's own voice only when the
+		// server has none (2 Nov 2026: the browser's read Arabic letter by letter, in no dialect).
+		const speak = item.role === "assistant" && !item.error
 			? `<button type="button" class="imed-assistant-speak" title="${esc(t("Read aloud", "اقرأ بصوت"))}" aria-label="${esc(t("Read aloud", "اقرأ بصوت"))}">🔊</button>`
 			: "";
 		return `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}${speak}</div>`;
@@ -268,9 +268,51 @@
 		window.speechSynthesis.speak(utter);
 	}
 
+	// One answer plays at a time; each answer's audio is fetched once and kept for the page.
+	const spoken = new Map();
+	let playing = null; // {audio, $btn}
+
+	function stop_playing() {
+		if (window.speechSynthesis) window.speechSynthesis.cancel();
+		if (!playing) return;
+		playing.audio.pause();
+		playing.$btn.text("🔊").removeClass("is-playing");
+		playing = null;
+	}
+
+	function play(url, $btn) {
+		const audio = new Audio(url);
+		playing = { audio, $btn };
+		$btn.text("⏹").addClass("is-playing");
+		audio.addEventListener("ended", () => stop_playing());
+		audio.play().catch(() => stop_playing());
+	}
+
+	function speak_answer($btn, text) {
+		if (playing && playing.$btn[0] === $btn[0]) return stop_playing();
+		stop_playing();
+		if (spoken.has(text)) return play(spoken.get(text), $btn);
+		$btn.text("⏳").prop("disabled", true);
+		frappe
+			.xcall(`${API}.speak`, { text })
+			.then((r) => {
+				if (r && r.audio) {
+					const url = `data:${r.mime || "audio/wav"};base64,${r.audio}`;
+					spoken.set(text, url);
+					play(url, $btn);
+				} else {
+					if (r && r.message) frappe.show_alert({ message: r.message, indicator: "orange" });
+					speak_text(text); // no voice on the server: the browser's own
+				}
+			})
+			.catch(() => speak_text(text))
+			.finally(() => $btn.prop("disabled", false).text(playing && playing.$btn[0] === $btn[0] ? "⏹" : "🔊"));
+	}
+
 	function bind_speak($root) {
 		$root.off("click.imed-speak").on("click.imed-speak", ".imed-assistant-speak", function () {
-			speak_text($(this).closest(".imed-assistant-msg").text().replace(/🔊\s*$/, "").trim());
+			const $btn = $(this);
+			speak_answer($btn, $btn.closest(".imed-assistant-msg").text().replace(/[🔊⏳⏹]\s*$/u, "").trim());
 		});
 	}
 
@@ -376,14 +418,37 @@
 		}, t("Rename the chat", "إعادة تسمية المحادثة"));
 	}
 
-	function send_voice($root, blob, mime) {
-		const item = { role: "user", audio_url: URL.createObjectURL(blob) };
-		state.audio_urls.push(item.audio_url);
-		state.items.push(item);
+	// A recording is written out into the message box (api.transcribe), for the user to read, correct and send,
+	// as in a chat app's dictation (owner, 2 Nov 2026); nothing is sent until they press Send.
+	function transcribe_to_input($root, blob, mime) {
+		const $input = $root.find("textarea");
+		const $mic = $root.find(".imed-assistant-mic");
+		const placeholder = $input.attr("placeholder");
+		$mic.prop("disabled", true).addClass("is-transcribing");
+		$input.prop("disabled", true).attr("placeholder", t("Writing out what you said…", "بكتب كلامك…"));
 		const reader = new FileReader();
 		reader.onloadend = () => {
 			const audio = String(reader.result).split(",")[1] || "";
-			ensure_chat($root).then((chat) => request($root, chat ? { chat, text: "", audio, audio_type: mime } : { messages: JSON.stringify(state.history), audio, audio_type: mime }, item));
+			frappe
+				.xcall(`${API}.transcribe`, { audio, audio_type: mime })
+				.then((r) => {
+					const text = ((r && r.text) || "").trim();
+					if (!text) {
+						frappe.show_alert({ message: (r && r.message) || t("Nothing was heard. Try again.", "ما سمعتش كلام واضح، جرّب تاني."), indicator: "orange" });
+						return;
+					}
+					const before = $input.val().trim();
+					$input.val(before ? `${before} ${text}` : text);
+				})
+				.catch(() => frappe.show_alert({ message: t("The recording could not be written out.", "ما قدرتش أكتب التسجيل."), indicator: "orange" }))
+				.finally(() => {
+					$mic.prop("disabled", state.busy).removeClass("is-transcribing");
+					$input.prop("disabled", false).attr("placeholder", placeholder);
+					autosize($input);
+					$input.trigger("focus");
+					const end = $input.val().length;
+					$input[0].setSelectionRange(end, end);
+				});
 		};
 		reader.readAsDataURL(blob);
 	}
@@ -454,7 +519,7 @@
 			const blob = new Blob(state.chunks, { type });
 			state.recorder = null;
 			set_recording_ui($root, false);
-			if (!state.cancelled && blob.size) send_voice($root, blob, type);
+			if (!state.cancelled && blob.size) transcribe_to_input($root, blob, type);
 		};
 		recorder.start();
 		state.record_started = Date.now();
@@ -481,7 +546,7 @@
 		$root
 			.find(".imed-assistant-mic")
 			.attr("aria-pressed", on ? "true" : "false")
-			.attr("aria-label", on ? t("Stop and send", "وقّف وابعت") : t("Record a voice message", "سجّل رسالة صوتية"));
+			.attr("aria-label", on ? t("Stop and write it out", "وقّف واكتب الكلام") : t("Speak your question", "قول سؤالك"));
 		$root.find(".imed-assistant-recording__time").text("0:00");
 	}
 
