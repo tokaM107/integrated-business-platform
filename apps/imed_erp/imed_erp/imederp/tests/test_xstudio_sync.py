@@ -527,6 +527,25 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		self.assertEqual((log.changed, log.status), (1, "Completed with Errors"))
 		self.assertEqual([r.kind for r in log.errors], ["Needs Review"])
 
+	def test_a_walk_in_without_a_customer_fails_alone_every_run_and_makes_nothing(self):
+		"""The walk-in of 26 Oct 2026 (b9f026fd): no customer account in XStudio, name only. It fails with its reason
+		on every run; the other bookings go on; no customer is made up for it; running again adds nothing."""
+		teacher = self.x.customer("_Test Beside Walk-in", self.phone(1))
+		ok = self.x.booking(teacher, start=(1, 8), end=(1, 9))
+		walk_in = self.x.booking(None, start=(1, 14), end=(1, 16), customer_name="Walk-in Guest")
+		customers_before = frappe.db.count("Customer")
+		for _ in range(2):
+			log = self.run_sync()
+			failed = [r for r in log.errors if r.kind == "Failed"]
+			self.assertEqual(len(failed), 1)
+			self.assertIn("no customer account", failed[0].reason)
+			self.assertIsNone(self.erp_booking(walk_in))
+			self.assertIsNotNone(self.erp_booking(ok))
+		self.assertEqual(log.status, "Completed with Errors")
+		# Only the real customer was made, once.
+		self.assertEqual(frappe.db.count("Customer"), customers_before + 1)
+		self.assertEqual(frappe.db.count("Booking", {"import_key": mappers.import_key(ok["id"])}), 1)
+
 	def test_missing_bookings_read_their_customers_once(self):
 		"""Review of 2 Nov 2026: one Customer query a missing booking."""
 		teachers = [self.x.customer(f"_Test Batch {i}", self.phone(i)) for i in (1, 2)]
