@@ -15,6 +15,7 @@ import pathlib
 from unittest.mock import patch
 
 import frappe
+from frappe.utils import flt
 from frappe.tests import IntegrationTestCase
 
 from imed_erp.assistant import api, service
@@ -327,7 +328,14 @@ class IntegrationTestAssistantSecurity(AssistantCase):
 		raghad, ctx = registry_for(RAGHAD)
 		text, is_error = raghad.run("account_balance", {"account": account, "date": "2026-11-01"}, ctx)
 		self.assertFalse(is_error, text)  # she may read the ledger (Accounts User) ...
-		self.assertEqual(json.loads(text)["balance"], owner_balance - 5000)  # ... but not Azarita's 5,000
+		# ... but only her cost center's rows (whatever else the box holds on the site): never Azarita's 5,000.
+		hers = frappe.db.sql(
+			"""select coalesce(sum(debit - credit), 0) from `tabGL Entry` where account = %s and is_cancelled = 0
+			and posting_date <= '2026-11-01' and cost_center = %s""",
+			(account, "مكتبة المواساة - MMG"),
+		)[0][0]
+		self.assertEqual(json.loads(text)["balance"], flt(hers, 2))
+		self.assertLess(json.loads(text)["balance"], owner_balance)
 
 	def test_a_heavy_background_report_is_not_forced_inline(self):
 		frappe.db.set_value("Report", "General Ledger", "prepared_report", 1)
