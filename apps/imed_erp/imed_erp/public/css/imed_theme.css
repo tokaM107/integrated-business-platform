@@ -2418,7 +2418,7 @@ a.imed-yday-stat:focus-visible,
 /* ------------------------------------------------------------------ */
 /* The owner's request of 1 Nov 2026: "why are there no colours, the sidebar is not coloured". Look only: no field,
    figure or permission changes. Comes last, so it refines the sections above.
-     - The sidebar is the brand's deep teal; each activity has its own colour, on its icon and on its open group.
+     - The sidebar in one deep forest green, as in the owner's picture of 2 Nov 2026 (its own part below).
      - On the dashboard each card and tile is tinted by what it is (tone-*), each figure by its meaning.
      - Lists and reports get a tinted header row, forms a coloured mark on each section's title.
    Colours come from Frappe's palette (--green-500...), so the dark theme only changes the shades (end of section). */
@@ -2507,86 +2507,139 @@ a.imed-yday-stat:focus-visible,
 }
 
 /* ---------------- The sidebar ---------------- */
-/* Each activity's colour, by its icon (workspace_sidebar/imederp.json), which is the same in every language (the
-   item's name is translated); a group's links take its colour.
-   --act-solid: the icon's chip; --act: lighter, for a dot or a mark on the dark teal. */
-.body-sidebar .sidebar-item-container {
-	--act: var(--imed-teal-300);
-	--act-solid: var(--imed-teal-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="home"]) {
-	--act: var(--imed-amber-400);
-	--act-solid: linear-gradient(135deg, var(--imed-amber-400), #e8892b);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="calendar-days"]) {
-	--act: var(--blue-300);
-	--act-solid: var(--blue-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="store"]) {
-	--act: var(--amber-300);
-	--act-solid: var(--amber-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="package"]) {
-	--act: var(--orange-300);
-	--act-solid: var(--orange-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="book-open"]) {
-	--act: var(--violet-300);
-	--act-solid: var(--violet-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="smartphone"]) {
-	--act: var(--cyan-300);
-	--act-solid: var(--cyan-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="wallet"]) {
-	--act: var(--red-300);
-	--act-solid: var(--red-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="chart-column"]) {
-	--act: var(--green-300);
-	--act-solid: var(--green-500);
-}
-.body-sidebar .sidebar-item-container:has(> .standard-sidebar-item [item-icon="settings"]) {
-	--act: #dfe7ea;
-	--act-solid: var(--gray-500);
-}
-/* A link inside a group keeps its group's colour (it is nested in the group's container). */
-.body-sidebar .sidebar-child-item .sidebar-item-container {
-	--act: inherit;
-	--act-solid: inherit;
-}
-
-/* The brand's deep teal, a little lighter at the top. */
+/* The owner's picture of 2 Nov 2026: one deep forest green with a soft light from the top corner; the signed-in
+   person on top (a large picture, the name, the e-mail), then search, notifications and the theme, then the
+   activities with white line icons, the open page a cream pill; at the bottom the switch between sidebars and
+   "Log out" (imed_sidebar.js). The parts are reordered with CSS only (Frappe's sidebar is one flex column). */
 .body-sidebar {
-	--sb-text: rgba(255, 255, 255, 0.9);
-	--sb-muted: rgba(255, 255, 255, 0.62);
-	--sb-hover: rgba(255, 255, 255, 0.09);
+	--sb-green: #1d4a3b;
+	--sb-green-deep: #133429;
+	--sb-text: rgba(255, 255, 255, 0.94);
+	--sb-muted: rgba(255, 255, 255, 0.66);
+	--sb-line: rgba(255, 255, 255, 0.16);
+	--sb-hover: rgba(255, 255, 255, 0.08);
+	--sb-pill: #f6f3ea;
+	--sb-pill-text: #163b2e;
 	background:
-		radial-gradient(320px 220px at 50% -60px, rgba(244, 185, 66, 0.14), transparent 70%),
-		linear-gradient(180deg, var(--imed-teal-700) 0%, var(--imed-teal-800) 55%, var(--imed-teal-900) 100%);
+		radial-gradient(130% 60% at 100% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
+		linear-gradient(180deg, var(--sb-green) 0%, #194234 50%, var(--sb-green-deep) 100%);
 	border-inline-end: 0;
 	color: var(--sb-text);
 }
-.body-sidebar .sidebar-header .header-title {
-	color: #ffffff;
+
+/* The order: the person, the standard items, the activities (they take the free height), then at the bottom
+   the sidebar switch and "Log out". */
+.body-sidebar > .body-sidebar-bottom {
+	order: -2;
 }
-.body-sidebar .sidebar-header .header-subtitle,
-.body-sidebar .sidebar-header .drop-icon .icon {
-	color: var(--sb-muted);
+.body-sidebar > .standard-items-sections {
+	order: -1;
+}
+.body-sidebar > .sidebar-header {
+	order: 20;
+}
+.body-sidebar > .imed-sidebar-logout {
+	order: 21;
+}
+
+/* The person on top */
+.body-sidebar .body-sidebar-bottom {
+	margin: 0 0 6px;
+	padding: 14px 8px 12px;
+	border-bottom: 1px solid var(--sb-line);
+}
+.body-sidebar .body-sidebar-bottom .dropdown-navbar-user {
+	margin: 0 !important;
+}
+.body-sidebar .sidebar-user-button {
+	display: flex !important;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 6px 4px;
+	border-radius: 16px;
+	text-align: center;
+}
+.body-sidebar .sidebar-user-button:hover {
+	background: var(--sb-hover);
+}
+.body-sidebar .sidebar-user-button .avatar {
+	position: relative;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92), 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+}
+.body-sidebar .sidebar-user-button .avatar .avatar-frame {
+	font-size: 21px;
+}
+.body-sidebar .sidebar-user-button .avatar.avatar-medium .avatar-frame.standard-image {
+	background: linear-gradient(135deg, #2f6b55, #1a4536) !important;
+}
+/* Online: a small green dot at the picture's edge. */
+.body-sidebar .sidebar-user-button .avatar::after {
+	content: "";
+	position: absolute;
+	inset-block-end: 2px;
+	inset-inline-end: 0;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: #8fe0b0;
+	box-shadow: 0 0 0 3px var(--sb-green);
+}
+.body-sidebar .sidebar-user-button .avatar-name-email {
+	margin: 0 !important;
+	text-align: center;
+}
+.body-sidebar .sidebar-user-button .avatar-name-email .d-block:first-child {
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 700;
+	text-transform: none;
+}
+.body-sidebar .sidebar-user-button .avatar-name-email,
+.body-sidebar .sidebar-user-button .avatar-name-email .text-muted,
+.body-sidebar .sidebar-user-button .avatar-name-email .d-block + * {
+	color: var(--sb-muted) !important;
+	font-size: 11.5px;
+}
+.body-sidebar .sidebar-user-button .icon {
 	--icon-stroke: var(--sb-muted);
 }
-.body-sidebar .sidebar-header .header-logo {
-	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+
+/* No header (the "ImedERP" switch between sidebars): the owner, 2 Nov 2026. Hidden here only; every screen is
+   in this sidebar and the search (Ctrl+K) reaches the rest. */
+.body-sidebar > .sidebar-header {
+	display: none !important;
+}
+
+/* Items: white words and white line icons, a little larger. */
+.body-sidebar .standard-sidebar-item {
+	min-height: 36px;
+	border-radius: 12px;
 }
 .body-sidebar .standard-sidebar-item .sidebar-item-label,
 .body-sidebar .standard-sidebar-item .item-anchor {
 	color: var(--sb-text);
+	font-size: 13px;
+	font-weight: 600;
 }
 /* Frappe draws these icons in currentColor and gives the svg itself a gray class: the colour goes on the svg. */
 .body-sidebar .standard-sidebar-item svg.icon {
-	color: var(--sb-muted) !important;
+	width: 17px;
+	height: 17px;
+	color: #ffffff !important;
 	--icon-stroke: currentColor;
 	stroke: currentColor;
+	stroke-width: 1.8px;
+}
+.body-sidebar .standard-sidebar-item .sidebar-control svg.icon,
+.body-sidebar .standard-sidebar-item .sidebar-item-control svg.icon {
+	width: 16px;
+	height: 16px;
+	color: var(--sb-muted) !important;
 }
 /* The search's keyboard hint and the like. */
 .body-sidebar .standard-items-sections .text-muted,
@@ -2594,109 +2647,142 @@ a.imed-yday-stat:focus-visible,
 .body-sidebar .standard-items-sections .keyboard-shortcut {
 	color: var(--sb-muted) !important;
 	background: transparent;
-	border-color: rgba(255, 255, 255, 0.2);
+	border-color: var(--sb-line);
 }
-/* Each activity's icon in a chip of its colour. */
-.body-sidebar .sidebar-items > .sidebar-item-container > .standard-sidebar-item .sidebar-item-icon {
-	display: inline-grid;
-	place-items: center;
-	width: 26px;
-	height: 26px;
-	padding: 0;
-	border-radius: 8px;
-	background: var(--act-solid);
-	box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.45);
+/* A line between the standard items and the activities. */
+.body-sidebar .standard-items-sections {
+	margin-bottom: 4px;
+	padding-bottom: 4px;
 }
-.body-sidebar .sidebar-items > .sidebar-item-container > .standard-sidebar-item .sidebar-item-icon svg.icon {
-	color: #ffffff !important;
-	stroke-width: 2px;
-}
-/* A link in a group: a dot of the group's colour where it has no icon. */
+/* A link in a group: a small dot where it has no icon. */
 .body-sidebar .sidebar-child-item .sidebar-item-icon:not(:has(svg)) {
 	display: inline-block;
 	flex: none;
-	width: 7px;
-	height: 7px;
+	width: 6px;
+	height: 6px;
 	padding: 0 !important;
-	margin-inline: 10px 8px;
+	margin-inline: 12px 8px;
 	border-radius: 50%;
-	background: var(--act);
-	opacity: 0.85;
+	background: var(--sb-muted);
+}
+.body-sidebar .sidebar-child-item .standard-sidebar-item {
+	min-height: 32px;
 }
 .body-sidebar .sidebar-child-item .sidebar-item-label {
-	color: rgba(255, 255, 255, 0.8);
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 12.5px;
+	font-weight: 500;
 }
-/* An open group: its links on a band of its colour. */
+/* An open group: its links on a slightly lighter band. */
 .body-sidebar .sidebar-item-container.section-item > .sidebar-child-item:not(.hidden) {
 	margin: 2px 0 6px;
 	padding: 4px 0;
-	border-radius: 10px;
-	background: color-mix(in srgb, var(--act) 9%, transparent);
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--act) 18%, transparent);
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.05);
 }
-/* The page open now: a white pill, its label in the brand's dark teal, its activity's mark at the edge. */
-.body-sidebar .standard-sidebar-item.active-sidebar {
-	background: #ffffff;
-	box-shadow: 0 6px 16px -8px rgba(0, 0, 0, 0.45);
-}
-.body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label {
-	color: var(--imed-teal-800);
-	font-weight: 700;
-}
-.body-sidebar .standard-sidebar-item.active-sidebar::before {
-	background: var(--act);
-	inset-inline-start: -6px;
-	width: 4px;
-}
-/* Under the pointer, or an opened group's own line (Frappe lights it white): its words dark, so they read on the
-   white (owner, 2 Nov 2026). */
+
+/* Under the pointer, or an opened group's own line: a light band, the words still white. */
 .body-sidebar .standard-sidebar-item:not(.active-sidebar):hover,
 .body-sidebar .standard-sidebar-item.selected:not(.active-sidebar),
 .body-sidebar .standard-sidebar-item:not(.active-sidebar):focus-within {
-	background: #ffffff !important;
+	background: var(--sb-hover) !important;
 	box-shadow: none;
-}
-.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover .sidebar-item-label,
-.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar) .sidebar-item-label,
-.body-sidebar .standard-sidebar-item:not(.active-sidebar):focus-within .sidebar-item-label,
-.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover .item-anchor,
-.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar) .item-anchor {
-	color: var(--imed-teal-900) !important;
-}
-.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover .sidebar-item-control svg.icon,
-.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar) .sidebar-item-control svg.icon,
-.body-sidebar .standard-items-sections .standard-sidebar-item:not(.active-sidebar):hover svg.icon {
-	color: var(--imed-teal-800) !important;
 }
 .body-sidebar .standard-sidebar-item.selected:not(.active-sidebar)::before {
 	display: none;
 }
+/* The page open now: a cream pill, its words and icon in the deep green. */
+.body-sidebar .standard-sidebar-item.active-sidebar {
+	background: var(--sb-pill) !important;
+	box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.55);
+}
+.body-sidebar .standard-sidebar-item.active-sidebar::before {
+	display: none;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label,
+.body-sidebar .standard-sidebar-item.active-sidebar .item-anchor {
+	color: var(--sb-pill-text) !important;
+	font-weight: 700;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar svg.icon {
+	color: var(--sb-pill-text) !important;
+}
 .body-sidebar .sidebar-child-item .standard-sidebar-item.active-sidebar .sidebar-item-icon:not(:has(svg)) {
-	background: var(--imed-teal-600);
-	opacity: 1;
+	background: var(--sb-pill-text);
 }
-/* The signed-in user at the bottom */
-.body-sidebar .sidebar-user-button .avatar-name-email .d-block:first-child {
-	color: #ffffff;
+
+/* On a phone the menu a little wider, so the activities' names are not cut. */
+@media (max-width: 767.98px) {
+	.body-sidebar-container {
+		--sidebar-width: 260px;
+	}
 }
-.body-sidebar .sidebar-user-button .avatar-name-email,
-.body-sidebar .sidebar-user-button .text-muted {
-	color: var(--sb-muted) !important;
+
+/* A short screen (a 768px laptop): everything a step tighter, so the whole sidebar shows without scrolling. */
+@media (min-width: 768px) and (max-height: 820px) {
+	.body-sidebar .body-sidebar-bottom {
+		padding: 10px 8px 8px;
+	}
+	.body-sidebar .sidebar-user-button {
+		gap: 6px;
+	}
+	.body-sidebar .sidebar-user-button .avatar {
+		width: 44px;
+		height: 44px;
+	}
+	.body-sidebar .sidebar-user-button .avatar .avatar-frame {
+		font-size: 17px;
+	}
+	.body-sidebar .standard-sidebar-item {
+		min-height: 32px;
+	}
+	.body-sidebar .body-sidebar-top {
+		margin-top: 0;
+		padding-top: 0;
+	}
 }
-.body-sidebar .sidebar-user-button .avatar {
-	box-shadow: 0 0 0 2px var(--imed-teal-800), 0 0 0 3.5px var(--imed-amber-400);
+
+/* "Log out", last (imed_sidebar.js). */
+.body-sidebar .imed-sidebar-logout {
+	margin-top: 6px;
+	padding: 8px 0 10px;
+	border-top: 1px solid var(--sb-line);
 }
-.body-sidebar .sidebar-user-button:hover {
-	background: var(--sb-hover);
-}
+
 /* What opens out of the sidebar (notifications, menus) stays a normal light panel. */
 .body-sidebar .dropdown-notifications,
 .body-sidebar .dropdown-menu {
 	color: var(--text-color);
 }
 .body-sidebar .dropdown-notifications .sidebar-item-label,
-.body-sidebar .dropdown-menu .sidebar-item-label {
+.body-sidebar .dropdown-menu .sidebar-item-label,
+.body-sidebar .dropdown-menu .dropdown-item {
 	color: var(--text-color);
+}
+.body-sidebar .dropdown-menu svg.icon {
+	color: inherit !important;
+}
+
+/* The sidebar folded to its icons (desktop): the person as a small picture, no name. */
+@media (min-width: 992px) {
+	.body-sidebar-container:not(.expanded) .body-sidebar .sidebar-user-button .avatar {
+		width: 32px;
+		height: 32px;
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+	}
+	.body-sidebar-container:not(.expanded) .body-sidebar .sidebar-user-button .avatar .avatar-frame {
+		font-size: 13px;
+	}
+	.body-sidebar-container:not(.expanded) .body-sidebar .sidebar-user-button .avatar::after {
+		width: 9px;
+		height: 9px;
+		inset-block-end: 0;
+		inset-inline-end: 0;
+		box-shadow: 0 0 0 2px var(--sb-green);
+	}
+	.body-sidebar-container:not(.expanded) .body-sidebar .body-sidebar-bottom {
+		padding: 14px 4px 12px;
+	}
 }
 
 /* ---------------- The Owner Dashboard ---------------- */
@@ -2895,16 +2981,9 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	--tone-line: color-mix(in srgb, var(--tone-solid) 34%, transparent);
 }
 [data-theme="dark"] .body-sidebar {
-	background:
-		radial-gradient(320px 220px at 50% -60px, rgba(244, 185, 66, 0.08), transparent 70%),
-		linear-gradient(180deg, #0f4b46 0%, #0c3633 55%, #0a2523 100%);
-	box-shadow: inset -1px 0 0 rgba(64, 174, 161, 0.18);
-}
-[data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar {
-	background: rgba(255, 255, 255, 0.92);
-}
-[data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label {
-	color: var(--imed-teal-900);
+	--sb-green: #163a2e;
+	--sb-green-deep: #0d241c;
+	box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
 }
 [data-theme="dark"] .imed-dash-card[data-imed-kind="net"],
 [data-theme="dark"] .imed-dash-card[data-imed-kind="cash"]:not(.is-negative) {
