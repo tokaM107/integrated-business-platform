@@ -2609,22 +2609,10 @@ a.imed-yday-stat:focus-visible,
 	--icon-stroke: var(--sb-muted);
 }
 
-/* The header (the switch between sidebars): small, at the bottom, above "Log out". */
-.body-sidebar .sidebar-header {
-	margin-top: 6px;
-	padding-top: 10px !important;
-	border-top: 1px solid var(--sb-line);
-}
-.body-sidebar .sidebar-header .header-title {
-	color: var(--sb-text);
-}
-.body-sidebar .sidebar-header .header-subtitle,
-.body-sidebar .sidebar-header .drop-icon .icon {
-	color: var(--sb-muted);
-	--icon-stroke: var(--sb-muted);
-}
-.body-sidebar .sidebar-header .header-logo {
-	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+/* No header (the "ImedERP" switch between sidebars): the owner, 2 Nov 2026. Hidden here only; every screen is
+   in this sidebar and the search (Ctrl+K) reaches the rest. */
+.body-sidebar > .sidebar-header {
+	display: none !important;
 }
 
 /* Items: white words and white line icons, a little larger. */
@@ -2756,8 +2744,9 @@ a.imed-yday-stat:focus-visible,
 
 /* "Log out", last (imed_sidebar.js). */
 .body-sidebar .imed-sidebar-logout {
-	margin-top: 4px;
-	padding: 4px 0 10px;
+	margin-top: 6px;
+	padding: 8px 0 10px;
+	border-top: 1px solid var(--sb-line);
 }
 
 /* What opens out of the sidebar (notifications, menus) stays a normal light panel. */
