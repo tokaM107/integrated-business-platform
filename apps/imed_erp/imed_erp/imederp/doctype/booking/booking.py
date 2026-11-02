@@ -31,14 +31,21 @@ from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.booking_accounts import complete, payments_total, posted, treasury_of
 from imed_erp.imederp.booking_pricing import REVENUE_SHARE, price_booking, pricing_key, revenue_share
 from imed_erp.imederp.customers import normalize_phone
+from imed_erp.imederp.booking_rules import (  # the booking domain's vocabulary, defined once
+	CANCELLED,
+	COMPLETED,
+	CONFIRMED_NO_DEPOSIT,
+	HALL,
+	HOLDING,
+	IMPORTED,
+	MANUAL,
+	NO_SHOW,
+	NOT_BILLABLE,
+	TENTATIVE,
+	span,
+)
+from imed_erp.imederp.booking_rules import CONFIRMED_WITH_DEPOSIT as CONFIRMED
 
-TENTATIVE, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW = "Tentative", "Confirmed with Deposit", "Completed", "Cancelled", "No Show"
-# IMED's halls take no deposit: a hall booking is confirmed by the halls' staff, which is not a payment (26 Oct 2026).
-CONFIRMED_NO_DEPOSIT = "Confirmed"
-# The bookings that hold their time: a cancelled booking frees it, and so does a no-show, whose time has passed.
-HOLDING = (TENTATIVE, CONFIRMED_NO_DEPOSIT, CONFIRMED, COMPLETED)
-HALL = "Hall"
-NOT_BILLABLE = "Not Billable"
 DOCTOR_GROUP = "طبيب"
 # IMED's own halls (never XStudio's rooms): what a hall is used for, and what that fixes about its money.
 #   Fixed-fee Rental -> Fixed Rent; Revenue Share -> Revenue Share; Internal Meeting and Maintenance Block -> Not
@@ -47,7 +54,6 @@ DOCTOR_GROUP = "طبيب"
 HALL_TYPES = ("Internal Course or Lecture", "External Lecturer", "Fixed-fee Rental", "Revenue Share", "Internal Meeting", "Maintenance Block")
 FORCED_MODEL = {"Fixed-fee Rental": "Fixed Rent", "Revenue Share": "Revenue Share", "Internal Meeting": NOT_BILLABLE, "Maintenance Block": NOT_BILLABLE}
 MAINTENANCE = "Maintenance Block"
-MANUAL, IMPORTED = "Manual", "Imported"
 SOURCE_FIELDS = ("source", "source_system", "external_id", "import_key")
 
 
@@ -209,8 +215,7 @@ class Booking(Document):
 			frappe.throw(_("The booking ends at {0}, the moment it starts: it has no length.").format(self.to_time), title=_("Wrong Times"))
 		# An end earlier than the start is the next day: a booking across midnight (at most 24 hours by construction).
 		self.ends_next_day = 1 if ends < starts else 0
-		self.starts_at = datetime.combine(getdate(self.booking_date), starts)
-		self.ends_at = datetime.combine(getdate(self.booking_date) + timedelta(days=self.ends_next_day), ends)
+		self.starts_at, self.ends_at = span(self.booking_date, starts, ends, self.ends_next_day)
 		self.hours = flt((self.ends_at - self.starts_at).total_seconds() / 3600, 2)
 
 	def not_billable(self):
@@ -475,8 +480,7 @@ def check_availability(resource, booking_date, from_time, to_time, name=None):
 	starts, ends = get_time(from_time), get_time(to_time)
 	if starts == ends:
 		return {"free": 0, "message": _("The booking ends at {0}, the moment it starts: it has no length.").format(to_time)}
-	starts_at = datetime.combine(getdate(booking_date), starts)
-	ends_at = datetime.combine(getdate(booking_date) + timedelta(days=1 if ends < starts else 0), ends)
+	starts_at, ends_at = span(booking_date, starts, ends, 1 if ends < starts else 0)
 	resource_type = frappe.db.get_value("Booking Resource", resource, "resource_type")
 	other = find_clash(resource, starts_at, ends_at, exclude=name)
 	if other:

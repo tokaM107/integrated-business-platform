@@ -410,3 +410,38 @@ class IntegrationTestBooking(IntegrationTestCase):
 		self.assertEqual({e.name for e in self.events(DAY, 1)}, {hall_booking.name, studio_booking.name})
 		# No access to bookings at all: refused, not an empty calendar.
 		self.assertRaises(frappe.PermissionError, self.events, DAY, 1, user=HR)
+
+
+class TestBookingRules(IntegrationTestCase):
+	"""The booking domain's vocabulary is defined once (booking_rules.py) and matches the DocType."""
+
+	def test_every_status_of_the_doctype_is_either_held_or_not(self):
+		from imed_erp.imederp import booking_rules as rules
+
+		options = {o for o in frappe.get_meta("Booking").get_field("status").options.split("\n") if o}
+		self.assertEqual(options, set(rules.HOLDING) | set(rules.NOT_HELD))
+		self.assertFalse(set(rules.HOLDING) & set(rules.NOT_HELD))
+		self.assertTrue(set(rules.OPEN) <= set(rules.HOLDING) and set(rules.BUSINESS_DONE) <= set(rules.HOLDING))
+
+	def test_the_rental_models_and_resource_types_are_the_doctypes_own(self):
+		from imed_erp.imederp import booking_rules as rules
+
+		def options(doctype, field):
+			return set(frappe.get_meta(doctype).get_field(field).options.split("\n")) - {""}
+
+		self.assertEqual(options("Booking", "rental_model"), {rules.FIXED_RENT, rules.REVENUE_SHARE, rules.NOT_BILLABLE})
+		self.assertLessEqual({rules.HALL, rules.STUDIO_SERVICE}, options("Booking Resource", "resource_type"))
+
+	def test_a_span_across_midnight_ends_the_next_day(self):
+		from imed_erp.imederp.booking_rules import span
+
+		starts, ends = span("2026-11-02", "22:00:00", "01:30:00", 1)
+		self.assertEqual((ends - starts).total_seconds(), 3.5 * 3600)
+		self.assertEqual(str(ends.date()), "2026-11-03")
+
+	def test_the_booking_module_still_exports_its_names(self):
+		from imed_erp.imederp.doctype.booking import booking
+
+		self.assertEqual(booking.CONFIRMED, "Confirmed with Deposit")
+		self.assertEqual(booking.HOLDING[0], "Tentative")
+

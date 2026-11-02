@@ -14,7 +14,9 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 
-CANCELLED = ("Cancelled", "No Show")
+from imed_erp.imederp.booking_rules import COMPLETED, HALL, REVENUE_SHARE
+from imed_erp.imederp.booking_rules import NOT_HELD as CANCELLED
+
 
 
 def execute(filters=None):
@@ -43,13 +45,12 @@ def get_columns():
 
 
 def get_data(filters):
-	conditions = {"resource_type": "Hall"}
+	conditions = {"resource_type": HALL}
 	if filters.from_date and filters.to_date:
 		conditions["booking_date"] = ("between", (filters.from_date, filters.to_date))
 	if filters.hall:
 		conditions["resource"] = filters.hall
-	rows = []
-	for b in frappe.get_list(
+	bookings = frappe.get_list(
 		"Booking",
 		filters=conditions,
 		fields=[
@@ -57,9 +58,12 @@ def get_data(filters):
 			"total_amount", "paid_amount", "collected_amount", "outstanding_amount", "sales_invoice", "hall_booking_type", "doctor", "hours",
 		],
 		order_by="booking_date, from_time",
-	):
+	)
+	invoices = invoices_of(bookings)
+	rows = []
+	for b in bookings:
 		cancelled = b.status in CANCELLED
-		share = b.rental_model == "Revenue Share"
+		share = b.rental_model == REVENUE_SHARE
 		rows.append(
 			{
 				**{k: b[k] for k in ("booking_date", "resource", "name", "activity", "status", "attendees", "admission_price", "doctor", "hours")},
@@ -68,16 +72,25 @@ def get_data(filters):
 				"status": _(b.status),
 				"rent": 0 if cancelled else flt(b.total_amount),
 				"collected": flt(b.collected_amount) if share else flt(b.paid_amount),
-				"unpaid": 0 if cancelled else unpaid(b),
+				"unpaid": 0 if cancelled else unpaid(b, invoices),
 				"cancelled": 1 if cancelled else 0,
 			}
 		)
 	return rows
 
 
-def unpaid(booking):
-	if booking.status == "Completed" and booking.sales_invoice:
-		invoice = frappe.db.get_value("Sales Invoice", booking.sales_invoice, ["docstatus", "outstanding_amount"], as_dict=True)
-		if invoice and invoice.docstatus == 1:
-			return flt(invoice.outstanding_amount)
+def invoices_of(bookings):
+	"""The submitted invoices of the completed bookings, read once for the whole report (was one query a row)."""
+	names = list({b.sales_invoice for b in bookings if b.status == COMPLETED and b.sales_invoice})
+	if not names:
+		return {}
+	return {
+		row.name: flt(row.outstanding_amount)
+		for row in frappe.get_all("Sales Invoice", filters={"name": ("in", names), "docstatus": 1}, fields=["name", "outstanding_amount"])
+	}
+
+
+def unpaid(booking, invoices):
+	if booking.status == COMPLETED and booking.sales_invoice in invoices:
+		return invoices[booking.sales_invoice]
 	return flt(booking.outstanding_amount)

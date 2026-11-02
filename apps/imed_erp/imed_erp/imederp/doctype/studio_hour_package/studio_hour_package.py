@@ -23,11 +23,12 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime
 
+from imed_erp.imederp.booking_rules import NOT_HELD, STUDIO_SERVICE
 from imed_erp.imederp.sales_cancellation import clean_reason
 
 ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
 ACTIVE, USED_UP, CANCELLED = "Active", "Used Up", "Cancelled"
-STUDIO = "Studio Service"
+STUDIO = STUDIO_SERVICE
 PRECISION = 4
 
 
@@ -179,7 +180,7 @@ def draw(booking):
 
 
 def reason_for(booking, difference):
-	if booking.status in ("Cancelled", "No Show"):
+	if booking.status in NOT_HELD:
 		return _("{0}: {1}").format(_(booking.status), booking.cancellation_reason or "-")[:140]
 	return _("Session drawn") if difference > 0 else _("Session shortened or moved")
 

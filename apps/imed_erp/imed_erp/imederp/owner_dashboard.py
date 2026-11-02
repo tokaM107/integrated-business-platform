@@ -16,10 +16,10 @@
 import frappe
 from frappe.utils import add_days, flt, get_first_day, get_last_day, today
 
+from imed_erp.imederp.booking_rules import BUSINESS_DONE, COMPLETED, NOT_HELD
+
 STUDIO = "استوديو X"
 HALLS = "قاعات Imed"
-BUSINESS_DONE = ("Confirmed with Deposit", "Completed")
-NOT_HELD = ("Cancelled", "No Show")
 FEE_ACCOUNT = "إيراد رسوم المنصة"
 
 
@@ -170,7 +170,7 @@ def unpaid_on_bookings():
 		filters={"status": ("in", BUSINESS_DONE), "booking_date": ("<=", today())},
 		fields=["status", "sales_invoice", "outstanding_amount"],
 	):
-		if booking.status == "Completed" and booking.sales_invoice:
+		if booking.status == COMPLETED and booking.sales_invoice:
 			invoice = frappe.db.get_value("Sales Invoice", booking.sales_invoice, ["docstatus", "outstanding_amount"], as_dict=True)
 			total += flt(invoice.outstanding_amount) if invoice and invoice.docstatus == 1 else flt(booking.outstanding_amount)
 		else:

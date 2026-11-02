@@ -10,7 +10,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint
 
-HALL = "Hall"
+from imed_erp.imederp.booking_rules import HALL
+
 
 
 class BookingResource(Document):

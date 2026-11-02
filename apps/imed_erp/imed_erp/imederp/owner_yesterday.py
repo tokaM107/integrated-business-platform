@@ -37,11 +37,11 @@ from imed_erp.imederp.business_figures import (
 	shared_cost_centers,
 )
 from imed_erp.imederp.owner_figures import balance
+from imed_erp.imederp.booking_rules import CANCELLED, COMPLETED, FIXED_RENT, HALL, NO_SHOW, NOT_HELD, REVENUE_SHARE
+from imed_erp.imederp.booking_rules import OPEN as OPEN_STATUSES
+from imed_erp.imederp.booking_rules import STUDIO_SERVICE as STUDIO
 
 OWNER_ROLE = "Super Admin"
-STUDIO, HALL = "Studio Service", "Hall"
-OPEN_STATUSES = ("Tentative", "Confirmed", "Confirmed with Deposit")
-NOT_HELD = ("Cancelled", "No Show")
 PLATFORM_RECEIVABLE = "مستحقات على الأطباء — رسوم المنصة"
 # A daily job that has not run for this long is a warning.
 JOB_LATE_HOURS = 36
@@ -251,7 +251,7 @@ def bookings(period):
 		"halls": summary(by_status.get(HALL, {})),
 		"studio": summary(by_status.get(STUDIO, {})),
 		"studio_hours_booked": flt(sum(flt(row.hours) for row in studio if row.status not in NOT_HELD), 2),
-		"studio_hours_delivered": flt(sum(flt(row.hours) for row in studio if row.status == "Completed"), 2),
+		"studio_hours_delivered": flt(sum(flt(row.hours) for row in studio if row.status == COMPLETED), 2),
 		# What XStudio says is due and paid on the studio's held bookings of the day: shown for monitoring, never
 		# posted here (no invoice, no payment entry; owner's rule). The studio's money is in XStudio.
 		# Due: XStudio's amount due less what it says was paid, the same figure as the month's card (audit of 1 Nov 2026).
@@ -305,11 +305,11 @@ def halls():
 		"active_halls": len(active),
 		"occupied_now": len([h for h in occupied if h in active]),
 		"month_held": len([r for r in month_rows if r.status not in NOT_HELD]),
-		"month_cancelled": len([r for r in month_rows if r.status == "Cancelled"]),
+		"month_cancelled": len([r for r in month_rows if r.status == CANCELLED]),
 		"month_hours": flt(sum(flt(r.hours) for r in month_rows if r.status not in NOT_HELD), 2),
 		# Operational figure, not accounting: the fixed rents of this month's held bookings, invoiced only on completion.
-		"month_fixed_rent": flt(sum(flt(r.total_amount) for r in month_rows if r.status not in NOT_HELD and r.rental_model == "Fixed Rent"), 2),
-		"month_revenue_share": len([r for r in month_rows if r.status not in NOT_HELD and r.rental_model == "Revenue Share"]),
+		"month_fixed_rent": flt(sum(flt(r.total_amount) for r in month_rows if r.status not in NOT_HELD and r.rental_model == FIXED_RENT), 2),
+		"month_revenue_share": len([r for r in month_rows if r.status not in NOT_HELD and r.rental_model == REVENUE_SHARE]),
 		"past_open": past_open,
 		"financial_review": review,
 	}
@@ -319,9 +319,9 @@ def summary(statuses):
 	held = sum(count for status, count in statuses.items() if status not in NOT_HELD)
 	return {
 		"held": held,
-		"completed": statuses.get("Completed", 0),
-		"cancelled": statuses.get("Cancelled", 0),
-		"no_show": statuses.get("No Show", 0),
+		"completed": statuses.get(COMPLETED, 0),
+		"cancelled": statuses.get(CANCELLED, 0),
+		"no_show": statuses.get(NO_SHOW, 0),
 		"total": sum(statuses.values()),
 	}
 
