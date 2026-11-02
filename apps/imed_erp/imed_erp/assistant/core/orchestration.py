@@ -104,7 +104,7 @@ class Orchestrator:
 		return results
 
 	def synthesize(self, system: str, header: str, memo: str, question: str, results: list[dict], may_need_more: bool) -> str:
-		shown = "\n\n".join(f"[{i + 1}] {r['tool']} {json.dumps(r['arguments'], ensure_ascii=False)}\n{r['result']}" for i, r in enumerate(results))
+		shown = "\n\n".join(f"[{i + 1}] {r['tool']} {json.dumps(r['arguments'], ensure_ascii=False)}\n{prompts.data_block(r['tool'], r['result'])}" for i, r in enumerate(results))
 		prompt = f"{header}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}\n\nResults of the reads:\n{shown}"
 		if may_need_more:
 			prompt += prompts.NEED_MORE

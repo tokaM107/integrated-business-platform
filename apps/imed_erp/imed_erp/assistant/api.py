@@ -134,7 +134,7 @@ def send_message(messages=None, audio=None, audio_type=None, chat=None, text=Non
 	provider = get_provider()
 	context = build_context(chat=chat)
 	if chat:
-		ChatStore.own(chat)
+		ChatStore.check_company(chat, context.company)
 		conversation = [{"role": "user", "content": (text or "").strip()[:MAX_MESSAGE_CHARS]}] if text else []
 	else:
 		conversation = clean_messages(messages)

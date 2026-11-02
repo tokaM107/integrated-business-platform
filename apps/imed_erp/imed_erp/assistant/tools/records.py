@@ -16,6 +16,15 @@ from imed_erp.assistant.tools.base import FILTERS_SCHEMA, MAX_ROWS_TO_MODEL, com
 NEVER_READ = ("Password", "Attach", "Attach Image", "Signature", "Code", "JSON")
 
 
+def scoped(doctype: str, filters: list | dict, context: RequestContext) -> list | dict:
+	"""A DocType with a company field is read for the request's company only, whatever the user's wider rights."""
+	if not context.company or not frappe.get_meta(doctype).has_field("company"):
+		return filters
+	if isinstance(filters, dict):
+		return {**filters, "company": context.company}
+	return [*filters, ["company", "=", context.company]]
+
+
 def readable_fields(doctype: str) -> set[str]:
 	"""The fields of `doctype` the asking user may read: at a permission level the user has, not a secret type."""
 	meta = frappe.get_meta(doctype)
@@ -75,7 +84,7 @@ class ListRecordsTool(_RecordsTool):
 			fields = ["name"] + ([title] if title in allowed else [])
 		rows = frappe.get_list(
 			doctype,
-			filters=filters,
+			filters=scoped(doctype, filters, context),
 			fields=fields,
 			order_by=arguments.get("order_by") or None,
 			limit=min(cint(arguments.get("limit")) or 50, MAX_ROWS_TO_MODEL),
@@ -106,5 +115,5 @@ class CountRecordsTool(_RecordsTool):
 		filters = parse_filters(arguments.get("filters"))
 		self.check_filters(filters, readable_fields(doctype))
 		# get_list with a count keeps the user's permission conditions, which db.count would skip.
-		rows = frappe.get_list(doctype, filters=filters, fields=[{"COUNT": "*", "as": "n"}])
+		rows = frappe.get_list(doctype, filters=scoped(doctype, filters, context), fields=[{"COUNT": "*", "as": "n"}])
 		return {"count": cint(rows[0].n) if rows else 0}

@@ -19,6 +19,7 @@ from frappe.utils import cint, now_datetime
 from imed_erp.assistant.core import prompts
 from imed_erp.assistant.core.context import RequestContext
 from imed_erp.assistant.core.interfaces import Completer
+from imed_erp.assistant.core.prompts import data_block
 
 WINDOW = 5
 FOLD_EVERY = 4
@@ -45,10 +46,18 @@ class ChatStore:
 		)
 
 	@staticmethod
-	def new(title: str | None = None) -> str:
-		doc = frappe.get_doc({"doctype": "Assistant Chat", "user": frappe.session.user, "title": (title or "").strip()[:TITLE_CHARS] or _("New chat")})
+	def new(title: str | None = None, company: str | None = None) -> str:
+		company = company or frappe.defaults.get_user_default("company") or frappe.defaults.get_global_default("company")
+		doc = frappe.get_doc({"doctype": "Assistant Chat", "user": frappe.session.user, "company": company, "title": (title or "").strip()[:TITLE_CHARS] or _("New chat")})
 		doc.insert(ignore_permissions=True)
 		return doc.name
+
+	@classmethod
+	def check_company(cls, chat: str, company: str) -> None:
+		"""A chat's memory holds figures of the company it was opened in: never carried into another company's."""
+		chat_company = cls.own(chat).company
+		if chat_company and company and chat_company != company:
+			frappe.throw(_("This chat belongs to {0}; you are working in {1}. Start a new chat.").format(chat_company, company), frappe.PermissionError)
 
 	@classmethod
 	def rename(cls, chat: str, title: str) -> str:
@@ -102,7 +111,7 @@ class ChatMemory:
 		if mem["summary"]:
 			parts.append("Summary of the earlier conversation:\n" + mem["summary"])
 		if mem["window"]:
-			parts.append("Last messages, as said:\n" + "\n".join(f"{r.role}: {r.content}" + (f"\n  (facts read: {r.facts[:600]})" if r.facts else "") for r in mem["window"]))
+			parts.append("Last messages, as said:\n" + "\n".join(f"{r.role}: {r.content}" + (f"\n  {data_block('facts read', r.facts[:600])}" if r.facts else "") for r in mem["window"]))
 		return "\n\n".join(parts) or "(a new conversation)"
 
 	def record(self, context: RequestContext, question: str, answer: str, facts: str) -> None:

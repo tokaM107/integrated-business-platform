@@ -1,12 +1,13 @@
 # What every read tool shares: a guarded run and the compaction of a result to what an answer needs.
 #
 # The guard: the read runs as the asking user, inside its own savepoint, rolled back after; a commit attempted
-# inside it fails (a tool is a read, whatever code it calls); a refusal or a validation error is returned as text
+# or any other write inside it is refused at the connection (a tool is a read, whatever code it calls); a refusal or a validation error is returned as text
 # the model can read; an unexpected error is logged before it is returned, never swallowed.
 
 from __future__ import annotations
 
 import json
+import re
 from contextlib import contextmanager
 from typing import Any
 
@@ -37,7 +38,18 @@ FILTERS_SCHEMA = {
 
 
 class WriteAttempted(Exception):
-	"""A tool tried to commit: refused, the tool's work is rolled back."""
+	"""A tool sent a statement that writes: refused, the tool's work is rolled back."""
+
+
+# The statements a read may send. Anything else (INSERT, UPDATE, DELETE, REPLACE, CREATE, ALTER, DROP, TRUNCATE,
+# COMMIT, LOCK, CALL, ...) is refused before it reaches the database.
+READ_STATEMENTS = ("select", "with", "show", "explain", "describe", "desc", "savepoint", "release", "rollback to")
+_LEADING_COMMENT = re.compile(r"^\s*(/\*.*?\*/\s*)*", re.S)
+
+
+def is_read(query) -> bool:
+	text = _LEADING_COMMENT.sub("", str(query)).lstrip().lower()
+	return text.startswith(READ_STATEMENTS) or text.startswith("set @")
 
 
 def parse_filters(filters: Any) -> list | dict:
@@ -79,25 +91,30 @@ def error_text(message: str) -> str:
 
 
 @contextmanager
-def no_commit():
-	"""Inside, frappe.db.commit raises: a read tool never persists anything, whatever code it calls."""
-	original = frappe.db.commit
+def read_only():
+	"""Inside, the database connection accepts reads only. Every query of Frappe, raw frappe.db.sql, the query
+	builder, set_value, insert and commit alike, passes through Database.execute_query: a write is refused there,
+	before it reaches the database."""
+	db = frappe.local.db
+	original = db.execute_query
 
-	def refuse(*args, **kwargs):
-		raise WriteAttempted(_("A read tried to save to the database; refused."))
+	def guard(query, values=None):
+		if not is_read(query):
+			raise WriteAttempted(_("A read tried to write to the database; refused."))
+		return original(query, values)
 
-	frappe.db.commit = refuse
+	db.execute_query = guard
 	try:
 		yield
 	finally:
-		frappe.db.commit = original
+		db.execute_query = original
 
 
 def guarded(run, arguments: dict, context: RequestContext) -> tuple[str, bool]:
 	"""(text, is_error): the tool's result as text."""
 	frappe.db.savepoint(SAVEPOINT)
 	try:
-		with no_commit():
+		with read_only():
 			return to_text(run(arguments, context)), False
 	except frappe.PermissionError as e:
 		return error_text(_("Not allowed for this user: {0}").format(str(getattr(e, "message", None) or e)[:300])), True
