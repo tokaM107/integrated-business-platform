@@ -7,6 +7,7 @@ import copy
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import flt
 
 from imed_erp.imederp.library_sync import contract as c
 from imed_erp.imederp.library_sync import mappers, sync
@@ -26,12 +27,12 @@ def settings():
 	}
 
 
-def sale(external_id="90001", status="2", operation="11", branch="1", lines=None, number="A-1001"):
+def sale(external_id="90001", status="2", operation="11", branch="1", lines=None, number="A-1001", when="2026-10-24 18:05:00"):
 	return {
 		"_family": "stock",
 		"TxtIdRefStock": external_id,
 		"TxtNumberRefStock": number,
-		"TxtRegDateRefStock": "2026-10-24 18:05:00",
+		"TxtRegDateRefStock": when,
 		"TxtOperationCodeRefStock": operation,
 		"TxtOperationNameRefStock": "فاتورة مبيعات تجزئة",
 		"TxtStatusCodeRefStock": status,
@@ -204,6 +205,30 @@ class TestLibraryReceive(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "names no library", sync.import_batch, nameless)
 		nameless["library"] = "PC 1"
 		self.assertRaisesRegex(frappe.ValidationError, "names no library", sync.import_batch, nameless)
+
+	def test_the_list_band_counts_todays_issued_sales_and_returns_only(self):
+		"""The figures above the list (library_sales_document_list.js): today's issued sales (150) and returns (40);
+		a held sale, a cancelled one and yesterday's do not count. Measured as a change, whatever the site holds."""
+		from imed_erp.imederp.doctype.library_sales_document.library_sales_document import list_summary
+
+		today, yesterday = frappe.utils.nowdate(), frappe.utils.add_days(frappe.utils.nowdate(), -1)
+		returned = [{"TxtIdRefStockSub": "600001", "TxtProductCodeRefStockSub": "P-1", "TxtProductQtyInRefStockSub": "1", "TxtProductTotalValueUpRefStockSub": "40"}]
+		before = list_summary()
+		sync.import_batch(
+			self.batch(
+				sale("91001", when=f"{today} 10:00:00"),
+				sale("91002", operation="21", lines=returned, when=f"{today} 11:00:00"),
+				sale("91003", status="1", when=f"{today} 12:00:00"),
+				sale("91004", status="3", when=f"{today} 12:30:00"),
+				sale("91005", when=f"{yesterday} 10:00:00"),
+			)
+		)
+		after = list_summary()
+		delta = {k: flt(after[k] - before[k], 2) for k in ("sales_count", "sales_value", "returns_count", "returns_value")}
+		self.assertEqual(delta, {"sales_count": 1, "sales_value": 150.0, "returns_count": 1, "returns_value": 40.0})
+		self.assertIsNotNone(after["last_synced_at"])
+		frappe.set_user("gilan@imed.local")
+		self.assertRaises(frappe.PermissionError, list_summary)
 
 	def test_the_status_report_shows_the_source(self):
 		sync.import_batch(self.batch(sale()))

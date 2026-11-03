@@ -2170,3 +2170,18 @@ View calendar,افتح التقويم
 Bookings' money,فلوس الحجوزات
 (This month),(الشهر ده)
 Pending,لسه متدفعش
+Sales today,مبيعات اليوم
+Returns today,مرتجعات اليوم
+Net today,صافي اليوم
+{0} invoices,{0} فاتورة
+{0} returns,{0} مرتجع
+Sales less returns,المبيعات بعد خصم المرتجعات
+Library connection,اتصال المكتبة
+Connected,متصلة
+Late,متأخرة
+Stopped,متوقفة
+Not connected yet,لم تتصل بعد
+No document has arrived from the library,لم يصل أي مستند من المكتبة بعد
+Last update {0},آخر تحديث {0}
+"Last update {0}: is the connector window open on the library PC?","آخر تحديث {0}: هل نافذة الربط مفتوحة على جهاز المكتبة؟"
+Not issued yet,لم يُصدر بعد
