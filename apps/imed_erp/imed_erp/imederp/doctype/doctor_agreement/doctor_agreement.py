@@ -169,7 +169,8 @@ def get_doctor_summary(doctor):
 	if not frappe.has_permission("Doctor Agreement", "read"):
 		return []
 	summary = []
-	for agreement in frappe.get_all(
+	# get_list: the reader's User Permissions apply (audit of 2 Nov 2026: get_all read every agreement of the doctor).
+	for agreement in frappe.get_list(
 		"Doctor Agreement",
 		filters={"doctor": doctor, "docstatus": 1},
 		fields=["name", "agreement_type", "status", "balance", "next_settlement_date"],

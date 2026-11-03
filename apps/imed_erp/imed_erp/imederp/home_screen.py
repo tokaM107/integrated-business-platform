@@ -10,6 +10,8 @@
 
 import frappe
 
+from imed_erp.imederp.roles import OWNER as OWNER_ROLE
+
 
 def tidy_home():
 	"""after_migrate hook."""
@@ -25,7 +27,6 @@ def tidy_home():
 
 
 DASHBOARD = "Owner Dashboard"
-OWNER_ROLE = "Super Admin"
 
 
 def owner_lands_on_dashboard():

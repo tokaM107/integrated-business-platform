@@ -14,11 +14,14 @@
 import frappe
 from frappe.utils import flt, get_first_day, get_last_day, today
 
-READERS = ("Super Admin", "System Manager", "Accounts Manager", "Accountant")
+from imed_erp.imederp.roles import FIGURE_READERS as READERS
+
 PAYABLES_GROUP = "الذمم الدائنة"
 
 
-# The group's company, by name, as in setup_coa.py: the site's default company is another one ("imed").
+# The group's company, by name, as in setup_coa.py. Every figure of the owner reads this one (owner_dashboard.py,
+# business_figures.py and the chart sources import it); the site default is the same company on the local and the
+# production sites (verified 1 Nov 2026), but a figure does not depend on a default someone may change.
 COMPANY = "Mohamed Mamdouh group"
 
 

@@ -297,3 +297,13 @@ class IntegrationTestCashHandover(IntegrationTestCase):
 			).insert(ignore_permissions=True)
 			frappe.db.set_value("Cash Handover", doc.name, "signed_receipt", f.file_url)
 		self.assertRaisesRegex(frappe.ValidationError, "already the receipt", as_user, OWNER, confirm_receipt, second.name, 120)
+
+	def test_only_someone_who_hands_over_lists_the_receivers(self):
+		"""Audit of 2 Nov 2026: the Receiver search listed the owner's and accountant's users to any desk user."""
+		from imed_erp.imederp.doctype.cash_handover.cash_handover import receivers
+
+		frappe.set_user(SARA)
+		self.assertIn(OWNER, [row[0] for row in receivers("User", "", "name", 0, 20, {"receiver_kind": "Owner"})])
+		frappe.set_user("hr@imed.local")
+		self.assertRaises(frappe.PermissionError, receivers, "User", "", "name", 0, 20, {"receiver_kind": "Owner"})
+

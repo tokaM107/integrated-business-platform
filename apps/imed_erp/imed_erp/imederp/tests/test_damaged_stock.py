@@ -322,6 +322,25 @@ class IntegrationTestDamagedStock(IntegrationTestCase):
 		plain_entry("Material Issue", {"s_warehouse": DAMAGED})
 		self.assertEqual(qty(PAPER, DAMAGED), self.damaged + 900)
 
+	def test_a_purchase_never_fills_the_damaged_store(self):
+		"""Audit of 2 Nov 2026: Purchase Invoice and Purchase Receipt were not guarded."""
+		from imed_erp.imederp.damaged_stock import guard_damaged_store
+
+		events = frappe.get_hooks("doc_events")
+		for doctype in ("Purchase Invoice", "Purchase Receipt", "Stock Entry", "Sales Invoice", "Delivery Note"):
+			self.assertIn("imed_erp.imederp.damaged_stock.guard_damaged_store", events[doctype]["validate"], doctype)
+		receipt = frappe.get_doc({"doctype": "Purchase Receipt", "company": COMPANY, "items": [{"item_code": PAPER, "qty": 10, "warehouse": DAMAGED}]})
+		self.assert_refused(frappe.ValidationError, as_user, RAGHAD, guard_damaged_store, receipt)
+		rejected = frappe.get_doc({"doctype": "Purchase Receipt", "company": COMPANY, "items": [{"item_code": PAPER, "qty": 10, "warehouse": MAWASAH_STORE, "rejected_warehouse": DAMAGED}]})
+		self.assert_refused(frappe.ValidationError, as_user, RAGHAD, guard_damaged_store, rejected)
+		bill = frappe.get_doc({"doctype": "Purchase Invoice", "company": COMPANY, "update_stock": 1, "items": [{"item_code": PAPER, "qty": 10, "warehouse": DAMAGED}]})
+		self.assert_refused(frappe.ValidationError, as_user, RAGHAD, guard_damaged_store, bill)
+		# A bill that moves no stock names no store to fill.
+		bill.update_stock = 0
+		as_user(RAGHAD, guard_damaged_store, bill)
+		# An ordinary store is any purchase's.
+		as_user(RAGHAD, guard_damaged_store, frappe.get_doc({"doctype": "Purchase Receipt", "company": COMPANY, "items": [{"item_code": PAPER, "qty": 10, "warehouse": MAWASAH_STORE}]}))
+
 	# ---------- 11: who may do what ----------
 	def test_permissions(self):
 		# Sara records damage for Azarita only.

@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_months, flt, format_datetime, getdate, now_datetime
 
+from imed_erp.imederp.roles import ACCOUNTANT as ACCOUNTANT_ROLE
 from imed_erp.imederp.doctype.expense_category.expense_category import get_expense_account
 from imed_erp.imederp.doctype.recurring_expense.recurring_expense import due_date_in
 from imed_erp.imederp.expense_reminders import notify
@@ -21,7 +22,6 @@ EVERY_MONTH = "Every Month"
 # holder approves it; an expense a holder records himself is approved as he submits it.
 APPROVER_ROLE = "Expense Approver"
 # The requirement role of the accountant (setup_users.py); approval requests and reminders go to him.
-ACCOUNTANT_ROLE = "Accountant"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
 
 # Set only by Request Approval, Approve and Reject. The form shows them read-only, but the server does not

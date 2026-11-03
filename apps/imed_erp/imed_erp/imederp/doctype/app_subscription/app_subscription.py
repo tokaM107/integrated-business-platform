@@ -31,8 +31,14 @@ class AppSubscription(Document):
         # A student counts once in a course: twice would raise the count, maybe to another tier, and charge
         # the doctor for him twice (APP-03). A draft may wait beside it; only one is submitted. Cancel the old
         # subscription to subscribe him again.
-        twin = frappe.db.exists(
-            "App Subscription", {"student": self.student, "course": self.course, "docstatus": 1, "name": ("!=", self.name)}
+        # The course is locked first, so two subscriptions of one course wait for each other, and the locking read
+        # sees what the other committed (audit of 2 Nov 2026: a plain read let the same student in twice at once).
+        frappe.db.get_value("App Course", self.course, "name", for_update=True)
+        twin = frappe.db.get_value(
+            "App Subscription",
+            {"student": self.student, "course": self.course, "docstatus": 1, "name": ("!=", self.name)},
+            "name",
+            for_update=True,
         )
         if twin:
             frappe.throw(_("{0} is already subscribed to course {1}: {2}.").format(self.student, self.course, twin))

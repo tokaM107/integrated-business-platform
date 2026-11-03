@@ -27,6 +27,7 @@ from frappe.utils import add_days, date_diff, flt, getdate, now_datetime, today
 
 from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import week_ends_on, week_starts_on
 from imed_erp.imederp.doctype.cash_discrepancy.cash_discrepancy import OPEN
+from imed_erp.imederp.owner_figures import COMPANY
 from imed_erp.imederp.treasuries import BUSINESS_TREASURY, abbr_of, plain
 
 
@@ -74,14 +75,23 @@ class WeeklyCashReconciliation(Document):
 		self.needs_review = 0
 
 	def check_once_a_week(self):
-		other = frappe.db.exists(
+		# As Treasury Close does for a day: the business (or, for the whole group, the company) is locked first, so
+		# two reviews of the same week wait for each other, and the locking read sees what the other committed
+		# (audit of 2 Nov 2026: a plain read let both pass).
+		if self.business:
+			frappe.db.get_value("Cost Center", self.business, "name", for_update=True)
+		else:
+			frappe.db.get_value("Company", COMPANY, "name", for_update=True)
+		other = frappe.db.get_value(
 			"Weekly Cash Reconciliation",
 			{
 				"week_start": self.week_start,
 				"business": self.business or ("is", "not set"),
 				"docstatus": ("<", 2),
-				"name": ("!=", self.name),
+				"name": ("!=", self.name or ""),
 			},
+			"name",
+			for_update=True,
 		)
 		if other:
 			frappe.throw(_("This week is already reconciled: {0}.").format(other), title=_("Already Reconciled"))

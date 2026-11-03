@@ -8,14 +8,14 @@ from frappe.utils import cint, flt
 
 from imed_erp.imederp.doctor_accrual import EXPENSE_ACCOUNT, PAYABLE_ACCOUNT, account, cancel
 from imed_erp.imederp.platform_fee_posting import RECEIVABLE_ACCOUNT, REVENUE_ACCOUNT, app_cost_center
-from imed_erp.imederp.doctype.book_edition.book_edition import get_copy_cost, get_sold_qty
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_SIGN, check_submitted, get_balance, update_balance
 from imed_erp.imederp.doctype.expense.expense import APPROVER_ROLE, get_approvers, is_approver
 from imed_erp.imederp.expense_reminders import notify
 
-# Which agreement each kind of entry is for. Books: the group owes the doctor and pays him out; copies he asked
-# for and left unsold are charged back to him (owner, 10 Oct 2026). App: the doctor owes the group its fees
-# and the group collects them. Accruals and adjustments go on either.
+# Which agreement each kind of entry is for. Books: the group owes the doctor and pays him out. App: the doctor owes
+# the group its fees and the group collects them. Accruals and adjustments go on either. An Unsold Copies Charge
+# (owner, 10 Oct 2026) is refused since 21 Oct 2026 (refuse_unsold_copies_charge): it stays a type only so the
+# ones recorded before can be rejected or cancelled.
 ONLY_ON = {"Payout": "Books", "Unsold Copies Charge": "Books", "Collection": "App"}
 
 # DOC-22: a deduction from the doctor is applied only once the owner or the accountant approves it, the same
@@ -424,9 +424,6 @@ def reverse_adjustment(name, reason):
 
 def lock_agreement(agreement):
 	frappe.db.get_value("Doctor Agreement", agreement, "name", for_update=True)
-
-
-EDITION_COST_FIELDS = ["paper_cost", "ink_cost", "overhead_cost", "pages", "binding_cost"]
 
 
 def descendants(period):

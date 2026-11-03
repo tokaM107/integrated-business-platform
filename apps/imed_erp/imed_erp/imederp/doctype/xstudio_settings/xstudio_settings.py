@@ -9,6 +9,8 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, cstr
 
+from imed_erp.imederp.booking_rules import STUDIO_SERVICE
+
 
 class XStudioSettings(Document):
 	def validate(self):
@@ -31,9 +33,9 @@ class XStudioSettings(Document):
 				frappe.throw(_("Hall {0} is mapped twice.").format(row.hall_id))
 			seen.add(row.hall_id)
 			kind = frappe.db.get_value("Booking Resource", row.resource, "resource_type")
-			if kind != "Studio Service":
+			if kind != STUDIO_SERVICE:
 				frappe.throw(_("{0} is a {1}. XStudio's halls are studio services, kept apart from the lecture halls.").format(row.resource, _(kind or "?")))
-		if self.packages_resource and frappe.db.get_value("Booking Resource", self.packages_resource, "resource_type") != "Studio Service":
+		if self.packages_resource and frappe.db.get_value("Booking Resource", self.packages_resource, "resource_type") != STUDIO_SERVICE:
 			frappe.throw(_("{0} is not a studio service.").format(self.packages_resource))
 		for field in ("lookback_days", "lookahead_days", "poll_minutes"):
 			if cint(self.get(field)) < 0:

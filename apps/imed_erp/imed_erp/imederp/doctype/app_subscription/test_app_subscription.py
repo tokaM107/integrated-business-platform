@@ -120,3 +120,21 @@ class IntegrationTestAppSubscription(IntegrationTestCase):
 		schedule = frappe.get_doc("Platform Fee Schedule", make_schedule("2040-01-01"))
 		schedule.cancel()
 		self.assertRaisesRegex(frappe.ValidationError, "cannot be deleted", frappe.delete_doc, "Platform Fee Schedule", schedule.name)
+
+	def test_the_course_is_locked_before_the_student_is_checked(self):
+		"""Audit of 2 Nov 2026: two subscriptions of one student submitted at once both passed a plain read."""
+		from unittest.mock import patch as spy_on
+
+		locked = []
+		original = frappe.db.get_value
+
+		def spy(*args, **kwargs):
+			if kwargs.get("for_update"):
+				locked.append(args[0] if args else kwargs.get("doctype"))
+			return original(*args, **kwargs)
+
+		course = make_course("_Test Locked Course")
+		with spy_on("imed_erp.imederp.doctype.app_subscription.app_subscription.frappe.db.get_value", side_effect=spy):
+			self.make_subscription(course)
+		self.assertEqual(locked[:2], ["App Course", "App Subscription"])
+

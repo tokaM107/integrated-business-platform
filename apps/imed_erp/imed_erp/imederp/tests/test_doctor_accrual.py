@@ -389,3 +389,48 @@ class IntegrationTestDoctorAccrual(IntegrationTestCase):
 		self.assertEqual(self.entries(sale.name), [])
 		self.assertNotIn(sale.name, missed_sales())
 
+	def test_the_invoice_is_locked_before_its_lines_are_checked(self):
+		"""Review of 2 Nov 2026: two runs of the daily job at once each counted a missed sale (setup/
+		concurrency_check_integrity.py reproduces it with two sessions)."""
+		edition = self.edition()
+		with patch.object(doctor_accrual, "accrue"):
+			invoice = self.sell([(self.items[0], 2)])
+		locked = []
+		original = frappe.db.get_value
+
+		def spy(*args, **kwargs):
+			if kwargs.get("for_update"):
+				locked.append(args[0] if args else kwargs.get("doctype"))
+			return original(*args, **kwargs)
+
+		with patch("imed_erp.imederp.doctor_accrual.frappe.db.get_value", side_effect=spy):
+			accrue(frappe.get_doc("Sales Invoice", invoice.name))
+		self.assertEqual(locked[:2], ["Sales Invoice", LEDGER])
+		self.assertEqual(len(self.entries(invoice.name)), 1)
+		# A second run adds nothing.
+		accrue(frappe.get_doc("Sales Invoice", invoice.name))
+		self.assertEqual(len(self.entries(invoice.name)), 1)
+		self.assertTrue(edition.name)
+
+	def test_a_dropped_transaction_stops_the_daily_job_with_its_own_error(self):
+		from imed_erp.imederp.doctor_accrual import catch_up
+
+		class Dropped(Exception):
+			pass
+
+		def fail(doc):
+			raise Dropped("deadlock")
+
+		real_rollback = frappe.db.rollback
+
+		def rollback(save_point=None, **kwargs):
+			if save_point:
+				raise Exception("SAVEPOINT doctor_accrual does not exist")
+			return real_rollback(**kwargs)
+
+		self.edition()
+		with patch.object(doctor_accrual, "accrue"):
+			invoice = self.sell([(self.items[0], 1)])
+		with patch.object(frappe.db, "rollback", side_effect=rollback):
+			self.assertRaises(Dropped, catch_up, [invoice.name], fail, "x {0}")
+

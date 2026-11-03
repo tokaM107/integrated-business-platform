@@ -365,6 +365,13 @@ class IntegrationTestHallBookings(IntegrationTestCase):
 			self.assertRaises(frappe.PermissionError, check_availability, self.hall, DAY, "12:00", "14:00")
 		finally:
 			frappe.set_user("Administrator")
+		# Audit of 2 Nov 2026: another business's branch manager may not probe the halls' schedule (the answer names
+		# the clashing booking). The studio's manager reads bookings, of her own business only.
+		frappe.set_user("gilan@imed.local")
+		try:
+			self.assertRaises(frappe.PermissionError, check_availability, self.hall, DAY, "11:00", "13:00")
+		finally:
+			frappe.set_user("Administrator")
 
 	def test_a_lecture_is_billed_to_its_doctor_unless_a_renter_is_named(self):
 		lecture = self.book(kind="External Lecturer", rental_model="Fixed Rent", doctor=self.doctor, customer=None)

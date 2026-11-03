@@ -38,7 +38,11 @@ PAYABLE_ACCOUNT = "مستحقات للأطباء — الكتب"
 
 
 def accrue(doc, method=None):
-	"""Sales Invoice on_submit hook."""
+	"""Sales Invoice on_submit hook, and the daily safety net."""
+	# The invoice is locked first and its lines checked with a locking read, so two runs of the daily job (or the
+	# job and a re-submit) wait for each other and the second sees the first's entries (review of 2 Nov 2026: two
+	# runs at once each posted the doctor's amount, twice). On submit the invoice is already this transaction's.
+	frappe.db.get_value("Sales Invoice", doc.name, "name", for_update=True)
 	rows = [row for row in doc.items if row.get(FIELD) and not counted(row)]
 	accruals = [accrual for accrual in map(lambda row: make_accrual(doc, row), rows) if accrual]
 	if not accruals:
@@ -53,7 +57,7 @@ def accrue(doc, method=None):
 
 
 def counted(row):
-	return frappe.db.exists(LEDGER, {"invoice_item": row.name, "docstatus": ["<", 2]})
+	return frappe.db.get_value(LEDGER, {"invoice_item": row.name, "docstatus": ["<", 2]}, "name", for_update=True)
 
 
 def make_accrual(doc, row):
@@ -248,8 +252,13 @@ def catch_up(invoices, action, error_title):
 		try:
 			action(frappe.get_doc("Sales Invoice", name))
 			count += 1
-		except Exception:
-			frappe.db.rollback(save_point="doctor_accrual")
+		except Exception as error:
+			try:
+				frappe.db.rollback(save_point="doctor_accrual")
+			except Exception:
+				# The database dropped the whole transaction (a deadlock): the savepoint went with it. Stop with the
+				# real error; the next run counts what is left.
+				raise error from None
 			# One bad invoice must not stop the others; the error log shows what went wrong.
 			frappe.log_error(title=error_title.format(name))
 	return count

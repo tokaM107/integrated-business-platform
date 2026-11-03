@@ -694,10 +694,15 @@ def find_missing(context, bookings, start, end):
 		fields=["name", "external_id", "customer"],
 	)
 	missing = [row for row in rows if row.external_id not in seen]
+	# The customers' XStudio ids, read once (review of 2 Nov 2026: one query a booking).
+	ids = dict(
+		frappe.get_all(
+			"Customer", filters={"name": ("in", list({row.customer for row in missing if row.customer}))}, fields=["name", "xstudio_customer_id"], as_list=True
+		)
+	) if missing else {}
 	by_customer = {}
 	for row in missing:
-		xid = frappe.db.get_value("Customer", row.customer, "xstudio_customer_id")
-		by_customer.setdefault(xid, []).append(row)
+		by_customer.setdefault(ids.get(row.customer), []).append(row)
 	for xid, group in by_customer.items():
 		found = {}
 		if xid:
@@ -716,7 +721,14 @@ def find_missing(context, bookings, start, end):
 						upsert_customer(context, mappers.customer_from_booking(booking))
 					upsert_booking(context, booking)
 				except Exception as e:
-					frappe.db.rollback(save_point=SAVEPOINT)
+					try:
+						frappe.db.rollback(save_point=SAVEPOINT)
+					except Exception:
+						# As in each(): a deadlock rolled the whole run back, savepoint and all (review of 2 Nov 2026:
+						# here the missing savepoint's error hid the real one).
+						raise SyncStopped(
+							_("The run stopped at {0}: the database rolled it back (another save at the same moment). Nothing of this run was kept; the next run is safe.").format(row.external_id)
+						) from e
 					frappe.clear_messages()
 					context.run.failed(row_no, row.external_id, cstr(getattr(e, "message", None) or e)[:500])
 			else:

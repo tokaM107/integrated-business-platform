@@ -5,14 +5,7 @@
 frappe.listview_settings["Booking"] = {
 	add_fields: ["status", "resource_type"],
 	get_indicator(doc) {
-		const colors = {
-			Tentative: "orange",
-			Confirmed: "green",
-			"Confirmed with Deposit": "green",
-			Completed: "blue",
-			Cancelled: "gray",
-			"No Show": "gray",
-		};
+		const colors = (frappe.boot.imed_booking || {}).colors || {};  // booking_rules.py
 		return [__(doc.status), colors[doc.status] || "gray", `status,=,${doc.status}`];
 	},
 };

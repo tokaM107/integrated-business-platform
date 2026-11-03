@@ -18,6 +18,8 @@ from unittest.mock import patch
 import frappe
 from frappe.utils import add_days, flt, today
 
+from imed_erp.imederp.booking_rules import NOT_HELD
+
 MAIN_SITE = "frontend"
 COMPANY = "Mohamed Mamdouh group"
 AZARITA = "مكتبة الأزاريطة - MMG"
@@ -304,7 +306,7 @@ def check_two_bookings():
 		).insert().name
 
 	outcome = at_once(book, book)
-	saved = frappe.db.count("Booking", {"resource": resource, "status": ("not in", ("Cancelled", "No Show"))})
+	saved = frappe.db.count("Booking", {"resource": resource, "status": ("not in", NOT_HELD)})
 	report("Bookings of one resource and hour at once", saved == 1, f"{outcome}; bookings saved: {saved}")
 
 

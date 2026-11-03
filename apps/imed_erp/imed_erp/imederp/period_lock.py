@@ -11,20 +11,9 @@ import frappe
 from frappe import _
 
 # The doctypes this check runs on (hooks.py: period_closing_doctypes, and doc_events validate and before_cancel).
-LOCKED_DOCTYPES = [
-	"Expense",
-	"Inter Business Transfer",
-	"Doctor Ledger Entry",
-	"App Subscription",
-	"Printer Reading",
-	"Daily Counter Reading",
-	"Stock Count",
-	"Damaged Stock Entry",
-	"Damaged Stock Sale",
-	"App Payment",
-	"Cash Handover",
-	"Studio Hour Package",
-]
+# The app's documents a closed period locks: hooks.py's period_closing_doctypes, which ERPNext's own month-end close
+# reads too. One list (audit of 2 Nov 2026: it was written here and in hooks.py).
+from imed_erp.hooks import period_closing_doctypes as LOCKED_DOCTYPES  # noqa: E402
 
 DATE_FIELDS = ("posting_date", "entry_date", "subscription_date", "reading_date", "handover_date", "purchase_date")
 COST_CENTER_FIELDS = ("activity", "from_business", "cost_center", "branch")

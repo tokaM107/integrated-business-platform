@@ -23,11 +23,12 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime
 
+from imed_erp.imederp.roles import ACCOUNTS_ROLES
+from imed_erp.imederp.booking_rules import NOT_HELD, STUDIO_SERVICE
 from imed_erp.imederp.sales_cancellation import clean_reason
 
-ACCOUNTS_ROLES = ("Accounts Manager", "System Manager")
 ACTIVE, USED_UP, CANCELLED = "Active", "Used Up", "Cancelled"
-STUDIO = "Studio Service"
+STUDIO = STUDIO_SERVICE
 PRECISION = 4
 
 
@@ -179,7 +180,7 @@ def draw(booking):
 
 
 def reason_for(booking, difference):
-	if booking.status in ("Cancelled", "No Show"):
+	if booking.status in NOT_HELD:
 		return _("{0}: {1}").format(_(booking.status), booking.cancellation_reason or "-")[:140]
 	return _("Session drawn") if difference > 0 else _("Session shortened or moved")
 
@@ -223,9 +224,15 @@ def record(package, booking, hours, reason):
 def make_invoice(name):
 	"""The package's one invoice: its price, for the hours bought, to the teacher. Its sessions are not billed again."""
 	from imed_erp.imederp.booking_accounts import company_of, income_account_of, rate_for
+	from imed_erp.imederp.doctype.booking.booking import check_own_business
 
 	package = frappe.get_doc("Studio Hour Package", name)
 	package.check_permission("write")
+	check_own_business(package.cost_center)
+	if package.source == "Imported":
+		# INT-01 and the owner's rule of 25 Oct 2026: an imported package's money is its source system's; it is never
+		# billed or posted here (audit of 2 Nov 2026: the button and this endpoint allowed it).
+		frappe.throw(_("{0} comes from {1}: it is billed there, never here.").format(name, package.source_system or _("another system")), title=_("Imported Package"))
 	frappe.db.get_value("Studio Hour Package", name, "name", for_update=True)
 	billed = frappe.db.get_value("Studio Hour Package", name, "sales_invoice")
 	if billed and frappe.db.get_value("Sales Invoice", billed, "docstatus") == 1:

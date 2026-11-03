@@ -162,6 +162,17 @@ class IntegrationTestStudioHourPackage(IntegrationTestCase):
 			lambda: frappe.get_doc({"doctype": "Studio Hour Package", "customer": self.teacher, "resource": self.hall, "purchase_date": today(), "hours_purchased": 5, "price": 1}).insert(),
 		)
 
+	def test_an_imported_package_is_never_billed_here(self):
+		"""Audit of 2 Nov 2026: make_invoice billed an XStudio package, which XStudio bills itself."""
+		package = self.package(hours=4, price=1500).name
+		frappe.db.set_value("Studio Hour Package", package, {"source": "Imported", "source_system": "xstudio"})
+		self.assertRaisesRegex(frappe.ValidationError, "billed there, never here", as_user, GILAN, make_invoice, package)
+		self.assertFalse(frappe.db.get_value("Studio Hour Package", package, "sales_invoice"))
+
+	def test_a_package_is_billed_by_its_own_business_only(self):
+		package = self.package(hours=4, price=1500).name
+		self.assertRaises(frappe.PermissionError, as_user, NOUR, make_invoice, package)
+
 	def test_the_studio_s_own_business_only(self):
 		self.assertRaises(frappe.PermissionError, self.package, user=NOUR)
 

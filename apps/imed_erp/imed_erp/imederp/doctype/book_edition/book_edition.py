@@ -214,20 +214,23 @@ def get_sold_qty(edition, exclude_invoice=None, for_update=False):
     )
 
 
-def get_disposed_qty(edition, exclude=None):
+def get_disposed_qty(edition, exclude=None, for_update=False):
     """Copies of an obsolete edition disposed of as scrap: its submitted Damaged Stock Entries."""
+    lock = "for update" if for_update else ""
     return flt(
         frappe.db.sql(
-            """select sum(dsi.qty) from `tabDamaged Stock Item` dsi
+            f"""select sum(dsi.qty) from `tabDamaged Stock Item` dsi
             join `tabDamaged Stock Entry` dse on dse.name = dsi.parent
-            where dse.book_edition = %s and dse.docstatus = 1 and dse.name != %s""",
+            where dse.book_edition = %s and dse.docstatus = 1 and dse.name != %s {lock}""",
             (edition, exclude or ""),
         )[0][0]
     )
 
 
 def update_sold_qty(edition):
-    sold, disposed = cint(get_sold_qty(edition)), cint(get_disposed_qty(edition))
+    # Locking reads (audit of 2 Nov 2026): two sales of one edition submitted together each saw the other's sale
+    # missing, and the last to write left sold_qty and remaining_qty one sale short.
+    sold, disposed = cint(get_sold_qty(edition, for_update=True)), cint(get_disposed_qty(edition, for_update=True))
     total = cint(frappe.db.get_value("Book Edition", edition, "total_qty"))
     frappe.db.set_value(
         "Book Edition",

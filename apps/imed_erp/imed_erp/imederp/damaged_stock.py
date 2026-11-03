@@ -119,13 +119,15 @@ def guard_damaged_store(doc, method=None):
 	"""validate hook on the stock documents: the damaged store is filled only by a damage record (with its
 	reason and its loss) and emptied only by a sale by weight. A plain transfer would bring stock in at its
 	cost with no reason and no loss; a plain issue or invoice would take it out without a sale by weight.
-	Stock counts (Stock Reconciliation) are not touched."""
+	A purchase never fills it either (audit of 2 Nov 2026: Purchase Invoice and Purchase Receipt were not guarded,
+	so stock could come in at full cost with no damage recorded). Stock counts (Stock Reconciliation) are not
+	touched."""
 	if doc.flags.from_damaged_stock or CORRECTION_ROLE in frappe.get_roles():
 		return
-	if doc.doctype in ("Sales Invoice", "POS Invoice") and not doc.get("update_stock"):
+	if doc.doctype in ("Sales Invoice", "POS Invoice", "Purchase Invoice") and not doc.get("update_stock"):
 		return
 	for row in doc.get("items") or []:
-		for field in ("s_warehouse", "t_warehouse", "warehouse", "target_warehouse"):
+		for field in ("s_warehouse", "t_warehouse", "warehouse", "target_warehouse", "rejected_warehouse"):
 			if is_damaged_store(row.get(field)):
 				frappe.throw(
 					_("Row #{0}: {1} is the damaged store. Damaged items go in through Damaged Stock Entry and out through Damaged Stock Sale.").format(

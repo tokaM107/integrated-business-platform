@@ -596,3 +596,17 @@ html[dir="rtl"] .imed-assistant-send .icon {
 /* Read-aloud button on an answer (1 Nov 2026). */
 .imed-assistant-speak { margin-inline-start: 0.4rem; border: 0; background: transparent; cursor: pointer; font-size: 0.9rem; opacity: 0.6; vertical-align: middle; }
 .imed-assistant-speak:hover { opacity: 1; }
+
+/* Saved chats (2 Nov 2026): the list drawer under the header, and the chat's title. */
+.imed-assistant-panel__chat-title { display: block; font-size: 0.75rem; opacity: 0.7; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imed-assistant-panel__chats, .imed-assistant-panel__new { border: 0; background: transparent; cursor: pointer; padding: 0.25rem; opacity: 0.8; }
+.imed-assistant-panel__chats:hover, .imed-assistant-panel__new:hover { opacity: 1; }
+.imed-assistant-chatlist { max-height: 260px; overflow: auto; border-bottom: 1px solid var(--border-color, #e5e7eb); padding: 0.25rem 0.5rem; background: var(--subtle-fg, #f8fafc); }
+.imed-assistant-chatlist__item { display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; }
+.imed-assistant-chatlist__item:hover, .imed-assistant-chatlist__item.is-current { background: var(--bg-light-gray, #eef2f7); }
+.imed-assistant-chatlist__text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.imed-assistant-chatlist__text b { font-weight: 500; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imed-assistant-chatlist__text small { font-size: 0.7rem; opacity: 0.6; }
+.imed-assistant-chatlist__rename, .imed-assistant-chatlist__delete { border: 0; background: transparent; cursor: pointer; opacity: 0.5; padding: 0.15rem; }
+.imed-assistant-chatlist__rename:hover, .imed-assistant-chatlist__delete:hover { opacity: 1; }
+.imed-assistant-chatlist__empty { font-size: 0.8rem; opacity: 0.7; margin: 0.4rem; }

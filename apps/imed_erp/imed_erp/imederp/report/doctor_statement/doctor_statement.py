@@ -70,6 +70,8 @@ def get_entries(agreement):
 
 def get_data(filters):
 	period = frappe.db.get_value("Academic Period", filters.period, ["start_date", "end_date"], as_dict=True)
+	if not period:
+		frappe.throw(_("Academic Period {0} was not found.").format(filters.period), frappe.DoesNotExistError)
 	start, end = getdate(period.start_date), getdate(period.end_date)
 
 	# A term's statement takes in its rounds and modules (books settle by module, DOC-05).

@@ -37,6 +37,10 @@ FINANCIAL_DOCTYPES = [
 	"Platform Fee Schedule",
 	"Treasury Close",
 	"Weekly Cash Reconciliation",
+	# Guarded in hooks.py, and listed here so the guard test covers them too (audit of 2 Nov 2026).
+	"App Payment",
+	"Cash Handover",
+	"Studio Hour Package",
 ]
 
 # Never submitted, so kept by what they carry instead (SEC-12, INT-01): a booking imported from the booking system

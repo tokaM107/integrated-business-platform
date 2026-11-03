@@ -26,10 +26,11 @@ from zoneinfo import ZoneInfo
 
 from frappe.utils import cint, cstr, flt
 
+from imed_erp.imederp.booking_rules import CANCELLED, COMPLETED, CONFIRMED_WITH_DEPOSIT, TENTATIVE
+
 SOURCE = "xstudio"
 CAIRO = ZoneInfo("Africa/Cairo")
-STATUS = {"pending": "Tentative", "confirmed": "Tentative", "completed": "Completed", "cancelled": "Cancelled"}
-CONFIRMED_WITH_DEPOSIT = "Confirmed with Deposit"
+STATUS = {"pending": TENTATIVE, "confirmed": TENTATIVE, "completed": COMPLETED, "cancelled": CANCELLED}
 LAST_SECOND = time(23, 59, 59)
 NO_PHONE = "no-phone-"
 REELS = "reels"
@@ -90,7 +91,7 @@ def booking_status(booking):
 	status = STATUS.get(cstr(booking.get("status")).lower())
 	if not status:
 		raise ValueError(f"unknown XStudio status {booking.get('status')!r}")
-	if status == "Tentative" and cstr(booking.get("status")).lower() == "confirmed" and flt(booking.get("amount_paid")) > 0:
+	if status == TENTATIVE and cstr(booking.get("status")).lower() == "confirmed" and flt(booking.get("amount_paid")) > 0:
 		return CONFIRMED_WITH_DEPOSIT
 	return status
 

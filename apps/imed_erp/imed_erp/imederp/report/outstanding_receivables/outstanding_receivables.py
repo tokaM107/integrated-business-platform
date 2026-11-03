@@ -25,6 +25,7 @@ from frappe import _
 from frappe.utils import date_diff, flt, getdate, today
 
 from imed_erp.imederp.business_figures import company, subtree
+from imed_erp.imederp.booking_rules import NOT_HELD
 from imed_erp.imederp.owner_figures import check_reader
 
 INVOICED, CREDIT, NOT_INVOICED = "Invoiced", "Credit", "Not Invoiced"
@@ -94,7 +95,7 @@ def get_columns():
 
 
 def get_rows(filters):
-	values = {"company": company()}
+	values = {"company": company(), "not_held": NOT_HELD}
 	if filters.cost_center:
 		values["cost_centers"] = tuple(row.name for row in subtree(filters.cost_center))
 	if filters.customer:
@@ -135,24 +136,28 @@ def get_rows(filters):
 			values,
 			as_dict=True,
 		)
+		# Each kind only when it is asked for (audit of 2 Nov 2026: Invoiced showed the credits as well, and Customer
+		# Credit the unpaid invoices).
 		for invoice in invoices:
 			if invoice.outstanding_amount > 0 and not invoice.is_return:
-				rows.append(invoice_row(invoice))
-			elif invoice.outstanding_amount < 0:
+				if filters.kind != CREDIT:
+					rows.append(invoice_row(invoice))
+			elif invoice.outstanding_amount < 0 and filters.kind != INVOICED:
 				rows.append(credit_row("Sales Invoice", invoice.name, invoice, -invoice.outstanding_amount))
 
 	# Bookings not invoiced yet, whatever the filters: a deposit on one is in its Amount Paid, never a credit.
 	open_bookings = set(
 		frappe.db.sql_list(
 			"""select name from `tabBooking`
-			where status not in ('Cancelled', 'No Show') and coalesce(sales_invoice, '') = ''"""
+			where status not in %(not_held)s and coalesce(sales_invoice, '') = ''""",
+			{"not_held": NOT_HELD},
 		)
 	)
 	if filters.kind in (None, "", NOT_INVOICED):
 		bookings = frappe.db.sql(
 			f"""select name, customer, booking_date, cost_center, total_amount, paid_amount, outstanding_amount
 			from `tabBooking`
-			where status not in ('Cancelled', 'No Show') and coalesce(sales_invoice, '') = ''
+			where status not in %(not_held)s and coalesce(sales_invoice, '') = ''
 				and outstanding_amount > 0
 			{where("booking_date", "cost_center", "customer")}
 			order by booking_date, name""",

@@ -29,12 +29,13 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import add_days, flt, now_datetime
 
+from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.sales_cancellation import clean_reason
 from imed_erp.imederp.treasuries import check_treasury
 
 CASH = "Cash"
-REOPEN_ROLES = ("Accounts Manager", "System Manager")
+REOPEN_ROLES = ACCOUNTS_ROLES
 MAX_REASON_LENGTH = 500
 
 

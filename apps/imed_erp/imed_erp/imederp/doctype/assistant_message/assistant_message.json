@@ -1,0 +1,30 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-11-02 09:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["chat", "seq", "role", "content", "facts"],
+ "fields": [
+  {"fieldname": "chat", "fieldtype": "Link", "label": "Chat", "options": "Assistant Chat", "reqd": 1, "in_list_view": 1, "in_standard_filter": 1},
+  {"fieldname": "seq", "fieldtype": "Int", "label": "No.", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "role", "fieldtype": "Select", "label": "Role", "options": "user\nassistant", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "content", "fieldtype": "Long Text", "label": "Content", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "facts", "fieldtype": "Long Text", "label": "Facts Read", "description": "The compact results of the reads behind an answer: what the assistant knew when it answered."}
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-11-02 12:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Assistant Message",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "read": 1, "report": 1, "role": "System Manager", "write": 1},
+  {"create": 1, "delete": 1, "read": 1, "report": 1, "role": "Super Admin", "write": 1}
+ ],
+ "sort_field": "seq",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 0
+}

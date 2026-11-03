@@ -1,6 +1,6 @@
 // IMED ERP assistant: an animated character in the corner of every page that opens a chat panel at the side.
 // Text and voice messages go to imed_erp.assistant.api.send_message; which AI answers is decided on
-// the server (imed_erp/assistant/providers.py), so this file does not change when a model is connected.
+// the server (imed_erp/assistant/providers/), so this file does not change when a model is connected.
 //
 // Shown only to users the server allows (the owner; see ALLOWED_ROLES in assistant/api.py). Mounted on
 // the page once Frappe has started; the conversation is kept in memory for the browser tab.
@@ -47,7 +47,10 @@
 
 	const state = {
 		status: null, // promise of get_status()
-		history: [], // [{role, content}] sent to the server
+		chat: null, // the saved chat open now (its name), or null before the first message
+		chats: [], // the user's saved chats [{name, title, last_message_at}]
+		list_open: false,
+		history: [], // [{role, content}] shown; the server keeps the saved chat's own memory
 		items: [], // what the panel shows: {role, text?, audio_url?, transcript?}
 		audio_urls: [], // the voice messages' object URLs, released when the page goes
 		busy: false,
@@ -80,11 +83,19 @@
 						<div class="imed-assistant-panel__avatar">${character("imed-bot--small")}</div>
 						<div class="imed-assistant-panel__titles">
 							<h2 id="imed-assistant-title">${esc(t("AI Assistant", "المساعد الذكي"))}</h2>
+							<small class="imed-assistant-panel__chat-title"></small>
 						</div>
+						<button type="button" class="imed-assistant-panel__chats" aria-label="${esc(t("Chats", "المحادثات"))}" title="${esc(t("Chats", "المحادثات"))}">
+							${frappe.utils.icon("list", "md")}
+						</button>
+						<button type="button" class="imed-assistant-panel__new" aria-label="${esc(t("New chat", "محادثة جديدة"))}" title="${esc(t("New chat", "محادثة جديدة"))}">
+							${frappe.utils.icon("add", "md")}
+						</button>
 						<button type="button" class="imed-assistant-panel__close" aria-label="${esc(t("Close", "إغلاق"))}">
 							${frappe.utils.icon("x", "md")}
 						</button>
 					</header>
+					<div class="imed-assistant-chatlist" hidden></div>
 					<div class="imed-assistant-panel__log" role="log" aria-live="polite"></div>
 					<div class="imed-assistant-panel__suggestions"></div>
 					<form class="imed-assistant-composer">
@@ -144,6 +155,11 @@
 			$root.hasClass("is-open") ? close($root) : open($root)
 		);
 		$root.find(".imed-assistant-panel__close").on("click", () => close($root));
+		$root.find(".imed-assistant-panel__new").on("click", () => start_new_chat($root));
+		$root.find(".imed-assistant-panel__chats").on("click", () => toggle_list($root));
+		$root.on("click", ".imed-assistant-chatlist__item", function () { open_chat($root, $(this).data("name")); });
+		$root.on("click", ".imed-assistant-chatlist__delete", function (e) { e.stopPropagation(); delete_chat($root, $(this).closest(".imed-assistant-chatlist__item").data("name")); });
+		$root.on("click", ".imed-assistant-chatlist__rename", function (e) { e.stopPropagation(); rename_chat($root, $(this).closest(".imed-assistant-chatlist__item").data("name")); });
 		// Page-level, so Esc works even when focus left the panel (e.g. a button got disabled while sending).
 		$(document)
 			.off("keydown.imed-assistant")
@@ -267,7 +283,97 @@
 	function send_text($root, text) {
 		state.items.push({ role: "user", text });
 		state.history.push({ role: "user", content: text });
-		request($root, { messages: JSON.stringify(state.history) });
+		ensure_chat($root).then((chat) => request($root, chat ? { chat, text } : { messages: JSON.stringify(state.history) }));
+	}
+
+	// ------------------------------------------------------------------ saved chats
+	function ensure_chat($root) {
+		if (state.chat) return Promise.resolve(state.chat);
+		return frappe
+			.xcall(`${API}.new_chat`, {})
+			.then((name) => {
+				state.chat = name;
+				return name;
+			})
+			.catch(() => null); // without a saved chat the whole conversation is sent, as before
+	}
+
+	function start_new_chat($root) {
+		state.chat = null;
+		state.history = [];
+		state.items = [];
+		state.list_open = false;
+		$root.find(".imed-assistant-chatlist").prop("hidden", true);
+		$root.find(".imed-assistant-panel__chat-title").text("");
+		render($root);
+		$root.find("textarea").trigger("focus");
+	}
+
+	function load_chats($root) {
+		return frappe
+			.xcall(`${API}.list_chats`)
+			.then((rows) => {
+				state.chats = rows || [];
+				render_list($root);
+			})
+			.catch(() => {});
+	}
+
+	function toggle_list($root) {
+		state.list_open = !state.list_open;
+		$root.find(".imed-assistant-chatlist").prop("hidden", !state.list_open);
+		if (state.list_open) load_chats($root);
+	}
+
+	function render_list($root) {
+		const $list = $root.find(".imed-assistant-chatlist").empty();
+		if (!state.chats.length) {
+			$list.append(`<p class="imed-assistant-chatlist__empty">${esc(t("No saved chats yet.", "مافيش محادثات محفوظة لسه."))}</p>`);
+			return;
+		}
+		state.chats.forEach((c) => {
+			const when = c.last_message_at ? frappe.datetime.prettyDate(c.last_message_at) : "";
+			$list.append(`
+				<div class="imed-assistant-chatlist__item ${c.name === state.chat ? "is-current" : ""}" data-name="${esc(c.name)}" role="button" tabindex="0">
+					<div class="imed-assistant-chatlist__text" dir="auto"><b>${esc(c.title || t("New chat", "محادثة جديدة"))}</b><small>${esc(when)}</small></div>
+					<button type="button" class="imed-assistant-chatlist__rename" title="${esc(t("Rename", "إعادة تسمية"))}">${frappe.utils.icon("edit", "sm")}</button>
+					<button type="button" class="imed-assistant-chatlist__delete" title="${esc(t("Delete", "حذف"))}">${frappe.utils.icon("delete", "sm")}</button>
+				</div>`);
+		});
+	}
+
+	function open_chat($root, name) {
+		frappe
+			.xcall(`${API}.get_chat`, { chat: name })
+			.then((chat) => {
+				state.chat = chat.name;
+				state.history = chat.messages.map((m) => ({ role: m.role, content: m.content }));
+				state.items = chat.messages.map((m) => ({ role: m.role, text: m.content }));
+				state.list_open = false;
+				$root.find(".imed-assistant-chatlist").prop("hidden", true);
+				$root.find(".imed-assistant-panel__chat-title").text(chat.title || "");
+				render($root);
+			})
+			.catch(() => frappe.show_alert({ message: t("Could not open the chat.", "ما قدرتش أفتح المحادثة."), indicator: "orange" }));
+	}
+
+	function delete_chat($root, name) {
+		frappe.confirm(t("Delete this chat?", "تحذف المحادثة دي؟"), () => {
+			frappe.xcall(`${API}.delete_chat`, { chat: name }).then(() => {
+				if (state.chat === name) start_new_chat($root);
+				load_chats($root);
+			});
+		});
+	}
+
+	function rename_chat($root, name) {
+		const current = (state.chats.find((c) => c.name === name) || {}).title || "";
+		frappe.prompt({ fieldname: "title", fieldtype: "Data", label: t("Title", "العنوان"), default: current, reqd: 1 }, (v) => {
+			frappe.xcall(`${API}.rename_chat`, { chat: name, title: v.title }).then(() => {
+				if (state.chat === name) $root.find(".imed-assistant-panel__chat-title").text(v.title);
+				load_chats($root);
+			});
+		}, t("Rename the chat", "إعادة تسمية المحادثة"));
 	}
 
 	function send_voice($root, blob, mime) {
@@ -277,7 +383,7 @@
 		const reader = new FileReader();
 		reader.onloadend = () => {
 			const audio = String(reader.result).split(",")[1] || "";
-			request($root, { messages: JSON.stringify(state.history), audio, audio_type: mime }, item);
+			ensure_chat($root).then((chat) => request($root, chat ? { chat, text: "", audio, audio_type: mime } : { messages: JSON.stringify(state.history), audio, audio_type: mime }, item));
 		};
 		reader.readAsDataURL(blob);
 	}
@@ -297,6 +403,10 @@
 				}
 				state.items.push({ role: "assistant", text: r.reply });
 				state.history.push({ role: "assistant", content: r.reply });
+				if (state.chat && !$root.find(".imed-assistant-panel__chat-title").text()) {
+					const first = (state.history.find((m) => m.role === "user") || {}).content || "";
+					$root.find(".imed-assistant-panel__chat-title").text(first.slice(0, 60));
+				}
 			})
 			.catch(() => {
 				// Keep the history consistent: drop the user turn that got no answer.
