@@ -14,13 +14,19 @@
   "booking_date",
   "from_time",
   "to_time",
+  "ends_next_day",
   "hours",
   "hall_section",
+  "hall_booking_type",
   "rental_model",
   "activity",
   "column_break_hall",
   "responsible_name",
   "responsible_phone",
+  "doctor",
+  "course",
+  "expected_attendees",
+  "capacity",
   "revenue_share_section",
   "attendees",
   "admission_price",
@@ -31,6 +37,8 @@
   "lecturer",
   "lecturer_share",
   "center_share",
+  "financial_review",
+  "financial_note",
   "extras_section",
   "package",
   "hour_package",
@@ -63,6 +71,8 @@
   "details_section",
   "resource_type",
   "cost_center",
+  "starts_at",
+  "ends_at",
   "column_break_details",
   "customer_group",
   "source_section",
@@ -70,7 +80,36 @@
   "source_system",
   "column_break_source",
   "external_id",
-  "import_key"
+  "import_key",
+  "source_updated_at",
+  "last_synced_at",
+  "source_payload_hash",
+  "source_payload",
+  "xstudio_section",
+  "xstudio_status",
+  "xstudio_payment_status",
+  "xstudio_booking_type",
+  "xstudio_screen_size",
+  "xstudio_cameras",
+  "xstudio_photographer",
+  "xstudio_cancelled_by",
+  "column_break_xstudio",
+  "xstudio_price_total",
+  "xstudio_amount_due",
+  "xstudio_amount_paid",
+  "xstudio_price_pending",
+  "xstudio_deposit_due",
+  "xstudio_package_id",
+  "xstudio_hours_deducted",
+  "xstudio_times_section",
+  "xstudio_starts_at",
+  "xstudio_ends_at",
+  "xstudio_hours",
+  "xstudio_crosses_midnight",
+  "column_break_xstudio_times",
+  "xstudio_customer_name",
+  "xstudio_customer_phone",
+  "xstudio_not_in_last_fetch"
  ],
  "fields": [
   {
@@ -93,14 +132,15 @@
    "description": "The hall, or the studio's service."
   },
   {
-   "description": "Find them by name or phone.",
+   "description": "The renter or the lecturer's customer record. Not needed for a not-billable hall booking.",
    "fieldname": "customer",
    "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Customer",
+   "label": "Customer / Renter",
    "options": "Customer",
-   "reqd": 1
+   "reqd": 0,
+   "mandatory_depends_on": "eval:!(doc.resource_type == 'Hall' && doc.rental_model == 'Not Billable')"
   },
   {
    "fieldname": "column_break_main",
@@ -119,15 +159,22 @@
    "fieldname": "from_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "From",
+   "label": "Start Time",
    "reqd": 1
   },
   {
    "fieldname": "to_time",
    "fieldtype": "Time",
    "in_list_view": 1,
-   "label": "To",
+   "label": "End Time",
    "reqd": 1
+  },
+  {
+   "fieldname": "ends_next_day",
+   "fieldtype": "Check",
+   "label": "Ends After Midnight",
+   "read_only": 1,
+   "description": "On when the end time is earlier than the start: the booking ends on the next day."
   },
   {
    "fieldname": "hours",
@@ -143,20 +190,31 @@
    "label": "Hall Details"
   },
   {
+   "fieldname": "hall_booking_type",
+   "fieldtype": "Select",
+   "label": "Booking Type",
+   "options": "\nInternal Course or Lecture\nExternal Lecturer\nFixed-fee Rental\nRevenue Share\nInternal Meeting\nMaintenance Block",
    "depends_on": "eval:doc.resource_type == 'Hall'",
    "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
+   "in_standard_filter": 1,
+   "in_list_view": 1,
+   "description": "What the hall is used for. It decides whether the booking is billed and which fields are needed."
+  },
+  {
+   "depends_on": "eval:doc.resource_type == 'Hall' && ['Internal Course or Lecture', 'External Lecturer'].includes(doc.hall_booking_type)",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall' && !doc.hall_booking_type",
    "fieldname": "rental_model",
    "fieldtype": "Select",
    "label": "Rental Model",
-   "options": "\nFixed Rent\nRevenue Share",
-   "description": "Fixed Rent: the lecturer pays the hall's price. Revenue Share: the center collects from the attendees and shares it with the lecturer."
+   "options": "\nFixed Rent\nRevenue Share\nNot Billable",
+   "description": "An internal course is free unless chosen otherwise; an external lecturer rents the hall or shares the revenue."
   },
   {
    "description": "The lecture, course or event.",
    "fieldname": "activity",
    "fieldtype": "Data",
-   "label": "Activity",
-   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+   "label": "Purpose",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall' && doc.hall_booking_type != 'Maintenance Block'"
   },
   {
    "fieldname": "column_break_hall",
@@ -166,14 +224,45 @@
    "fieldname": "responsible_name",
    "fieldtype": "Data",
    "label": "Responsible Person",
-   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'"
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall' && doc.hall_booking_type != 'Maintenance Block'"
   },
   {
    "fieldname": "responsible_phone",
    "fieldtype": "Data",
    "label": "Responsible Person's Phone",
-   "mandatory_depends_on": "eval:doc.resource_type == 'Hall'",
+   "mandatory_depends_on": "eval:doc.resource_type == 'Hall' && doc.hall_booking_type != 'Maintenance Block'",
    "options": "Phone"
+  },
+  {
+   "fieldname": "doctor",
+   "fieldtype": "Link",
+   "label": "Doctor / Lecturer",
+   "options": "Customer",
+   "depends_on": "eval:doc.resource_type == 'Hall'",
+   "in_standard_filter": 1,
+   "description": "The doctor's own customer record (group طبيب); never a second record for the same doctor."
+  },
+  {
+   "fieldname": "course",
+   "fieldtype": "Link",
+   "label": "Course",
+   "options": "App Course",
+   "depends_on": "eval:doc.resource_type == 'Hall'",
+   "description": "The course this session belongs to, when it is one of the app's courses."
+  },
+  {
+   "fieldname": "expected_attendees",
+   "fieldtype": "Int",
+   "label": "Expected Attendees",
+   "depends_on": "eval:doc.resource_type == 'Hall'",
+   "description": "Checked against the hall's capacity."
+  },
+  {
+   "fieldname": "capacity",
+   "fieldtype": "Int",
+   "label": "Hall Capacity",
+   "read_only": 1,
+   "depends_on": "eval:doc.resource_type == 'Hall'"
   },
   {
    "depends_on": "eval:doc.rental_model == 'Revenue Share'",
@@ -184,7 +273,7 @@
   {
    "fieldname": "attendees",
    "fieldtype": "Int",
-   "label": "Attendees"
+   "label": "Attendees (actual)"
   },
   {
    "fieldname": "admission_price",
@@ -233,6 +322,20 @@
    "fieldtype": "Currency",
    "label": "Center's Share",
    "read_only": 1
+  },
+  {
+   "fieldname": "financial_review",
+   "fieldtype": "Check",
+   "label": "Financial Arrangement Needs Review",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "financial_note",
+   "fieldtype": "Small Text",
+   "label": "Financial Note",
+   "read_only": 1,
+   "depends_on": "eval:doc.financial_note"
   },
   {
    "fieldname": "extras_section",
@@ -308,7 +411,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Status",
-   "options": "Tentative\nConfirmed with Deposit\nCompleted\nCancelled\nNo Show",
+   "options": "Tentative\nConfirmed\nConfirmed with Deposit\nCompleted\nCancelled\nNo Show",
    "reqd": 1
   },
   {
@@ -457,6 +560,18 @@
    "read_only": 1
   },
   {
+   "fieldname": "starts_at",
+   "fieldtype": "Datetime",
+   "label": "Starts At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ends_at",
+   "fieldtype": "Datetime",
+   "label": "Ends At",
+   "read_only": 1
+  },
+  {
    "fieldname": "column_break_details",
    "fieldtype": "Column Break"
   },
@@ -514,11 +629,221 @@
    "no_copy": 1,
    "read_only": 1,
    "unique": 1
+  },
+  {
+   "fieldname": "source_updated_at",
+   "fieldtype": "Datetime",
+   "label": "Changed in Source At",
+   "description": "When the source last changed the booking (XStudio updated_at).",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "last_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Last Read From Source",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_payload_hash",
+   "fieldtype": "Data",
+   "label": "Source Payload Hash",
+   "hidden": 1,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "source_payload",
+   "fieldtype": "Long Text",
+   "label": "Source Data (JSON)",
+   "description": "The booking exactly as the source sent it.",
+   "collapsible": 0,
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_section",
+   "fieldtype": "Section Break",
+   "label": "XStudio",
+   "collapsible": 1,
+   "depends_on": "eval:doc.source_system=='xstudio'"
+  },
+  {
+   "fieldname": "xstudio_status",
+   "fieldtype": "Data",
+   "label": "XStudio Status",
+   "description": "pending, confirmed, completed or cancelled, as XStudio has it. Confirmed there says nothing about a deposit.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_payment_status",
+   "fieldtype": "Data",
+   "label": "XStudio Payment Status",
+   "description": "unpaid, partial, paid or refunded. For reading only: no payment is posted here from it.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_booking_type",
+   "fieldtype": "Data",
+   "label": "XStudio Service",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_screen_size",
+   "fieldtype": "Int",
+   "label": "Screen (inches)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_cameras",
+   "fieldtype": "Int",
+   "label": "Cameras",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_photographer",
+   "fieldtype": "Data",
+   "label": "XStudio Photographer ID",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_cancelled_by",
+   "fieldtype": "Data",
+   "label": "Cancelled By (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_xstudio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "xstudio_price_total",
+   "fieldtype": "Currency",
+   "label": "XStudio Full Price",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_amount_due",
+   "fieldtype": "Currency",
+   "label": "XStudio Amount Due",
+   "description": "What the customer owes after package hours and discounts: the Total Amount above.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_amount_paid",
+   "fieldtype": "Currency",
+   "label": "XStudio Amount Paid",
+   "description": "An aggregate: XStudio's payments carry no ids, so no Payment Entry is made from this.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_price_pending",
+   "fieldtype": "Check",
+   "label": "Price Still To Be Agreed",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_deposit_due",
+   "fieldtype": "Currency",
+   "label": "XStudio Deposit Due",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_package_id",
+   "fieldtype": "Data",
+   "label": "XStudio Package ID",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_hours_deducted",
+   "fieldtype": "Float",
+   "label": "Hours Deducted (XStudio)",
+   "precision": "4",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_times_section",
+   "fieldtype": "Section Break",
+   "label": "XStudio Times",
+   "collapsible": 1,
+   "depends_on": "eval:doc.source_system=='xstudio'"
+  },
+  {
+   "fieldname": "xstudio_starts_at",
+   "fieldtype": "Datetime",
+   "label": "Starts At (Cairo)",
+   "description": "XStudio's exact start, Cairo time.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_ends_at",
+   "fieldtype": "Datetime",
+   "label": "Ends At (Cairo)",
+   "description": "XStudio's exact end. A booking ending at midnight is kept to 23:59:59 on its day above; this is the exact end.",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_hours",
+   "fieldtype": "Float",
+   "label": "Hours (XStudio)",
+   "precision": "2",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_crosses_midnight",
+   "fieldtype": "Check",
+   "label": "Ends at or After Midnight",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "column_break_xstudio_times",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "xstudio_customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_customer_phone",
+   "fieldtype": "Data",
+   "label": "Customer Phone (XStudio)",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "xstudio_not_in_last_fetch",
+   "fieldtype": "Check",
+   "label": "Not Returned by XStudio in Its Last Read",
+   "description": "XStudio did not return this booking for its day: it may have been moved. Kept here as it was; check it in XStudio.",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-24 12:00:00.000000",
+ "modified": "2026-10-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",

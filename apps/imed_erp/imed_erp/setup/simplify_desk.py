@@ -1,6 +1,6 @@
 # Declutter the desk for Mohamed Mamdouh group: hide the standard ERPNext workspaces (modules) the
 # group does not use, so the owner and staff see only the areas that matter instead of ERPNext's full
-# 20-module menu. Part of the screen design standard (docs/SCREEN_DESIGN_STANDARD.md).
+# 20-module menu. Part of the screen design standard (docs/standards/screen-design-standard.md).
 #
 # Run from bench console:
 #   exec(open("/home/frappe/frappe-bench/apps/imed_erp/imed_erp/setup/simplify_desk.py").read(), {"frappe": frappe})
@@ -19,7 +19,7 @@ import frappe
 # visible (Owner Dashboard, Invoicing, Financial Reports, Selling, Stock, Buying, Users, Home, ...).
 #
 # NOTE: this exact list is a business decision — confirm with the owner before treating it as final
-# (see docs/SCREEN_DESIGN_STANDARD.md §13, "Needs Business Confirmation").
+# (see docs/standards/screen-design-standard.md §13, "Needs Business Confirmation").
 HIDE = [
     "Assets",
     "Manufacturing",

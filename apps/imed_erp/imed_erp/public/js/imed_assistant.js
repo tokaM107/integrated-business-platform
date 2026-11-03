@@ -220,6 +220,7 @@
 		}
 
 		$root.find(".imed-assistant-send, .imed-assistant-mic").prop("disabled", state.busy);
+		bind_speak($root);
 		scroll_to_end($root);
 	}
 
@@ -232,7 +233,29 @@
 					${item.transcript ? `<div class="imed-assistant-msg__transcript" dir="auto">${esc(item.transcript)}</div>` : ""}
 				</div>`;
 		}
-		return `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}</div>`;
+		// An answer can be read aloud by the browser's own voice (no server, no model): the owner asked for the
+		// figures to be read to him (1 Nov 2026).
+		const speak = item.role === "assistant" && !item.error && window.speechSynthesis
+			? `<button type="button" class="imed-assistant-speak" title="${esc(t("Read aloud", "اقرأ بصوت"))}" aria-label="${esc(t("Read aloud", "اقرأ بصوت"))}">🔊</button>`
+			: "";
+		return `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}${speak}</div>`;
+	}
+
+	function speak_text(text) {
+		if (!window.speechSynthesis) return;
+		window.speechSynthesis.cancel();
+		const utter = new SpeechSynthesisUtterance(text);
+		utter.lang = /[\u0600-\u06FF]/.test(text) ? "ar-EG" : "en-US";
+		const voice = window.speechSynthesis.getVoices().find((v) => v.lang && v.lang.toLowerCase().startsWith(utter.lang.slice(0, 2)));
+		if (voice) utter.voice = voice;
+		utter.rate = 0.95;
+		window.speechSynthesis.speak(utter);
+	}
+
+	function bind_speak($root) {
+		$root.off("click.imed-speak").on("click.imed-speak", ".imed-assistant-speak", function () {
+			speak_text($(this).closest(".imed-assistant-msg").text().replace(/🔊\s*$/, "").trim());
+		});
 	}
 
 	function scroll_to_end($root) {

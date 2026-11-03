@@ -20,11 +20,18 @@
 		"Net This Month": ["scale", "net"],
 		"Owed to Us": ["hand-coins", "due"],
 		"We Owe": ["receipt", "owe"],
-		"Studio Bookings": ["clapperboard", "count"],
-		"Studio Hours": ["clock", "count"],
-		"Hall Bookings": ["presentation", "count"],
+		"Platform Fees This Month": ["smartphone", "in"],
+		"Collected from Doctors This Month": ["hand-coins", "in"],
+		"Cash Shortages This Month": ["triangle-alert", "out"],
+		"Open Cash Discrepancies": ["scale", "due"],
+		"Studio Bookings This Month": ["clapperboard", "count"],
+		"Studio Hours This Month": ["clock", "count"],
+		"Hall Bookings This Month": ["presentation", "count"],
 		"Unpaid on Bookings": ["hourglass", "due"],
+		"Due on Studio Bookings (XStudio)": ["clapperboard", "due"],
 	};
+	// The cards read from the ledger (owner_figures.py): zero for lack of any record is said on them.
+	const LEDGER_CARDS = ["Cash in the Cash Boxes", "Revenue This Month", "Expenses This Month", "Net This Month", "Owed to Us", "We Owe"];
 	// The section headers are written in Arabic on the workspace (setup_dashboard.py).
 	const HEADERS = {
 		"محتاج موافقتك": "bell-ring",
@@ -74,14 +81,57 @@
 		});
 	}
 
+	// The list each custom card opens when clicked (a Frappe "Custom" card opens nothing by itself).
+	function card_route(label) {
+		const month = ["Between", [frappe.datetime.month_start(), frappe.datetime.month_end()]];
+		const held = ["not in", ["Cancelled", "No Show"]];
+		const studio = { resource_type: "Studio Service", booking_date: month, status: held };
+		switch (label) {
+			case "Studio Bookings This Month":
+			case "Studio Hours This Month":
+				return ["Booking", studio];
+			case "Hall Bookings This Month":
+				return ["Booking", { resource_type: "Hall", booking_date: month, status: held }];
+			case "Due on Studio Bookings (XStudio)":
+				return ["Booking", { source_system: "xstudio", resource_type: "Studio Service", booking_date: month, status: held, xstudio_amount_due: [">", 0] }];
+			case "Unpaid on Bookings":
+				return ["Booking", { status: ["in", ["Confirmed with Deposit", "Completed"]], booking_date: ["<=", frappe.datetime.get_today()], outstanding_amount: [">", 0] }];
+			case "Owed to Us":
+				return ["Sales Invoice", { docstatus: 1, outstanding_amount: [">", 0] }];
+			case "We Owe":
+				return ["Purchase Invoice", { docstatus: 1, outstanding_amount: [">", 0] }];
+			case "Cash in the Cash Boxes":
+				// The report the chart under it draws, one row per cash box (there is no "Treasury" list: that route
+				// opened an empty "not found" page; audit of 1 Nov 2026).
+				return ["query-report", "Cash Box Balances"];
+			default:
+				return null;
+		}
+	}
+
 	function mark_cards($page) {
 		const map = by_title();
 		$page.find(".widget.number-widget-box").each(function () {
 			const $card = $(this);
-			const entry = map[$card.find(".widget-title").first().text().trim()];
+			const title = $card.find(".widget-title").first().text().trim();
+			const entry = map[title];
 			if (entry && !$card.attr("data-imed-kind")) {
 				$card.attr("data-imed-kind", entry[1]).addClass("imed-dash-card");
 				$card.find(".widget-label").first().prepend(`<span class="imed-dash-card-icon">${frappe.utils.icon(entry[0], "md")}</span>`);
+				const label = Object.keys(CARDS).find((key) => __(key) === title);
+				const route = card_route(label);
+				if (route) {
+					$card.addClass("imed-dash-card-link").attr("title", __("Open the list")).on("click", (e) => {
+						if ($(e.target).closest(".widget-control, .dropdown").length) return;
+						open_route(route);
+					});
+				}
+			}
+			// On a site with no ledger entry at all, each money card says "no records yet" next to its zero
+			// (decision of 1 Nov 2026); the badge is put back whenever Frappe redraws the card.
+			const is_ledger_card = LEDGER_CARDS.some((label) => __(label) === title);
+			if (ledger_empty && is_ledger_card && !$card.find(".imed-dash-norecords").length) {
+				$card.find(".widget-label, .widget-title").first().append(`<span class="imed-dash-norecords">${esc(__("no records yet"))}</span>`);
 			}
 			// A negative amount (cash short, a month at a loss) shows in red; it changes when the card reloads.
 			const value = $card.find(".number").first().text();
@@ -112,24 +162,43 @@
 	// ---------------- Yesterday (requirements 5.1; imederp/owner_yesterday.py) ----------------
 	// Under the welcome band: each business's money, the bookings, the app's fees, the printing and the systems, for
 	// the day before. Fetched when the dashboard opens, again after five minutes away.
-	const REFRESH_MS = 5 * 60 * 1000;
+	const REFRESH_MS = 30 * 1000; // the live state: fetched again on every visit after half a minute
 	let yesterday = null;
+	let ledger_empty = false; // no GL entry on the site at all: the money cards' zeros are "no records yet"
 	let fetched_at = 0;
 	let fetching = false;
 
 	const money = (value, currency) => format_currency(value || 0, currency);
 	const number = (value) => format_number(value || 0, null, 0);
+	// Hours keep their half (2.5 h was shown as "2 h"; audit of 1 Nov 2026).
+	const hours_text = (value) => __("{0} h", [format_number(value || 0, null, (value || 0) % 1 ? 1 : 0)]);
 	const tone = (value) => (value > 0 ? "is-positive" : value < 0 ? "is-negative" : "");
-	const STATES = {
-		ok: __("Working"),
-		warning: __("Needs attention"),
-		error: __("Failed"),
-		unknown: __("Unknown"),
-		not_configured: __("Not configured"),
+
+	// Each card and figure in its colour (imed_theme.css §27): a card by its icon, a figure by what it counts. A
+	// figure not named here takes the brand's teal.
+	const CARD_TONES = {
+		"chart-column": "tone-green",
+		"calendar-days": "tone-blue",
+		presentation: "tone-violet",
+		smartphone: "tone-cyan",
+		printer: "tone-amber",
+		plug: "tone-purple",
 	};
+	const STAT_TONES = Object.fromEntries(
+		[
+			["tone-blue", ["Held", "Booked", "Bookings", "Studio hours booked"]],
+			["tone-cyan", ["Hours today", "Hours", "Charged today"]],
+			["tone-green", ["Completed", "Studio hours delivered", "Paid in XStudio", "Occupied now", "Collected today", "Sheets sold"]],
+			["tone-red", ["Cancelled"]],
+			["tone-amber", ["No Show", "Due in XStudio", "Fixed rents (not yet invoiced)", "Still owed by doctors", "Difference"]],
+			["tone-violet", ["Booked today (any date)", "Next 7 days", "Revenue shares", "New students"]],
+			["tone-blue", ["Sheets printed"]],
+			["tone-gray", ["Hall resources", "Active halls"]],
+		].flatMap(([tone, labels]) => labels.map((label) => [__(label), tone]))
+	);
 
 	function card(icon, title, body, extra_class = "") {
-		return `<section class="imed-yday-card ${extra_class}">
+		return `<section class="imed-yday-card ${CARD_TONES[icon] || "tone-teal"} ${extra_class}">
 				<h3>${frappe.utils.icon(icon, "sm")}<span>${esc(title)}</span></h3>
 				${body}
 			</section>`;
@@ -142,7 +211,9 @@
 				(row) => `<tr class="${row.revenue || row.expenses ? "" : "is-quiet"}">
 					<td>${esc(row.business)}${
 					row.not_split ? ` <span class="imed-yday-flag">${esc(__("not split"))}</span>` : ""
-				}</td>
+				}${row.external ? ` <span class="imed-yday-flag">${esc(__("from XStudio: {0} booking(s), paid {1}, still due {2}", [row.bookings, money(row.paid, c), money(row.due, c)]))}${
+					row.package_bookings ? " · " + esc(__("{0} on prepaid packages ({1} h, paid when bought)", [row.package_bookings, number(row.package_hours)])) : ""
+				}</span>` : ""}</td>
 					<td class="is-num">${money(row.revenue, c)}</td>
 					<td class="is-num">${money(row.expenses, c)}</td>
 					<td class="is-num ${tone(row.net)}">${money(row.net, c)}</td>
@@ -160,63 +231,141 @@
 				<tfoot><tr><td>${esc(__("Total"))}</td><td class="is-num">${money(t.revenue, c)}</td>
 					<td class="is-num">${money(t.expenses, c)}</td><td class="is-num ${tone(t.net)}">${money(t.net, c)}</td></tr></tfoot>
 			</table>
+			${
+				data.money.ledger_entries === 0
+					? `<p class="imed-yday-warn">${esc(__("Nothing has been posted to the ledger for this day yet: the zeros above mean no approved document, not no money."))}</p>`
+					: ""
+			}
 			<p class="imed-yday-note">${esc(
-				__("Invoiced revenue and approved expenses (submitted documents only). Money collected is not revenue.")
+				__("Invoiced revenue and approved expenses (submitted documents only). The X Studio line is what XStudio bills for the day's bookings (cancelled ones left out; hours on prepaid packages were paid when the package was bought), with what was paid and what is still due; it is shown, not posted.")
 			)}</p>`,
 			"is-wide"
 		);
 	}
 
-	function stat(label, value, cls = "") {
-		return `<div class="imed-yday-stat ${cls}"><span>${esc(label)}</span><b>${value}</b></div>`;
+	// Every figure opens the list behind it: route = [doctype, filters] (a Frappe list view with those filters).
+	function stat(label, value, cls = "", route = null) {
+		cls = `${STAT_TONES[label] || "tone-teal"} ${cls}`;
+		const inner = `<span>${esc(label)}</span><b>${value}</b>`;
+		return route
+			? `<a class="imed-yday-stat imed-yday-link ${cls}" href="#" data-route="${esc(JSON.stringify(route))}" title="${esc(__("Open the list"))}">${inner}</a>`
+			: `<div class="imed-yday-stat ${cls}">${inner}</div>`;
 	}
 
-	function bookings_card(b) {
-		const kind = (title, s) =>
+	const open_route = (route) =>
+		route[0] === "query-report" ? frappe.set_route("query-report", route[1]) : frappe.set_route("List", route[0], route[1]);
+	const HELD = ["not in", ["Cancelled", "No Show"]];
+
+	function bookings_card(b, day, currency) {
+		const list = (resource_type, status) => ["Booking", { booking_date: day, resource_type, status }];
+		// What XStudio never reported (a completed booking, a payment) is said so, never shown as 0 (decision of
+		// 1 Nov 2026): the studio's bookings come from XStudio, where the staff do not record these yet.
+		const tracks = b.xstudio_tracks || { completion: true, payments: true };
+		const untracked = `<span class="imed-yday-untracked">${esc(__("Not tracked in XStudio"))}</span>`;
+		const kind = (title, s, resource_type, studio = false) =>
 			`<div class="imed-yday-sub">${esc(title)}</div>
 			<div class="imed-yday-stats">
-				${stat(__("Held"), number(s.held))}
-				${stat(__("Completed"), number(s.completed))}
-				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "")}
-				${stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "")}
+				${stat(__("Held"), number(s.held), "", list(resource_type, HELD))}
+				${studio && !tracks.completion ? stat(__("Completed"), untracked, "is-untracked") : stat(__("Completed"), number(s.completed), "", list(resource_type, "Completed"))}
+				${stat(__("Cancelled"), number(s.cancelled), s.cancelled ? "is-warning" : "", list(resource_type, "Cancelled"))}
+				${studio && !tracks.completion ? stat(__("No Show"), untracked, "is-untracked") : stat(__("No Show"), number(s.no_show), s.no_show ? "is-warning" : "", list(resource_type, "No Show"))}
 			</div>`;
-		const hours = __("{0} h", [number(b.studio_hours_booked)]);
-		const delivered = __("{0} h", [number(b.studio_hours_delivered)]);
+		const hours = hours_text(b.studio_hours_booked);
+		const delivered = tracks.completion ? hours_text(b.studio_hours_delivered) : untracked;
+		const made = ["Booking", { creation: ["Between", [`${day} 00:00:00`, `${day} 23:59:59`]] }];
+		// The same statuses the server counts (owner_yesterday.OPEN_STATUSES; "Confirmed" was missing: audit of 1 Nov 2026).
+		const open = ["Booking", { booking_date: day, status: ["in", ["Tentative", "Confirmed", "Confirmed with Deposit"]], source_system: ["is", "not set"] }];
 		return card(
 			"calendar-days",
 			__("Halls and studio"),
-			`${kind(__("Halls"), b.halls)}${kind(__("Studio"), b.studio)}
+			`${kind(__("Halls"), b.halls, "Hall")}${kind(__("Studio"), b.studio, "Studio Service", true)}
 			<div class="imed-yday-stats">
-				${stat(__("Studio hours booked"), hours)}
-				${stat(__("Studio hours delivered"), delivered)}
-				${stat(__("Booked yesterday (any date)"), number(b.made_yesterday))}
+				${stat(__("Studio hours booked"), hours, "", list("Studio Service", HELD))}
+				${tracks.completion ? stat(__("Studio hours delivered"), delivered, "", list("Studio Service", "Completed")) : stat(__("Studio hours delivered"), untracked, "is-untracked")}
+				${stat(__("Booked today (any date)"), number(b.made_yesterday), "", made)}
+			</div>
+			<div class="imed-yday-sub">${esc(__("The studio's money, as XStudio says it (not posted here)"))}</div>
+			<div class="imed-yday-stats">
+				${stat(__("Due in XStudio"), money(b.xstudio_due, currency), b.xstudio_due ? "is-negative" : "", ["Booking", { booking_date: day, source_system: "xstudio", status: HELD, xstudio_amount_due: [">", 0] }])}
+				${tracks.payments ? stat(__("Paid in XStudio"), money(b.xstudio_paid, currency), b.xstudio_paid ? "is-positive" : "", ["Booking", { booking_date: day, source_system: "xstudio", xstudio_amount_paid: [">", 0] }]) : stat(__("Paid in XStudio"), untracked, "is-untracked")}
 			</div>
 			${
 				b.still_open
-					? `<p class="imed-yday-warn">${esc(
-							__("{0} booking(s) of yesterday are neither completed nor cancelled.", [b.still_open])
-					  )}</p>`
+					? `<p class="imed-yday-warn"><a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(open))}">${esc(
+							__("{0} booking(s) of today are neither completed nor cancelled.", [b.still_open])
+					  )}</a></p>`
 					: ""
 			}`
 		);
 	}
 
-	function app_card(a, currency) {
+	// IMED's lecture halls, apart from the studio's rooms and from XStudio: today, the week ahead, what needs action.
+	function halls_card(h, currency) {
+		const day = frappe.datetime.get_today();
+		const held = ["not in", ["Cancelled", "No Show"]];
+		const hall = (extra) => ["Booking", Object.assign({ resource_type: "Hall" }, extra)];
+		const month = ["Between", [frappe.datetime.month_start(), frappe.datetime.month_end()]];
+		if (h.configured === false) {
+			// No hall of type Hall is set up yet (decision of 1 Nov 2026: say so, never zeros; XStudio's rooms are not halls).
+			return card(
+				"presentation",
+				__("IMED hall bookings"),
+				`<p class="imed-yday-warn">${esc(__("Not configured yet: no IMED hall is set up as a booking resource. The figures appear once the halls, their capacities and prices are entered."))}</p>
+				${stat(__("Hall resources"), number(h.active_halls), "", ["Booking Resource", { resource_type: "Hall" }])}`
+			);
+		}
+		return card(
+			"presentation",
+			__("IMED hall bookings"),
+			`<div class="imed-yday-sub">${esc(__("Today"))}</div>
+			<div class="imed-yday-stats">
+				${stat(__("Booked"), number(h.today.held), "", hall({ booking_date: day, status: held }))}
+				${stat(__("Completed"), number(h.today.completed), "", hall({ booking_date: day, status: "Completed" }))}
+				${stat(__("Cancelled"), number(h.today.cancelled), h.today.cancelled ? "is-warning" : "", hall({ booking_date: day, status: "Cancelled" }))}
+				${stat(__("Hours today"), hours_text(h.today_hours), "", hall({ booking_date: day, status: held }))}
+			</div>
+			<div class="imed-yday-stats">
+				${stat(__("Next 7 days"), number(h.upcoming), "", hall({ booking_date: ["Between", [frappe.datetime.add_days(day, 1), frappe.datetime.add_days(day, 7)]], status: held }))}
+				${stat(__("Active halls"), number(h.active_halls), "", ["Booking Resource", { resource_type: "Hall", disabled: 0 }])}
+				${stat(__("Occupied now"), `${number(h.occupied_now)} / ${number(h.active_halls)}`, h.occupied_now ? "is-positive" : "", hall({ status: held, booking_date: day }))}
+			</div>
+			<div class="imed-yday-sub">${esc(__("This month"))}</div>
+			<div class="imed-yday-stats">
+				${stat(__("Bookings"), number(h.month_held), "", hall({ booking_date: month, status: held }))}
+				${stat(__("Hours"), hours_text(h.month_hours), "", hall({ booking_date: month, status: held }))}
+				${stat(__("Cancelled"), number(h.month_cancelled), h.month_cancelled ? "is-warning" : "", hall({ booking_date: month, status: "Cancelled" }))}
+				${stat(__("Fixed rents (not yet invoiced)"), money(h.month_fixed_rent, currency), "", hall({ booking_date: month, status: held, rental_model: "Fixed Rent" }))}
+				${stat(__("Revenue shares"), number(h.month_revenue_share), "", hall({ booking_date: month, status: held, rental_model: "Revenue Share" }))}
+			</div>
+			${
+				h.past_open || h.financial_review
+					? `<p class="imed-yday-warn">
+						${h.past_open ? `<a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(hall({ status: ["in", ["Tentative", "Confirmed", "Confirmed with Deposit"]], booking_date: ["<=", day] })))}">${esc(__("{0} past hall booking(s) neither completed nor cancelled.", [h.past_open]))}</a>` : ""}
+						${h.financial_review ? ` <a href="#" class="imed-yday-link" data-route="${esc(JSON.stringify(hall({ financial_review: 1, status: held })))}">${esc(__("{0} revenue share(s) with no share agreed yet.", [h.financial_review]))}</a>` : ""}
+					  </p>`
+					: ""
+			}`
+		);
+	}
+
+	function app_card(a, currency, day) {
 		if (a.state !== "ok") {
 			return card("smartphone", __("Platform fees"), `<p class="imed-yday-warn">${esc(__("No app agreement yet."))}</p>`);
 		}
+		const ledger = (types) => ["Doctor Ledger Entry", { docstatus: 1, entry_date: day, entry_type: ["in", types] }];
 		return card(
 			"smartphone",
 			__("Platform fees"),
 			`<div class="imed-yday-stats">
-				${stat(__("Charged yesterday"), money(a.charged, currency))}
-				${stat(__("Collected yesterday"), money(a.collected, currency), a.collected ? "is-positive" : "")}
+				${stat(__("Charged today"), money(a.charged, currency), "", ledger(["Accrual", "Adjustment"]))}
+				${stat(__("Collected today"), money(a.collected, currency), a.collected ? "is-positive" : "", ledger(["Collection"]))}
 				${stat(
 					__("Still owed by doctors"),
 					a.outstanding == null ? esc(__("Not configured")) : money(a.outstanding, currency),
-					a.outstanding > 0 ? "is-negative" : ""
+					a.outstanding > 0 ? "is-negative" : "",
+					["Doctor Ledger Entry", { docstatus: 1 }]
 				)}
-				${stat(__("New students"), number(a.subscriptions))}
+				${stat(__("New students"), number(a.subscriptions), "", ["App Subscription", { docstatus: 1, subscription_date: day }])}
 			</div>`
 		);
 	}
@@ -227,13 +376,16 @@
 			: "";
 	}
 
-	function printing_card(p) {
+	function printing_card(p, day) {
 		if (p.state !== "ok") {
 			return card("printer", __("Paper and counters"), `<p class="imed-yday-warn">${esc(__("No printing machine is set up."))}</p>`);
 		}
 		const libraries = p.libraries
 			.map((lib) => {
 				if (!lib.reading) return "";
+				// The figures are the library's submitted Daily Counter Reading of the day (owner_yesterday.printing),
+				// not a Printer Reading (audit of 1 Nov 2026: the links opened the wrong, empty list).
+				const reading = ["Daily Counter Reading", { name: lib.reading }];
 				const machines = lib.machines
 					.map(
 						(m) => `<tr><td>${esc(m.machine)}${m.fault ? ` <span class="imed-yday-flag">${esc(__("breakdown"))}</span>` : ""}</td>
@@ -248,33 +400,17 @@
 						<tbody>${machines}</tbody>
 					</table>
 					<div class="imed-yday-stats">
-						${stat(__("Sheets printed"), number(lib.consumed))}
-						${stat(__("Sheets sold"), number(lib.sold))}
-						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "")}
+						${stat(__("Sheets printed"), number(lib.consumed), "", reading)}
+						${stat(__("Sheets sold"), number(lib.sold), "", reading)}
+						${stat(__("Difference"), number(lib.variance), lib.variance ? "is-warning" : "", reading)}
 					</div>`;
 			})
 			.join("");
 		return card("printer", __("Paper and counters"), libraries + warnings(p.warnings));
 	}
 
-	function systems_card(list) {
-		const rows = list
-			.map(
-				(s) => `<li class="imed-yday-system is-${esc(s.state)}">
-					<span class="imed-yday-dot"></span>
-					<div><b>${esc(s.name)}</b> <span class="imed-yday-state">${esc(STATES[s.state] || s.state)}</span>
-						${s.detail ? `<div class="imed-yday-detail">${esc(s.detail)}</div>` : ""}
-						${
-							s.last_success
-								? `<div class="imed-yday-detail">${esc(__("Last success: {0}", [frappe.datetime.str_to_user(s.last_success)]))}</div>`
-								: ""
-						}
-					</div>
-				</li>`
-			)
-			.join("");
-		return card("plug", __("Integrations and imports"), `<ul class="imed-yday-systems">${rows}</ul>`);
-	}
+	// The integrations and imports are not on the owner's page (the owner, 2 Nov 2026): their state is on the
+	// Integration Status screen, in the sidebar.
 
 	function render_yesterday($page) {
 		if (!yesterday) return;
@@ -290,19 +426,30 @@
 			.join("");
 		const $panel = $(`<div class="imed-yday">
 				<div class="imed-yday-head">
-					<h2>${frappe.utils.icon("calendar-check", "md")}<span>${esc(__("Yesterday, {0}", [day]))}</span></h2>
+					<h2>${frappe.utils.icon("calendar-check", "md")}<span>${esc(__("Today, {0}", [day]))}</span> <small class="text-muted">${esc(__("as of {0}", [d.as_of ? frappe.datetime.str_to_user(d.as_of).slice(11, 16) : ""]))}</small></h2>
 					<nav>${links}</nav>
 				</div>
 				<div class="imed-yday-grid">
 					${money_card(d)}
-					${bookings_card(d.bookings)}
-					${app_card(d.app, d.currency)}
-					${printing_card(d.printing)}
-					${systems_card(d.systems)}
+					${bookings_card(d.bookings, d.day, d.currency)}
+					${d.halls ? halls_card(d.halls, d.currency) : ""}
+					${app_card(d.app, d.currency, d.day)}
+					${printing_card(d.printing, d.day)}
 				</div>
 			</div>`);
-		const $welcome = $page.find(".imed-dash-welcome").first();
-		if ($welcome.length) $panel.insertAfter($welcome);
+		$panel.on("click", ".imed-yday-link", function (e) {
+			e.preventDefault();
+			open_route(JSON.parse($(this).attr("data-route")));
+		});
+		if (d.ledger_entries_all_time === 0) {
+			// The money cards read zero because the ledger holds nothing yet, not because the business made nothing.
+			$panel.prepend(`<p class="imed-yday-warn imed-yday-ledger-empty">${esc(__("No accounting record has been posted yet: the money cards (cash, revenue, expenses, owed) show zero for lack of records, not as a result."))}</p>`);
+		}
+		ledger_empty = d.ledger_entries_all_time === 0;
+		mark_cards($page);
+		// Under the overview when it is there (it may come first or second), else under the welcome band.
+		const $above = $page.find(".imed-ov").first().length ? $page.find(".imed-ov").first() : $page.find(".imed-dash-welcome").first();
+		if ($above.length) $panel.insertAfter($above);
 		else $panel.insertBefore($page.find(".codex-editor").first());
 	}
 
@@ -331,11 +478,180 @@
 			.finally(() => (fetching = false));
 	}
 
+	// ---------------- The overview (imederp/owner_overview.py; the owner's picture of 2 Nov 2026) ----------------
+	// Under the welcome band, above the day's figures: four figures with how they moved since last month, the
+	// bookings' path this month, the next bookings, the bookings' money and the reports. Every figure is the
+	// server's; only a difference and a percentage between two of them are worked out here. Styles: §28.
+	let overview = null;
+	let overview_at = 0;
+	let overview_busy = false;
+	// "Go there" points forward: left in Arabic, right in English.
+	const forward = () => (frappe.utils.is_rtl() ? "arrow-left" : "arrow-right");
+	const pct = (value) => `${format_number(Math.abs(value), null, Math.abs(value) < 10 ? 1 : 0)}%`;
+	const short_day = (value) => {
+		const d = new Date(`${value}T00:00:00`);
+		return [d.toLocaleDateString(frappe.boot.lang || "en", { day: "numeric" }), d.toLocaleDateString(frappe.boot.lang || "en", { month: "short" })];
+	};
+	// The four figures: icon, name and amount only (the owner, 2 Nov 2026: no "vs last month" line).
+	function kpi(tone, icon, label, value) {
+		return `<section class="imed-ov-kpi tone-${tone}">
+				<div class="imed-ov-kpi__top">
+					<span class="imed-ov-kpi__icon">${frappe.utils.icon(icon, "md")}</span>
+					<span class="imed-ov-kpi__label">${esc(label)}</span>
+				</div>
+				<b class="imed-ov-kpi__value imed-ov-num ${value < 0 ? "is-negative" : ""}">${esc(format_currency(value || 0, overview.currency, 0))}</b>
+			</section>`;
+	}
+
+	function kpis_html(k) {
+		return `<div class="imed-ov-kpis">
+				${kpi("green", "scale", __("Net profit this month"), k.month.net)}
+				${kpi("blue", "trending-up", __("Revenue this month"), k.month.revenue)}
+				${kpi("orange", "trending-down", __("Expenses this month"), k.month.expenses)}
+				${kpi("violet", "wallet", __("In the cash boxes"), k.cash)}
+			</div>`;
+	}
+
+	// The halls and the studio apart (the owner, 2 Nov 2026), each booking tentative or completed.
+	const KINDS = {
+		halls: ["presentation", "tone-blue", __("Halls")],
+		studio: ["clapperboard", "tone-violet", __("Studio")],
+	};
+
+	function pipeline_html(p) {
+		const blocks = p.kinds
+			.map((k) => {
+				const [icon, tone, name] = KINDS[k.kind];
+				const total = k.tentative + k.completed;
+				const done = total ? (k.completed / total) * 100 : 0;
+				const apart = k.cancelled || k.no_show
+					? `<span class="imed-ov-muted">${esc(__("Cancelled {0} · No show {1}", [number(k.cancelled), number(k.no_show)]))}</span>`
+					: "";
+				return `<div class="imed-ov-kind ${tone}">
+						<div class="imed-ov-kind__head">
+							<span class="imed-ov-kind__icon">${frappe.utils.icon(icon, "sm")}</span>
+							<b>${esc(name)}</b>
+							<span class="imed-ov-kind__total"><b class="imed-ov-num">${esc(number(total))}</b><small>${esc(__("Total"))}</small></span>
+						</div>
+						<div class="imed-ov-kind__bar ${total ? "" : "is-empty"}" role="img" aria-label="${esc(`${__("Completed")} ${number(k.completed)} / ${number(total)}`)}">
+							<i class="is-done" style="inline-size:${done}%"></i><i class="is-open" style="inline-size:${total ? 100 - done : 0}%"></i>
+						</div>
+						<div class="imed-ov-kind__counts">
+							<span class="is-open">${esc(__("Tentative"))} <b class="imed-ov-num">${esc(number(k.tentative))}</b></span>
+							<span class="is-done">${esc(__("Completed"))} <b class="imed-ov-num">${esc(number(k.completed))}</b></span>
+							${apart}
+						</div>
+					</div>`;
+			})
+			.join("");
+		return `<section class="imed-ov-card imed-ov-pipeline">
+				<h3>${esc(__("Bookings this month"))}</h3>
+				<div class="imed-ov-kinds">${blocks}</div>
+			</section>`;
+	}
+
+	function upcoming_html(u) {
+		const rows = u.rows
+			.map((r) => {
+				const [day, month] = short_day(r.booking_date);
+				const time = r.from_time ? `${r.from_time.slice(0, 5)}${r.to_time ? " – " + r.to_time.slice(0, 5) : ""}` : "";
+				return `<li><a href="/desk/booking/${encodeURIComponent(r.name)}">
+						<span class="imed-ov-date"><b>${esc(day)}</b><small>${esc(month)}</small></span>
+						<span class="imed-ov-upcoming__text"><b>${esc(r.resource || r.name)}</b>
+							<small>${r.customer_name ? `<bdi>${esc(r.customer_name)}</bdi>` : ""}${r.customer_name && time ? " · " : ""}${time ? `<bdi dir="ltr">${esc(time)}</bdi>` : ""}</small></span>
+					</a></li>`;
+			})
+			.join("");
+		return `<section class="imed-ov-card imed-ov-upcoming">
+				<h3>${esc(__("Upcoming bookings"))}</h3>
+				${rows ? `<ul>${rows}</ul>` : `<p class="imed-ov-empty">${frappe.utils.icon("calendar-days", "md")}<span>${esc(__("No booking in the next {0} days.", [u.days]))}</span></p>`}
+				<a class="imed-ov-more" href="/desk/booking/view/calendar">${esc(__("View calendar"))}${frappe.utils.icon(forward(), "xs")}</a>
+			</section>`;
+	}
+
+	function collection_html(c) {
+		const pending = Math.max(flt(c.outstanding - c.overdue, 2), 0);
+		const share = (v) => (c.total ? Math.max(0, Math.min(100, (v / c.total) * 100)) : 0);
+		const paid = share(c.paid);
+		const due = share(pending);
+		const ring = c.total
+			? `conic-gradient(var(--ov-paid) 0 ${paid}%, var(--ov-pending) ${paid}% ${paid + due}%, var(--ov-overdue) ${paid + due}% 100%)`
+			: "conic-gradient(var(--ov-empty) 0 100%)";
+		const line = (cls, label, value) => `<li class="${cls}"><span>${esc(label)}</span><b class="imed-ov-num">${esc(money(value, overview.currency))}</b></li>`;
+		return `<section class="imed-ov-card imed-ov-collection">
+				<h3>${esc(__("Bookings' money"))} <small>${esc(__("(This month)"))}</small></h3>
+				<div class="imed-ov-collection__body">
+					<div class="imed-ov-ring" style="background:${ring}">
+						<div><b class="imed-ov-num">${c.total ? esc(pct(paid)) : "—"}</b><small>${esc(__("Collected"))}</small></div>
+					</div>
+					<ul class="imed-ov-legend">
+						${line("tone-green", __("Collected"), c.paid)}
+						${line("tone-amber", __("Pending"), pending)}
+						${line("tone-red", __("Overdue"), c.overdue)}
+						<li class="is-total"><span>${esc(__("Total"))}</span><b class="imed-ov-num">${esc(money(c.total, overview.currency))}</b></li>
+					</ul>
+				</div>
+			</section>`;
+	}
+
+	const REPORTS = [
+		["Revenue by Period", "chart-column", "blue"],
+		["Profit Before and After Shared Costs", "scale", "green"],
+		["Outstanding Receivables", "hand-coins", "amber"],
+		["Cash Box Balances", "wallet", "violet"],
+	];
+
+	function reports_html() {
+		const tiles = REPORTS.map(
+			([report, icon, tone]) => `<a class="imed-ov-report tone-${tone}" href="/desk/query-report/${encodeURIComponent(report)}">
+					<span class="imed-ov-report__icon">${frappe.utils.icon(icon, "md")}</span><span>${esc(__(report))}</span>
+				</a>`
+		).join("");
+		return `<section class="imed-ov-card imed-ov-reports">
+				<h3>${esc(__("Reports"))}</h3>
+				<div class="imed-ov-reports__grid">${tiles}</div>
+			</section>`;
+	}
+
+	function render_overview($page) {
+		if (!overview) return;
+		$page.find(".imed-ov").remove();
+		const $panel = $(`<div class="imed-ov">
+				${kpis_html(overview.kpis)}
+				<div class="imed-ov-row">${pipeline_html(overview.pipeline)}${upcoming_html(overview.upcoming)}</div>
+				<div class="imed-ov-row">${collection_html(overview.collection)}${reports_html()}</div>
+			</div>`);
+		const $welcome = $page.find(".imed-dash-welcome").first();
+		if ($welcome.length) $panel.insertAfter($welcome);
+		else $panel.insertBefore($page.find(".codex-editor").first());
+	}
+
+	function add_overview($page) {
+		if (!is_owner()) return;
+		if (Date.now() - overview_at < REFRESH_MS) {
+			if (overview && !$page.find(".imed-ov").length) render_overview($page);
+			return;
+		}
+		if (overview_busy) return;
+		overview_busy = true;
+		frappe
+			.xcall("imed_erp.imederp.owner_overview.get_overview")
+			.then((data) => {
+				overview = data;
+				overview_at = Date.now();
+				if (on_dashboard()) render_overview($(".page-container:visible .layout-main-section, .page-container:visible").first());
+			})
+			// Shown by Frappe; asked again on the next visit after the wait, not on every redraw.
+			.catch(() => (overview_at = Date.now()))
+			.finally(() => (overview_busy = false));
+	}
+
 	function decorate() {
 		if (!on_dashboard()) return;
 		const $page = $(".page-container:visible .layout-main-section, .page-container:visible").first();
 		if (!$page.length) return;
 		add_welcome($page);
+		add_overview($page);
 		add_yesterday($page);
 		mark_headers($page);
 		mark_cards($page);

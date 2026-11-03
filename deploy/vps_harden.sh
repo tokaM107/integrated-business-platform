@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Close the VPS's management ports to the internet, reversibly, without touching the five Coolify applications.
+# Read before running: docs/deployment/production-deployment-coolify.md, section 13. NOT run by the preparation.
+#
+# What it does (as root on the VPS):
+#   1. Starts a dead-man's switch: in REVERT_MINUTES (10) the rules are removed again, unless `vps_harden.sh confirm`
+#      was run from a NEW SSH session that worked after the change. A lock-out undoes itself.
+#   2. Docker publishes ports around UFW, so the block is in iptables' DOCKER-USER chain (what Docker leaves to the
+#      administrator), matched on the ORIGINAL destination port (DOCKER-USER sees post-DNAT ports; Coolify's 8000 is
+#      8080 inside its container). Default: only Traefik's unused 8080. The owner chose on 29 Oct 2026 to keep
+#      Coolify's 8000 and its realtime 6001/6002 public; pass PORTS=8000,8080,6001,6002 to close them too.
+#   3. UFW for the host itself: 22, 80, 443 allowed, the rest denied (sshd is the only host service listening).
+#   4. Persists the DOCKER-USER rule as a systemd oneshot unit ordered after docker.service, so a reboot keeps it.
+#   Not here (separate, after the owner confirms their key works): sshd PasswordAuthentication no.
+#
+#   bash vps_harden.sh apply      # then open a NEW terminal, ssh in, open https://<an app domain>; if both work:
+#   bash vps_harden.sh confirm    # cancels the automatic revert
+#   bash vps_harden.sh revert     # undo everything now
+#   bash vps_harden.sh status
+set -euo pipefail
+IFACE="${IFACE:-$(ip -o -4 route show default | awk '{print $5}' | head -1)}"
+PORTS="${PORTS:-8080}"
+REVERT_MINUTES="${REVERT_MINUTES:-10}"
+MARK="imed-harden"
+STATE=/var/run/imed-harden-revert.pid
+
+rules_add() {
+	iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP 2>/dev/null \
+		|| iptables -I DOCKER-USER 1 -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP
+}
+rules_del() {
+	while iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP 2>/dev/null; do
+		iptables -D DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP
+	done
+}
+persist() {
+	# Re-applied after Docker starts on every boot (Docker rebuilds its chains at start, so a rule loaded by UFW
+	# before Docker would be lost): a small oneshot unit ordered after docker.service.
+	cat > /usr/local/sbin/imed-docker-user.sh <<SCRIPT
+#!/usr/bin/env bash
+# Managed by deploy/vps_harden.sh: block new connections from the internet to the management ports that Docker
+# publishes around UFW (Coolify 8000, its realtime 6001/6002, Traefik's unused 8080).
+for i in \$(seq 1 30); do iptables -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 2; done
+iptables -C DOCKER-USER -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport $PORTS -m comment --comment "$MARK" -j DROP 2>/dev/null \
+	|| iptables -I DOCKER-USER 1 -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport $PORTS -m comment --comment "$MARK" -j DROP
+SCRIPT
+	chmod 755 /usr/local/sbin/imed-docker-user.sh
+	cat > /etc/systemd/system/imed-docker-user.service <<UNIT
+[Unit]
+Description=IMED: block public access to Docker-published management ports (DOCKER-USER)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/imed-docker-user.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+	systemctl daemon-reload
+	systemctl enable imed-docker-user.service >/dev/null 2>&1
+}
+unpersist() {
+	systemctl disable imed-docker-user.service >/dev/null 2>&1 || true
+	rm -f /etc/systemd/system/imed-docker-user.service /usr/local/sbin/imed-docker-user.sh
+	systemctl daemon-reload
+}
+
+case "${1:-status}" in
+apply)
+	echo "interface $IFACE, ports $PORTS; automatic revert in $REVERT_MINUTES minutes unless confirmed"
+	nohup bash -c "sleep $((REVERT_MINUTES * 60)); bash '$0' revert; echo 'auto-reverted' >> /var/log/imed-harden.log" >/dev/null 2>&1 &
+	echo $! > "$STATE"
+	rules_add
+	ufw --force reset >/dev/null
+	ufw default deny incoming >/dev/null; ufw default allow outgoing >/dev/null
+	ufw allow 22/tcp >/dev/null; ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null
+	ufw --force enable >/dev/null
+	persist
+	echo "applied $(date -u +%FT%TZ)" >> /var/log/imed-harden.log
+	echo "applied. Now, from a NEW terminal: ssh in, open an app domain over https, open http://<ip>:8000 (must fail). Then: bash $0 confirm"
+	;;
+confirm)
+	[ -f "$STATE" ] && kill "$(cat "$STATE")" 2>/dev/null && rm -f "$STATE" && echo "automatic revert cancelled; rules stay" || echo "no pending revert"
+	echo "confirmed $(date -u +%FT%TZ)" >> /var/log/imed-harden.log
+	;;
+revert)
+	[ -f "$STATE" ] && kill "$(cat "$STATE")" 2>/dev/null; rm -f "$STATE"
+	rules_del; unpersist
+	ufw --force disable >/dev/null
+	echo "reverted $(date -u +%FT%TZ)" >> /var/log/imed-harden.log
+	echo "reverted: DOCKER-USER rules removed, ufw disabled (as before)"
+	;;
+status)
+	echo "interface $IFACE"; iptables -S DOCKER-USER | grep "$MARK" || echo "no $MARK rule"; ufw status | head -8
+	;;
+*) echo "usage: $0 apply|confirm|revert|status"; exit 2 ;;
+esac

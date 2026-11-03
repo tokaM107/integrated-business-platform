@@ -28,6 +28,9 @@ def get_columns():
 		{"label": _("Hall"), "fieldname": "resource", "fieldtype": "Link", "options": "Booking Resource", "width": 160},
 		{"label": _("Booking"), "fieldname": "name", "fieldtype": "Link", "options": "Booking", "width": 140},
 		{"label": _("Activity"), "fieldname": "activity", "fieldtype": "Data", "width": 160},
+		{"label": _("Hall Booking Type"), "fieldname": "hall_booking_type", "fieldtype": "Data", "width": 140},
+		{"label": _("Doctor / Lecturer"), "fieldname": "doctor", "fieldtype": "Link", "options": "Customer", "width": 140},
+		{"label": _("Hours"), "fieldname": "hours", "fieldtype": "Float", "width": 70},
 		{"label": _("Rental Model"), "fieldname": "rental_model", "fieldtype": "Data", "width": 110},
 		{"label": _("Status"), "fieldname": "status", "fieldtype": "Data", "width": 110},
 		{"label": _("Attendees"), "fieldname": "attendees", "fieldtype": "Int", "width": 90},
@@ -51,7 +54,7 @@ def get_data(filters):
 		filters=conditions,
 		fields=[
 			"name", "booking_date", "resource", "activity", "rental_model", "status", "attendees", "admission_price",
-			"total_amount", "paid_amount", "collected_amount", "outstanding_amount", "sales_invoice",
+			"total_amount", "paid_amount", "collected_amount", "outstanding_amount", "sales_invoice", "hall_booking_type", "doctor", "hours",
 		],
 		order_by="booking_date, from_time",
 	):
@@ -59,7 +62,8 @@ def get_data(filters):
 		share = b.rental_model == "Revenue Share"
 		rows.append(
 			{
-				**{k: b[k] for k in ("booking_date", "resource", "name", "activity", "status", "attendees", "admission_price")},
+				**{k: b[k] for k in ("booking_date", "resource", "name", "activity", "status", "attendees", "admission_price", "doctor", "hours")},
+				"hall_booking_type": _(b.hall_booking_type) if b.hall_booking_type else "",
 				"rental_model": _(b.rental_model) if b.rental_model else "",
 				"status": _(b.status),
 				"rent": 0 if cancelled else flt(b.total_amount),

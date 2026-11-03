@@ -43,7 +43,7 @@ frappe.ui.form.on("Expense", {
 	},
 
 	refresh(frm) {
-		// Apply the screen design standard (see docs/SCREEN_DESIGN_STANDARD.md).
+		// Apply the screen design standard (see docs/standards/screen-design-standard.md).
 		// Expense is a lean custom doctype with no tax / currency fields, so the standard here is
 		// about PROGRESSIVE DISCLOSURE, not hiding noise. Everyone fills the same few business fields
 		// (date, activity, category, amount, treasury, supplier, description, receipt). The derived

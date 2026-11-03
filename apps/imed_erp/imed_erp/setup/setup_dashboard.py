@@ -44,6 +44,8 @@ booking_cards = [
     dict(label="Studio Hours This Month", method=M + "studio_hours_this_month", color=TEAL),
     dict(label="Hall Bookings This Month", method=M + "hall_bookings_this_month", color=SLATE),
     dict(label="Unpaid on Bookings", money=1, method=M + "unpaid_on_bookings_card", color=AMBER),
+    # What XStudio says is still due on the studio's bookings of the month: read from XStudio, never posted here.
+    dict(label="Due on Studio Bookings (XStudio)", money=1, method=M + "xstudio_due_this_month", color=AMBER),
 ]
 cards = money_cards + booking_cards
 # Cards of earlier runs: counts and all-time sums, not the owner's money, and yesterday's figures now in the
@@ -110,15 +112,34 @@ charts = [
     dict(label="Sales Trend", doc="Sales Invoice",
          based_on="posting_date", value_field="grand_total",
          ctype="Line", color=TEAL, timespan="Last Quarter", time_interval="Weekly",
-         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1]]),
+         # The group's own sales: the site also holds ERPNext's _Test companies (audit of 1 Nov 2026).
+         parent_doc=None, filters=[["Sales Invoice", "docstatus", "=", 1], ["Sales Invoice", "company", "=", COMPANY]]),
     # QA-06: from the ledger's income accounts, this month to today, so revenue posted by journal entry is in.
-    dict(label="Revenue by Business", source="Revenue by Business (Ledger)",
+    dict(label="Revenue by Business", source="Revenue by Business Ledger",
          ctype="Bar", color=TEAL_LIGHT),
-    dict(label="Stock Value by Warehouse", doc="Bin",
-         based_on="warehouse", value_field="stock_value",
-         ctype="Donut", color=TEAL, timespan=None, time_interval=None,
-         parent_doc=None),
+    # A Bin has no company: the group's warehouses by the Warehouse's company, through a custom source (the _Test
+    # companies' bins showed on the production dashboard, 2,000 of test stock; audit of 1 Nov 2026).
+    dict(label="Stock Value by Warehouse", source="Stock Value by Warehouse Company",
+         source_path=("stock_value_by_warehouse_company", "stock_value_by_warehouse_company.json"),
+         ctype="Donut", color=TEAL),
 ]
+
+# Sources named with parentheses (until 1 Nov 2026): Frappe looks for their JS at scrub(name), which keeps the
+# parentheses, so the file was never found and the chart never drew. Their charts are recreated below on the renamed
+# sources; the old source records go.
+for old_source in ("Revenue by Business (Ledger)", "Stock Value by Warehouse (Company)"):
+    if frappe.db.exists("Dashboard Chart Source", old_source):
+        for chart_name in frappe.get_all("Dashboard Chart", filters={"source": old_source}, pluck="name"):
+            frappe.delete_doc("Dashboard Chart", chart_name, force=1)
+        # A Dashboard Chart Source is deleted only in developer mode or by a migration (its on_trash); on the
+        # production site (developer_mode 0, 1 Nov 2026) this one-off removal of a misnamed record runs as the
+        # migration would. Its folder (scrub of the old name) never existed, so nothing on disk is touched.
+        in_migrate, frappe.flags.in_migrate = frappe.flags.in_migrate, True
+        try:
+            frappe.delete_doc("Dashboard Chart Source", old_source, force=1)
+            print("removed source:", old_source)
+        finally:
+            frappe.flags.in_migrate = in_migrate
 
 created_charts = []
 for ch in charts:
@@ -139,9 +160,8 @@ for ch in charts:
             if not frappe.db.exists("Dashboard Chart Source", ch["source"]):
                 from frappe.modules.import_file import import_file_by_path
 
-                import_file_by_path(frappe.get_app_path(
-                    "imed_erp", "imederp", "dashboard_chart_source", "revenue_by_business_ledger", "revenue_by_business_ledger.json"
-                ))
+                folder, file = ch.get("source_path", ("revenue_by_business_ledger", "revenue_by_business_ledger.json"))
+                import_file_by_path(frappe.get_app_path("imed_erp", "imederp", "dashboard_chart_source", folder, file))
             d.update({"chart_type": "Custom", "source": ch["source"], "module": "ImedERP", "filters_json": "{}"})
         elif ch["ctype"] in ("Bar", "Donut"):
             d.update({

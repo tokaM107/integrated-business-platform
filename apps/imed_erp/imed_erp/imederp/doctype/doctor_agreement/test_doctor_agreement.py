@@ -14,11 +14,11 @@ from frappe.tests import IntegrationTestCase
 
 from frappe.utils import flt, today
 
-from imed_erp.imederp.testing import ledger_entry
+from imed_erp.imederp.tests.testing import ledger_entry
 from imed_erp.imederp.doctype.app_course.test_app_course import make_course
 from imed_erp.imederp.doctype.book_edition.test_book_edition import PAPER_COST, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import DOCTOR_GROUP
-from imed_erp.imederp.testing import fund_cash_boxes
+from imed_erp.imederp.tests.testing import fund_cash_boxes
 
 
 # On IntegrationTestCase, the doctype test records and all

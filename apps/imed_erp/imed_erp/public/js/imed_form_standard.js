@@ -34,7 +34,7 @@
  *
  * What it does NOT do: reorder fields or rename labels. Field order and business-friendly labels are a
  * definition-time concern — `field_order` / labels in the `.json` for our own doctypes, or Customize
- * Form (a Property Setter) for standard doctypes — following docs/SCREEN_DESIGN_STANDARD.md. Reordering
+ * Form (a Property Setter) for standard doctypes — following docs/standards/screen-design-standard.md. Reordering
  * or relabelling live in JavaScript fights the framework and breaks on upgrades, so we do not do it.
  *
  * Every field name is guarded with `frm.fields_dict[...]`, so a group that does not exist on a given
@@ -93,7 +93,7 @@ imed.screen.FIELD_GROUPS = {
 
 /*
  * Project role groups, for `restrict`. These are the real roles from setup_users.py (see the
- * Role / Screen matrix in docs/SCREEN_DESIGN_STANDARD.md). This is shared configuration (data), not
+ * Role / Screen matrix in docs/standards/screen-design-standard.md). This is shared configuration (data), not
  * per-screen logic — the per-screen rules live in each screen's own file. The exact visibility lines
  * are a UX choice; confirm boundaries with the business.
  *   accounting        — sees GL / journal / accounting detail

@@ -57,12 +57,15 @@ app_include_js = [
 	# The Owner Dashboard's welcome band, card icons and colours.
 	asset("js/imed_owner_dashboard.js"),
 	asset("js/imed_theme_toggle.js"),
+	# "Log out" at the bottom of the sidebar.
+	asset("js/imed_sidebar.js"),
 	# Fixes to Frappe's desk seen in the browser (a broken icon in the sidebar menu).
 	asset("js/imed_desk_fixes.js"),
 ]
 
 # include js, css files in header of web template (the theme there only touches the login page)
-web_include_css = ["/assets/imed_erp/css/imed_fonts.css", "/assets/imed_erp/css/imed_web.css"]
+# Versioned like the desk's (asset()): the sign-in page's look changed on 2 Nov 2026 and browsers kept the old copy.
+web_include_css = [asset("css/imed_fonts.css"), asset("css/imed_web.css")]
 # web_include_js = "/assets/imed_erp/js/imed_erp.js"
 
 # Branding: logo on the home screen and the login page, and the browser tab icon.
@@ -83,7 +86,7 @@ website_context = {
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# Screen design standard applied to a standard ERPNext doctype (see docs/SCREEN_DESIGN_STANDARD.md).
+# Screen design standard applied to a standard ERPNext doctype (see docs/standards/screen-design-standard.md).
 doctype_js = {
 	"Sales Invoice": "public/js/sales_invoice.js",
 	"Material Request": "public/js/material_request.js",
@@ -510,6 +513,7 @@ after_install = [
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
+	"imed_erp.imederp.xstudio.fields.make_custom_fields",
 ]
 after_migrate = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
@@ -518,6 +522,7 @@ after_migrate = [
 	"imed_erp.imederp.customers.make_custom_fields",
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
+	"imed_erp.imederp.xstudio.fields.make_custom_fields",
 	# The home screen's tiles: what the group uses (imederp/home_screen.py).
 	"imed_erp.imederp.home_screen.tidy_home",
 ]
@@ -544,6 +549,11 @@ after_migrate = [
 # }
 
 scheduler_events = {
+	"cron": {
+		# XStudio's bookings, customers and prepaid packages, read from its API (imederp/xstudio/sync.py); the
+		# settings say whether it is on and how many minutes between runs.
+		"*/10 * * * *": ["imed_erp.imederp.xstudio.sync.run_scheduled"],
+	},
 	"daily": [
 		"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily",
 		# The doctor's amount on any sale the hooks missed, e.g. imported ones (imederp/doctor_accrual.py).

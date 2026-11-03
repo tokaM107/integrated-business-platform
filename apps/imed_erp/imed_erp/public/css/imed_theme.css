@@ -1857,6 +1857,18 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.number-widget-box::before 
 	color: var(--text-muted) !important;
 	font-size: var(--text-base) !important;
 	font-weight: 500 !important;
+	line-height: 1.3;
+}
+/* A long name on a narrow card goes on two lines instead of being cut (the owner, 2 Nov 2026); Frappe sets the
+   one line on the title and on the span inside it. */
+.imed-dash-card .widget-head,
+.imed-dash-card .widget-label,
+.imed-dash-card .widget-title,
+.imed-dash-card .widget-title * {
+	min-width: 0;
+	white-space: normal !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
 }
 .imed-dash-card .widget-content .number {
 	margin-block-start: 10px;
@@ -2378,5 +2390,1169 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 	.std-form-layout .form-section.card-section {
 		padding: 14px;
 		margin-bottom: 12px;
+	}
+}
+
+/* Every figure on the owner's dashboard opens the list behind it (imed_owner_dashboard.js, 25 Oct 2026). */
+a.imed-yday-stat,
+a.imed-yday-stat:hover,
+.imed-yday-warn a,
+.imed-yday-system b a {
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+}
+a.imed-yday-stat:hover b,
+.imed-yday-warn a:hover,
+.imed-yday-system b a:hover {
+	text-decoration: underline;
+}
+a.imed-yday-stat:focus-visible,
+.imed-dash-card-link:focus-visible {
+	outline: 2px solid var(--primary, #1f6f5c);
+	outline-offset: 2px;
+}
+.imed-dash-card-link {
+	cursor: pointer;
+}
+.imed-dash-card-link:hover {
+	box-shadow: 0 0 0 2px var(--primary, #1f6f5c) inset;
+}
+
+/* §26 Audit of 1 Nov 2026: what is not recorded is said, never shown as zero. */
+.imed-yday-stat.is-untracked b,
+.imed-yday-untracked { font-size: 0.78rem; font-weight: 500; color: #8a6d1d; }
+.imed-dash-norecords { display: inline-block; margin-inline-start: 0.4rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: #fff4e0; color: #8a6d1d; font-size: 0.68rem; font-weight: 600; }
+.imed-yday-ledger-empty { margin: 0 0 0.75rem; }
+
+/* ------------------------------------------------------------------ */
+/* 27. Colour: the sidebar, the dashboard, lists and forms             */
+/* ------------------------------------------------------------------ */
+/* The owner's request of 1 Nov 2026: "why are there no colours, the sidebar is not coloured". Look only: no field,
+   figure or permission changes. Comes last, so it refines the sections above.
+     - The sidebar in one deep forest green, as in the owner's picture of 2 Nov 2026 (its own part below).
+     - On the dashboard each card and tile is tinted by what it is (tone-*), each figure by its meaning.
+     - Lists and reports get a tinted header row, forms a coloured mark on each section's title.
+   Colours come from Frappe's palette (--green-500...), so the dark theme only changes the shades (end of section). */
+
+/* Tones: a colour for a kind of thing. --tone-solid a bar or a chip, --tone-soft a tinted background,
+   --tone-fg text and icons on a light background, --tone-line a border. */
+.tone-teal,
+.imed-act-teal {
+	--tone-solid: var(--imed-teal-500);
+	--tone-soft: var(--imed-teal-50);
+	--tone-fg: var(--imed-teal-700);
+	--tone-line: var(--imed-teal-200);
+	--tone-on-dark: var(--imed-teal-200);
+}
+.tone-blue,
+.imed-act-blue {
+	--tone-solid: var(--blue-500);
+	--tone-soft: var(--blue-50);
+	--tone-fg: var(--blue-700);
+	--tone-line: var(--blue-200);
+	--tone-on-dark: var(--blue-200);
+}
+.tone-cyan,
+.imed-act-cyan {
+	--tone-solid: var(--cyan-500);
+	--tone-soft: var(--cyan-50);
+	--tone-fg: var(--cyan-700);
+	--tone-line: var(--cyan-200);
+	--tone-on-dark: var(--cyan-200);
+}
+.tone-green,
+.imed-act-green {
+	--tone-solid: var(--green-500);
+	--tone-soft: var(--green-50);
+	--tone-fg: var(--green-700);
+	--tone-line: var(--green-200);
+	--tone-on-dark: var(--green-200);
+}
+.tone-amber,
+.imed-act-amber {
+	--tone-solid: var(--amber-500);
+	--tone-soft: var(--amber-50);
+	--tone-fg: var(--amber-700);
+	--tone-line: var(--amber-200);
+	--tone-on-dark: var(--amber-200);
+}
+.tone-orange,
+.imed-act-orange {
+	--tone-solid: var(--orange-500);
+	--tone-soft: var(--orange-50);
+	--tone-fg: var(--orange-700);
+	--tone-line: var(--orange-200);
+	--tone-on-dark: var(--orange-200);
+}
+.tone-red,
+.imed-act-red {
+	--tone-solid: var(--red-500);
+	--tone-soft: var(--red-50);
+	--tone-fg: var(--red-600);
+	--tone-line: var(--red-200);
+	--tone-on-dark: var(--red-200);
+}
+.tone-violet,
+.imed-act-violet {
+	--tone-solid: var(--violet-500);
+	--tone-soft: var(--violet-50);
+	--tone-fg: var(--violet-700);
+	--tone-line: var(--violet-200);
+	--tone-on-dark: var(--violet-200);
+}
+.tone-purple,
+.imed-act-purple {
+	--tone-solid: var(--purple-500);
+	--tone-soft: var(--purple-50);
+	--tone-fg: var(--purple-700);
+	--tone-line: var(--purple-200);
+	--tone-on-dark: var(--purple-200);
+}
+.tone-gray,
+.imed-act-gray {
+	--tone-solid: var(--gray-500);
+	--tone-soft: var(--gray-100);
+	--tone-fg: var(--gray-700);
+	--tone-line: var(--gray-300);
+	--tone-on-dark: #dfe7ea;
+}
+
+/* ---------------- The sidebar ---------------- */
+/* The owner's picture of 2 Nov 2026: one deep forest green with a soft light from the top corner; the signed-in
+   person on top (a large picture, the name, the e-mail), then search, notifications and the theme, then the
+   activities with white line icons, the open page a cream pill; at the bottom the switch between sidebars and
+   "Log out" (imed_sidebar.js). The parts are reordered with CSS only (Frappe's sidebar is one flex column). */
+.body-sidebar {
+	--sb-green: #1d4a3b;
+	--sb-green-deep: #133429;
+	--sb-text: rgba(255, 255, 255, 0.94);
+	--sb-muted: rgba(255, 255, 255, 0.66);
+	--sb-line: rgba(255, 255, 255, 0.16);
+	--sb-hover: rgba(255, 255, 255, 0.08);
+	--sb-pill: #f6f3ea;
+	--sb-pill-text: #163b2e;
+	background:
+		radial-gradient(130% 60% at 100% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
+		linear-gradient(180deg, var(--sb-green) 0%, #194234 50%, var(--sb-green-deep) 100%);
+	border-inline-end: 0;
+	color: var(--sb-text);
+}
+
+/* The order: the person, the standard items, the activities (they take the free height), then at the bottom
+   the sidebar switch and "Log out". */
+.body-sidebar > .body-sidebar-bottom {
+	order: -2;
+}
+.body-sidebar > .standard-items-sections {
+	order: -1;
+}
+.body-sidebar > .sidebar-header {
+	order: 20;
+}
+.body-sidebar > .imed-sidebar-logout {
+	order: 21;
+}
+
+/* The person on top */
+.body-sidebar .body-sidebar-bottom {
+	margin: 0 0 6px;
+	padding: 14px 8px 12px;
+	border-bottom: 1px solid var(--sb-line);
+}
+.body-sidebar .body-sidebar-bottom .dropdown-navbar-user {
+	margin: 0 !important;
+}
+.body-sidebar .sidebar-user-button {
+	display: flex !important;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 6px 4px;
+	border-radius: 16px;
+	text-align: center;
+}
+.body-sidebar .sidebar-user-button:hover {
+	background: var(--sb-hover);
+}
+.body-sidebar .sidebar-user-button .avatar {
+	position: relative;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.92), 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+}
+.body-sidebar .sidebar-user-button .avatar .avatar-frame {
+	font-size: 21px;
+}
+.body-sidebar .sidebar-user-button .avatar.avatar-medium .avatar-frame.standard-image {
+	background: linear-gradient(135deg, #2f6b55, #1a4536) !important;
+}
+/* Online: a small green dot at the picture's edge. */
+.body-sidebar .sidebar-user-button .avatar::after {
+	content: "";
+	position: absolute;
+	inset-block-end: 2px;
+	inset-inline-end: 0;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: #8fe0b0;
+	box-shadow: 0 0 0 3px var(--sb-green);
+}
+.body-sidebar .sidebar-user-button .avatar-name-email {
+	margin: 0 !important;
+	text-align: center;
+}
+.body-sidebar .sidebar-user-button .avatar-name-email .d-block:first-child {
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 700;
+	text-transform: none;
+}
+.body-sidebar .sidebar-user-button .avatar-name-email,
+.body-sidebar .sidebar-user-button .avatar-name-email .text-muted,
+.body-sidebar .sidebar-user-button .avatar-name-email .d-block + * {
+	color: var(--sb-muted) !important;
+	font-size: 11.5px;
+}
+.body-sidebar .sidebar-user-button .icon {
+	--icon-stroke: var(--sb-muted);
+}
+
+/* No header (the "ImedERP" switch between sidebars): the owner, 2 Nov 2026. Hidden here only; every screen is
+   in this sidebar and the search (Ctrl+K) reaches the rest. */
+.body-sidebar > .sidebar-header {
+	display: none !important;
+}
+
+/* Items: white words and white line icons, a little larger. */
+.body-sidebar .standard-sidebar-item {
+	min-height: 36px;
+	border-radius: 12px;
+}
+.body-sidebar .standard-sidebar-item .sidebar-item-label,
+.body-sidebar .standard-sidebar-item .item-anchor {
+	color: var(--sb-text);
+	font-size: 13px;
+	font-weight: 600;
+}
+/* Frappe draws these icons in currentColor and gives the svg itself a gray class: the colour goes on the svg. */
+.body-sidebar .standard-sidebar-item svg.icon {
+	width: 17px;
+	height: 17px;
+	color: #ffffff !important;
+	--icon-stroke: currentColor;
+	stroke: currentColor;
+	stroke-width: 1.8px;
+}
+.body-sidebar .standard-sidebar-item .sidebar-control svg.icon,
+.body-sidebar .standard-sidebar-item .sidebar-item-control svg.icon {
+	width: 16px;
+	height: 16px;
+	color: var(--sb-muted) !important;
+}
+/* The search's keyboard hint and the like. */
+.body-sidebar .standard-items-sections .text-muted,
+.body-sidebar .standard-items-sections kbd,
+.body-sidebar .standard-items-sections .keyboard-shortcut {
+	color: var(--sb-muted) !important;
+	background: transparent;
+	border-color: var(--sb-line);
+}
+/* A line between the standard items and the activities. */
+.body-sidebar .standard-items-sections {
+	margin-bottom: 4px;
+	padding-bottom: 4px;
+}
+/* A link in a group: a small dot where it has no icon. */
+.body-sidebar .sidebar-child-item .sidebar-item-icon:not(:has(svg)) {
+	display: inline-block;
+	flex: none;
+	width: 6px;
+	height: 6px;
+	padding: 0 !important;
+	margin-inline: 12px 8px;
+	border-radius: 50%;
+	background: var(--sb-muted);
+}
+.body-sidebar .sidebar-child-item .standard-sidebar-item {
+	min-height: 32px;
+}
+.body-sidebar .sidebar-child-item .sidebar-item-label {
+	color: rgba(255, 255, 255, 0.82);
+	font-size: 12.5px;
+	font-weight: 500;
+}
+/* An open group: its links on a slightly lighter band. */
+.body-sidebar .sidebar-item-container.section-item > .sidebar-child-item:not(.hidden) {
+	margin: 2px 0 6px;
+	padding: 4px 0;
+	border-radius: 14px;
+	background: rgba(255, 255, 255, 0.05);
+}
+
+/* Under the pointer, or an opened group's own line: a light band, the words still white. */
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):hover,
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar),
+.body-sidebar .standard-sidebar-item:not(.active-sidebar):focus-within {
+	background: var(--sb-hover) !important;
+	box-shadow: none;
+}
+.body-sidebar .standard-sidebar-item.selected:not(.active-sidebar)::before {
+	display: none;
+}
+/* The page open now: a cream pill, its words and icon in the deep green. */
+.body-sidebar .standard-sidebar-item.active-sidebar {
+	background: var(--sb-pill) !important;
+	box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.55);
+}
+.body-sidebar .standard-sidebar-item.active-sidebar::before {
+	display: none;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label,
+.body-sidebar .standard-sidebar-item.active-sidebar .item-anchor {
+	color: var(--sb-pill-text) !important;
+	font-weight: 700;
+}
+.body-sidebar .standard-sidebar-item.active-sidebar svg.icon {
+	color: var(--sb-pill-text) !important;
+}
+.body-sidebar .sidebar-child-item .standard-sidebar-item.active-sidebar .sidebar-item-icon:not(:has(svg)) {
+	background: var(--sb-pill-text);
+}
+
+/* On a phone the menu a little wider, so the activities' names are not cut. */
+@media (max-width: 767.98px) {
+	.body-sidebar-container {
+		--sidebar-width: 260px;
+	}
+}
+
+/* A short screen (a 768px laptop): everything a step tighter, so the whole sidebar shows without scrolling. */
+@media (min-width: 768px) and (max-height: 820px) {
+	.body-sidebar .body-sidebar-bottom {
+		padding: 10px 8px 8px;
+	}
+	.body-sidebar .sidebar-user-button {
+		gap: 6px;
+	}
+	.body-sidebar .sidebar-user-button .avatar {
+		width: 44px;
+		height: 44px;
+	}
+	.body-sidebar .sidebar-user-button .avatar .avatar-frame {
+		font-size: 17px;
+	}
+	.body-sidebar .standard-sidebar-item {
+		min-height: 32px;
+	}
+	.body-sidebar .body-sidebar-top {
+		margin-top: 0;
+		padding-top: 0;
+	}
+}
+
+/* "Log out", last (imed_sidebar.js). */
+.body-sidebar .imed-sidebar-logout {
+	margin-top: 6px;
+	padding: 8px 0 10px;
+	border-top: 1px solid var(--sb-line);
+}
+
+/* What opens out of the sidebar (notifications, menus) stays a normal light panel. */
+.body-sidebar .dropdown-notifications,
+.body-sidebar .dropdown-menu {
+	color: var(--text-color);
+}
+.body-sidebar .dropdown-notifications .sidebar-item-label,
+.body-sidebar .dropdown-menu .sidebar-item-label,
+.body-sidebar .dropdown-menu .dropdown-item {
+	color: var(--text-color);
+}
+.body-sidebar .dropdown-menu svg.icon {
+	color: inherit !important;
+}
+
+/* The sidebar folded to its icons (desktop): the person as a small picture, no name. */
+@media (min-width: 992px) {
+	.body-sidebar-container:not(.expanded) .body-sidebar .sidebar-user-button .avatar {
+		width: 32px;
+		height: 32px;
+		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+	}
+	.body-sidebar-container:not(.expanded) .body-sidebar .sidebar-user-button .avatar .avatar-frame {
+		font-size: 13px;
+	}
+	.body-sidebar-container:not(.expanded) .body-sidebar .sidebar-user-button .avatar::after {
+		width: 9px;
+		height: 9px;
+		inset-block-end: 0;
+		inset-inline-end: 0;
+		box-shadow: 0 0 0 2px var(--sb-green);
+	}
+	.body-sidebar-container:not(.expanded) .body-sidebar .body-sidebar-bottom {
+		padding: 14px 4px 12px;
+	}
+}
+
+/* ---------------- The Owner Dashboard ---------------- */
+/* The money and booking cards: the whole card tinted by its meaning, its icon in a solid chip. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card {
+	background: linear-gradient(160deg, var(--kind-bg) 0%, var(--card-bg) 72%);
+	border-color: color-mix(in srgb, var(--kind-fg) 22%, transparent);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	background: var(--kind-fg);
+	color: #ffffff;
+	box-shadow: 0 8px 18px -10px var(--kind-fg);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-title {
+	color: var(--heading-color) !important;
+	font-weight: 600 !important;
+}
+/* "Net this month" and the cash: the brand's own blue-teal, a negative one red (above). */
+.imed-dash-card[data-imed-kind="net"],
+.imed-dash-card[data-imed-kind="cash"]:not(.is-negative) {
+	--kind-bg: var(--blue-50);
+	--kind-fg: var(--blue-700);
+}
+.imed-dash-card[data-imed-kind="count"] {
+	--kind-bg: var(--violet-50);
+	--kind-fg: var(--violet-700);
+}
+/* Approvals: green when nothing waits, amber when something does (§22), with a coloured edge. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-approval {
+	border-inline-start: 4px solid var(--green-500) !important;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-approval.is-waiting {
+	border-inline-start-color: var(--amber-500) !important;
+}
+/* The section headers' icons in the brand's chip, a little bolder. */
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-dash-head-icon,
+body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-dash-head-icon * {
+	color: #ffffff !important;
+}
+.imed-dash-head-icon {
+	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
+}
+
+/* Yesterday's cards: each with its colour on top and on its title's icon. */
+.imed-yday-card[class*="tone-"] {
+	border-top: 4px solid var(--tone-solid);
+	background: linear-gradient(180deg, var(--tone-soft) 0, var(--fg-color) 90px);
+}
+.imed-yday-card[class*="tone-"] h3 .icon {
+	box-sizing: content-box;
+	padding: 6px;
+	border-radius: 9px;
+	background: var(--tone-solid);
+	stroke: #ffffff;
+}
+/* Revenue green, expenses red, net blue: on the column headers (an amount's own colour is its sign's, §25). */
+.imed-yday-table:not(.is-compact) thead th:nth-child(2) {
+	color: var(--green-700);
+}
+.imed-yday-table:not(.is-compact) thead th:nth-child(3) {
+	color: var(--red-600);
+}
+.imed-yday-table:not(.is-compact) thead th:nth-child(4) {
+	color: var(--blue-700);
+}
+.imed-yday-table thead th {
+	background: var(--gray-50);
+}
+.imed-yday-table tbody tr:hover td {
+	background: var(--imed-teal-50);
+}
+/* Each figure's tile in its colour. */
+.imed-yday-stat[class*="tone-"] {
+	position: relative;
+	overflow: hidden;
+	background: var(--tone-soft);
+	box-shadow: inset 0 0 0 1px var(--tone-line);
+}
+.imed-yday-stat[class*="tone-"]::before {
+	content: "";
+	position: absolute;
+	inset-block: 0;
+	inset-inline-start: 0;
+	width: 3px;
+	background: var(--tone-solid);
+}
+.imed-yday-stat[class*="tone-"] span {
+	color: var(--tone-fg);
+	font-weight: 600;
+}
+.imed-yday-stat[class*="tone-"]:not(.is-untracked) b {
+	color: var(--tone-fg);
+	font-size: var(--text-xl);
+}
+.imed-yday-stat.is-negative b {
+	color: var(--red-600);
+}
+/* The links to the reports as coloured chips. */
+.imed-yday-head nav a {
+	border-color: transparent;
+	background: var(--imed-teal-600);
+	color: #ffffff;
+}
+.imed-yday-head nav a:hover {
+	background: var(--imed-teal-700);
+	color: #ffffff;
+}
+
+/* ---------------- Lists, reports and forms ---------------- */
+/* A list's or a report's header row in the brand's tint. */
+.list-row-head,
+.report-wrapper .dt-header .dt-row,
+.report-wrapper .dt-header .dt-cell {
+	background: var(--imed-teal-50) !important;
+}
+.list-row-head .list-row-col,
+.list-row-head .level-left,
+.list-row-head .list-subject,
+.report-wrapper .dt-header .dt-cell__content {
+	color: var(--imed-teal-800) !important;
+	font-weight: 600;
+}
+.frappe-list .list-row-container:hover .list-row {
+	background: color-mix(in srgb, var(--imed-teal-50) 70%, var(--card-bg));
+}
+/* Status pills: a little stronger, with a dot. */
+.indicator-pill {
+	font-weight: 600;
+}
+.indicator-pill.green {
+	background: var(--green-100);
+	color: var(--green-800);
+}
+.indicator-pill.orange,
+.indicator-pill.yellow {
+	background: var(--amber-100);
+	color: var(--amber-800);
+}
+.indicator-pill.red {
+	background: var(--red-100);
+	color: var(--red-700);
+}
+.indicator-pill.blue,
+.indicator-pill.light-blue {
+	background: var(--blue-100);
+	color: var(--blue-800);
+}
+.indicator-pill.purple {
+	background: var(--purple-100);
+	color: var(--purple-800);
+}
+.indicator-pill.gray,
+.indicator-pill.grey {
+	background: var(--gray-100);
+	color: var(--gray-700);
+}
+/* A form's section title: a coloured mark before it. */
+.std-form-layout .form-section .section-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--heading-color);
+}
+.std-form-layout .form-section .section-head::before {
+	content: "";
+	flex: none;
+	width: 4px;
+	height: 18px;
+	border-radius: 4px;
+	background: linear-gradient(180deg, var(--imed-teal-400), var(--imed-teal-700));
+}
+/* The main action: the brand's gradient. */
+.btn-primary,
+.btn-primary:focus {
+	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
+	border-color: var(--imed-teal-700);
+	box-shadow: 0 6px 14px -8px rgba(15, 98, 91, 0.75);
+}
+.btn-primary:hover {
+	background: linear-gradient(135deg, var(--imed-teal-600), var(--imed-teal-800));
+}
+
+/* ---------------- Dark theme ---------------- */
+[data-theme="dark"] .tone-teal,
+[data-theme="dark"] .tone-blue,
+[data-theme="dark"] .tone-cyan,
+[data-theme="dark"] .tone-green,
+[data-theme="dark"] .tone-amber,
+[data-theme="dark"] .tone-orange,
+[data-theme="dark"] .tone-red,
+[data-theme="dark"] .tone-violet,
+[data-theme="dark"] .tone-purple,
+[data-theme="dark"] .tone-gray {
+	--tone-soft: color-mix(in srgb, var(--tone-solid) 15%, transparent);
+	--tone-fg: var(--tone-on-dark);
+	--tone-line: color-mix(in srgb, var(--tone-solid) 34%, transparent);
+}
+[data-theme="dark"] .body-sidebar {
+	--sb-green: #163a2e;
+	--sb-green-deep: #0d241c;
+	box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
+}
+[data-theme="dark"] .imed-dash-card[data-imed-kind="net"],
+[data-theme="dark"] .imed-dash-card[data-imed-kind="cash"]:not(.is-negative) {
+	--kind-bg: color-mix(in srgb, var(--blue-500) 16%, transparent);
+	--kind-fg: var(--blue-300);
+}
+[data-theme="dark"] .imed-dash-card[data-imed-kind="count"] {
+	--kind-bg: color-mix(in srgb, var(--violet-500) 16%, transparent);
+	--kind-fg: var(--violet-300);
+}
+[data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	background: color-mix(in srgb, var(--kind-fg) 30%, transparent);
+	color: var(--kind-fg);
+}
+[data-theme="dark"] .imed-yday-card[class*="tone-"] h3 .icon {
+	background: color-mix(in srgb, var(--tone-solid) 70%, transparent);
+}
+[data-theme="dark"] .imed-yday-table:not(.is-compact) thead th:nth-child(2) {
+	color: var(--green-300);
+}
+[data-theme="dark"] .imed-yday-table:not(.is-compact) thead th:nth-child(3) {
+	color: var(--red-300);
+}
+[data-theme="dark"] .imed-yday-table:not(.is-compact) thead th:nth-child(4) {
+	color: var(--blue-300);
+}
+[data-theme="dark"] .imed-yday-table thead th {
+	background: rgba(255, 255, 255, 0.03);
+}
+[data-theme="dark"] .imed-yday-table tbody tr:hover td {
+	background: rgba(64, 174, 161, 0.08);
+}
+[data-theme="dark"] .imed-yday-stat.is-negative b {
+	color: var(--red-300);
+}
+[data-theme="dark"] .list-row-head,
+[data-theme="dark"] .report-wrapper .dt-header .dt-row,
+[data-theme="dark"] .report-wrapper .dt-header .dt-cell {
+	background: rgba(64, 174, 161, 0.12) !important;
+}
+[data-theme="dark"] .list-row-head .list-row-col,
+[data-theme="dark"] .list-row-head .level-left,
+[data-theme="dark"] .list-row-head .list-subject,
+[data-theme="dark"] .report-wrapper .dt-header .dt-cell__content {
+	color: var(--imed-teal-200) !important;
+}
+[data-theme="dark"] .frappe-list .list-row-container:hover .list-row {
+	background: rgba(64, 174, 161, 0.07);
+}
+[data-theme="dark"] .indicator-pill.green {
+	background: color-mix(in srgb, var(--green-500) 18%, transparent);
+	color: var(--green-300);
+}
+[data-theme="dark"] .indicator-pill.orange,
+[data-theme="dark"] .indicator-pill.yellow {
+	background: color-mix(in srgb, var(--amber-500) 18%, transparent);
+	color: var(--amber-300);
+}
+[data-theme="dark"] .indicator-pill.red {
+	background: color-mix(in srgb, var(--red-500) 18%, transparent);
+	color: var(--red-300);
+}
+[data-theme="dark"] .indicator-pill.blue,
+[data-theme="dark"] .indicator-pill.light-blue {
+	background: color-mix(in srgb, var(--blue-500) 18%, transparent);
+	color: var(--blue-300);
+}
+[data-theme="dark"] .indicator-pill.purple {
+	background: color-mix(in srgb, var(--purple-500) 18%, transparent);
+	color: var(--purple-300);
+}
+[data-theme="dark"] .indicator-pill.gray,
+[data-theme="dark"] .indicator-pill.grey {
+	background: rgba(255, 255, 255, 0.08);
+	color: var(--gray-600);
+}
+
+/* ------------------------------------------------------------------ */
+/* 28. The Owner Dashboard's overview, as in the owner's picture       */
+/*     (imed_owner_dashboard.js, imederp/owner_overview.py)           */
+/* ------------------------------------------------------------------ */
+/* The owner's picture of 2 Nov 2026: a light welcome on top; four figures, each with its icon in a tinted square
+   and how it moved since last month; then the bookings' path (a funnel) beside the next bookings; then the
+   bookings' money (a ring) beside the reports. White cards, rounded, a soft shadow. The colours are the tones of
+   §27 (tone-green, tone-blue...), so the dark theme follows. */
+
+/* The welcome, light: the greeting large and dark, the note under it; the date a quiet pill. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome {
+	margin: 4px 0 18px;
+	padding: 4px 2px;
+	border-radius: 0;
+	background: none;
+	box-shadow: none;
+	color: var(--heading-color);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome h1 {
+	margin: 10px 0 4px;
+	color: var(--heading-color);
+	font-size: var(--text-3xl);
+	font-weight: 800;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__note {
+	color: var(--text-muted);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__date {
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
+	display: none;
+}
+[data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__date {
+	background: rgba(64, 174, 161, 0.14);
+	color: var(--imed-teal-200);
+}
+
+.imed-ov {
+	display: grid;
+	gap: 18px;
+	margin: 0 0 22px;
+}
+.imed-ov-num {
+	direction: ltr;
+	unicode-bidi: isolate;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+.imed-ov-num.is-negative {
+	color: var(--red-600) !important;
+}
+.imed-ov-muted {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+
+/* A card */
+.imed-ov-card,
+.imed-ov-kpi {
+	min-width: 0;
+	padding: 20px 22px;
+	border: 1px solid var(--imed-border);
+	border-radius: 18px;
+	background: var(--card-bg);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 14px 32px -24px rgba(16, 34, 42, 0.35);
+}
+.imed-ov-card h3 {
+	margin: 0 0 16px;
+	color: var(--heading-color);
+	font-size: var(--text-lg);
+	font-weight: 700;
+}
+.imed-ov-card h3 small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 500;
+}
+
+/* The four figures: each card wholly in a light tint of its own colour (green, blue, orange, violet), its icon
+   white on a square of the colour (the owner, 2 Nov 2026). */
+.imed-ov-kpis {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 18px;
+}
+.imed-ov-kpi {
+	position: relative;
+	overflow: hidden;
+	border-color: color-mix(in srgb, var(--tone-solid) 28%, var(--card-bg));
+	/* The whole card in its colour, evenly (the owner, 2 Nov 2026: "not only a part of it"). */
+	background: color-mix(in srgb, var(--tone-solid) 11%, var(--card-bg));
+}
+.imed-ov-kpi__top {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+.imed-ov-kpi__icon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 48px;
+	height: 48px;
+	border-radius: 14px;
+	background: var(--tone-solid);
+	color: #ffffff;
+	box-shadow: 0 10px 20px -10px var(--tone-solid);
+}
+.imed-ov-kpi__icon .icon {
+	width: 24px;
+	height: 24px;
+	stroke: currentColor;
+	stroke-width: 2px;
+}
+.imed-ov-kpi__label {
+	color: var(--tone-fg);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	line-height: 1.35;
+}
+/* The figure on its own line, so a long amount shows whole. */
+.imed-ov-kpi__value {
+	position: relative;
+	display: block;
+	margin-top: 18px;
+	color: var(--heading-color);
+	font-size: var(--text-3xl);
+	font-weight: 800;
+	line-height: 1.15;
+	letter-spacing: -0.01em;
+	text-align: start;
+}
+/* Two cards side by side */
+.imed-ov-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+	gap: 18px;
+}
+
+/* A legend: a coloured square, the name, the figure at the end. */
+.imed-ov-legend {
+	display: grid;
+	gap: 14px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-ov-legend li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	color: var(--text-color);
+	font-size: var(--text-sm);
+}
+.imed-ov-legend li span::before {
+	content: "";
+	display: inline-block;
+	width: 11px;
+	height: 11px;
+	margin-inline-end: 9px;
+	border-radius: 3px;
+	background: var(--tone-solid);
+	vertical-align: -1px;
+}
+.imed-ov-legend li b {
+	color: var(--heading-color);
+	font-weight: 700;
+}
+.imed-ov-legend li.is-total {
+	padding-top: 12px;
+	border-top: 1px solid var(--imed-border);
+	font-weight: 600;
+}
+.imed-ov-legend li.is-total span::before {
+	display: none;
+}
+
+/* The bookings this month: the halls and the studio, each with its total, a bar of completed (green) and
+   tentative (amber), and the two counts (the owner, 2 Nov 2026). */
+.imed-ov-kinds {
+	display: grid;
+	gap: 16px;
+}
+.imed-ov-kind {
+	padding: 14px 16px;
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--tone-solid) 7%, var(--card-bg));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tone-solid) 18%, var(--card-bg));
+}
+.imed-ov-kind__head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.imed-ov-kind__head > b {
+	color: var(--heading-color);
+	font-size: var(--text-base);
+	font-weight: 700;
+}
+.imed-ov-kind__icon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: var(--tone-solid);
+	color: #ffffff;
+}
+.imed-ov-kind__icon .icon {
+	stroke: currentColor;
+	stroke-width: 2px;
+}
+.imed-ov-kind__total {
+	display: inline-flex;
+	align-items: baseline;
+	gap: 6px;
+	margin-inline-start: auto;
+}
+.imed-ov-kind__total b {
+	color: var(--heading-color);
+	font-size: var(--text-2xl);
+	font-weight: 800;
+}
+.imed-ov-kind__total small {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+.imed-ov-kind__bar {
+	display: flex;
+	height: 12px;
+	margin: 12px 0 10px;
+	overflow: hidden;
+	border-radius: 999px;
+	background: var(--gray-200);
+}
+.imed-ov-kind__bar i {
+	display: block;
+	height: 100%;
+}
+.imed-ov-kind__bar .is-done {
+	background: var(--green-500);
+}
+.imed-ov-kind__bar .is-open {
+	background: var(--amber-400);
+}
+.imed-ov-kind__counts {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 18px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-ov-kind__counts > span.is-open::before,
+.imed-ov-kind__counts > span.is-done::before {
+	content: "";
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	margin-inline-end: 7px;
+	border-radius: 3px;
+	vertical-align: -1px;
+}
+.imed-ov-kind__counts > span.is-open::before {
+	background: var(--amber-400);
+}
+.imed-ov-kind__counts > span.is-done::before {
+	background: var(--green-500);
+}
+.imed-ov-kind__counts b {
+	margin-inline-start: 4px;
+	color: var(--heading-color);
+	font-weight: 700;
+}
+
+/* The next bookings: a date chip, the hall or service, the customer and the time. */
+.imed-ov-upcoming ul {
+	display: grid;
+	gap: 10px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-ov-upcoming li a {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	color: inherit;
+	text-decoration: none;
+}
+.imed-ov-upcoming li a:hover .imed-ov-upcoming__text b {
+	color: var(--imed-teal-700);
+}
+.imed-ov-date {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 52px;
+	height: 52px;
+	border: 1px solid var(--imed-border);
+	border-radius: 12px;
+	background: var(--subtle-fg);
+	line-height: 1.1;
+}
+.imed-ov-date b {
+	color: var(--heading-color);
+	font-size: var(--text-xl);
+	font-weight: 800;
+}
+.imed-ov-date small {
+	color: var(--text-muted);
+	font-size: var(--text-tiny);
+	font-weight: 600;
+	text-transform: uppercase;
+}
+.imed-ov-upcoming__text {
+	display: grid;
+	gap: 2px;
+	min-width: 0;
+}
+.imed-ov-upcoming__text b {
+	overflow: hidden;
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.imed-ov-upcoming__text small {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+.imed-ov-more {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 16px;
+	color: var(--imed-teal-700);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	text-decoration: none;
+}
+.imed-ov-more .icon {
+	stroke: currentColor;
+}
+[data-theme="dark"] .imed-ov-more,
+[data-theme="dark"] .imed-ov-upcoming li a:hover .imed-ov-upcoming__text b {
+	color: var(--imed-teal-300);
+}
+.imed-ov-empty {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	padding: 18px 4px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-ov-empty .icon {
+	stroke: currentColor;
+}
+
+/* The bookings' money: a ring (collected, pending, overdue) and its legend. */
+.imed-ov-collection {
+	--ov-paid: var(--green-500);
+	--ov-pending: var(--amber-400);
+	--ov-overdue: var(--red-500);
+	--ov-empty: var(--gray-200);
+}
+.imed-ov-collection__body {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	align-items: center;
+	gap: 28px;
+}
+.imed-ov-ring {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 156px;
+	height: 156px;
+	border-radius: 50%;
+}
+.imed-ov-ring > div {
+	display: grid;
+	place-items: center;
+	align-content: center;
+	width: 118px;
+	height: 118px;
+	border-radius: 50%;
+	background: var(--card-bg);
+	line-height: 1.15;
+}
+.imed-ov-ring b {
+	color: var(--heading-color);
+	font-size: var(--text-4xl);
+	font-weight: 800;
+}
+.imed-ov-ring small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+/* The reports: four tiles, each with its icon in its colour. */
+.imed-ov-reports__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	grid-auto-rows: 1fr;
+	gap: 12px;
+}
+.imed-ov-report {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 64px;
+	padding: 12px 14px;
+	border: 1px solid var(--imed-border);
+	border-radius: 14px;
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	line-height: 1.35;
+	text-decoration: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+.imed-ov-report:hover {
+	border-color: var(--tone-line);
+	box-shadow: 0 10px 22px -16px rgba(16, 34, 42, 0.45);
+	color: var(--heading-color);
+	text-decoration: none;
+	transform: translateY(-1px);
+}
+.imed-ov-report__icon {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 11px;
+	background: var(--tone-soft);
+	color: var(--tone-solid);
+}
+.imed-ov-report__icon .icon {
+	stroke: currentColor;
+	stroke-width: 2px;
+}
+
+/* Narrower screens */
+@media (max-width: 1199.98px) {
+	.imed-ov-kpis {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 991.98px) {
+	.imed-ov-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+@media (max-width: 575.98px) {
+	.imed-ov-kpis {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.imed-ov-card,
+	.imed-ov-kpi {
+		padding: 16px;
+	}
+	.imed-ov-collection__body {
+		grid-template-columns: minmax(0, 1fr);
+		justify-items: center;
+	}
+	.imed-ov-collection .imed-ov-legend {
+		width: 100%;
+	}
+	.imed-ov-reports__grid {
+		grid-template-columns: minmax(0, 1fr);
 	}
 }

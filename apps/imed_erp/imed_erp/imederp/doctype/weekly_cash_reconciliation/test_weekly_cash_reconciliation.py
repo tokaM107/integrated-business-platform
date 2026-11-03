@@ -15,7 +15,7 @@ from frappe.utils import add_days, getdate, today
 from imed_erp.imederp.doctype.treasury_close.test_treasury_close import (
 	ACCOUNTANT, AZARITA, AZARITA_BOX, HALLS, HALLS_BOX, SARA, close, move,
 )
-from imed_erp.imederp.testing import fund_cash_boxes
+from imed_erp.imederp.tests.testing import fund_cash_boxes
 
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Account", "Cost Center", "Journal Entry", "User", "Treasury Close", "Cash Discrepancy", "Weekly Cash Reconciliation", "Cash Handover"]
 

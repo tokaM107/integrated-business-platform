@@ -25,7 +25,7 @@ frappe.ui.form.on("Daily Counter Reading", {
 
 	refresh(frm) {
 		// A branch manager types the closing readings and sees the sheets; the money is the accountant's and the
-		// owner's (docs/SCREEN_DESIGN_STANDARD.md §2).
+		// owner's (docs/standards/screen-design-standard.md §2).
 		imed.screen.apply(frm, {
 			restrict: [{ unless: imed.screen.ROLE_GROUPS.accounting_manager, hide: ["money_section"] }],
 		});

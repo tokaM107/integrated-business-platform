@@ -1,0 +1,4 @@
+warehouse,item_code,item_name,count_uom,counted_qty,valuation_rate,cost_source,counted_by,count_date,notes
+خامات المواساة - MMG,A4-PAPER,ورق A4,رزمة,,,,,,الورق في المخزن المركزي
+إصدارات الأطباء — المواساة - MMG,,,,,,,,,نسخ إصدارات الأطباء
+التالف — المواساة - MMG,,,,,0,,,,التالف يُعدّ بقيمة صفر

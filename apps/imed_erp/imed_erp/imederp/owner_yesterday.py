@@ -25,7 +25,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import add_days, cint, flt, get_datetime, getdate, nowdate
+from frappe.utils import get_first_day, get_last_day, add_days, cint, flt, get_datetime, getdate, nowdate, now_datetime
 from frappe.utils.scheduler import is_scheduler_disabled
 
 from imed_erp.imederp.business_figures import (
@@ -40,13 +40,14 @@ from imed_erp.imederp.owner_figures import balance
 
 OWNER_ROLE = "Super Admin"
 STUDIO, HALL = "Studio Service", "Hall"
-OPEN_STATUSES = ("Tentative", "Confirmed with Deposit")
+OPEN_STATUSES = ("Tentative", "Confirmed", "Confirmed with Deposit")
 NOT_HELD = ("Cancelled", "No Show")
 PLATFORM_RECEIVABLE = "مستحقات على الأطباء — رسوم المنصة"
 # A daily job that has not run for this long is a warning.
 JOB_LATE_HOURS = 36
 # The app's daily jobs (hooks.py scheduler_events) by what they do; another one shows its module's name.
 JOB_NAMES = {
+	"imed_erp.imederp.xstudio.sync.run_scheduled": "XStudio sync",
 	"imed_erp.imederp.doctor_accrual.run_daily": "Doctors' share of sales",
 	"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily": "Monthly bills reminder",
 }
@@ -54,14 +55,16 @@ JOB_NAMES = {
 
 def check_owner():
 	if frappe.session.user != "Administrator" and OWNER_ROLE not in frappe.get_roles():
-		frappe.throw(_("Only the owner sees yesterday's figures."), frappe.PermissionError)
+		frappe.throw(_("Only the owner sees the day's figures."), frappe.PermissionError)
 
 
 def report_day(today=None):
-	"""Yesterday: the calendar day before `today` (the site's today by default), and its bounds as times."""
-	today = getdate(today or nowdate())
-	day = add_days(today, -1)
-	return frappe._dict(day=day, start=get_datetime(day), end=get_datetime(today))
+	"""The day the owner's band reports: today, as it stands now (the owner's wish of 29 Oct 2026: the live state,
+	not yesterday's closed day), from midnight up to this moment. With a date given (tests), the whole of that day."""
+	live = today is None
+	day = getdate(today or nowdate())
+	end = now_datetime() if live else get_datetime(add_days(day, 1))
+	return frappe._dict(day=day, start=get_datetime(day), end=end, as_of=end)
 
 
 @frappe.whitelist()
@@ -70,10 +73,15 @@ def get_yesterday():
 	period = report_day()
 	return {
 		"day": period.day,
+		"as_of": period.as_of,
 		"currency": frappe.get_cached_value("Company", company(), "default_currency"),
 		"money": money(period.day),
+		# Whether the ledger holds anything at all: the money cards read zero on a site with no accounting records
+		# yet, and that is not a result (decision of 1 Nov 2026).
+		"ledger_entries_all_time": cint(frappe.db.count("GL Entry", {"company": company(), "is_cancelled": 0})),
 		"printing": printing(period.day),
 		"bookings": bookings(period),
+		"halls": halls(),
 		"app": app_fees(period.day),
 		"systems": systems(),
 	}
@@ -87,8 +95,55 @@ def money(day):
 		rows.append(money_row(business.label, business.name, totals, business.name in shared))
 	if totals.get((NO_COST_CENTER, "Income")) or totals.get((NO_COST_CENTER, "Expense")):
 		rows.append(money_row(_("No business on the entry"), NO_COST_CENTER, totals))
+	rows.append(xstudio_money_row(day))
 	total = {key: flt(sum(row[key] for row in rows), 2) for key in ("revenue", "expenses", "net")}
-	return {"rows": rows, "total": total}
+	# How many ledger entries the day has at all: a table of zeros with none is "nothing posted yet", not "no money"
+	# (audit of 1 Nov 2026: a zero must be told from missing data).
+	entries = frappe.db.sql(
+		"""select count(*) from `tabGL Entry` gl join `tabAccount` acc on acc.name = gl.account
+		where gl.company = %s and gl.is_cancelled = 0 and gl.posting_date = %s and acc.root_type in ('Income', 'Expense')""",
+		(company(), day),
+	)[0][0]
+	return {"rows": rows, "total": total, "ledger_entries": cint(entries)}
+
+
+def xstudio_money_row(day):
+	"""The studio's money as XStudio reports it (owner's wish of 29 Oct 2026: the synced figures on the same table):
+	what XStudio bills for the day's bookings that hold their time (cancelled and no-show left out), with what XStudio
+	says was paid and what is still due on them. Read from the mirrored bookings, never posted to the ledger (owner's
+	rule of 25 Oct 2026); the row is marked so the accountant knows.
+
+	The value is XStudio's amount due, not its list price: a booking paid with a prepaid package carries its list
+	price with nothing due (the package was paid when it was bought), and a settled or discounted one owes less than
+	its price. Counting the price double-counted every package hour (audit of 1 Nov 2026: 29 such bookings, 14,600
+	of price with nothing due). The package hours are reported apart."""
+	row = frappe.db.sql(
+		"""select coalesce(sum(xstudio_amount_due), 0), coalesce(sum(xstudio_amount_paid), 0),
+			coalesce(sum(xstudio_price_total), 0), count(*),
+			coalesce(sum(case when xstudio_package_id is not null and xstudio_package_id != '' then 1 else 0 end), 0),
+			coalesce(sum(xstudio_hours_deducted), 0)
+		from `tabBooking`
+		where source_system = 'xstudio' and booking_date = %s and status not in ('Cancelled', 'No Show')""",
+		(day,),
+	)[0]
+	revenue, paid = flt(row[0], 2), flt(row[1], 2)
+	return {
+		"business": _("X Studio, as XStudio reports it (not posted)"),
+		"cost_center": None,
+		"revenue": revenue,
+		"expenses": 0,
+		"net": revenue,
+		"not_split": False,
+		"external": True,
+		"bookings": cint(row[3]),
+		"paid": paid,
+		# Still to collect: XStudio's amount due less what it says was paid (the same figure as the card "Due on
+		# Studio Bookings (XStudio)").
+		"due": flt(revenue - paid, 2),
+		"list_price": flt(row[2], 2),
+		"package_bookings": cint(row[4]),
+		"package_hours": flt(row[5], 2),
+	}
 
 
 def money_row(label, cost_center, totals, is_shared=False):
@@ -184,7 +239,7 @@ def bookings(period):
 	rows = frappe.get_all(
 		"Booking",
 		filters={"booking_date": period.day},
-		fields=["resource_type", "status", "hours"],
+		fields=["resource_type", "status", "hours", "source_system", "xstudio_amount_due", "xstudio_amount_paid"],
 	)
 	by_status = {}
 	for row in rows:
@@ -197,9 +252,66 @@ def bookings(period):
 		"studio": summary(by_status.get(STUDIO, {})),
 		"studio_hours_booked": flt(sum(flt(row.hours) for row in studio if row.status not in NOT_HELD), 2),
 		"studio_hours_delivered": flt(sum(flt(row.hours) for row in studio if row.status == "Completed"), 2),
-		# A day gone by and the booking neither completed nor cancelled: someone has to close it.
-		"still_open": len([row for row in rows if row.status in OPEN_STATUSES]),
+		# What XStudio says is due and paid on the studio's held bookings of the day: shown for monitoring, never
+		# posted here (no invoice, no payment entry; owner's rule). The studio's money is in XStudio.
+		# Due: XStudio's amount due less what it says was paid, the same figure as the month's card (audit of 1 Nov 2026).
+		"xstudio_due": flt(sum(flt(row.xstudio_amount_due) - flt(row.xstudio_amount_paid) for row in studio if row.source_system == "xstudio" and row.status not in NOT_HELD), 2),
+		"xstudio_paid": flt(sum(flt(row.xstudio_amount_paid) for row in studio if row.source_system == "xstudio" and row.status not in NOT_HELD), 2),
+		# A day gone by and the booking neither completed nor cancelled: someone has to close it, here. An imported
+		# one (XStudio) is closed there, and stays "pending" there as a rule: not counted.
+		"still_open": len([row for row in rows if row.status in OPEN_STATUSES and not row.source_system]),
 		"made_yesterday": made,
+		# What XStudio actually tracks (decision of 1 Nov 2026: never a zero for what is not recorded there). It is
+		# known from the mirror: has XStudio ever reported a completed booking, a payment, a no-show?
+		"xstudio_tracks": xstudio_tracks(),
+	}
+
+
+def xstudio_tracks():
+	"""Which operational facts XStudio has ever reported, from every mirrored booking: completion (its status
+	"completed"), payments (an amount paid above zero). A fact never reported is "not tracked" on the band, not 0."""
+	row = frappe.db.sql(
+		"""select count(*), sum(xstudio_status = 'completed'), sum(xstudio_amount_paid > 0)
+		from `tabBooking` where source_system = 'xstudio'"""
+	)[0]
+	return {"bookings": cint(row[0]), "completion": bool(cint(row[1])), "payments": bool(cint(row[2]))}
+
+
+def halls():
+	"""IMED's lecture halls (resource type Hall, never XStudio's rooms): today's bookings, the next seven days, the
+	halls active, which are occupied at this moment, this month's cancellations and booked hours, and the bookings
+	that need someone's action: past ones neither completed nor cancelled, and revenue shares not agreed."""
+	from imed_erp.imederp.doctype.booking.booking import HOLDING
+
+	now = now_datetime()
+	day = nowdate()
+	first, last = get_first_day(day), get_last_day(day)
+	held = ("status", "in", HOLDING)
+	hall = ("resource_type", "=", HALL)
+	today_rows = frappe.get_all("Booking", filters=[hall, ("booking_date", "=", day)], fields=["status", "hours", "resource"])
+	upcoming = frappe.db.count("Booking", filters=[hall, held, ("booking_date", ">", day), ("booking_date", "<=", add_days(day, 7))])
+	active = frappe.get_all("Booking Resource", filters={"resource_type": HALL, "disabled": 0}, pluck="name")
+	occupied = frappe.get_all("Booking", filters=[hall, held, ("starts_at", "<=", now), ("ends_at", ">", now)], pluck="resource", distinct=True)
+	month_rows = frappe.get_all("Booking", filters=[hall, ("booking_date", "between", (first, last))], fields=["status", "hours", "resource", "rental_model", "total_amount", "financial_review"])
+	past_open = frappe.db.count("Booking", filters=[hall, ("status", "in", OPEN_STATUSES), ("ends_at", "<", now), ("source_system", "is", "not set")])
+	review = frappe.db.count("Booking", filters=[hall, held, ("financial_review", "=", 1)])
+	return {
+		# No hall resource of type Hall: the halls are not set up yet, and the band says so instead of zeros
+		# (decision of 1 Nov 2026; XStudio's rooms are Studio Service resources, never counted here).
+		"configured": bool(active),
+		"today": summary({s: sum(1 for r in today_rows if r.status == s) for s in {r.status for r in today_rows}}),
+		"today_hours": flt(sum(flt(r.hours) for r in today_rows if r.status not in NOT_HELD), 2),
+		"upcoming": upcoming,
+		"active_halls": len(active),
+		"occupied_now": len([h for h in occupied if h in active]),
+		"month_held": len([r for r in month_rows if r.status not in NOT_HELD]),
+		"month_cancelled": len([r for r in month_rows if r.status == "Cancelled"]),
+		"month_hours": flt(sum(flt(r.hours) for r in month_rows if r.status not in NOT_HELD), 2),
+		# Operational figure, not accounting: the fixed rents of this month's held bookings, invoiced only on completion.
+		"month_fixed_rent": flt(sum(flt(r.total_amount) for r in month_rows if r.status not in NOT_HELD and r.rental_model == "Fixed Rent"), 2),
+		"month_revenue_share": len([r for r in month_rows if r.status not in NOT_HELD and r.rental_model == "Revenue Share"]),
+		"past_open": past_open,
+		"financial_review": review,
 	}
 
 
@@ -254,14 +366,35 @@ def system(name, state, detail="", last_success=None, last_status=None):
 
 
 def booking_import():
-	last = frappe.db.get_value("Booking", {"source": "Imported"}, "creation", order_by="creation desc")
-	# booking_import.py is written, but nothing runs it and it keeps no log of its runs (known-issues 17, 18).
-	return system(
-		_("Booking system import"),
-		"not_configured",
-		_("Nothing runs the import yet, and its runs are not logged."),
-		last_success=last,
+	"""The XStudio sync (imederp/xstudio/sync.py): its health from XStudio Settings and its last log."""
+	settings = frappe.get_cached_doc("XStudio Settings")
+	last = frappe.get_all(
+		"Integration Import Log", filters={"source_system": "xstudio"}, fields=["name", "status", "finished_at"], order_by="finished_at desc", limit=1
 	)
+	last_status = last[0].status if last else None
+	if not settings.enabled:
+		return system(_("XStudio bookings"), "not_configured", _("The sync is off (XStudio Settings)."), last_success=settings.last_success_at, last_status=last_status)
+	health = settings.health or "Never Run"
+	state = {"Healthy": "ok", "Degraded": "warning", "Down": "error"}.get(health, "unknown")
+	detail = settings.last_message or _("No run yet.")
+	if last and last[0].status != "Failed":
+		# Said in the reader's language, from the log's counts (the stored message is in the scheduler's).
+		log = frappe.db.get_value("Integration Import Log", last[0].name, ["rows_read", "inserted", "updated", "skipped", "changed", "failed"], as_dict=True)
+		detail = _("{0} read, {1} inserted, {2} updated, {3} unchanged, {4} to look at, {5} failed.").format(
+			log.rows_read, log.inserted, log.updated, log.skipped, log.changed, log.failed
+		)
+		# The owner reads why, not only how many (audit of 1 Nov 2026: one walk-in booking failed every run for a
+		# week, shown as "1 failed" with no name): the first reason the log kept, and how many notes it holds.
+		rows = frappe.get_all(
+			"Integration Import Log Error", filters={"parent": last[0].name}, fields=["external_id", "kind", "reason"], order_by="idx"
+		)
+		# A failure or a row to look at before a mere note.
+		first = next((r for r in rows if r.kind != "Note"), rows[0] if rows else None)
+		if first:
+			detail += " " + _("{0} note(s) in the log; the first: {1}: {2}").format(len(rows), first.external_id, (first.reason or "")[:140])
+	if health == "Down":
+		detail = _("XStudio could not be read {0} times in a row: {1}").format(settings.consecutive_failures, detail)
+	return system(_("XStudio bookings"), state, detail, last_success=settings.last_success_at, last_status=last_status)
 
 
 def file_imports():
@@ -295,14 +428,14 @@ def daily_jobs():
 	jobs = frappe.get_all(
 		"Scheduled Job Type",
 		filters={"method": ["like", "imed_erp.%"]},
-		fields=["name", "method", "stopped", "last_execution"],
+		fields=["name", "method", "stopped", "last_execution", "frequency"],
 	)
 	scheduler_off = is_scheduler_disabled()
 	result = []
 	for job in jobs:
-		label = _("Daily job: {0}").format(
-			_(JOB_NAMES.get(job.method) or job.method.rsplit(".", 2)[-2].replace("_", " "))
-		)
+		name = _(JOB_NAMES.get(job.method) or job.method.rsplit(".", 2)[-2].replace("_", " "))
+		# A job on a cron (the XStudio sync, every few minutes) is not a daily job (audit of 1 Nov 2026).
+		label = (_("Daily job: {0}") if job.frequency == "Daily" else _("Scheduled job: {0}")).format(name)
 		failure = frappe.get_all(
 			"Scheduled Job Log",
 			filters={"scheduled_job_type": job.name, "status": "Failed"},
@@ -316,8 +449,11 @@ def daily_jobs():
 			not job.last_execution
 			or (get_datetime() - get_datetime(job.last_execution)).total_seconds() > JOB_LATE_HOURS * 3600
 		)
-		if scheduler_off or job.stopped:
+		if scheduler_off:
 			state, detail = "error", _("The scheduler is off: the job does not run.")
+		elif job.stopped:
+			# Paused on purpose (Scheduled Job Type, Stopped): said as it is, not as a scheduler failure.
+			state, detail = "warning", _("The job is paused (Scheduled Job Type, Stopped): it does not run until it is resumed.")
 		elif failed_last:
 			state, detail = "error", _("The last run failed: {0}").format(last_line(failure.details))
 		elif late:

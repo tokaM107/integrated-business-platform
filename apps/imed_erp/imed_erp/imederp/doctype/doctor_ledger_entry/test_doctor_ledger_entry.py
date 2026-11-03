@@ -18,7 +18,7 @@ from frappe.utils import flt, today
 
 from imed_erp.imederp.doctype.book_edition.test_book_edition import make_agreement, make_doctor
 from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import get_balance
-from imed_erp.imederp.testing import fund_cash_boxes
+from imed_erp.imederp.tests.testing import fund_cash_boxes
 
 # Linked records already exist on the site or are made by the tests; without this list Frappe builds
 # ERPNext's "_Test ..." records and commits them to the site.

@@ -1,5 +1,5 @@
 # BA Plus's daily file (INT-05, APP-13): its courses and their students' subscriptions, by their ids in BA Plus,
-# into App Course and submitted App Subscription. The file's columns are in docs/IMPORT_DATA_STANDARD.md, part 3.
+# into App Course and submitted App Subscription. The file's columns are in docs/integrations/import-data-standard.md, part 3.
 #
 # Run (the file on the server, as the integration user or an accountant; commits at the end):
 #   bench --site frontend execute imed_erp.imederp.app_import.import_file --kwargs '{"path": "/path/app.csv"}'

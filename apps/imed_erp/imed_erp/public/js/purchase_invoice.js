@@ -3,7 +3,7 @@
 
 /*
  * Purchase Invoice — the screen design standard on the accountant's purchase of paper and materials
- * (LIB-07, ACC-12). See docs/SCREEN_DESIGN_STANDARD.md. Attached via hooks.py `doctype_js`.
+ * (LIB-07, ACC-12). See docs/standards/screen-design-standard.md. Attached via hooks.py `doctype_js`.
  *
  * The library buys directly: one invoice with Update Stock ticked receives the paper into the store and
  * records what is owed (setup/setup_buying.py). What stays on screen: supplier and date -> Update Stock
