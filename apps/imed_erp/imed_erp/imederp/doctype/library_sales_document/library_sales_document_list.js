@@ -65,13 +65,85 @@
 			.catch(() => listview.page.main.find(".imed-lib-band").remove());
 	}
 
-	// The library system stores the day only (its time is always 00:00): the day, with its weekday, in the user's
-	// language.
+	// The day with its weekday and, under it, the time the cashier saved the invoice (mappers.day_and_time). A
+	// document read before the time was sent stays at 00:00: its day alone.
 	function day(value) {
 		const d = frappe.datetime.str_to_obj(value);
 		if (!d || isNaN(d)) return esc(value);
 		const lang = frappe.boot.lang || "en";
-		return `<span class="imed-lib-day"><b>${esc(d.toLocaleDateString(lang, { day: "numeric", month: "short", year: "numeric" }))}</b><small>${esc(d.toLocaleDateString(lang, { weekday: "long" }))}</small></span>`;
+		const has_time = d.getHours() || d.getMinutes() || d.getSeconds();
+		const time = has_time ? `<i dir="ltr">${esc(d.toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" }))}</i>` : "";
+		return `<span class="imed-lib-day"><b>${esc(d.toLocaleDateString(lang, { day: "numeric", month: "short", year: "numeric" }))}</b><small>${esc(d.toLocaleDateString(lang, { weekday: "long" }))}${time}</small></span>`;
+	}
+
+	// Quick filters inside the filter card: a period and a kind, one click each, the active one filled.
+	const DOCTYPE = "Library Sales Document";
+	const PERIODS = [
+		["", "layers", __("All")],
+		["today", "sun", __("Today")],
+		["yesterday", "history", __("Yesterday")],
+		["this week", "calendar-range", __("This Week")],
+		["this month", "calendar-days", __("This Month")],
+	];
+	const KINDS = [
+		["", "layers", __("All kinds")],
+		["sales", "shopping-cart", __("Sales")],
+		["returns", "undo-2", __("Returns")],
+		["cancelled", "ban", __("Cancelled")],
+	];
+	const SALES = ["Retail Sale", "Wholesale Sale"];
+	const RETURNS = ["Retail Return", "Wholesale Return"];
+
+	function current(listview) {
+		const f = listview.filter_area.get();
+		const period = (f.find((x) => x[1] === "reg_date" && x[2] === "Timespan") || [])[3] || "";
+		const kind_f = f.find((x) => x[1] === "document_kind");
+		const kind = f.some((x) => x[1] === "is_cancelled" && String(x[3]) === "1")
+			? "cancelled"
+			: kind_f && JSON.stringify(kind_f[3]) === JSON.stringify(SALES)
+			? "sales"
+			: kind_f && JSON.stringify(kind_f[3]) === JSON.stringify(RETURNS)
+			? "returns"
+			: "";
+		return { period, kind };
+	}
+
+	function chips(group, items, active) {
+		return `<div class="imed-lib-quick__group" role="group" data-group="${group}">
+				${items
+					.map(([value, icon, label]) => `<button type="button" class="imed-lib-chip ${value === active ? "is-active" : ""}" data-value="${esc(value)}">${frappe.utils.icon(icon, "xs")}<span>${esc(label)}</span></button>`)
+					.join("")}
+			</div>`;
+	}
+
+	function render_quick(listview) {
+		const form = listview.page.page_form;
+		if (!form || !form.length) return;
+		const now = current(listview);
+		const html = `<div class="imed-lib-quick">
+				<span class="imed-lib-quick__title">${frappe.utils.icon("sliders-horizontal", "sm")}${esc(__("Show"))}</span>
+				${chips("period", PERIODS, now.period)}
+				<span class="imed-lib-quick__sep"></span>
+				${chips("kind", KINDS, now.kind)}
+			</div>`;
+		const $old = form.find(".imed-lib-quick");
+		if ($old.length) $old.replaceWith(html);
+		else form.prepend(html);
+	}
+
+	async function apply(listview, group, value) {
+		const area = listview.filter_area;
+		if (group === "period") {
+			await area.remove("reg_date");
+			if (value) await area.add([[DOCTYPE, "reg_date", "Timespan", value]]);
+		} else {
+			await area.remove("document_kind");
+			await area.remove("is_cancelled");
+			if (value === "sales") await area.add([[DOCTYPE, "document_kind", "in", SALES], [DOCTYPE, "is_cancelled", "=", 0]]);
+			if (value === "returns") await area.add([[DOCTYPE, "document_kind", "in", RETURNS], [DOCTYPE, "is_cancelled", "=", 0]]);
+			if (value === "cancelled") await area.add([[DOCTYPE, "is_cancelled", "=", 1]]);
+		}
+		render_quick(listview);
 	}
 
 	frappe.listview_settings["Library Sales Document"] = {
@@ -106,6 +178,11 @@
 		},
 		onload(listview) {
 			load(listview, true);
+			render_quick(listview);
+			listview.page.page_form.on("click", ".imed-lib-chip", function () {
+				const $chip = $(this);
+				apply(listview, $chip.closest("[data-group]").data("group"), String($chip.data("value") || ""));
+			});
 			// The heartbeat's "minutes ago" ages while the page stays open: fetched again every minute while shown.
 			clearInterval(listview.__imed_lib_timer);
 			listview.__imed_lib_timer = setInterval(() => {
@@ -114,6 +191,8 @@
 		},
 		refresh(listview) {
 			load(listview);
+			// Filters also change from the filter button or a column click: the chips follow them.
+			render_quick(listview);
 		},
 	};
 })();

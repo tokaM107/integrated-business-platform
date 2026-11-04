@@ -3906,3 +3906,178 @@ a.imed-ov-lib:hover {
 		transition: none;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 32. The library documents list: a green header, quick filters       */
+/* ------------------------------------------------------------------ */
+/* The owner, 4 Nov 2026: the table's head green and nicer, each invoice's time shown, the filter card more
+   inventive. This page only. */
+
+/* The table's head: the brand's green, white words */
+[data-page-route="List/Library Sales Document/List"] .list-row-head {
+	border: 0 !important;
+	border-radius: var(--imed-card-radius, 18px) var(--imed-card-radius, 18px) 0 0;
+	background: linear-gradient(90deg, var(--imed-teal-700), var(--imed-teal-500)) !important;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-row,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .level-left,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .level-right {
+	background: transparent !important;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-row {
+	min-height: 50px;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-row-col,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-subject,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-count,
+[data-page-route="List/Library Sales Document/List"] .list-row-head span,
+[data-page-route="List/Library Sales Document/List"] .list-row-head a {
+	color: #ffffff !important;
+	font-size: var(--text-sm);
+	font-weight: 700;
+	letter-spacing: 0;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-count {
+	opacity: 0.85;
+	font-weight: 600;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head .icon,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .like-action {
+	color: #ffffff !important;
+	stroke: currentColor;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head input[type="checkbox"] {
+	border-color: rgba(255, 255, 255, 0.7);
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-head .like-action,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-liked-by-me {
+	display: none !important;
+}
+
+/* The time under the day */
+.imed-lib-day small i {
+	margin-inline-start: 6px;
+	padding: 0 6px;
+	border-radius: 6px;
+	background: color-mix(in srgb, var(--imed-teal-500) 12%, transparent);
+	color: var(--imed-teal-700);
+	font-style: normal;
+	font-weight: 700;
+}
+[data-theme="dark"] .imed-lib-day small i {
+	color: var(--imed-teal-200);
+}
+
+/* The filter card: the quick filters on their own line at the top, then the boxes */
+[data-page-route="List/Library Sales Document/List"] .page-form {
+	row-gap: 12px;
+	padding: 14px 16px !important;
+}
+.imed-lib-quick {
+	display: flex;
+	flex: 0 0 100%;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	order: -1;
+	padding-bottom: 12px;
+	border-bottom: 1px dashed var(--imed-border-strong);
+}
+.imed-lib-quick__title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 800;
+}
+.imed-lib-quick__title .icon {
+	color: var(--imed-teal-600);
+}
+.imed-lib-quick__group {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	padding: 4px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--imed-teal-500) 7%, var(--card-bg));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--imed-teal-500) 16%, transparent);
+}
+.imed-lib-quick__sep {
+	width: 1px;
+	height: 26px;
+	background: var(--imed-border-strong);
+}
+.imed-lib-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 30px;
+	padding: 0 13px;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--text-color);
+	font-size: var(--text-sm);
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease;
+}
+.imed-lib-chip .icon {
+	width: 14px;
+	height: 14px;
+	color: var(--imed-teal-600);
+	stroke: currentColor;
+}
+.imed-lib-chip:hover {
+	background: color-mix(in srgb, var(--imed-teal-500) 14%, var(--card-bg));
+}
+.imed-lib-chip:focus-visible {
+	outline: none;
+	box-shadow: var(--imed-ring);
+}
+.imed-lib-chip.is-active {
+	background: linear-gradient(135deg, var(--imed-teal-600), var(--imed-teal-500));
+	color: #ffffff;
+	box-shadow: 0 6px 14px -8px var(--imed-teal-600);
+}
+.imed-lib-chip.is-active .icon {
+	color: #ffffff;
+}
+[data-theme="dark"] .imed-lib-chip .icon {
+	color: var(--imed-teal-300);
+}
+[data-theme="dark"] .imed-lib-chip.is-active .icon {
+	color: #ffffff;
+}
+
+/* The boxes: soft, rounded, tinted; the internal ID box hidden (the invoice's own number is searched) */
+[data-page-route="List/Library Sales Document/List"] .page-form .frappe-control[data-fieldname="name"] {
+	display: none !important;
+}
+[data-page-route="List/Library Sales Document/List"] .page-form .form-control {
+	height: 36px;
+	border: 1px solid color-mix(in srgb, var(--imed-teal-500) 18%, var(--imed-border)) !important;
+	border-radius: 12px !important;
+	background: color-mix(in srgb, var(--imed-teal-500) 5%, var(--card-bg)) !important;
+	transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+[data-page-route="List/Library Sales Document/List"] .page-form .form-control:hover {
+	border-color: var(--imed-border-strong) !important;
+}
+[data-page-route="List/Library Sales Document/List"] .page-form .form-control:focus {
+	border-color: var(--imed-teal-400) !important;
+	background: var(--card-bg) !important;
+	box-shadow: var(--imed-ring) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+	.imed-lib-chip,
+	[data-page-route="List/Library Sales Document/List"] .page-form .form-control {
+		transition: none;
+	}
+}
+@media (max-width: 575.98px) {
+	.imed-lib-quick__sep {
+		display: none;
+	}
+}

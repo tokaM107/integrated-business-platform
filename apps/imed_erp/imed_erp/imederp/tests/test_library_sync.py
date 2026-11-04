@@ -80,6 +80,15 @@ class TestLibraryMappers(IntegrationTestCase):
 		self.assertEqual(fields["import_key"], "tanmya:azarita:stock:90001")
 		self.assertEqual(notes, [])
 
+	def test_the_invoice_keeps_the_librarys_day_at_the_time_the_cashier_saved_it(self):
+		"""TxtRegDateRefStock is the day at 00:00; TxtOrderTime the clock of the save. Without it, the day alone."""
+		document = sale(when="2026-11-03 00:00:00")
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
+		document["TxtOrderTime"] = "2026-11-03T12:14:20.473000"
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 12:14:20")
+		document["TxtOrderTime"] = "not a time"
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
+
 	def test_a_held_and_a_cancelled_document_are_not_final(self):
 		held, _ = mappers.map_document("stock", sale(status="1"), settings())
 		cancelled, _ = mappers.map_document("stock", sale(status="3"), settings())
