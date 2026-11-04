@@ -2186,3 +2186,19 @@ Last update {0},آخر تحديث {0}
 "Last update {0}: is the connector window open on the library PC?","آخر تحديث {0}: هل نافذة الربط مفتوحة على جهاز المكتبة؟"
 Not issued yet,لم يُصدر بعد
 Library System Invoices,فواتير نظام المكتبة
+This screen is the library's.,الشاشة دي بتاعة المكتبة.
+This account is not set to one library and one store. Ask the owner.,الحساب ده مش متظبط على مكتبة واحدة ومخزن واحد. كلّم صاحب الشغل.
+Not Set Up,مش متظبط
+{0} is not one of the library's supplies.,{0} مش من خامات المكتبة.
+How many finished?,خلص كام؟
+The store holds {0} of {1}. Enter what you hold first (رصيد المخزون).,المخزن مسجل فيه {0} من {1} بس. سجّل اللي عندك الأول (رصيد المخزون).
+Not Enough,مش كفاية
+"Finished in the library, entered by {0}.",خلص في المكتبة، سجّله {0}.
+A quantity cannot be negative.,الكمية ماينفعش تبقى بالسالب.
+"{0} has no price in the system yet. Ask the owner to enter it, then count again.",{0} لسه ملوش سعر في السيستم. اطلب من صاحب الشغل يدخّله، وبعدين سجّل تاني.
+Enter at least one quantity.,اكتب كمية واحدة على الأقل.
+How many do you need?,محتاجين كام؟
+The counters were recorded from another screen. Open them again.,العدادات اتسجلت من شاشة تانية. افتحها تاني.
+Today's counters are closed.,عدادات النهارده اتقفلت.
+Type the number {0} shows.,اكتب الرقم اللي ظاهر على عداد {0}.
+Reading Missing,ناقص قراية

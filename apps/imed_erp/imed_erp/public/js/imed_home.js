@@ -212,6 +212,11 @@
 	// (Frappe sends each user only the links they may read). A user with nothing in that sidebar keeps the home
 	// screen, rather than land nowhere.
 	function landing_route() {
+		// A library's shared account lands on its own screen, مكتبتي (owner, 4 Nov 2026), and nothing else.
+		const roles = frappe.user_roles || [];
+		if (roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin")) {
+			return "/desk/imed-library";
+		}
 		if ((frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard")) {
 			return frappe.utils.generate_route({ type: "workspace", name: "Owner Dashboard", public: 1 });
 		}
