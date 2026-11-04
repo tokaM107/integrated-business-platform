@@ -230,6 +230,33 @@ class TestLibraryReceive(IntegrationTestCase):
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, list_summary)
 
+	def test_the_owner_sees_each_librarys_sales_today_apart(self):
+		"""The Owner Dashboard's first row (owner_overview.libraries): Azarita and Mawasah apart, by the cost center
+		the branch maps to; today's issued sales and returns only. Measured as a change, whatever the site holds."""
+		from imed_erp.imederp import owner_overview
+
+		today = frappe.utils.nowdate()
+		period = owner_overview.periods(today)
+		returned = [{"TxtIdRefStockSub": "610001", "TxtProductCodeRefStockSub": "P-1", "TxtProductQtyInRefStockSub": "1", "TxtProductTotalValueUpRefStockSub": "40"}]
+
+		def by_name():
+			return {r["name"]: r for r in owner_overview.libraries(period)["rows"]}
+
+		before = by_name()
+		sync.import_batch(
+			self.batch(
+				sale("92001", branch="1", when=f"{today} 09:00:00"),
+				sale("92002", branch="2", when=f"{today} 09:30:00"),
+				sale("92003", branch="2", operation="21", lines=returned, when=f"{today} 10:00:00"),
+				sale("92004", branch="2", status="1", when=f"{today} 10:30:00"),
+			)
+		)
+		after = by_name()
+		change = {name: (after[name]["sales_count"] - before[name]["sales_count"], flt(after[name]["sales_value"] - before[name]["sales_value"], 2), flt(after[name]["returns_value"] - before[name]["returns_value"], 2)) for name in after}
+		self.assertEqual(change, {"مكتبة الأزاريطة": (1, 150.0, 0.0), "مكتبة المواساة": (1, 150.0, 40.0)})
+		self.assertTrue(after["مكتبة الأزاريطة"]["linked"] and after["مكتبة المواساة"]["linked"])
+		self.assertEqual(list(after), ["مكتبة الأزاريطة", "مكتبة المواساة"])
+
 	def test_the_status_report_shows_the_source(self):
 		sync.import_batch(self.batch(sale()))
 		from imed_erp.imederp.report.integration_status.integration_status import get_data

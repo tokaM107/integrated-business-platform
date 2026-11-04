@@ -12,6 +12,9 @@
 #   upcoming    the next bookings from today, a week ahead, not cancelled.
 #   collection  this month's bookings (not cancelled, not a no-show): their total, what was paid and what is still
 #               owed, and of that what is owed on bookings whose day has passed.
+#   libraries   today's sales of each library (Azarita, Mawasah) as its own system sent them (Library Sales
+#               Document, issued and not cancelled), its returns, and when its connector last delivered; a library
+#               whose system is not linked yet says so (the owner, 4 Nov 2026: the first thing on the page).
 #
 # The owner's alone, as the day's figures (owner_yesterday.check_owner).
 
@@ -43,6 +46,7 @@ def overview(today=None):
 		"pipeline": pipeline(period),
 		"upcoming": upcoming(period),
 		"collection": collection(period),
+		"libraries": libraries(period),
 	}
 
 
@@ -149,3 +153,49 @@ def collection(period):
 		# Still owed on bookings whose day has passed: part of the outstanding.
 		"overdue": flt(overdue.amount, 2),
 	}
+
+
+# The libraries, by their cost center's name (as library_revenue.py and treasuries.py name them), Azarita first.
+LIBRARIES = ("مكتبة الأزاريطة", "مكتبة المواساة")
+
+
+def libraries(period):
+	from imed_erp.imederp.library_sync.contract import RETURN_KINDS, SALES_KINDS
+
+	centers = {
+		r.cost_center_name: r.name
+		for r in frappe.get_all("Cost Center", filters={"company": company(), "cost_center_name": ["in", LIBRARIES]}, fields=["name", "cost_center_name"])
+	}
+	day = {
+		"reg_date": ["between", [f"{period.today} 00:00:00", f"{period.today} 23:59:59"]],
+		"is_final": 1,
+		"is_cancelled": 0,
+		"document_kind": ["in", SALES_KINDS + RETURN_KINDS],
+	}
+	sums = frappe.get_all(
+		"Library Sales Document",
+		filters={**day, "cost_center": ["in", list(centers.values()) or [""]]},
+		fields=["cost_center", "document_kind", {"COUNT": "*", "as": "n"}, {"SUM": "total", "as": "value"}],
+		group_by="cost_center, document_kind",
+	)
+	heard = {
+		r.cost_center: r.at
+		for r in frappe.get_all(
+			"Library Sales Document",
+			filters={"cost_center": ["in", list(centers.values()) or [""]]},
+			fields=["cost_center", {"MAX": "last_synced_at", "as": "at"}],
+			group_by="cost_center",
+		)
+	}
+	rows = []
+	for name in LIBRARIES:
+		center = centers.get(name)
+		row = {"name": name, "cost_center": center, "linked": bool(center and heard.get(center)), "last_synced_at": heard.get(center), "sales_count": 0, "sales_value": 0.0, "returns_count": 0, "returns_value": 0.0}
+		for s in sums:
+			if s.cost_center == center:
+				side = "sales" if s.document_kind in SALES_KINDS else "returns"
+				row[f"{side}_count"] += s.n
+				row[f"{side}_value"] = flt(row[f"{side}_value"] + flt(s.value), 2)
+		row["net"] = flt(row["sales_value"] - row["returns_value"], 2)
+		rows.append(row)
+	return {"rows": rows, "total": flt(sum(r["net"] for r in rows), 2)}
