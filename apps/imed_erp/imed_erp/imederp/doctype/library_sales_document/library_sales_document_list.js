@@ -65,9 +65,28 @@
 			.catch(() => listview.page.main.find(".imed-lib-band").remove());
 	}
 
+	// The library system stores the day only (its time is always 00:00): the day, with its weekday, in the user's
+	// language.
+	function day(value) {
+		const d = frappe.datetime.str_to_obj(value);
+		if (!d || isNaN(d)) return esc(value);
+		const lang = frappe.boot.lang || "en";
+		return `<span class="imed-lib-day"><b>${esc(d.toLocaleDateString(lang, { day: "numeric", month: "short", year: "numeric" }))}</b><small>${esc(d.toLocaleDateString(lang, { weekday: "long" }))}</small></span>`;
+	}
+
 	frappe.listview_settings["Library Sales Document"] = {
-		add_fields: ["document_kind", "is_final", "is_cancelled", "status_name", "money_direction", "total"],
+		add_fields: ["document_kind", "is_final", "is_cancelled", "status_name", "money_direction", "total", "cost_center"],
+		// The internal name (LIB-2026-...) says nothing here: the library's own number is the title.
+		hide_name_column: true,
 		formatters: {
+			reg_date(value) {
+				return value ? day(value) : "";
+			},
+			// The cost center without the company's abbreviation: "مكتبة الأزاريطة".
+			cost_center(value) {
+				if (!value) return `<span class="text-muted">—</span>`;
+				return `<span class="imed-lib-place">${frappe.utils.icon("store", "xs")}${esc(value.replace(/\s+-\s+[^-]+$/, ""))}</span>`;
+			},
 			// The list's own Status column, as a coloured pill: issued green, cancelled red, anything else (under
 			// issue, held) orange.
 			status_name(value, df, doc) {

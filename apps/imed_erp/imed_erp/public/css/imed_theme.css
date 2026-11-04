@@ -3793,3 +3793,116 @@ a.imed-ov-lib:hover {
 		transform: none;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 31. The library documents list: the table itself                    */
+/* ------------------------------------------------------------------ */
+/* This page only (its route), so no other list changes. The owner, 4 Nov 2026: "the table is not nice". Roomier
+   rows that light up on hover, the library's number in the brand's colour, the day with its weekday, the amount
+   larger and at the row's end, a return's row tinted red, a cancelled one faded; the likes, comments and "last
+   changed" column hidden (a mirror is not discussed here). Columns are set in the doctype (§29 for the pills). */
+[data-page-route="List/Library Sales Document/List"] {
+	--imed-lib-row-pad: 14px;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-activity,
+[data-page-route="List/Library Sales Document/List"] .list-row .comment-count,
+[data-page-route="List/Library Sales Document/List"] .list-row .like-action {
+	display: none !important;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-container .list-row {
+	min-height: 62px;
+	padding-block: var(--imed-lib-row-pad);
+	transition: background-color 0.12s ease;
+}
+/* The tints sit on the whole row (its container), so no part of it stays white. */
+[data-page-route="List/Library Sales Document/List"] .list-row-container .list-row,
+[data-page-route="List/Library Sales Document/List"] .list-row-container .list-row .level-right {
+	background: transparent !important;
+}
+/* One line between rows: the container's (§7); the row's own would double it. */
+[data-page-route="List/Library Sales Document/List"] .list-row-container .list-row {
+	border-bottom: 0 !important;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-container:hover {
+	background: color-mix(in srgb, var(--imed-teal-500) 6%, var(--card-bg));
+}
+/* The library's own number: bold, in the brand's colour, with a "#" */
+[data-page-route="List/Library Sales Document/List"] .list-row .list-subject a {
+	color: var(--imed-teal-700);
+	font-size: var(--text-base);
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row .list-subject a::before {
+	content: "#";
+	margin-inline-end: 2px;
+	color: var(--imed-teal-400);
+	font-weight: 600;
+}
+/* The header: small, muted, a little spaced */
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-row-col,
+[data-page-route="List/Library Sales Document/List"] .list-row-head .list-subject {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+/* Wider columns for the kind and the amount; the amount at the row's end and larger */
+[data-page-route="List/Library Sales Document/List"] .list-row-col[data-fieldname="document_kind"] {
+	flex-basis: 130px !important;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-col[data-fieldname="reg_date"] {
+	flex-basis: 140px !important;
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-col[data-fieldname="total"] {
+	flex-basis: 130px !important;
+	justify-content: flex-end;
+	text-align: end !important;
+}
+[data-page-route="List/Library Sales Document/List"] .imed-lib-amount {
+	font-size: var(--text-base);
+}
+/* The day over its weekday */
+.imed-lib-day {
+	display: inline-flex;
+	flex-direction: column;
+	line-height: 1.25;
+}
+.imed-lib-day b {
+	color: var(--heading-color);
+	font-weight: 600;
+}
+.imed-lib-day small {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+/* The library, with a small shop icon */
+.imed-lib-place {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-color);
+	font-weight: 600;
+}
+.imed-lib-place .icon {
+	color: var(--imed-teal-500);
+}
+/* A return's row tinted red with a red edge; a cancelled one faded */
+[data-page-route="List/Library Sales Document/List"] .list-row-container:has(.imed-lib-amount.is-out) {
+	background: color-mix(in srgb, var(--red-500) 5%, var(--card-bg));
+	box-shadow: inset -3px 0 0 var(--red-400);
+}
+[dir="ltr"] [data-page-route="List/Library Sales Document/List"] .list-row-container:has(.imed-lib-amount.is-out) {
+	box-shadow: inset 3px 0 0 var(--red-400);
+}
+[data-page-route="List/Library Sales Document/List"] .list-row-container:has(.imed-lib-amount.is-void) .list-row {
+	opacity: 0.6;
+}
+[data-theme="dark"] [data-page-route="List/Library Sales Document/List"] .list-row .list-subject a {
+	color: var(--imed-teal-300);
+}
+@media (prefers-reduced-motion: reduce) {
+	[data-page-route="List/Library Sales Document/List"] .list-row-container .list-row {
+		transition: none;
+	}
+}
