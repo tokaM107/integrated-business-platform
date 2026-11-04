@@ -16,7 +16,7 @@ from imed_erp.assistant import service
 from imed_erp.assistant.core.context import RequestContext, build_context
 from imed_erp.assistant.core.exceptions import ModelUnavailable
 from imed_erp.assistant.memory.chat_memory import ChatStore
-from imed_erp.assistant.providers import get_provider
+from imed_erp.assistant.providers import get_provider, voice_provider
 
 # Requirements section 3.2 / open question 22: the AI assistant is for the owner only (Super Admin).
 # System Manager is included so the developers can test it; branch managers, the accountant and HR do not see it.
@@ -43,7 +43,7 @@ def get_status():
 	if not can_use():
 		return {"allowed": False}
 	provider = get_provider()
-	return {"allowed": True, "provider": provider.name, "connected": provider.connected, "voice": provider.supports_voice}
+	return {"allowed": True, "provider": provider.name, "connected": provider.connected, "voice": voice_provider(provider).supports_voice}
 
 
 def clean_messages(messages) -> list[dict]:
@@ -114,9 +114,11 @@ def delete_chat(chat):
 def unavailable_text(error: ModelUnavailable, context: RequestContext) -> str:
 	ar = context.is_arabic
 	if error.reason == "quota":
-		return "كوتة المفتاح خلصت مؤقتًا (حد جوجل). جرّب بعد دقيقة، أو ارفع الكوتة من Google AI Studio." if ar else "The model's quota for this key is used up for now. Try again in a minute, or raise the key's quota."
+		return "حد الاستخدام بتاع مفتاح الموديل خلص مؤقتًا. جرّب بعد دقيقة، أو زوّد الحد من حساب المفتاح." if ar else "The model key's usage limit is reached for now. Try again in a minute, or raise the key's limit."
 	if error.reason == "overload":
-		return "الموديل مزدحم عند جوجل دلوقتي. جرّب بعد شوية." if ar else "The model is overloaded at its provider right now. Try again in a moment."
+		return "الموديل مزدحم دلوقتي. جرّب بعد شوية." if ar else "The model is overloaded right now. Try again in a moment."
+	if error.reason == "refused":
+		return "الموديل رفض يجاوب على السؤال ده. جرّب تصيغه بشكل تاني." if ar else "The model declined to answer this one. Try asking it another way."
 	return "المساعد غير مربوط بنموذج بعد." if ar else "The assistant is not connected to a model yet."
 
 
@@ -138,7 +140,7 @@ def transcribe(audio=None, audio_type=None):
 	"""A recorded question as text, put in the message box for the user to read, correct and send (2 Nov 2026: the
 	voice went straight to the model, unseen). Returns {"text": str}, or {"text": "", "message": why}."""
 	check_access()
-	provider = get_provider()
+	provider = voice_provider(get_provider())
 	context = build_context()
 	data = decode_audio(audio, audio_type)
 	try:
@@ -162,7 +164,7 @@ def speak(text=None):
 	words = speakable(text)
 	if not words:
 		frappe.throw(_("Nothing to read."))
-	provider = get_provider()
+	provider = voice_provider(get_provider())
 	context = build_context()
 	try:
 		spoken = provider.speak(words, context)

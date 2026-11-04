@@ -27,6 +27,13 @@ TRANSCRIBE = (
 )
 
 
+def gemini_key() -> str:
+	"""Site config imed_assistant_gemini_key, else GEMINI_API_KEY / GOOGLE_API_KEY in the environment, else
+	imed_assistant_api_key unless that is an Anthropic key."""
+	key = AssistantProvider.secret("imed_assistant_gemini_key", ("GEMINI_API_KEY", "GOOGLE_API_KEY"), ("",))
+	return "" if key.startswith("sk-ant-") else key
+
+
 def as_wav(pcm: bytes, rate: int = 24000) -> bytes:
 	"""16-bit mono PCM (what the speech model sends as audio/L16) with a RIFF header, so a browser plays it."""
 	return b"RIFF" + struct.pack("<I", 36 + len(pcm)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, rate, rate * 2, 2, 16) + b"data" + struct.pack("<I", len(pcm)) + pcm
@@ -44,7 +51,7 @@ class GeminiProvider(AssistantProvider):
 	supports_voice = True
 
 	def __init__(self):
-		self.key = self.api_key()
+		self.key = gemini_key()
 		self.model = self.model_setting(DEFAULT_MODEL)
 		self.connected = bool(self.key)
 		self._client = None

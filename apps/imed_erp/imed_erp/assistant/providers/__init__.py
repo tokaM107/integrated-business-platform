@@ -20,10 +20,33 @@ LEGACY = {
 }
 
 
+def setting() -> str:
+	"""Which provider answers. IMED_ASSISTANT_PROVIDER in the environment decides when set; otherwise Claude whenever
+	an Anthropic key is there (owner, 2 Nov 2026: "use it instead of Gemini"), else the site config's
+	imed_assistant_provider, else Gemini when a Gemini key is there, else the offline placeholder."""
+	import os
+
+	from imed_erp.assistant.providers.claude import anthropic_key
+	from imed_erp.assistant.providers.gemini import gemini_key
+
+	chosen = os.environ.get("IMED_ASSISTANT_PROVIDER") or ("claude" if anthropic_key() else frappe.conf.get("imed_assistant_provider"))
+	if not chosen:
+		chosen = "gemini" if gemini_key() else "offline"
+	return LEGACY.get(chosen, chosen)
+
+
 def get_provider() -> AssistantProvider:
-	setting = frappe.conf.get("imed_assistant_provider") or "offline"
-	setting = LEGACY.get(setting, setting)
-	return frappe.get_attr(BUILT_IN.get(setting, setting))()
+	chosen = setting()
+	return frappe.get_attr(BUILT_IN.get(chosen, chosen))()
 
 
-__all__ = ["AssistantProvider", "OfflineProvider", "get_provider"]
+def voice_provider(provider: AssistantProvider) -> AssistantProvider:
+	"""Who hears and speaks: the answering provider if it can, else Gemini when its key is set (Claude has no voice)."""
+	if provider.supports_voice:
+		return provider
+	from imed_erp.assistant.providers.gemini import GeminiProvider, gemini_key
+
+	return GeminiProvider() if gemini_key() else provider
+
+
+__all__ = ["AssistantProvider", "OfflineProvider", "get_provider", "voice_provider"]

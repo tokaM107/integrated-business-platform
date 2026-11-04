@@ -107,9 +107,16 @@ class IntegrationTestAssistantEndpoints(AssistantCase):
 			self.assertEqual(r["reply"], api.unavailable_text(ModelUnavailable(reason), build_context()))
 
 	def test_a_site_configured_before_the_reorganisation_keeps_working(self):
-		for legacy, expected in (("imed_erp.assistant.gemini.GeminiProvider", "gemini"), ("imed_erp.assistant.claude.ClaudeProvider", "claude"), (None, "offline"), ("gemini", "gemini")):
-			with patch.dict(frappe.local.conf, {"imed_assistant_provider": legacy}):
+		import os
+
+		# No key in the environment (an Anthropic key there would make Claude answer whatever the site config says).
+		clean = {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "", "GOOGLE_API_KEY": "", "IMED_ASSISTANT_PROVIDER": ""}
+		for legacy, expected in (("imed_erp.assistant.gemini.GeminiProvider", "gemini"), ("imed_erp.assistant.claude.ClaudeProvider", "claude"), ("gemini", "gemini")):
+			with patch.dict(frappe.local.conf, {"imed_assistant_provider": legacy}), patch.dict(os.environ, clean):
 				self.assertEqual(get_provider().name, expected)
+		# Nothing configured and no key anywhere: the offline placeholder.
+		with patch.dict(frappe.local.conf, {"imed_assistant_provider": None, "imed_assistant_api_key": None, "imed_assistant_gemini_key": None, "imed_assistant_anthropic_key": None}), patch.dict(os.environ, clean):
+			self.assertEqual(get_provider().name, "offline")
 
 
 # ---------------------------------------------------------------- registry and extensibility
@@ -593,7 +600,7 @@ class IntegrationTestAssistantVoice(AssistantCase):
 
 	def test_dictation_says_why_when_it_cannot(self):
 		frappe.set_user(OWNER)
-		with patch.object(api, "get_provider", return_value=FakeModel()):  # a model with no ears
+		with patch.object(api, "get_provider", return_value=FakeModel()), patch.object(api, "voice_provider", side_effect=lambda p: p):  # no ears
 			self.assertEqual(api.transcribe(audio=self.RECORDING, audio_type="audio/webm")["text"], "")
 		self.assertRaises(frappe.ValidationError, api.transcribe, audio=self.RECORDING, audio_type="video/mp4")
 
@@ -605,8 +612,8 @@ class IntegrationTestAssistantVoice(AssistantCase):
 		self.assertEqual(result["mime"], "audio/wav")
 		self.assertEqual(__import__("base64").b64decode(result["audio"]), model.audio[0])
 		self.assertEqual(model.spoken, ["عندنا ٣ حجوزات في الاستوديو"])
-		# No voice on the server: the browser reads it.
-		with patch.object(api, "get_provider", return_value=FakeModel()):
+		# No voice on the server: the browser reads it (and nothing reaches a real model from a test).
+		with patch.object(api, "get_provider", return_value=FakeModel()), patch.object(api, "voice_provider", side_effect=lambda p: p):
 			self.assertEqual(api.speak(text="تمام")["audio"], None)
 
 	def test_voice_is_the_owner_s_like_the_rest_of_the_assistant(self):
@@ -632,4 +639,85 @@ class IntegrationTestAssistantVoice(AssistantCase):
 		self.assertEqual(mime, "audio/wav")
 		with wave.open(io.BytesIO(data)) as w:
 			self.assertEqual((w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()), (1, 2, 24000, 2400))
+
+
+# ---------------------------------------------------------------- which model: Claude answers, Gemini speaks
+
+
+class IntegrationTestAssistantProviders(AssistantCase):
+	NONE = {"imed_assistant_provider": None, "imed_assistant_api_key": None, "imed_assistant_anthropic_key": None,
+		"imed_assistant_gemini_key": None, "imed_assistant_claude_model": None}
+	CLEAN_ENV = {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "", "GOOGLE_API_KEY": "", "IMED_ASSISTANT_PROVIDER": "", "IMED_ASSISTANT_CLAUDE_MODEL": ""}
+
+	def configured(self, conf=None, env=None):
+		import os
+
+		return (patch.dict(frappe.local.conf, {**self.NONE, **(conf or {})}), patch.dict(os.environ, {**self.CLEAN_ENV, **(env or {})}))
+
+	def chosen(self, conf=None, env=None):
+		from imed_erp.assistant.providers import setting
+
+		a, b = self.configured(conf, env)
+		with a, b:
+			return setting()
+
+	def test_an_anthropic_key_in_the_environment_makes_claude_answer(self):
+		self.assertEqual(self.chosen(env={"ANTHROPIC_API_KEY": "sk-ant-test"}, conf={"imed_assistant_provider": "gemini"}), "claude")
+		# The environment's explicit choice still wins; and without an Anthropic key, the site config as before.
+		self.assertEqual(self.chosen(env={"ANTHROPIC_API_KEY": "sk-ant-test", "IMED_ASSISTANT_PROVIDER": "gemini"}), "gemini")
+		self.assertEqual(self.chosen(conf={"imed_assistant_provider": "imed_erp.assistant.gemini.GeminiProvider"}), "gemini")
+		self.assertEqual(self.chosen(env={"GEMINI_API_KEY": "AIza-test"}), "gemini")
+		self.assertEqual(self.chosen(), "offline")
+
+	def test_each_provider_takes_only_its_own_kind_of_key(self):
+		from imed_erp.assistant.providers.claude import anthropic_key
+		from imed_erp.assistant.providers.gemini import gemini_key
+
+		a, b = self.configured(conf={"imed_assistant_api_key": "sk-ant-shared"})
+		with a, b:
+			self.assertEqual((anthropic_key(), gemini_key()), ("sk-ant-shared", ""))
+		a, b = self.configured(conf={"imed_assistant_api_key": "AIza-shared"}, env={"ANTHROPIC_API_KEY": "sk-ant-env"})
+		with a, b:
+			self.assertEqual((anthropic_key(), gemini_key()), ("sk-ant-env", "AIza-shared"))
+
+	def test_claude_answers_with_sonnet_4_6_and_gemini_keeps_the_voice(self):
+		from imed_erp.assistant.providers import get_provider, voice_provider
+
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test", "GEMINI_API_KEY": "AIza-test"})
+		with a, b:
+			provider = get_provider()
+			self.assertEqual((provider.name, provider.model, provider.supports_voice), ("claude", "claude-sonnet-4-6", False))
+			self.assertEqual(voice_provider(provider).name, "gemini")
+			frappe.set_user(OWNER)
+			self.assertEqual(api.get_status(), {"allowed": True, "provider": "claude", "connected": True, "voice": True})
+		# No Gemini key: no server voice (the browser reads, as before).
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test"})
+		with a, b:
+			self.assertEqual(voice_provider(get_provider()).name, "claude")
+
+	def test_claude_s_request_and_its_refusal(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.core.exceptions import ModelUnavailable
+		from imed_erp.assistant.providers.claude import ClaudeProvider
+
+		sent = []
+
+		def create(**kwargs):
+			sent.append(kwargs)
+			stop = "refusal" if "refuse" in kwargs["messages"][0]["content"] else "end_turn"
+			return SimpleNamespace(stop_reason=stop, content=[SimpleNamespace(type="text", text="عندنا ٣ حجوزات")])
+
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test"})
+		with a, b:
+			provider = ClaudeProvider()
+		with patch.object(provider, "client", return_value=SimpleNamespace(messages=SimpleNamespace(create=create))):
+			self.assertEqual(provider.complete("system", "question"), "عندنا ٣ حجوزات")
+			provider.complete("system", "plan", json_schema={"type": "object", "properties": {"steps": {"type": "array", "items": {"type": "object"}}}})
+			self.assertRaises(ModelUnavailable, provider.complete, "system", "please refuse")
+		self.assertEqual(sent[0]["model"], "claude-sonnet-4-6")
+		self.assertNotIn("temperature", sent[0])  # the API refuses sampling parameters since 21 Oct 2026
+		# Every object closed, nested ones too (the API answered 400 without it).
+		schema = sent[1]["output_config"]["format"]["schema"]
+		self.assertEqual((schema["additionalProperties"], schema["properties"]["steps"]["items"]["additionalProperties"]), (False, False))
 

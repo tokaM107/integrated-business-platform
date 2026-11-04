@@ -32,6 +32,12 @@ services:
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      # The AI assistant's keys and choices, from Coolify's environment (empty when not set; never in git):
+      # Claude answers when ANTHROPIC_API_KEY is set, Gemini gives the voice when GEMINI_API_KEY is set.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      IMED_ASSISTANT_PROVIDER: ${IMED_ASSISTANT_PROVIDER:-}
+      IMED_ASSISTANT_CLAUDE_MODEL: ${IMED_ASSISTANT_CLAUDE_MODEL:-}
     healthcheck:
       interval: 30s
       retries: 5
