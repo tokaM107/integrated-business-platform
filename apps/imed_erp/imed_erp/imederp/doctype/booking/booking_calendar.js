@@ -100,6 +100,9 @@ frappe.views.calendar["Booking"] = {
 			scrollTime: "08:00:00",
 			allDaySlot: false,
 			nowIndicator: true,
+			// In Arabic the calendar reads right to left (the owner, 4 Nov 2026): the hours on the right, the week's
+			// first day (Saturday) on the right, the arrows the right way round.
+			direction: frappe.utils.is_rtl() ? "rtl" : "ltr",
 			dayMaxEvents: 3,
 			eventContent: event_card,
 			dayHeaderContent: day_header,

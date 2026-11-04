@@ -4242,7 +4242,8 @@ a.imed-ov-lib:hover {
 /* The grid: lighter lines, the day headers with the date in a circle, today tinted */
 .imed-cal .fc {
 	--fc-border-color: var(--imed-border);
-	--fc-today-bg-color: color-mix(in srgb, var(--imed-teal-500) 6%, transparent);
+	/* Today: its whole column in a light, transparent green (the owner, 4 Nov 2026) */
+	--fc-today-bg-color: color-mix(in srgb, var(--green-500) 10%, transparent);
 	--fc-now-indicator-color: var(--red-500);
 	padding: 0 16px 16px;
 }
@@ -4256,6 +4257,20 @@ a.imed-ov-lib:hover {
 }
 .imed-cal .fc .fc-col-header-cell-cushion {
 	text-decoration: none !important;
+}
+/* Frappe shades Sunday as a weekend; here the halls and the studio work on Sunday: no day is shaded but today */
+.imed-cal .fc .fc-day-sun:not(.fc-day-today) {
+	background: transparent !important;
+}
+/* Today's column: Frappe's calendar style paints it, so ours is set on the column itself */
+.imed-cal .fc .fc-timegrid-col.fc-day-today,
+.imed-cal .fc .fc-daygrid-day.fc-day-today {
+	background: color-mix(in srgb, var(--green-500) 10%, transparent) !important;
+}
+/* Today's header in the same green as its column, with a green line on top */
+.imed-cal .fc .fc-col-header-cell.fc-day-today {
+	background: color-mix(in srgb, var(--green-500) 10%, var(--card-bg));
+	box-shadow: inset 0 3px 0 var(--green-500);
 }
 .imed-dh {
 	display: inline-flex;
