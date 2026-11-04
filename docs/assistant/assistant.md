@@ -93,8 +93,12 @@ ANTHROPIC_API_KEY=sk-ant-...            # Claude answers (default model claude-s
 GEMINI_API_KEY=AIza...                  # the Egyptian voice and the dictation
 IMED_ASSISTANT_PROVIDER=gemini          # optional: force a provider (gemini, claude, offline)
 IMED_ASSISTANT_CLAUDE_MODEL=...         # optional: another Claude model
-ELEVENLABS_API_KEY=...                  # answers read aloud by ElevenLabs voice I3u6waC588j43py1kDN2 (else Gemini's)
+ELEVENLABS_API_KEY=...                  # the voice: answers read aloud (voice I3u6waC588j43py1kDN2, "Fatima - Expressive
+                                        # Egyptian") and recordings written out (Scribe); Gemini is never the voice
+                                        # when Claude answers. The library voice needs a paid ElevenLabs plan; on the
+                                        # free one the account's Sarah reads instead
 IMED_ELEVENLABS_VOICE_ID=...            # optional: another ElevenLabs voice (it must be in the key's account)
+IMED_ELEVENLABS_FALLBACK_VOICE_ID=...   # optional: the voice used while the chosen one is refused for the plan
 ```
 
 The same can live in the site config instead (`bench --site frontend set-config <name> <value>`):

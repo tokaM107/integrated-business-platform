@@ -646,8 +646,9 @@ class IntegrationTestAssistantVoice(AssistantCase):
 
 class IntegrationTestAssistantProviders(AssistantCase):
 	NONE = {"imed_assistant_provider": None, "imed_assistant_api_key": None, "imed_assistant_anthropic_key": None,
-		"imed_assistant_gemini_key": None, "imed_assistant_claude_model": None}
-	CLEAN_ENV = {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "", "GOOGLE_API_KEY": "", "IMED_ASSISTANT_PROVIDER": "", "IMED_ASSISTANT_CLAUDE_MODEL": ""}
+		"imed_assistant_gemini_key": None, "imed_assistant_claude_model": None, "imed_elevenlabs_api_key": None}
+	CLEAN_ENV = {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "", "GOOGLE_API_KEY": "", "IMED_ASSISTANT_PROVIDER": "", "IMED_ASSISTANT_CLAUDE_MODEL": "",
+		"ELEVENLABS_API_KEY": "", "XI_API_KEY": ""}
 
 	def configured(self, conf=None, env=None):
 		import os
@@ -680,18 +681,18 @@ class IntegrationTestAssistantProviders(AssistantCase):
 		with a, b:
 			self.assertEqual((anthropic_key(), gemini_key()), ("sk-ant-env", "AIza-shared"))
 
-	def test_claude_answers_with_sonnet_4_6_and_gemini_keeps_the_voice(self):
+	def test_claude_answers_with_sonnet_4_6_and_elevenlabs_is_the_voice_never_gemini(self):
 		from imed_erp.assistant.providers import get_provider, voice_provider
 
-		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test", "GEMINI_API_KEY": "AIza-test"})
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test", "GEMINI_API_KEY": "AIza-test", "ELEVENLABS_API_KEY": "el-test"})
 		with a, b:
 			provider = get_provider()
 			self.assertEqual((provider.name, provider.model, provider.supports_voice), ("claude", "claude-sonnet-4-6", False))
-			self.assertEqual(voice_provider(provider).name, "gemini")
+			self.assertEqual(voice_provider(provider).name, "elevenlabs")
 			frappe.set_user(OWNER)
 			self.assertEqual(api.get_status(), {"allowed": True, "provider": "claude", "connected": True, "voice": True})
-		# No Gemini key: no server voice (the browser reads, as before).
-		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test"})
+		# No ElevenLabs key: Gemini is not used for Claude's voice (owner, 4 Nov 2026); the browser reads.
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test", "GEMINI_API_KEY": "AIza-test"})
 		with a, b:
 			self.assertEqual(voice_provider(get_provider()).name, "claude")
 
@@ -803,10 +804,10 @@ class IntegrationTestAssistantElevenLabs(AssistantCase):
 		with a, b:
 			speaker = speech_provider(FakeModel())
 			self.assertEqual((speaker.name, speaker.voice, speaker.model), ("elevenlabs", "I3u6waC588j43py1kDN2", "eleven_multilingual_v2"))
-		# Without its key: the voice as before (Gemini's when its key is set, else none).
+		# Without its key: the answering provider's own voice, if any.
 		a, b = self.env()
-		with a, b, patch("imed_erp.assistant.providers.voice_provider", side_effect=lambda p: p):
-			self.assertNotEqual(speech_provider(FakeModel()).name, "elevenlabs")
+		with a, b:
+			self.assertEqual(speech_provider(FakeModel()).name, "fake")
 
 	def test_the_request_elevenlabs_gets_and_what_comes_back(self):
 		from types import SimpleNamespace
@@ -840,4 +841,50 @@ class IntegrationTestAssistantElevenLabs(AssistantCase):
 		with a, b, patch("requests.post", return_value=SimpleNamespace(status_code=200, content=b"ID3 mp3", text="")):
 			result = api.speak(text="عندنا تلات حجوزات")
 		self.assertEqual((result["mime"], __import__("base64").b64decode(result["audio"])), ("audio/mpeg", b"ID3 mp3"))
+
+
+
+	def test_the_chosen_voice_refused_for_the_plan_falls_back_to_the_account_s_voice(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice
+
+		urls = []
+
+		def post(url, **kwargs):
+			urls.append(url)
+			if "I3u6waC588j43py1kDN2" in url:  # as the free plan answered on 4 Nov 2026
+				return SimpleNamespace(status_code=402, content=b"", text='{"detail":{"code":"paid_plan_required"}}')
+			return SimpleNamespace(status_code=200, content=b"ID3 sarah", text="")
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			voice = ElevenLabsVoice()
+		with patch("requests.post", side_effect=post):
+			self.assertEqual(voice.speak("تمام", build_context()), (b"ID3 sarah", "audio/mpeg"))
+		self.assertEqual([u.rsplit("/", 1)[1] for u in urls], ["I3u6waC588j43py1kDN2", "EXAVITQu4vr4xnSDxMaL"])
+
+	def test_a_recording_is_written_out_by_scribe(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice
+
+		sent = []
+
+		def post(url, **kwargs):
+			sent.append((url, kwargs))
+			return SimpleNamespace(status_code=200, json=lambda: {"text": " عندنا كام حجز النهارده؟ ", "language_code": "ara"})
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			voice = ElevenLabsVoice()
+		with patch("requests.post", side_effect=post):
+			self.assertEqual(voice.transcribe(b"webm bytes", "audio/webm", build_context()), "عندنا كام حجز النهارده؟")
+		url, kwargs = sent[0]
+		self.assertEqual((url, kwargs["data"]["model_id"], kwargs["files"]["file"][0]), ("https://api.elevenlabs.io/v1/speech-to-text", "scribe_v2", "question.webm"))
+		# Through the endpoint, as the owner.
+		frappe.set_user(OWNER)
+		recording = __import__("base64").b64encode(b"\x1aE\xdf\xa3 webm").decode()
+		with a, b, patch("requests.post", side_effect=post):
+			self.assertEqual(api.transcribe(audio=recording, audio_type="audio/webm;codecs=opus"), {"text": "عندنا كام حجز النهارده؟"})
 

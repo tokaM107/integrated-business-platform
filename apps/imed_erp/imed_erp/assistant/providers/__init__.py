@@ -41,20 +41,15 @@ def get_provider() -> AssistantProvider:
 
 
 def voice_provider(provider: AssistantProvider) -> AssistantProvider:
-	"""Who hears and speaks: the answering provider if it can, else Gemini when its key is set (Claude has no voice)."""
-	if provider.supports_voice:
-		return provider
-	from imed_erp.assistant.providers.gemini import GeminiProvider, gemini_key
-
-	return GeminiProvider() if gemini_key() else provider
-
-
-def speech_provider(provider: AssistantProvider) -> AssistantProvider:
-	"""Who reads answers aloud: ElevenLabs when its key is set (the owner's chosen voice), else whoever hears and
-	speaks (voice_provider)."""
+	"""Who hears and speaks: ElevenLabs when its key is set (owner, 4 Nov 2026: the voice is ElevenLabs', never
+	Gemini's when another model answers), else the answering provider itself (Gemini has a voice when it answers;
+	Claude has none, and the browser reads then)."""
 	from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice, elevenlabs_key
 
-	return ElevenLabsVoice() if elevenlabs_key() else voice_provider(provider)
+	return ElevenLabsVoice() if elevenlabs_key() else provider
+
+
+speech_provider = voice_provider  # reading aloud and writing out recordings go to the same voice
 
 
 __all__ = ["AssistantProvider", "OfflineProvider", "get_provider", "voice_provider", "speech_provider"]
