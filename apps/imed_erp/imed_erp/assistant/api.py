@@ -122,6 +122,36 @@ def unavailable_text(error: ModelUnavailable, context: RequestContext) -> str:
 	return "المساعد غير مربوط بنموذج بعد." if ar else "The assistant is not connected to a model yet."
 
 
+STREAM_EVENT = "imed_assistant_stream"
+STREAM_EVERY_SECONDS = 0.12
+
+
+def streamer(stream_id):
+	"""The answer's pieces to the asking user's browser as they are written (realtime, to this user only), a few
+	times a second; None without a stream id. The full answer is still returned by send_message, so a page whose
+	realtime connection is down loses nothing (4 Nov 2026: the reply only showed once wholly written)."""
+	if not stream_id:
+		return None
+	import time
+
+	stream_id, user = str(stream_id)[:64], frappe.session.user
+	state = {"pending": "", "at": 0.0}
+
+	def flush():
+		if state["pending"]:
+			frappe.publish_realtime(STREAM_EVENT, {"id": stream_id, "text": state["pending"]}, user=user, after_commit=False)
+			state["pending"] = ""
+			state["at"] = time.monotonic()
+
+	def on_text(piece):
+		state["pending"] += piece
+		if time.monotonic() - state["at"] >= STREAM_EVERY_SECONDS:
+			flush()
+
+	on_text.flush = flush
+	return on_text
+
+
 MAX_SPOKEN_CHARS = 1500
 
 
@@ -182,7 +212,7 @@ def speak(text=None):
 @frappe.whitelist(methods=["POST"])
 # SEC-11: each message may reach a paid model; a script calling in a loop is stopped (per address, per minute).
 @rate_limit(limit=MESSAGES_PER_MINUTE, seconds=60)
-def send_message(messages=None, audio=None, audio_type=None, chat=None, text=None):
+def send_message(messages=None, audio=None, audio_type=None, chat=None, text=None, stream_id=None):
 	"""Answer the user's message. In a saved chat (`chat` + `text`) the turn is stored and the chat's memory is the
 	context; without a chat the browser sends the whole conversation (`messages`). With `audio` (base64) the user
 	turn is a voice message, transcribed first if the provider can.
@@ -211,7 +241,10 @@ def send_message(messages=None, audio=None, audio_type=None, chat=None, text=Non
 	if chat:
 		ChatStore.append(chat, "user", question)
 	try:
-		reply, _facts = service.answer(provider, question, context, earlier)
+		on_text = streamer(stream_id)
+		reply, _facts = service.answer(provider, question, context, earlier, on_text=on_text)
+		if on_text:
+			on_text.flush()
 	except ModelUnavailable as e:
 		reply = unavailable_text(e, context)
 		if chat:

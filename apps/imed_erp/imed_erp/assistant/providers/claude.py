@@ -15,6 +15,9 @@ from imed_erp.assistant.core.interfaces import JsonSchema
 from imed_erp.assistant.providers.base import AssistantProvider
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
+# The planner only lists which reads answer the question (JSON): the fastest model, thinking off, low effort
+# (measured 4 Nov 2026: Sonnet 4.6 planned in 3.1-4.0 s, Haiku 5.5 in 1.5 s). Setting: imed_assistant_claude_planner_model.
+PLANNER_MODEL = "claude-haiku-5-5"
 
 
 def strict(schema):
@@ -40,6 +43,7 @@ class ClaudeProvider(AssistantProvider):
 	def __init__(self):
 		self.key = anthropic_key()
 		self.model = frappe.conf.get("imed_assistant_claude_model") or os.environ.get("IMED_ASSISTANT_CLAUDE_MODEL") or DEFAULT_MODEL
+		self.planner_model = frappe.conf.get("imed_assistant_claude_planner_model") or os.environ.get("IMED_ASSISTANT_CLAUDE_PLANNER_MODEL") or PLANNER_MODEL
 		self.connected = bool(self.key)
 		self._client = None
 
@@ -52,15 +56,26 @@ class ClaudeProvider(AssistantProvider):
 			self._client = anthropic.Anthropic(api_key=self.key, max_retries=2, timeout=120.0)
 		return self._client
 
-	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str:
+	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None, on_text=None) -> str:
 		import anthropic
 
-		# The planner's JSON at low effort (it only lists reads); the answer at the model's default.
-		kwargs = {"output_config": {"effort": "low", "format": {"type": "json_schema", "schema": strict(json_schema)}}} if json_schema else {}
+		if json_schema:
+			request = {
+				"model": self.planner_model,
+				"thinking": {"type": "disabled"},
+				"output_config": {"effort": "low", "format": {"type": "json_schema", "schema": strict(json_schema)}},
+			}
+		else:
+			request = {"model": self.model, "output_config": {"effort": "low"}}
+		request.update(max_tokens=4000, system=system, messages=[{"role": "user", "content": prompt}])
 		try:
-			response = self.client().messages.create(
-				model=self.model, max_tokens=4000, system=system, messages=[{"role": "user", "content": prompt}], **kwargs
-			)
+			if on_text:
+				with self.client().messages.stream(**request) as stream:
+					for piece in stream.text_stream:
+						on_text(piece)
+					response = stream.get_final_message()
+			else:
+				response = self.client().messages.create(**request)
 		except anthropic.RateLimitError as e:
 			raise ModelUnavailable("quota", str(e)[:200]) from e
 		except anthropic.APIStatusError as e:

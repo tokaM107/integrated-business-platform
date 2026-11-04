@@ -715,9 +715,73 @@ class IntegrationTestAssistantProviders(AssistantCase):
 			self.assertEqual(provider.complete("system", "question"), "عندنا ٣ حجوزات")
 			provider.complete("system", "plan", json_schema={"type": "object", "properties": {"steps": {"type": "array", "items": {"type": "object"}}}})
 			self.assertRaises(ModelUnavailable, provider.complete, "system", "please refuse")
-		self.assertEqual(sent[0]["model"], "claude-sonnet-4-6")
+		self.assertEqual((sent[0]["model"], sent[0]["output_config"]), ("claude-sonnet-4-6", {"effort": "low"}))
 		self.assertNotIn("temperature", sent[0])  # the API refuses sampling parameters since 21 Oct 2026
+		# The plan by the fastest model, thinking off (4 Nov 2026: latency).
+		self.assertEqual((sent[1]["model"], sent[1]["thinking"]), ("claude-haiku-5-5", {"type": "disabled"}))
 		# Every object closed, nested ones too (the API answered 400 without it).
 		schema = sent[1]["output_config"]["format"]["schema"]
 		self.assertEqual((schema["additionalProperties"], schema["properties"]["steps"]["items"]["additionalProperties"]), (False, False))
 
+	def test_an_answer_is_streamed_to_its_user_while_it_is_written(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.claude import ClaudeProvider
+
+		class Stream:
+			text_stream = iter(["عندنا ", "تلات ", "حجوزات"])
+
+			def __enter__(self):
+				return self
+
+			def __exit__(self, *a):
+				return False
+
+			def get_final_message(self):
+				return SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text="عندنا تلات حجوزات")])
+
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test"})
+		with a, b:
+			provider = ClaudeProvider()
+		pieces = []
+		with patch.object(provider, "client", return_value=SimpleNamespace(messages=SimpleNamespace(stream=lambda **kw: Stream()))):
+			self.assertEqual(provider.complete("system", "q", on_text=pieces.append), "عندنا تلات حجوزات")
+		self.assertEqual(pieces, ["عندنا ", "تلات ", "حجوزات"])
+
+		# Through the endpoint: to the asking user only, on the realtime channel, under the browser's stream id.
+		frappe.set_user(OWNER)
+
+		class Streaming(FakeModel):
+			def complete(self, system, prompt, json_schema=None, on_text=None):
+				out = super().complete(system, prompt, json_schema)
+				if on_text and not json_schema:
+					for word in out.split(" "):
+						on_text(word + " ")
+				return out
+
+		published = []
+		model = Streaming(plan(direct=""), ["تلات حجوزات النهارده"])
+		model.queue[0] = json.dumps({"steps": [], "may_need_more": False, "answer_without_reading": ""})
+		with patch.object(api, "get_provider", return_value=model), patch("frappe.publish_realtime", side_effect=lambda *a, **k: published.append((a, k))):
+			result = api.send_message(messages=json.dumps([{"role": "user", "content": "كام حجز؟"}]), stream_id="s-1")
+		self.assertEqual(result["reply"], "تلات حجوزات النهارده")
+		self.assertTrue(published)
+		self.assertTrue(all(a[0] == "imed_assistant_stream" and a[1]["id"] == "s-1" and k["user"] == OWNER for a, k in published))
+		self.assertEqual("".join(a[1]["text"] for a, k in published).strip(), "تلات حجوزات النهارده")
+
+
+class IntegrationTestAssistantAccountNames(AssistantCase):
+	"""4 Nov 2026: the planner asked for "خزنة الأزاريطة"; the chart says "خزينة مكتبة الأزاريطة - MMG"."""
+
+	def test_a_cash_box_is_found_by_the_words_people_say(self):
+		from imed_erp.assistant.tools.ledger import AccountBalanceTool, resolve_account
+
+		frappe.set_user(OWNER)
+		context = build_context()
+		box = "خزينة مكتبة الأزاريطة - MMG"
+		self.assertEqual(resolve_account("خزنة الأزاريطة", context), box)
+		self.assertEqual(resolve_account(box, context), box)
+		self.assertRaisesRegex(frappe.ValidationError, "several accounts", resolve_account, "خزينة", context)
+		self.assertRaisesRegex(frappe.ValidationError, "Cash boxes and banks", resolve_account, "Cash Box - Azarita", context)
+		self.assertIn(box, AccountBalanceTool().spec(context)["description"])
+		self.assertEqual(AccountBalanceTool().run({"account": "خزنة الازاريطه", "date": ""}, context)["account"], box)

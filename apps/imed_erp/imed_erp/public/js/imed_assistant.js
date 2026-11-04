@@ -46,6 +46,8 @@
 		</svg>`;
 
 	const state = {
+		stream: null, // the answer being written: {id, text}
+		listening: false, // the realtime listener for streamed answers is set
 		status: null, // promise of get_status()
 		chat: null, // the saved chat open now (its name), or null before the first message
 		chats: [], // the user's saved chats [{name, title, last_message_at}]
@@ -219,7 +221,10 @@
 		}
 
 		state.items.forEach((item) => $log.append(bubble(item)));
-		if (state.busy) {
+		if (state.busy && state.stream && state.stream.text) {
+			// The answer while it is written (api.streamer): replaced by the final one when it arrives.
+			$log.append(`<div class="imed-assistant-msg is-assistant is-streaming" dir="auto">${esc(state.stream.text)}</div>`);
+		} else if (state.busy) {
 			$log.append(`
 				<div class="imed-assistant-msg is-assistant is-typing" aria-label="${esc(t("Typing", "بيكتب"))}">
 					<span></span><span></span><span></span>
@@ -453,7 +458,24 @@
 		reader.readAsDataURL(blob);
 	}
 
+	// The answer's pieces as the server writes them (one listener for the page).
+	function listen_to_stream($root) {
+		if (state.listening || !frappe.realtime || !frappe.realtime.on) return;
+		state.listening = true;
+		frappe.realtime.on("imed_assistant_stream", (data) => {
+			if (!state.busy || !state.stream || !data || data.id !== state.stream.id) return;
+			state.stream.text += data.text || "";
+			const $live = $root.find(".imed-assistant-msg.is-streaming");
+			if ($live.length) $live.text(state.stream.text);
+			else render($root);
+			scroll_to_end($root);
+		});
+	}
+
 	function request($root, args, voice_item) {
+		listen_to_stream($root);
+		state.stream = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, text: "" };
+		args = { ...args, stream_id: state.stream.id };
 		state.busy = true;
 		render($root);
 		frappe
@@ -484,6 +506,7 @@
 			})
 			.finally(() => {
 				state.busy = false;
+				state.stream = null;
 				render($root);
 			});
 	}

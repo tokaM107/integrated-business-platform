@@ -17,7 +17,7 @@ class AssistantProvider:
 	connected = False
 	supports_voice = False
 
-	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str:
+	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None, on_text=None) -> str:
 		raise NotImplementedError
 
 	def transcribe(self, audio: bytes, mime_type: str, context: RequestContext) -> str | None:
@@ -51,5 +51,5 @@ class OfflineProvider(AssistantProvider):
 
 	name = "offline"
 
-	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str:
+	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None, on_text=None) -> str:
 		raise ModelUnavailable("not_configured")

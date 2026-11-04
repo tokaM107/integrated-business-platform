@@ -65,7 +65,7 @@ class GeminiProvider(AssistantProvider):
 			self._client = genai.Client(api_key=self.key)
 		return self._client
 
-	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str:
+	def complete(self, system: str, prompt: str, json_schema: JsonSchema | None = None, on_text=None) -> str:
 		from google.genai import types
 
 		config = types.GenerateContentConfig(system_instruction=system, temperature=0.1, max_output_tokens=4000)
@@ -73,6 +73,13 @@ class GeminiProvider(AssistantProvider):
 			config.response_mime_type = "application/json"
 			config.response_schema = json_schema
 		try:
+			if on_text and not json_schema:
+				parts = []
+				for chunk in self.client().models.generate_content_stream(model=self.model, contents=prompt, config=config):
+					if chunk.text:
+						parts.append(chunk.text)
+						on_text(chunk.text)
+				return "".join(parts)
 			response = self.client().models.generate_content(model=self.model, contents=prompt, config=config)
 		except Exception as e:
 			code = getattr(e, "code", None) or getattr(e, "status_code", None)
