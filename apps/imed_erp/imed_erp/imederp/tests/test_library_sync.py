@@ -239,6 +239,18 @@ class TestLibraryReceive(IntegrationTestCase):
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, list_summary)
 
+	def test_the_list_band_of_one_library_counts_that_library_only(self):
+		"""The sidebar's "Mawasah Invoices" opens the list filtered to Mawasah: its band counts Mawasah alone."""
+		from imed_erp.imederp.doctype.library_sales_document.library_sales_document import list_summary
+
+		today = frappe.utils.nowdate()
+		mawasah = cost_center("مكتبة المواساة")
+		before_one, before_all = list_summary(mawasah), list_summary()
+		sync.import_batch(self.batch(sale("93001", branch="1", when=f"{today} 09:00:00"), sale("93002", branch="2", when=f"{today} 09:10:00")))
+		after_one, after_all = list_summary(mawasah), list_summary()
+		self.assertEqual((after_one["sales_count"] - before_one["sales_count"], after_all["sales_count"] - before_all["sales_count"]), (1, 2))
+		self.assertEqual(flt(after_one["sales_value"] - before_one["sales_value"], 2), 150.0)
+
 	def test_the_owner_sees_each_librarys_sales_today_apart(self):
 		"""The Owner Dashboard's first row (owner_overview.libraries): Azarita and Mawasah apart, by the cost center
 		the branch maps to; today's issued sales and returns only. Measured as a change, whatever the site holds."""

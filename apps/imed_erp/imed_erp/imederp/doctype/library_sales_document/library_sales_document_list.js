@@ -55,12 +55,21 @@
 		else listview.page.main.prepend(html);
 	}
 
+	// The library the list is filtered to (the sidebar's "Azarita Invoices" / "Mawasah Invoices"), if one.
+	function library_of(listview) {
+		const f = listview.filter_area.get().find((x) => x[1] === "cost_center" && x[2] === "=");
+		return f ? f[3] : null;
+	}
+
 	function load(listview, force) {
 		const now = Date.now();
-		if (!force && listview.__imed_lib_at && now - listview.__imed_lib_at < REFETCH_MS) return;
+		const library = library_of(listview);
+		// A change of library refetches at once; otherwise at most every REFETCH_MS.
+		if (!force && library === listview.__imed_lib_for && listview.__imed_lib_at && now - listview.__imed_lib_at < REFETCH_MS) return;
 		listview.__imed_lib_at = now;
+		listview.__imed_lib_for = library;
 		frappe
-			.xcall("imed_erp.imederp.doctype.library_sales_document.library_sales_document.list_summary")
+			.xcall("imed_erp.imederp.doctype.library_sales_document.library_sales_document.list_summary", { cost_center: library })
 			.then((s) => render(listview, s))
 			.catch(() => listview.page.main.find(".imed-lib-band").remove());
 	}
