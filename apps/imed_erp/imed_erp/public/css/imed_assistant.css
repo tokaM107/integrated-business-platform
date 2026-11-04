@@ -1099,3 +1099,13 @@ html[dir="rtl"] .imed-assistant-send .icon {
 		animation: none;
 	}
 }
+/* The read-aloud button shows a sign (speaker, hourglass while the voice is fetched, stop while it plays,
+   set by speak_answer): sized for the round button, tinted while playing. */
+.imed-assistant-speak {
+	font-size: 14px;
+	line-height: 1;
+}
+.imed-assistant-speak.is-playing {
+	background: var(--chat-mint);
+	color: var(--chat-green-dark);
+}
