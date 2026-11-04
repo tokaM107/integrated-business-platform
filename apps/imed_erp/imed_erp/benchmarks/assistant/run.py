@@ -3,7 +3,7 @@
 # right answer is worked out from the ERP at the same moment (the cases' oracles). It calls the configured models,
 # which costs money: it refuses to run without paid_calls=1.
 #
-#   bench --site <site> execute imed_erp.assistant.benchmark.run.run --kwargs '{"paid_calls": 1}'
+#   bench --site <site> execute imed_erp.benchmarks.assistant.run.run --kwargs '{"paid_calls": 1}'
 #   options: user (default owner@imed.local), only ("H02,H07"), repeat (default 1), out (a folder)
 #
 # Writes results.json (every run: plan, reads, answer, timings, scores), results.csv and summary.md (the numbers)
@@ -21,7 +21,7 @@ import time
 import frappe
 from frappe.utils import now_datetime
 
-from imed_erp.assistant.benchmark.cases import CASES
+from imed_erp.benchmarks.assistant.cases import CASES
 
 ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩٫", "0123456789.")
 NO_DATA = re.compile(r"مفيش|ما فيش|مش متسجل|مش موجود|لسه ما|مالهاش|مش بيتسجل|مش متاح|ما بيتسجلش|لا توجد|no record|not (in|tracked)", re.I)

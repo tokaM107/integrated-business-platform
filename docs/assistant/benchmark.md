@@ -4,7 +4,7 @@ The questions the owner wrote by hand on the requirements sheet (section 12, "AI
 2026), plus the sheet's five printed examples, as 21 cases. Each case says what a right answer must hold. That
 check is worked out from the ERP itself when the benchmark runs, so it holds on any site and on any day.
 
-Code: `apps/imed_erp/imed_erp/assistant/benchmark/` (`cases.py` holds the questions and their answer checks;
+Code: `apps/imed_erp/imed_erp/benchmarks/assistant/` (`cases.py` holds the questions and their answer checks;
 `run.py` runs and scores them).
 
 ## The questions
@@ -67,9 +67,9 @@ It calls the configured models (Claude, and nothing else), so it costs money. It
 `paid_calls`:
 
 ```
-bench --site <site> execute imed_erp.assistant.benchmark.run.run --kwargs '{"paid_calls": 1}'
+bench --site <site> execute imed_erp.benchmarks.assistant.run.run --kwargs '{"paid_calls": 1}'
 # one or a few cases, or each question several times (the models do not answer the same way twice):
-bench --site <site> execute imed_erp.assistant.benchmark.run.run --kwargs '{"paid_calls": 1, "only": "H02,H07", "repeat": 3}'
+bench --site <site> execute imed_erp.benchmarks.assistant.run.run --kwargs '{"paid_calls": 1, "only": "H02,H07", "repeat": 3}'
 ```
 
 What a run does:
