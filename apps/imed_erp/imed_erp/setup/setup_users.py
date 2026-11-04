@@ -34,7 +34,11 @@ LIBRARY_ROLES = [*BRANCH_ROLES, "Stock User"]
 # 12 Oct 2026), and the owner.
 # "Stock Request Approver" approves or rejects the branches' requests from the main warehouse
 # (imederp/material_issue.py), for the warehouses her User Permissions give her; Raghad has it.
-CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff", "Expense Approver", "Stock Request Approver"]
+CUSTOM_ROLES = ["Super Admin", "Accountant", "Branch Manager", "HR", "CRM Staff", "Expense Approver", "Stock Request Approver", "Library Staff"]
+# "Library Staff" is a library's shared account (owner, 4 Nov 2026: one account a library, a very simple screen):
+# its screen مكتبتي (imederp/library_desk.py) records today's counters, something finished, the stock it holds and
+# a request for more, in its own library and store only. It sees no money: no sales, no accounts, no cash.
+from imed_erp.imederp.library_desk import STAFF_RIGHTS as LIBRARY_STAFF_RIGHTS  # noqa: E402
 
 # Permissions matrix, section 3.2: "only the owner and the accountant can edit, cancel or delete a
 # financial transaction". Branch managers keep create / edit draft / submit, but lose cancel, amend
@@ -97,6 +101,8 @@ USERS = [
 		"cost_centers": ["مكتبة الأزاريطة"],
 		"warehouses": ["مخزن الأزاريطة"],
 	},
+	# A library's shared account: its library and its store only (password set apart: bench set-password).
+	{"email": "mowasah", "first_name": "مكتبة المواساة", "roles": ["Library Staff"], "cost_centers": ["مكتبة المواساة"], "warehouses": ["خامات المواساة"]},
 	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"]},
 	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR", "HR Manager"]},
 ]
@@ -354,6 +360,15 @@ def apply_permission_matrix():
 		frappe.clear_cache(doctype=doctype)
 
 
+def apply_library_staff_rights():
+	from frappe.core.doctype.doctype.doctype import validate_permissions_for_doctype
+
+	for doctype, rights in LIBRARY_STAFF_RIGHTS.items():
+		ensure_docperm(doctype, "Library Staff", rights, create=True)
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)
+
+
 def ensure_items_visible_to_branches():
 	"""An item's default selling cost center (Mawasah for the books, setup_library.py) must not hide the
 	item from the other branch: both libraries sell and request the same books. ERPNext already exempts
@@ -420,6 +435,7 @@ def run():
 
 		# ---------- 4) Permissions matrix (section 3.2) on financial documents ----------
 		apply_permission_matrix()
+		apply_library_staff_rights()
 		ensure_items_visible_to_branches()
 		ensure_stock_settings_readable()
 		let_the_owner_read_everything()
