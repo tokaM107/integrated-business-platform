@@ -4463,6 +4463,19 @@ a.imed-ov-lib:hover {
 .imed-cal.imed-rows-on .fc .fc-view-harness {
 	display: none !important;
 }
+/* Frappe gives the calendar's box a fixed height and hides what overflows (its own grid scrolls inside): the
+   rows are taller than that, so while they are shown the box takes their height and the page scrolls (the owner
+   could not scroll down to the last days, 4 Nov 2026). */
+.frappe-list:has(.imed-cal.imed-rows-on),
+.frappe-list:has(.imed-cal.imed-rows-on) .result-container,
+.imed-cal.imed-rows-on {
+	height: auto !important;
+	max-height: none !important;
+	overflow: visible !important;
+}
+.imed-rows {
+	overflow-y: visible;
+}
 .imed-rows:empty {
 	display: none;
 }
