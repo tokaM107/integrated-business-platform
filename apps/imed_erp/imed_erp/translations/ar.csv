@@ -2151,3 +2151,19 @@ Only the owner sees the day's figures.,أرقام اليوم للمالك بس.
 "Invoiced revenue and approved expenses (submitted documents only). The X Studio line is what XStudio reports as paid on the day's bookings; it is shown, not posted.",الإيراد المفوتر والمصروفات المعتمدة (المستندات المعتمدة بس). سطر استوديو X هو اللي XStudio بيقول إنه اتدفع على حجوزات اليوم؛ معروض بس ومش مرحّل في الحسابات.
 "from XStudio: {0} booking(s), paid {1}, due {2}",من XStudio: {0} حجز، مدفوع {1}، مستحق {2}
 "Invoiced revenue and approved expenses (submitted documents only). The X Studio line is the price of the day's bookings as XStudio reports it (cancelled ones left out), with what was paid and what is due; it is shown, not posted.",الإيراد المفوتر والمصروفات المعتمدة (المستندات المعتمدة بس). سطر استوديو X هو قيمة حجوزات اليوم زي ما XStudio بيقول (من غير الملغي)، ومعاه المدفوع والمستحق؛ معروض بس ومش مرحّل في الحسابات.
+This screen is the library's.,الشاشة دي بتاعة المكتبة.
+This account is not set to one library and one store. Ask the owner.,الحساب ده مش متظبط على مكتبة واحدة ومخزن واحد. كلّم صاحب الشغل.
+Not Set Up,مش متظبط
+{0} is not one of the library's supplies.,{0} مش من خامات المكتبة.
+How many finished?,خلص كام؟
+The store holds {0} of {1}. Enter what you hold first (رصيد المخزون).,المخزن مسجل فيه {0} من {1} بس. سجّل اللي عندك الأول (رصيد المخزون).
+Not Enough,مش كفاية
+"Finished in the library, entered by {0}.",خلص في المكتبة، سجّله {0}.
+A quantity cannot be negative.,الكمية ماينفعش تبقى بالسالب.
+"{0} has no price in the system yet. Ask the owner to enter it, then count again.",{0} لسه ملوش سعر في السيستم. اطلب من صاحب الشغل يدخّله، وبعدين سجّل تاني.
+Enter at least one quantity.,اكتب كمية واحدة على الأقل.
+How many do you need?,محتاجين كام؟
+The counters were recorded from another screen. Open them again.,العدادات اتسجلت من شاشة تانية. افتحها تاني.
+Today's counters are closed.,عدادات النهارده اتقفلت.
+Type the number {0} shows.,اكتب الرقم اللي ظاهر على عداد {0}.
+Reading Missing,ناقص قراية

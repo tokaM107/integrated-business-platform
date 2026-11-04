@@ -5,7 +5,7 @@ Mawasah. It lands on **مكتبتي** (`/desk/imed-library`), four big buttons a
 
 | Button | What it does | In the system |
 |---|---|---|
-| عدادات النهارده | the day's counters of the library's machines | Daily Counter Reading (once a day, as before) |
+| عدادات النهارده | one box a machine, for the number its counter shows: in the morning (the day opens, saved as a draft), then at the end of the day (the day closes). A counter that went up overnight asks why; a breakdown is a note in the evening. An earlier day missing its evening comes first | Daily Counter Reading (once a day, its own rules unchanged) |
 | حاجة خلصت | an ink bottle, a box of paper… finished | taken off the library's store (Stock Entry, Material Issue, posted by the system) |
 | رصيد المخزون | what the library holds now | a Stock Count of its store (Periodic) |
 | اطلب حاجة | ink, paper… needed | a Material Request: a purchase request for Mawasah (its store supplies the others); a transfer request Raghad approves for any other library |
@@ -38,3 +38,7 @@ bench --site frontend clear-cache
 
 Check first that Printing Cost Settings holds the ink prices, or the inks are valued at 0 and their first count is
 refused. Another library's account is one more line in `setup_users.py` USERS, with its own cost center and store.
+
+## Language
+
+The account works in Arabic, the whole desk with it (`"language": "ar"` in its line of setup/setup_users.py; the screen's messages are in translations/ar.csv). The other accounts keep the site's language.

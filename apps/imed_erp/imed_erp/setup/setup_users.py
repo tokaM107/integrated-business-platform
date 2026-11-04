@@ -102,7 +102,7 @@ USERS = [
 		"warehouses": ["مخزن الأزاريطة"],
 	},
 	# A library's shared account: its library and its store only (password set apart: bench set-password).
-	{"email": "mowasah", "first_name": "مكتبة المواساة", "roles": ["Library Staff"], "cost_centers": ["مكتبة المواساة"], "warehouses": ["خامات المواساة"]},
+	{"email": "mowasah", "first_name": "مكتبة المواساة", "language": "ar", "roles": ["Library Staff"], "cost_centers": ["مكتبة المواساة"], "warehouses": ["خامات المواساة"]},
 	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"]},
 	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR", "HR Manager"]},
 ]
@@ -185,6 +185,7 @@ def ensure_user(spec, new_passwords):
 				"user_type": "System User",
 				"send_welcome_email": 0,
 				"new_password": password,
+				"language": spec.get("language"),
 				"roles": [{"role": r} for r in spec["roles"]],
 			}
 		).insert()
@@ -200,6 +201,10 @@ def ensure_user(spec, new_passwords):
 	if user.enabled != enabled:
 		user.enabled = enabled
 		changes.append(f"enabled = {enabled}")
+	# A library's screen in Arabic, the whole desk with it (owner, 4 Nov 2026); the others keep the site's language.
+	if spec.get("language") and user.language != spec["language"]:
+		user.language = spec["language"]
+		changes.append(f"language = {spec['language']}")
 
 	current = [d.role for d in user.roles]
 	missing = [r for r in spec["roles"] if r not in current]

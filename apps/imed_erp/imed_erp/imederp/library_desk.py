@@ -3,6 +3,9 @@
 # for more. Each action here is checked on the server: the account works in its own library and store only, and
 # never sees money.
 #
+#   counters_today / save_counters
+#                the day's counters in two steps, a number a machine: the morning's (a Daily Counter Reading saved
+#                as a draft) and the evening's (the same day, submitted). The day's own rules check both.
 #   used_up      takes the finished items off the library's store (a Stock Entry, Material Issue, posted by the
 #                system: the account has no right on stock entries)
 #   count        the quantities the library holds now (a Stock Count, as a library manager would make it)
@@ -97,7 +100,7 @@ def get_desk():
 			"unit": unit,
 			"qty": flt(on_hand(i.name, mine.store) / factor, 2),
 		})
-	counter = frappe.db.get_value("Daily Counter Reading", {"branch": mine.library, "reading_date": today(), "docstatus": ("<", 2)}, ["name", "docstatus"], as_dict=True)
+	counter = open_day(mine.library)
 	requests = frappe.get_all(
 		"Material Request",
 		filters={"owner": frappe.session.user, "docstatus": ("<", 2)},
@@ -235,3 +238,69 @@ def ask_for(item_code, qty, note=None):
 		doc.submit()  # a purchase request, for whoever buys
 	frappe.clear_messages()  # ERPNext's own notes ("Item rates have been updated...") mean nothing to the library
 	return {"request": doc.name, "type": doc.material_request_type}
+
+
+def open_day(library):
+	"""The day the counters screen works on: an earlier day still waiting for its evening readings, else today's."""
+	return frappe.db.get_value(
+		"Daily Counter Reading",
+		{"branch": library, "reading_date": ("<", today()), "docstatus": 0},
+		["name", "reading_date", "docstatus"],
+		as_dict=True,
+		order_by="reading_date",
+	) or frappe.db.get_value(
+		"Daily Counter Reading", {"branch": library, "reading_date": today(), "docstatus": ("<", 2)}, ["name", "reading_date", "docstatus"], as_dict=True
+	)
+
+
+@frappe.whitelist()
+def counters_today():
+	"""What the counters box asks for: the morning's readings (nothing recorded today), the evening's (the morning
+	is saved; an earlier day missing its evening comes first), or nothing (the day is closed)."""
+	check_staff()
+	mine = my_library()
+	day = open_day(mine.library)
+	if day and day.docstatus == 1:
+		return {"phase": "done", "day": day.name, "date": str(day.reading_date)}
+	if day:
+		doc = frappe.get_doc("Daily Counter Reading", day.name)
+		machines = [{"machine": r.machine, "machine_type": r.machine_type, "morning": cint(r.opening_reading)} for r in doc.machines]
+		return {"phase": "evening", "day": day.name, "date": str(day.reading_date), "earlier": str(day.reading_date) != today(), "machines": machines}
+	from imed_erp.imederp.doctype.daily_counter_reading.daily_counter_reading import get_machines
+
+	machines = [{"machine": m["machine"], "machine_type": m["machine_type"], "last": cint(m["previous_closing"]) or None} for m in get_machines(mine.library)]
+	return {"phase": "morning", "date": today(), "machines": machines}
+
+
+@frappe.whitelist(methods=["POST"])
+def save_counters(phase, readings, notes=None):
+	"""The numbers the counters show, a machine each. Morning: the day is opened, a note says why a counter went up
+	since last night's. Evening: the day is closed, a note says what broke down."""
+	check_staff()
+	mine = my_library()
+	readings = json.loads(readings) if isinstance(readings, str) else (readings or {})
+	notes = json.loads(notes) if isinstance(notes, str) else (notes or {})
+	now = counters_today()
+	if now["phase"] != phase:
+		frappe.throw(_("The counters were recorded from another screen. Open them again."), title=_("Already Recorded"))
+	if phase == "done":
+		frappe.throw(_("Today's counters are closed."))
+	for m in now["machines"]:
+		if cint(readings.get(m["machine"])) <= 0:
+			frappe.throw(_("Type the number {0} shows.").format(m["machine"]), title=_("Reading Missing"))
+	if phase == "morning":
+		doc = frappe.get_doc({"doctype": "Daily Counter Reading", "branch": mine.library, "reading_date": today()})
+		for m in now["machines"]:
+			doc.append("machines", {"machine": m["machine"], "opening_reading": cint(readings[m["machine"]]), "gap_note": (notes.get(m["machine"]) or "").strip() or None})
+		doc.insert()
+	else:
+		doc = frappe.get_doc("Daily Counter Reading", now["day"])
+		for row in doc.machines:
+			row.closing_reading = cint(readings.get(row.machine))
+			note = (notes.get(row.machine) or "").strip()
+			if note:
+				row.fault, row.fault_note = 1, note
+		doc.save()
+		doc.submit()
+	frappe.clear_messages()  # "no paper price" and the like are for the accountant, not the library
+	return {"day": doc.name, "phase": "evening" if phase == "morning" else "done", "sheets": cint(doc.total_consumed)}

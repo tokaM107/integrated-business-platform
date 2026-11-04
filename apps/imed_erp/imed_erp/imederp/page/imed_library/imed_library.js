@@ -36,7 +36,7 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 			<div class="imed-library__tiles">
 				<div class="imed-library__tile ${counted && counted.docstatus === 1 ? "is-done" : ""}" data-action="counters">
 					<span class="emoji">📟</span>${__("عدادات النهارده")}
-					<small>${counted ? (counted.docstatus === 1 ? __("اتسجلت ✓") : __("مفتوحة، كمّلها")) : __("لسه ما اتسجلتش")}</small>
+					<small>${counted ? (counted.docstatus === 1 ? __("اتسجلت ✓") : __("سجّل آخر اليوم")) : __("سجّل الصبح")}</small>
 				</div>
 				<div class="imed-library__tile" data-action="used"><span class="emoji">📦</span>${__("حاجة خلصت")}<small>${__("إزازة حبر، كرتونة ورق…")}</small></div>
 				<div class="imed-library__tile" data-action="count"><span class="emoji">🔢</span>${__("رصيد المخزون")}<small>${__("اكتب اللي عندنا دلوقتي")}</small></div>
@@ -68,9 +68,58 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 
 	const ACTIONS = {
 		counters() {
-			const today = desk.counter_today;
-			if (today) frappe.set_route("Form", "Daily Counter Reading", today.name);
-			else frappe.new_doc("Daily Counter Reading", { branch: desk.library, reading_date: frappe.datetime.get_today() });
+			// One number a machine, read off its counter: in the morning, then at the end of the day.
+			frappe.xcall(`${API}.counters_today`).then((now) => {
+				if (now.phase === "done") return frappe.msgprint(__("عدادات النهارده اتسجلت خلاص ✓"));
+				const morning = now.phase === "morning";
+				const fields = [
+					{
+						fieldtype: "HTML",
+						options: `<p class="imed-counters__hint">${
+							morning
+								? __("بداية اليوم: اكتب الرقم اللي ظاهر على عداد كل مكنة.")
+								: now.earlier
+								? __("يوم {0} لسه ناقصه قراية آخر اليوم. اكتب أرقام العدادات دلوقتي.", [frappe.datetime.str_to_user(now.date)])
+								: __("آخر اليوم: اكتب الرقم اللي ظاهر على عداد كل مكنة.")
+						}</p>`,
+					},
+				];
+				now.machines.forEach((m, i) => {
+					const before = morning ? m.last : m.morning;
+					fields.push({
+						fieldname: `m${i}`,
+						fieldtype: "Int",
+						label: m.machine,
+						reqd: 1,
+						description: before ? (morning ? __("آخر قراية امبارح: {0}", [qty(before)]) : __("الصبح كان: {0}", [qty(before)])) : __("أول قراية للمكنة دي"),
+					});
+					fields.push(
+						morning
+							? { fieldname: `n${i}`, fieldtype: "Data", label: __("العداد زاد عن امبارح، ليه؟"), depends_on: before ? `eval:doc.m${i} > ${before}` : "eval:false" }
+							: { fieldname: `n${i}`, fieldtype: "Data", label: __("المكنة عطلت؟ اكتب إيه اللي حصل (لو فيه)") }
+					);
+				});
+				const d = new frappe.ui.Dialog({
+					title: morning ? __("عدادات الصبح") : __("عدادات آخر اليوم"),
+					fields,
+					primary_action_label: __("سجّل"),
+					primary_action(v) {
+						const readings = {};
+						const notes = {};
+						now.machines.forEach((m, i) => {
+							readings[m.machine] = v[`m${i}`];
+							if (v[`n${i}`]) notes[m.machine] = v[`n${i}`];
+						});
+						frappe.xcall(`${API}.save_counters`, { phase: now.phase, readings: JSON.stringify(readings), notes: JSON.stringify(notes) }).then((r) => {
+							d.hide();
+							done(morning ? __("عدادات الصبح اتسجلت. آخر اليوم سجّل تاني.") : __("اليوم اتقفل: اتطبع {0} ورقة.", [qty(r.sheets)]));
+						});
+					},
+				});
+				d.$wrapper.addClass("imed-counters");
+				d.$wrapper.find("input[data-fieldtype='Int']").attr("inputmode", "numeric");
+				d.show();
+			});
 		},
 		used() {
 			const d = new frappe.ui.Dialog({

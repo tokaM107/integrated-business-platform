@@ -125,3 +125,49 @@ class IntegrationTestLibraryDesk(IntegrationTestCase):
 		frappe.set_user(ACCOUNT)
 		self.assertRaisesRegex(frappe.ValidationError, "no price", desk.count, {INK: 2})
 
+
+	def test_the_counters_are_one_number_a_machine_morning_then_evening(self):
+		frappe.set_user(ACCOUNT)
+		now = desk.counters_today()
+		if now["phase"] != "morning" or not now["machines"]:
+			self.skipTest(f"{LIBRARY} has no machines, or its day is already open on this site")
+		morning = {m["machine"]: (m["last"] or 1000) for m in now["machines"]}
+		# A missing number is refused, in words the library reads.
+		self.assertRaises(frappe.ValidationError, desk.save_counters, "morning", {**morning, now["machines"][0]["machine"]: 0})
+		desk.save_counters("morning", morning)
+		later = desk.counters_today()
+		self.assertEqual(later["phase"], "evening")
+		self.assertEqual({m["machine"]: m["morning"] for m in later["machines"]}, morning)
+		# The screen is told when the day moved on elsewhere.
+		self.assertRaises(frappe.ValidationError, desk.save_counters, "morning", morning)
+		first = now["machines"][0]["machine"]
+		closed = desk.save_counters("evening", {m: n + 40 for m, n in morning.items()}, {first: "الورق اتزنق"})
+		self.assertEqual((closed["phase"], closed["sheets"]), ("done", 40 * len(morning)))
+		day = frappe.get_doc("Daily Counter Reading", closed["day"])
+		row = next(r for r in day.machines if r.machine == first)
+		self.assertEqual((day.docstatus, row.fault, row.fault_note), (1, 1, "الورق اتزنق"))
+		self.assertEqual(desk.counters_today()["phase"], "done")
+
+	def test_a_counter_that_went_up_overnight_needs_a_reason(self):
+		frappe.set_user(ACCOUNT)
+		now = desk.counters_today()
+		if now["phase"] != "morning" or not now["machines"]:
+			self.skipTest(f"{LIBRARY} has no machines, or its day is already open on this site")
+		if not any(m["last"] for m in now["machines"]):
+			# Yesterday closed, so this morning has a last reading to compare with.
+			frappe.set_user("Administrator")
+			from frappe.utils import add_days, today
+
+			day = frappe.get_doc({"doctype": "Daily Counter Reading", "branch": LIBRARY, "reading_date": add_days(today(), -1)})
+			for m in now["machines"]:
+				day.append("machines", {"machine": m["machine"], "opening_reading": 500, "closing_reading": 600})
+			day.insert()
+			day.submit()
+			frappe.set_user(ACCOUNT)
+			now = desk.counters_today()
+		known = [m for m in now["machines"] if m["last"]]
+		morning = {m["machine"]: (m["last"] or 1000) for m in now["machines"]}
+		morning[known[0]["machine"]] += 15
+		self.assertRaises(frappe.ValidationError, desk.save_counters, "morning", morning)
+		desk.save_counters("morning", morning, {known[0]["machine"]: "طباعة بالليل لطلب مستعجل"})
+		self.assertEqual(desk.counters_today()["phase"], "evening")
