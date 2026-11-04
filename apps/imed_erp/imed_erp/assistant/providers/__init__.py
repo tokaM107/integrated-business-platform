@@ -49,4 +49,12 @@ def voice_provider(provider: AssistantProvider) -> AssistantProvider:
 	return GeminiProvider() if gemini_key() else provider
 
 
-__all__ = ["AssistantProvider", "OfflineProvider", "get_provider", "voice_provider"]
+def speech_provider(provider: AssistantProvider) -> AssistantProvider:
+	"""Who reads answers aloud: ElevenLabs when its key is set (the owner's chosen voice), else whoever hears and
+	speaks (voice_provider)."""
+	from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice, elevenlabs_key
+
+	return ElevenLabsVoice() if elevenlabs_key() else voice_provider(provider)
+
+
+__all__ = ["AssistantProvider", "OfflineProvider", "get_provider", "voice_provider", "speech_provider"]

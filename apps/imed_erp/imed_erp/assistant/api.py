@@ -16,7 +16,7 @@ from imed_erp.assistant import service
 from imed_erp.assistant.core.context import RequestContext, build_context
 from imed_erp.assistant.core.exceptions import ModelUnavailable
 from imed_erp.assistant.memory.chat_memory import ChatStore
-from imed_erp.assistant.providers import get_provider, voice_provider
+from imed_erp.assistant.providers import get_provider, speech_provider, voice_provider
 
 # Requirements section 3.2 / open question 22: the AI assistant is for the owner only (Super Admin).
 # System Manager is included so the developers can test it; branch managers, the accountant and HR do not see it.
@@ -194,7 +194,7 @@ def speak(text=None):
 	words = speakable(text)
 	if not words:
 		frappe.throw(_("Nothing to read."))
-	provider = voice_provider(get_provider())
+	provider = speech_provider(get_provider())
 	context = build_context()
 	try:
 		spoken = provider.speak(words, context)

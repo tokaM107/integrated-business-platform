@@ -607,13 +607,13 @@ class IntegrationTestAssistantVoice(AssistantCase):
 	def test_an_answer_is_read_by_the_model_s_voice_cleaned_of_marks(self):
 		frappe.set_user(OWNER)
 		model = VoiceModel()
-		with patch.object(api, "get_provider", return_value=model):
+		with patch.object(api, "get_provider", return_value=model), patch.object(api, "speech_provider", side_effect=lambda p: p):
 			result = api.speak(text="**عندنا** ٣ حجوزات 👋 في # الاستوديو")
 		self.assertEqual(result["mime"], "audio/wav")
 		self.assertEqual(__import__("base64").b64decode(result["audio"]), model.audio[0])
 		self.assertEqual(model.spoken, ["عندنا ٣ حجوزات في الاستوديو"])
 		# No voice on the server: the browser reads it (and nothing reaches a real model from a test).
-		with patch.object(api, "get_provider", return_value=FakeModel()), patch.object(api, "voice_provider", side_effect=lambda p: p):
+		with patch.object(api, "get_provider", return_value=FakeModel()), patch.object(api, "speech_provider", side_effect=lambda p: p):
 			self.assertEqual(api.speak(text="تمام")["audio"], None)
 
 	def test_voice_is_the_owner_s_like_the_rest_of_the_assistant(self):
@@ -785,3 +785,59 @@ class IntegrationTestAssistantAccountNames(AssistantCase):
 		self.assertRaisesRegex(frappe.ValidationError, "Cash boxes and banks", resolve_account, "Cash Box - Azarita", context)
 		self.assertIn(box, AccountBalanceTool().spec(context)["description"])
 		self.assertEqual(AccountBalanceTool().run({"account": "خزنة الازاريطه", "date": ""}, context)["account"], box)
+
+
+class IntegrationTestAssistantElevenLabs(AssistantCase):
+	"""4 Nov 2026: the owner chose the ElevenLabs voice I3u6waC588j43py1kDN2 for reading answers aloud."""
+
+	def env(self, **values):
+		import os
+
+		clean = {"ELEVENLABS_API_KEY": "", "XI_API_KEY": "", "IMED_ELEVENLABS_VOICE_ID": "", "IMED_ELEVENLABS_MODEL": ""}
+		return patch.dict(os.environ, {**clean, **values}), patch.dict(frappe.local.conf, {"imed_elevenlabs_api_key": None, "imed_elevenlabs_voice_id": None, "imed_elevenlabs_model": None})
+
+	def test_the_owner_s_voice_reads_answers_when_its_key_is_set(self):
+		from imed_erp.assistant.providers import speech_provider
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			speaker = speech_provider(FakeModel())
+			self.assertEqual((speaker.name, speaker.voice, speaker.model), ("elevenlabs", "I3u6waC588j43py1kDN2", "eleven_multilingual_v2"))
+		# Without its key: the voice as before (Gemini's when its key is set, else none).
+		a, b = self.env()
+		with a, b, patch("imed_erp.assistant.providers.voice_provider", side_effect=lambda p: p):
+			self.assertNotEqual(speech_provider(FakeModel()).name, "elevenlabs")
+
+	def test_the_request_elevenlabs_gets_and_what_comes_back(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice
+
+		sent = []
+
+		def post(url, **kwargs):
+			sent.append((url, kwargs))
+			return SimpleNamespace(status_code=200, content=b"ID3 mp3 bytes", text="")
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			voice = ElevenLabsVoice()
+		with patch("requests.post", side_effect=post):
+			self.assertEqual(voice.speak("عندنا تلات حجوزات", build_context()), (b"ID3 mp3 bytes", "audio/mpeg"))
+		url, kwargs = sent[0]
+		self.assertEqual(url, "https://api.elevenlabs.io/v1/text-to-speech/I3u6waC588j43py1kDN2")
+		self.assertEqual((kwargs["headers"]["xi-api-key"], kwargs["json"]), ("el-test", {"text": "عندنا تلات حجوزات", "model_id": "eleven_multilingual_v2"}))
+		# A voice not in the account or no characters left: logged, and the browser reads instead (no error shown).
+		with patch("requests.post", return_value=SimpleNamespace(status_code=404, content=b"", text='{"detail":{"status":"voice_not_found"}}')):
+			self.assertIsNone(voice.speak("x", build_context()))
+		self.assertTrue(frappe.db.exists("Error Log", {"method": "ElevenLabs speech refused"}))
+
+	def test_the_endpoint_plays_the_owner_s_voice(self):
+		frappe.set_user(OWNER)
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		from types import SimpleNamespace
+
+		with a, b, patch("requests.post", return_value=SimpleNamespace(status_code=200, content=b"ID3 mp3", text="")):
+			result = api.speak(text="عندنا تلات حجوزات")
+		self.assertEqual((result["mime"], __import__("base64").b64decode(result["audio"])), ("audio/mpeg", b"ID3 mp3"))
+

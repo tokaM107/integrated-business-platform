@@ -38,6 +38,9 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       IMED_ASSISTANT_PROVIDER: ${IMED_ASSISTANT_PROVIDER:-}
       IMED_ASSISTANT_CLAUDE_MODEL: ${IMED_ASSISTANT_CLAUDE_MODEL:-}
+      # Answers read aloud by the owner's ElevenLabs voice when this key is set (else Gemini's).
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      IMED_ELEVENLABS_VOICE_ID: ${IMED_ELEVENLABS_VOICE_ID:-}
     healthcheck:
       interval: 30s
       retries: 5

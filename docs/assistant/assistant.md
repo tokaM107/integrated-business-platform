@@ -93,6 +93,8 @@ ANTHROPIC_API_KEY=sk-ant-...            # Claude answers (default model claude-s
 GEMINI_API_KEY=AIza...                  # the Egyptian voice and the dictation
 IMED_ASSISTANT_PROVIDER=gemini          # optional: force a provider (gemini, claude, offline)
 IMED_ASSISTANT_CLAUDE_MODEL=...         # optional: another Claude model
+ELEVENLABS_API_KEY=...                  # answers read aloud by ElevenLabs voice I3u6waC588j43py1kDN2 (else Gemini's)
+IMED_ELEVENLABS_VOICE_ID=...            # optional: another ElevenLabs voice (it must be in the key's account)
 ```
 
 The same can live in the site config instead (`bench --site frontend set-config <name> <value>`):
