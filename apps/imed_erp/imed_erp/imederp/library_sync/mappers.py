@@ -46,6 +46,20 @@ def when(value):
 	raise MappingError(f"not a date: {value!r}")
 
 
+def day_and_time(day, saved_at=None):
+	"""The document's day (TxtRegDateRefStock: the library keeps it at 00:00) at the time the cashier saved it
+	(TxtOrderTime, set to GETDATE() by SPrFSSSUpdate), when the connector sends that: the day stays the library's,
+	only the clock comes from the save. Without it, or when it does not read as a date, the day alone."""
+	base = when(day)
+	if not saved_at:
+		return base
+	try:
+		t = when(saved_at)
+	except MappingError:
+		return base
+	return base.replace(hour=t.hour, minute=t.minute, second=t.second, microsecond=0)
+
+
 def kind_of(family, document, operation_map):
 	spec = c.FAMILIES[family]
 	if "kind" in spec:
@@ -90,7 +104,7 @@ def map_document(family, document, settings):
 		"operation_code": str(document.get(spec["operation_code"]) or ""),
 		"operation_name": str(document.get(spec["operation_name"]) or "") if spec["operation_name"] else "",
 		"number": str(document[spec["number"]]),
-		"reg_date": when(document[spec["date"]]),
+		"reg_date": day_and_time(document[spec["date"]], document.get("TxtOrderTime")),
 		"status_code": status_code,
 		"status_name": str(document.get(spec["status_name"]) or ""),
 		"is_final": 1 if status_code in issued else 0,
