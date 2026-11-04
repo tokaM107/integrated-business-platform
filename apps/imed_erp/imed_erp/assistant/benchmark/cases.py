@@ -168,19 +168,20 @@ def oracle_studio_money(company):
 	}
 
 
-def oracle_did_haitham_pay(company, words=("هيثم", "Haitham", "haitham")):
-	students = [c.name for c in frappe.get_all("Customer", fields=["name", "customer_name"]) if any(w in (c.customer_name or c.name) for w in words)]
-	payments = frappe.get_all("App Payment", filters={"student": ("in", students or ["-"]), "docstatus": 1}, fields=["name", "amount", "posting_date"]) if students else []
-	doctors = [a.name for a in frappe.get_all("Doctor Agreement", fields=["name", "doctor"]) if any(w in (a.doctor or "") for w in words)]
-	collections = frappe.get_all("Doctor Ledger Entry", filters={"agreement": ("in", doctors or ["-"]), "entry_type": "Collection", "docstatus": 1}, fields=["amount"]) if doctors else []
-	if not students and not doctors:
-		return {"available": True, "has_records": False, "facts": {}, "why": "no student or doctor named Haitham"}
+def oracle_who_paid(company):
+	"""BA Plus students who paid this month (submitted App Payments): who, how many, how much."""
+	start, end = get_first_day(today()), today()
+	rows = frappe.get_all("App Payment", filters={"docstatus": 1, "posting_date": ("between", [start, end])}, fields=["student", "amount"])
+	per = {}
+	for r in rows:
+		per[r.student] = flt(per.get(r.student, 0) + flt(r.amount), 2)
+	names = {c.name: c.customer_name for c in frappe.get_all("Customer", filters={"name": ("in", list(per) or ["-"])}, fields=["name", "customer_name"])}
 	return {
 		"available": True,
-		"has_records": bool(payments or collections),
-		"facts": {"paid": flt(sum(flt(p.amount) for p in payments) + sum(flt(c.amount) for c in collections), 2)},
-		"ambiguous": len(students) + len(doctors) > 1,
-		"matches": {"students": students, "doctors": doctors},
+		"has_records": bool(rows),
+		"facts": {"payers": len(per), "total": flt(sum(per.values()), 2)},
+		"items": [names.get(k, k) for k in per],
+		"period": f"{start}..{end}",
 	}
 
 
@@ -261,11 +262,12 @@ CASES: list[Case] = [
 	Case("H11", "فلوس الاستوديو وحساباته الشهر ده عاملة إيه؟", "facts", "studio", "the studio's money this month",
 		oracle=oracle_studio_money, expected_tools=("run_report", "dashboard_cards", "owner_band_today"), reading="اعد فلوسك والحسابات بالنسبة للاستوديو", uncertain=True,
 		notes="XStudio's amounts due and paid are mirrored, never posted: a right answer keeps them apart from the ledger."),
-	Case("H12", "هيثم دفع؟", "facts", "ba-plus", "whether Haitham paid",
-		oracle=oracle_did_haitham_pay, expected_tools=("list_records",), reading="هيثم دفع", uncertain=True,
-		notes="Haitham may be a student or a teacher; with several matches a right answer asks which one."),
-	Case("H13", "كام مدرس، وكل مدرس عنده كام طالب؟", "facts", "ba-plus", "active teachers and their students",
-		oracle=oracle_teachers_students, expected_tools=("list_records", "run_report"), reading="كام مدرس عمل كام طالب"),
+	Case("H12", "مين دفع؟", "list", "ba-plus", "which BA Plus students paid (this month)",
+		oracle=oracle_who_paid, expected_tools=("list_records",), reading="مين دفع",
+		notes="Confirmed by the owner (4 Nov 2026): 'who paid', next to teachers and students, so BA Plus. No period said: this month is assumed; the answer must say which period it used."),
+	Case("H13", "كام مدرس، وكل مدرس معاه كام طالب؟", "facts", "ba-plus", "active teachers and their students",
+		oracle=oracle_teachers_students, expected_tools=("list_records", "run_report"), reading="كام مدرس معاه كام طالب",
+		notes="Confirmed by the owner (4 Nov 2026)."),
 	Case("H14", "رصيد الحبر في المكتبة اتحط على السيستم امتى؟", "unavailable", "library-stock", "when the ink stock was entered",
 		oracle=oracle_ink, reading="المكتبة بيدخل رصيد الحبر على السيستم حطيناه امتى"),
 	Case("H15", "معدل استهلاك الأحبار الطبيعي قد إيه، والأحبار هتخلص امتى؟", "unavailable", "library-stock", "ink usage rate and run-out date",

@@ -25,8 +25,8 @@ that case's score.
 | H09 | كام واحد حجز الاستوديو النهاردة | كام واحد حجز الاستوديو النهارده؟ | facts | today's studio bookings, distinct customers |
 | H10 **(?)** | الحجوزات اللي اتعملت وواحد لنفس… اخد كام ساعة | الحجوزات اللي اتعملت النهارده، وكل واحد خد كام ساعة؟ | facts | hours per customer today |
 | H11 **(?)** | اعد فلوسك والحسابات بالنسبة للاستوديو | فلوس الاستوديو وحساباته الشهر ده عاملة إيه؟ | facts | studio revenue, expenses, net; XStudio due and paid shown apart |
-| H12 **(?)** | هيثم دفع | هيثم دفع؟ | facts | App Payments of a student, or collections of a doctor, named Haitham |
-| H13 | كام مدرس عمل كام طالب | كام مدرس، وكل مدرس عنده كام طالب؟ | facts | active App Courses: teachers and students |
+| H12 | مين دفع (confirmed by the owner) | مين دفع؟ | list | BA Plus students with an App Payment this month: who, how many, how much |
+| H13 | كام مدرس معاه كام طالب (confirmed) | كام مدرس، وكل مدرس معاه كام طالب؟ | facts | active App Courses: teachers and students per teacher |
 | H14 | المكتبة بيدخل رصيد الحبر على السيستم حطيناه امتى | رصيد الحبر في المكتبة اتحط على السيستم امتى؟ | unavailable | ink not stocked |
 | H15 | معدل طبيعي الأحبار هتخلص امتى | معدل استهلاك الأحبار الطبيعي قد إيه، والأحبار هتخلص امتى؟ | unavailable | ink not stocked |
 | H16 | لما المخزون يخلص يدي انذار | لما المخزون يخلص ابعتلي إنذار. | readonly | a request: reorder alerts exist; the assistant sets nothing |
