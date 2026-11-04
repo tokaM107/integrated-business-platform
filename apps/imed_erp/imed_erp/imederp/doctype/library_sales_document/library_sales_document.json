@@ -73,15 +73,15 @@
    "label": "Kind",
    "options": "Retail Sale\nWholesale Sale\nRetail Return\nWholesale Return\nPurchase\nPurchase Return\nOpening Balance\nAdjustment In\nAdjustment Out\nTransfer\nPrice Offer\nCash Receipt\nCash Payment\nOther",
    "in_list_view": 1,
-   "in_standard_filter": 1,
    "read_only": 1
   },
   {
    "fieldname": "number",
    "fieldtype": "Data",
-   "label": "Number in the Library System",
+   "label": "Invoice No.",
    "in_list_view": 1,
-   "read_only": 1
+   "read_only": 1,
+   "in_standard_filter": 1
   },
   {
    "fieldname": "reg_date",
@@ -95,7 +95,6 @@
    "fieldname": "is_final",
    "fieldtype": "Check",
    "label": "Issued (final)",
-   "in_standard_filter": 1,
    "description": "On: the library issued it. Off: held, or cancelled; see Status.",
    "read_only": 1
   },
@@ -120,16 +119,16 @@
    "fieldname": "branch_name",
    "fieldtype": "Data",
    "label": "Branch",
-   "in_list_view": 1,
    "read_only": 1
   },
   {
    "fieldname": "cost_center",
    "fieldtype": "Link",
-   "label": "Cost Center",
+   "label": "Library",
    "options": "Cost Center",
    "in_standard_filter": 1,
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "fieldname": "store_code",
@@ -392,8 +391,6 @@
    "fieldtype": "Data",
    "label": "Library (PC)",
    "read_only": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "description": "The library PC the document came from (its connector's config.json): the first library or PC1. Two libraries never share a document id."
   },
   {
@@ -442,7 +439,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-27 16:00:00.000000",
+ "modified": "2026-11-04 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Library Sales Document",

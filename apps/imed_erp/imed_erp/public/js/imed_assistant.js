@@ -24,6 +24,8 @@
 		t("Paper stock in each store", "رصيد الورق في كل مخزن"),
 		t("Doctors due for settlement", "الدكاترة اللي عليهم تسوية"),
 	];
+	// An icon for each suggestion card on the welcome screen, in the same order (the owner, 4 Nov 2026).
+	const SUGGESTION_ICONS = ["trending-up", "hand-coins", "package", "stethoscope"];
 
 	// The character: a teal head with a face screen and an antenna ending in the logo's amber dot.
 	const character = (cls) => `
@@ -86,6 +88,7 @@
 						<div class="imed-assistant-panel__titles">
 							<h2 id="imed-assistant-title">${esc(t("AI Assistant", "المساعد الذكي"))}</h2>
 							<small class="imed-assistant-panel__chat-title"></small>
+							<small class="imed-assistant-panel__status"><i></i><span>${esc(t("Ready to help", "جاهز يساعدك"))}</span></small>
 						</div>
 						<button type="button" class="imed-assistant-panel__chats" aria-label="${esc(t("Chats", "المحادثات"))}" title="${esc(t("Chats", "المحادثات"))}">
 							${frappe.utils.icon("list", "md")}
@@ -131,6 +134,12 @@
 		$(container).append($root);
 		bind($root);
 		render($root);
+		// The header's line under the name: ready, or the model not reached.
+		get_status().then((s) => {
+			if (s && s.allowed && s.connected === false) {
+				$root.find(".imed-assistant-panel__status").addClass("is-off").find("span").text(t("The model is not connected", "النموذج مش متصل"));
+			}
+		});
 	}
 
 	// ------------------------------------------------------------------ open / close
@@ -217,49 +226,72 @@
 							)
 						)}
 					</p>
+					<p class="imed-assistant-welcome__try">${esc(t("Try asking", "جرّب تسأل"))}</p>
+					<div class="imed-assistant-welcome__grid"></div>
 				</div>`);
+			// The suggestions as cards on the welcome screen, each with its icon.
+			const $grid = $log.find(".imed-assistant-welcome__grid");
+			SUGGESTIONS().forEach((s, i) =>
+				$(`<button type="button" class="imed-assistant-chip" dir="auto">
+						<span class="imed-assistant-chip__icon">${frappe.utils.icon(SUGGESTION_ICONS[i] || "message-circle", "sm")}</span>
+						<span class="imed-assistant-chip__text">${esc(s)}</span>
+					</button>`)
+					.on("click", () => send_text($root, s))
+					.appendTo($grid)
+			);
 		}
 
 		state.items.forEach((item) => $log.append(bubble(item)));
 		if (state.busy && state.stream && state.stream.text) {
 			// The answer while it is written (api.streamer): replaced by the final one when it arrives.
-			$log.append(`<div class="imed-assistant-msg is-assistant is-streaming" dir="auto">${esc(state.stream.text)}</div>`);
+			$log.append(`
+				<div class="imed-assistant-row is-assistant">
+					<span class="imed-assistant-row__avatar">${character("imed-bot--tiny")}</span>
+					<div class="imed-assistant-row__body"><div class="imed-assistant-msg is-assistant is-streaming" dir="auto">${esc(state.stream.text)}</div></div>
+				</div>`);
 		} else if (state.busy) {
 			$log.append(`
-				<div class="imed-assistant-msg is-assistant is-typing" aria-label="${esc(t("Typing", "بيكتب"))}">
-					<span></span><span></span><span></span>
+				<div class="imed-assistant-row is-assistant">
+					<span class="imed-assistant-row__avatar">${character("imed-bot--tiny")}</span>
+					<div class="imed-assistant-msg is-assistant is-typing" aria-label="${esc(t("Typing", "بيكتب"))}">
+						<span></span><span></span><span></span>
+					</div>
 				</div>`);
 		}
 
-		const $sugg = $root.find(".imed-assistant-panel__suggestions").empty();
-		if (!state.items.length) {
-			SUGGESTIONS().forEach((s) =>
-				$(`<button type="button" class="imed-assistant-chip" dir="auto">${esc(s)}</button>`)
-					.on("click", () => send_text($root, s))
-					.appendTo($sugg)
-			);
-		}
+		$root.find(".imed-assistant-panel__suggestions").empty();
 
 		$root.find(".imed-assistant-send, .imed-assistant-mic").prop("disabled", state.busy);
 		bind_speak($root);
 		scroll_to_end($root);
 	}
 
+	// A message as a row: the user's on one side; the assistant's with its avatar beside it and, under an answer,
+	// the actions (read aloud, copy).
 	function bubble(item) {
-		const cls = item.role === "user" ? "is-user" : item.error ? "is-assistant is-error" : "is-assistant";
+		const mine = item.role === "user";
+		const cls = mine ? "is-user" : item.error ? "is-assistant is-error" : "is-assistant";
+		const avatar = mine ? "" : `<span class="imed-assistant-row__avatar">${character("imed-bot--tiny")}</span>`;
+		let body;
 		if (item.audio_url) {
-			return `
+			body = `
 				<div class="imed-assistant-msg ${cls} is-voice">
 					<audio controls preload="metadata" src="${esc(item.audio_url)}"></audio>
 					${item.transcript ? `<div class="imed-assistant-msg__transcript" dir="auto">${esc(item.transcript)}</div>` : ""}
 				</div>`;
+		} else {
+			// Under an answer: read aloud by the model's Egyptian voice (api.speak; the browser's own voice only when
+			// the server has none, 2 Nov 2026: the browser's read Arabic letter by letter, in no dialect), and copy.
+			// The speak button's sign (🔊, ⏳ while fetching, ⏹ while playing) is set by speak_answer.
+			const actions = !mine && !item.error
+				? `<div class="imed-assistant-msg__actions">
+						<button type="button" class="imed-assistant-speak" title="${esc(t("Read aloud", "اقرأ بصوت"))}" aria-label="${esc(t("Read aloud", "اقرأ بصوت"))}">🔊</button>
+						<button type="button" class="imed-assistant-copy" title="${esc(t("Copy", "انسخ"))}" aria-label="${esc(t("Copy", "انسخ"))}">${frappe.utils.icon("copy", "sm")}</button>
+					</div>`
+				: "";
+			body = `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}</div>${actions}`;
 		}
-		// An answer is read aloud by the model's Egyptian voice (api.speak); the browser's own voice only when the
-		// server has none (2 Nov 2026: the browser's read Arabic letter by letter, in no dialect).
-		const speak = item.role === "assistant" && !item.error
-			? `<button type="button" class="imed-assistant-speak" title="${esc(t("Read aloud", "اقرأ بصوت"))}" aria-label="${esc(t("Read aloud", "اقرأ بصوت"))}">🔊</button>`
-			: "";
-		return `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}${speak}</div>`;
+		return `<div class="imed-assistant-row ${mine ? "is-user" : "is-assistant"}">${avatar}<div class="imed-assistant-row__body">${body}</div></div>`;
 	}
 
 	function speak_text(text) {
@@ -315,9 +347,19 @@
 	}
 
 	function bind_speak($root) {
+		// The answer's text: its row's message, or the message holding the button (a message drawn without a row).
+		const text_of = (el) => {
+			const $row = $(el).closest(".imed-assistant-row");
+			const $msg = $row.length ? $row.find(".imed-assistant-msg") : $(el).closest(".imed-assistant-msg");
+			return $msg.text().replace(/[🔊⏳⏹]\s*$/u, "").trim();
+		};
 		$root.off("click.imed-speak").on("click.imed-speak", ".imed-assistant-speak", function () {
-			const $btn = $(this);
-			speak_answer($btn, $btn.closest(".imed-assistant-msg").text().replace(/[🔊⏳⏹]\s*$/u, "").trim());
+			speak_answer($(this), text_of(this));
+		});
+		$root.off("click.imed-copy").on("click.imed-copy", ".imed-assistant-copy", function () {
+			const done = () => frappe.show_alert({ message: t("Copied", "اتنسخ"), indicator: "green" }, 2);
+			if (navigator.clipboard) navigator.clipboard.writeText(text_of(this)).then(done, () => frappe.utils.copy_to_clipboard(text_of(this)));
+			else frappe.utils.copy_to_clipboard(text_of(this));
 		});
 	}
 

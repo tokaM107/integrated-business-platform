@@ -512,6 +512,46 @@
 			</div>`;
 	}
 
+	// Today's sales of each library as its own system sent them, first on the page (the owner, 4 Nov 2026): the
+	// sales, how many invoices, the returns, and whether the library's connector is delivering (every 10 minutes:
+	// live under 25 minutes, late under 2 hours, stopped beyond). A library not linked yet says so, not a zero.
+	const LIBRARY_TONES = ["teal", "cyan"];
+
+	function library_tile(l, i) {
+		const tone = LIBRARY_TONES[i % LIBRARY_TONES.length];
+		if (!l.linked) {
+			return `<section class="imed-ov-kpi imed-lib-kpi imed-ov-lib is-unlinked tone-gray">
+					<div class="imed-ov-kpi__top">
+						<span class="imed-ov-kpi__icon">${frappe.utils.icon("store", "md")}</span>
+						<span class="imed-ov-kpi__label">${esc(l.name)}</span>
+					</div>
+					<b class="imed-ov-kpi__value">${esc(__("Not linked yet"))}</b>
+					<span class="imed-lib-kpi__note">${esc(__("Its sales show here once its system is linked"))}</span>
+				</section>`;
+		}
+		const minutes = (Date.now() - frappe.datetime.str_to_obj(l.last_synced_at).getTime()) / 60000;
+		const beat = minutes <= 25 ? ["is-live", __("Connected")] : minutes <= 120 ? ["is-late", __("Late")] : ["is-stopped", __("Stopped")];
+		const returns = l.returns_count ? ` · ${__("Returns {0}", [format_currency(l.returns_value, overview.currency, 0)])}` : "";
+		const href = `/desk/library-sales-document?cost_center=${encodeURIComponent(l.cost_center)}`;
+		return `<a class="imed-ov-kpi imed-lib-kpi imed-ov-lib tone-${tone}" href="${href}">
+				<div class="imed-ov-kpi__top">
+					<span class="imed-ov-kpi__icon">${frappe.utils.icon("store", "md")}</span>
+					<span class="imed-ov-kpi__label">${esc(l.name)}</span>
+					<span class="imed-ov-lib__beat ${beat[0]}" title="${esc(__("Last update {0}", [frappe.datetime.prettyDate(l.last_synced_at)]))}"><i class="imed-lib-beat ${beat[0] === "is-live" ? "is-live" : ""}"></i>${esc(beat[1])}</span>
+				</div>
+				<b class="imed-ov-kpi__value imed-ov-num">${esc(format_currency(l.sales_value, overview.currency, 0))}</b>
+				<span class="imed-lib-kpi__note">${esc(__("{0} invoices", [number(l.sales_count)]) + returns)}</span>
+			</a>`;
+	}
+
+	function libraries_html(libs) {
+		if (!libs || !libs.rows.length) return "";
+		return `<section class="imed-ov-libs">
+				<h3>${frappe.utils.icon("store", "sm")}${esc(__("The libraries' sales today"))}</h3>
+				<div class="imed-ov-libs__grid">${libs.rows.map(library_tile).join("")}</div>
+			</section>`;
+	}
+
 	// The halls and the studio apart (the owner, 2 Nov 2026), each booking tentative or completed.
 	const KINDS = {
 		halls: ["presentation", "tone-blue", __("Halls")],
@@ -617,6 +657,7 @@
 		if (!overview) return;
 		$page.find(".imed-ov").remove();
 		const $panel = $(`<div class="imed-ov">
+				${libraries_html(overview.libraries)}
 				${kpis_html(overview.kpis)}
 				<div class="imed-ov-row">${pipeline_html(overview.pipeline)}${upcoming_html(overview.upcoming)}</div>
 				<div class="imed-ov-row">${collection_html(overview.collection)}${reports_html()}</div>
