@@ -9,22 +9,21 @@ Code: `apps/imed_erp/imed_erp/assistant/benchmark/` (`cases.py` holds the questi
 
 ## The questions
 
-Each handwritten line is shown as it was read. **(?)** marks a reading to confirm with the owner before trusting
-that case's score.
+Each handwritten line is shown as it was read; the owner confirmed every reading (4 Nov 2026).
 
 | Case | Handwriting, as read | Question asked | Kind | What the ERP holds |
 |---|---|---|---|---|
 | H01 | مين بيشتغل ومين مش بيشتغل | مين بيشتغل ومين مش بيشتغل النهارده؟ | unavailable | no attendance (no HR app) |
 | H02 | كام كتاب اتباع للدكتور ايمن كتاب bio | كام كتاب اتباع للدكتور أيمن، كتاب البيو؟ | facts | Book Edition sold quantities |
-| H03 **(?)** | الناس النهاردة حجم اساعة كام | الناس النهارده حجزت الساعة كام؟ | list | today's held bookings and their times |
+| H03 | الناس النهاردة حجم اساعة كام | الناس النهارده حجزت الساعة كام؟ | list | today's held bookings and their times |
 | H04 | مين اتأخر بعد ٩ ونص | مين اتأخر بعد ٩ ونص؟ | unavailable | no attendance |
 | H05 | الأحبار والورق فيها مخزون كام | الأحبار والورق فيها مخزون كام؟ | facts | paper in sheets and boxes; ink not a stock item |
 | H06 | الأحبار اتحطت فين | الأحبار اتحطت فين؟ | unavailable | ink not stocked (becomes "list" once it is) |
 | H07 | كام كارتونة ورق متبقية | كام كرتونة ورق متبقية؟ | facts | paper ÷ 2,500 sheets a box |
 | H08 | حساب كامل لكل مكان لوحده | عايز حساب كامل لكل مكان لوحده. | facts | revenue, expenses and net per business, this month |
 | H09 | كام واحد حجز الاستوديو النهاردة | كام واحد حجز الاستوديو النهارده؟ | facts | today's studio bookings, distinct customers |
-| H10 **(?)** | الحجوزات اللي اتعملت وواحد لنفس… اخد كام ساعة | الحجوزات اللي اتعملت النهارده، وكل واحد خد كام ساعة؟ | facts | hours per customer today |
-| H11 **(?)** | اعد فلوسك والحسابات بالنسبة للاستوديو | فلوس الاستوديو وحساباته الشهر ده عاملة إيه؟ | facts | studio revenue, expenses, net; XStudio due and paid shown apart |
+| H10 | الحجوزات اللي اتعملت وواحد لنفس… اخد كام ساعة | الحجوزات اللي اتعملت النهارده، وكل واحد خد كام ساعة؟ | facts | hours per customer today |
+| H11 | اعد فلوسك والحسابات بالنسبة للاستوديو | فلوس الاستوديو وحساباته الشهر ده عاملة إيه؟ | facts | studio revenue, expenses, net; XStudio due and paid shown apart |
 | H12 | مين دفع (confirmed by the owner) | مين دفع؟ | list | BA Plus students with an App Payment this month: who, how many, how much |
 | H13 | كام مدرس معاه كام طالب (confirmed) | كام مدرس، وكل مدرس معاه كام طالب؟ | facts | active App Courses: teachers and students per teacher |
 | H14 | المكتبة بيدخل رصيد الحبر على السيستم حطيناه امتى | رصيد الحبر في المكتبة اتحط على السيستم امتى؟ | unavailable | ink not stocked |
