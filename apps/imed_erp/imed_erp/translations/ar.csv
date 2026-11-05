@@ -2246,3 +2246,18 @@ In the accounts,في الحسابات
 Nothing in the accounts for this period,مفيش قيود في الحسابات للفترة دي
 "Revenue {0}, expenses {1}","إيراد {0}، مصروف {1}"
 Net in the accounts,الصافي في الحسابات
+Cash in each box,الفلوس في كل خزينة
+The boxes are empty.,الخزن فاضية.
+Stock,المخزون
+No supplies are set up.,مفيش خامات متسجلة.
+Not used this week,ما اتستخدمش الأسبوع ده
+Runs out today,بيخلص النهارده
+Lasts about {0} days,يكفي حوالي {0} يوم
+A week ago: {0},من أسبوع: {0}
+No change this week,من غير تغيير الأسبوع ده
+more than last week,زيادة عن الأسبوع اللي فات
+less than last week,أقل من الأسبوع اللي فات
+{0} new subscriptions,{0} اشتراك جديد
+X Studio (XStudio),استوديو X (XStudio)
+Today's revenue and expenses by business,إيراد ومصروف النهارده لكل نشاط
+No revenue or expenses today yet.,مفيش إيراد ولا مصروف النهارده لسه.

@@ -153,3 +153,100 @@ def app(start, end):
 		"collected": flt(amounts.get("Collection", 0), 2),
 		"subscriptions": frappe.db.count("App Subscription", {"docstatus": 1, "subscription_date": ["between", [start, end]]}),
 	}
+
+
+# ---------- the cash boxes and the supplies (the owner, 5 Nov 2026: "a good stock section, arrows up and down") ----
+
+
+@frappe.whitelist()
+def get_boxes_and_stock():
+	check_owner()
+	return {"currency": frappe.get_cached_value("Company", company(), "default_currency"), "boxes": boxes(), "stock": stock()}
+
+
+def boxes():
+	"""What each cash box and wallet holds now, largest first; its name without the company's suffix."""
+	from imed_erp.imederp.owner_figures import balance, leaf_accounts
+
+	abbr = frappe.get_cached_value("Company", company(), "abbr")
+	rows = []
+	for account in leaf_accounts(account_type=["in", ["Cash", "Bank"]]):
+		name = frappe.get_cached_value("Account", account, "account_name") or account.replace(f" - {abbr}", "")
+		rows.append({"account": account, "name": name, "balance": flt(balance([account]), 2)})
+	return sorted(rows, key=lambda r: -r["balance"])
+
+
+WEEK = 7
+
+
+def stock(today=None):
+	"""Each supply (paper, inks, and any binding supplies), in the unit the libraries count it in (paper in boxes):
+	what the group's stores hold now, what they held a week ago (the arrow), what a week used, how many days that
+	lasts, and each store's part."""
+	from imed_erp.imederp.library_desk import SUPPLY_GROUPS, UNIT_NAMES, screen_unit
+
+	today = getdate(today or nowdate())
+	week_ago = add_days(today, -WEEK)
+	groups = [g for g in SUPPLY_GROUPS if frappe.db.exists("Item Group", g)]
+	groups += frappe.get_all("Item Group", filters={"is_group": 0, "item_group_name": ["like", "%سلك%"]}, pluck="name")
+	groups += frappe.get_all("Item Group", filters={"is_group": 0, "item_group_name": ["like", "%تجليد%"]}, pluck="name")
+	stores = frappe.get_all("Warehouse", filters={"company": company(), "is_group": 0}, pluck="name")
+	if not groups or not stores:
+		return []
+	rows = []
+	for item in frappe.get_all(
+		"Item", filters={"item_group": ["in", list(dict.fromkeys(groups))], "disabled": 0, "is_stock_item": 1}, fields=["name", "item_name", "item_group"], order_by="item_group desc, item_name"
+	):
+		unit, factor = screen_unit(item.name)
+		per_store = frappe.db.sql(
+			"select warehouse, actual_qty from `tabBin` where item_code = %s and warehouse in %s and actual_qty != 0", (item.name, tuple(stores)), as_dict=True
+		)
+		now = sum(flt(b.actual_qty) for b in per_store)
+		before = sum(
+			flt(r[0])
+			for r in frappe.db.sql(
+				"""select (select qty_after_transaction from `tabStock Ledger Entry` s
+					where s.item_code = %(item)s and s.warehouse = w.name and s.is_cancelled = 0 and s.posting_date <= %(day)s
+					order by s.posting_date desc, s.posting_time desc, s.creation desc limit 1)
+				from `tabWarehouse` w where w.name in %(stores)s""",
+				{"item": item.name, "day": week_ago, "stores": tuple(stores)},
+			)
+			if r[0] is not None
+		)
+		used = -flt(
+			frappe.db.sql(
+				"""select coalesce(sum(actual_qty), 0) from `tabStock Ledger Entry`
+				where item_code = %s and warehouse in %s and is_cancelled = 0 and actual_qty < 0 and voucher_type not in ('Stock Entry', 'Stock Reconciliation')
+					and posting_date > %s and posting_date <= %s""",
+				(item.name, tuple(stores), week_ago, today),
+			)[0][0]
+		)
+		# A transfer between the group's stores moves it and a count corrects it: neither is use. What a sale took,
+		# and what a library took off as finished (a Material Issue), is.
+		used += -flt(
+			frappe.db.sql(
+				"""select coalesce(sum(sle.actual_qty), 0) from `tabStock Ledger Entry` sle join `tabStock Entry` se on se.name = sle.voucher_no
+				where sle.item_code = %s and sle.warehouse in %s and sle.is_cancelled = 0 and sle.actual_qty < 0 and sle.voucher_type = 'Stock Entry'
+					and se.stock_entry_type = 'Material Issue' and sle.posting_date > %s and sle.posting_date <= %s""",
+				(item.name, tuple(stores), week_ago, today),
+			)[0][0]
+		)
+		daily = used / WEEK
+		rows.append(
+			{
+				"item_code": item.name,
+				"name": item.item_name,
+				"group": item.item_group,
+				"unit": UNIT_NAMES.get(unit, unit) or "",
+				"qty": flt(now / factor, 2),
+				"week_ago": flt(before / factor, 2),
+				"change": flt((now - before) / factor, 2),
+				"used_week": flt(used / factor, 2),
+				"days_left": cint(now / daily) if daily > 0 else None,
+				"stores": [
+					{"store": frappe.get_cached_value("Warehouse", b.warehouse, "warehouse_name") or b.warehouse, "qty": flt(flt(b.actual_qty) / factor, 2)}
+					for b in sorted(per_store, key=lambda b: -flt(b.actual_qty))
+				],
+			}
+		)
+	return rows

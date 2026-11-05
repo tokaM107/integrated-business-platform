@@ -5122,236 +5122,497 @@ a.imed-ov-lib:hover {
 	color: var(--imed-teal-300);
 }
 
-/* §40 The Owner Dashboard by period (owner, 5 Nov 2026; imed_owner_dashboard.js, owner_periods.py): today first and
-   strongest (deep teal, white figures), the week calmer (blue), the month quietest (lavender). Each band: four cards,
-   one a business. */
-.imed-pd {
+
+/* §40 The owner's page, simplified (owner, 5 Nov 2026; imed_owner_dashboard.js, owner_periods.py). Mostly seen on a
+   phone: two cards to a row, one big figure each, in the money cards' own look (white card, a solid icon, a soft
+   tint of its colour). Today first and marked live; the week and the month after it. Everything comes in with a
+   short animation, none when the system asks for less motion. */
+.imed-slot-top,
+.imed-slot-after {
 	display: grid;
-	gap: 18px;
-	margin: 0 0 24px;
+	gap: 20px;
+	margin: 0 0 22px;
 }
+.imed-slot-after {
+	margin-top: 22px;
+}
+.imed-slot-top:empty,
+.imed-slot-after > :empty {
+	display: none;
+}
+[data-slot="periods"] {
+	display: grid;
+	gap: 22px;
+}
+
+/* A period: its name, its dates, its four cards. */
 .imed-pd-band {
-	border-radius: 20px;
-	padding: 18px 18px 20px;
-	border: 1px solid transparent;
+	animation: imed-rise 0.5s ease both;
+	animation-delay: calc(var(--n, 0) * 0.12s);
 }
 .imed-pd-band__head {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 14px;
+	gap: 10px;
+	margin: 0 2px 12px;
 }
 .imed-pd-band__head h2 {
-	color: inherit;
 	display: flex;
 	align-items: center;
-	gap: 8px;
+	gap: 10px;
 	margin: 0;
-	font-size: 18px;
+	font-size: 20px;
 	font-weight: 700;
+	color: var(--heading-color);
+}
+.imed-pd-band__head h2 .icon {
+	color: var(--imed-teal-600);
 }
 .imed-pd-band__dates {
 	font-size: 13px;
-	opacity: 0.8;
+	color: var(--text-muted);
+	direction: ltr;
 }
+/* Today stands out: a live dot, a larger heading, a faint teal ground. */
+.imed-pd-band.is-today {
+	padding: 16px;
+	margin: 0 -4px;
+	border-radius: 24px;
+	background: linear-gradient(180deg, var(--imed-teal-50), transparent 85%);
+	border: 1px solid var(--imed-teal-100);
+}
+.imed-pd-band.is-today .imed-pd-band__head h2 {
+	font-size: 24px;
+}
+.imed-live {
+	position: relative;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--green-500, #22c55e);
+}
+.imed-live::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+	background: inherit;
+	animation: imed-pulse 1.8s ease-out infinite;
+}
+
 .imed-pd-grid {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 14px;
 }
 .imed-pd-card {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	padding: 14px 16px;
-	border-radius: 16px;
-	background: var(--card-bg);
+	--tone: var(--blue-600);
+	--tone-bg: var(--blue-50);
+	position: relative;
+	display: grid;
+	grid-template-columns: auto 1fr;
+	grid-template-areas: "icon label" "num num" "cap cap";
+	align-items: center;
+	gap: 10px 12px;
+	padding: 18px;
+	border-radius: 20px;
+	background: linear-gradient(160deg, var(--tone-bg), var(--card-bg) 70%);
+	border: 1px solid var(--imed-border);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
 	color: var(--text-color);
 	text-decoration: none !important;
-	transition: transform 0.15s ease, box-shadow 0.15s ease;
-	min-width: 0;
+	overflow: hidden;
+	animation: imed-rise 0.5s ease both;
+	animation-delay: calc(var(--n, 0) * 0.12s + var(--i, 0) * 0.06s);
+	transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 .imed-pd-card:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 10px 24px -16px rgba(16, 34, 42, 0.45);
+	transform: translateY(-3px);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.05), 0 18px 32px -20px rgba(16, 34, 42, 0.45);
 }
-.imed-pd-card__head {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-weight: 600;
-	font-size: 14px;
+.imed-pd-card:active {
+	transform: scale(0.98);
+}
+.imed-pd-card.tone-studio {
+	--tone: var(--purple-600, #7c3aed);
+	--tone-bg: var(--purple-50, #f5f3ff);
+}
+.imed-pd-card.tone-halls {
+	--tone: var(--blue-600, #2563eb);
+	--tone-bg: var(--blue-50, #eff6ff);
+}
+.imed-pd-card.tone-libraries {
+	--tone: var(--orange-600, #ea580c);
+	--tone-bg: var(--orange-50, #fff7ed);
+}
+.imed-pd-card.tone-app {
+	--tone: var(--green-600, #16a34a);
+	--tone-bg: var(--green-50, #f0fdf4);
 }
 .imed-pd-card__icon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 32px;
-	height: 32px;
-	border-radius: 10px;
-	background: var(--imed-teal-50);
-	color: var(--imed-teal-700);
-}
-.imed-pd-card__main {
-	font-size: 20px;
-	font-weight: 700;
-	line-height: 1.3;
-	overflow-wrap: anywhere;
-}
-.imed-pd-card__main small {
-	display: block;
-	font-size: 12px;
-	font-weight: 500;
-	opacity: 0.75;
-}
-.imed-pd-card__lines {
+	grid-area: icon;
 	display: grid;
-	gap: 4px;
-	font-size: 13px;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 14px;
+	background: var(--tone);
+	color: #fff;
+	box-shadow: 0 8px 18px -10px var(--tone);
 }
-.imed-pd-line {
-	display: flex;
-	justify-content: space-between;
-	gap: 8px;
+.imed-pd-card__icon .icon {
+	stroke: currentColor;
 }
-.imed-pd-line span {
-	opacity: 0.75;
-	min-width: 0;
+.imed-pd-card__label {
+	grid-area: label;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--heading-color);
 }
-.imed-pd-line b {
-	white-space: nowrap;
+.imed-pd-num {
+	font-variant-numeric: tabular-nums;
 	direction: ltr;
 	unicode-bidi: isolate;
 }
-.imed-pd-line.is-out b {
-	color: var(--red-600, #dc2626);
+.imed-pd-card .imed-pd-num {
+	grid-area: num;
+	font-size: 34px;
+	font-weight: 800;
+	line-height: 1.1;
+	color: var(--tone);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
-.imed-pd-band.is-today .imed-pd-line.is-out b {
-	color: #fecaca;
+.imed-pd-band.is-today .imed-pd-card .imed-pd-num {
+	font-size: 40px;
 }
-.imed-pd-line.is-in b,
-.imed-pd-books .is-in {
+.imed-pd-card__caption {
+	grid-area: cap;
+	font-size: 13px;
+	color: var(--text-muted);
+}
+.imed-pd-card__caption .is-in {
 	color: var(--green-600, #16a34a);
+	font-weight: 600;
 }
-.imed-pd-line.is-due b {
-	color: var(--orange-600, #ea580c);
+
+/* A section of the page: a white card with its heading. */
+.imed-sec {
+	padding: 20px;
+	border-radius: 22px;
+	background: var(--card-bg);
+	border: 1px solid var(--imed-border);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
+	animation: imed-rise 0.5s ease both;
 }
-.imed-pd-books .is-out {
+.imed-sec__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+.imed-sec__head h2 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--heading-color);
+}
+.imed-sec__head h2 .icon {
+	color: var(--imed-teal-600);
+}
+.imed-sec__head > .imed-pd-num {
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--imed-teal-700);
+}
+.imed-sec__empty {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+/* The cash in each box: whole names, a bar each, growing in. */
+.imed-boxes {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 14px;
+}
+.imed-boxes li {
+	animation: imed-rise 0.45s ease both;
+	animation-delay: calc(var(--i, 0) * 0.05s);
+}
+.imed-boxes a {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	grid-template-areas: "name value" "bar bar";
+	gap: 6px 12px;
+	color: inherit;
+	text-decoration: none !important;
+}
+.imed-boxes__name {
+	grid-area: name;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--heading-color);
+}
+.imed-boxes__value {
+	grid-area: value;
+	font-size: 16px;
+	font-weight: 700;
+	direction: ltr;
+	unicode-bidi: isolate;
+	white-space: nowrap;
+}
+.imed-boxes__value.is-out {
 	color: var(--red-600, #dc2626);
 }
-.imed-pd-line.is-quiet,
-.imed-pd-books.is-quiet {
-	opacity: 0.6;
+.imed-boxes__bar {
+	grid-area: bar;
+	height: 10px;
+	border-radius: 999px;
+	background: var(--imed-teal-50);
+	overflow: hidden;
 }
-.imed-pd-books {
-	margin-top: auto;
-	padding-top: 8px;
-	border-top: 1px dashed var(--imed-border);
+.imed-boxes__bar i {
+	display: block;
+	height: 100%;
+	width: var(--w);
+	border-radius: inherit;
+	background: linear-gradient(90deg, var(--imed-teal-500), var(--imed-teal-700));
+	transform-origin: right;
+	animation: imed-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+	animation-delay: calc(var(--i, 0) * 0.05s + 0.15s);
+}
+html[dir="ltr"] .imed-boxes__bar i {
+	transform-origin: left;
+}
+
+/* The supplies: what is left, big; the week's arrow; how long it lasts; each store's part. */
+.imed-stock-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+.imed-stock {
+	display: grid;
+	gap: 8px;
+	padding: 16px;
+	border-radius: 18px;
+	border: 1px solid var(--imed-border);
+	background: linear-gradient(160deg, var(--imed-teal-50), var(--card-bg) 70%);
+	color: inherit;
+	text-decoration: none !important;
+	animation: imed-rise 0.45s ease both;
+	animation-delay: calc(var(--i, 0) * 0.06s);
+	transition: transform 0.18s ease;
+}
+.imed-stock:hover {
+	transform: translateY(-2px);
+}
+.imed-stock.is-low {
+	border-color: var(--orange-200, #fed7aa);
+	background: linear-gradient(160deg, var(--orange-50, #fff7ed), var(--card-bg) 70%);
+}
+.imed-stock.is-empty {
+	border-color: var(--red-200, #fecaca);
+	background: linear-gradient(160deg, var(--red-50, #fef2f2), var(--card-bg) 70%);
+}
+.imed-stock__name {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--heading-color);
+}
+.imed-stock__qty {
+	font-size: 14px;
+	color: var(--text-muted);
+}
+.imed-stock__qty .imed-pd-num {
+	font-size: 32px;
+	font-weight: 800;
+	color: var(--heading-color);
+	margin-inline-end: 4px;
+}
+.imed-stock.is-empty .imed-stock__qty .imed-pd-num {
+	color: var(--red-600, #dc2626);
+}
+.imed-stock__trend,
+.imed-stock__lasts {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 600;
+}
+.imed-stock__trend .icon {
+	display: grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	padding: 4px;
+	border-radius: 50%;
+}
+.imed-stock__trend.is-up {
+	color: var(--green-700, #15803d);
+}
+.imed-stock__trend.is-up .icon {
+	background: var(--green-100, #dcfce7);
+	animation: imed-nudge-up 1.6s ease-in-out infinite;
+}
+.imed-stock__trend.is-down {
+	color: var(--red-700, #b91c1c);
+}
+.imed-stock__trend.is-down .icon {
+	background: var(--red-100, #fee2e2);
+	animation: imed-nudge-down 1.6s ease-in-out infinite;
+}
+.imed-stock__trend.is-flat {
+	color: var(--text-muted);
+}
+.imed-stock__trend.is-flat .icon {
+	background: var(--gray-100, #f3f4f6);
+}
+.imed-stock__lasts {
+	font-weight: 500;
+	color: var(--text-muted);
+}
+.imed-stock.is-low .imed-stock__lasts {
+	color: var(--orange-700, #c2410c);
+	font-weight: 600;
+}
+.imed-stock__stores {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
 	font-size: 12px;
 }
-
-/* Today: the strongest. */
-.imed-pd-band.is-today {
-	background: linear-gradient(135deg, var(--imed-teal-800), var(--imed-teal-600));
-	color: #fff;
-	box-shadow: 0 18px 40px -26px rgba(15, 98, 91, 0.8);
-}
-.imed-pd-band.is-today .imed-pd-card {
-	background: rgba(255, 255, 255, 0.11);
-	color: #fff;
-	border: 1px solid rgba(255, 255, 255, 0.16);
-}
-.imed-pd-band.is-today .imed-pd-card:hover {
-	background: rgba(255, 255, 255, 0.17);
-}
-.imed-pd-band.is-today .imed-pd-card__icon {
-	background: rgba(255, 255, 255, 0.18);
-	color: #fff;
-}
-.imed-pd-band.is-today .imed-pd-card__main {
-	font-size: 26px;
-}
-.imed-pd-band.is-today .imed-pd-line.is-in b,
-.imed-pd-band.is-today .imed-pd-books .is-in {
-	color: #a7f3d0;
-}
-.imed-pd-band.is-today .imed-pd-line.is-due b {
-	color: #fed7aa;
-}
-.imed-pd-band.is-today .imed-pd-books .is-out {
-	color: #fecaca;
-}
-.imed-pd-band.is-today .imed-pd-books {
-	border-top-color: rgba(255, 255, 255, 0.25);
-}
-.imed-pd-band.is-today .is-positive {
-	color: #a7f3d0;
-}
-.imed-pd-band.is-today .is-negative {
-	color: #fecaca;
+.imed-stock__stores span {
+	padding: 3px 9px;
+	border-radius: 999px;
+	background: var(--subtle-fg, rgba(16, 34, 42, 0.05));
 }
 
-/* The week: blue, calmer. */
-.imed-pd-band.is-week {
-	background: #eef4ff;
-	border-color: #dbe6fe;
-	color: #1e3a8a;
+/* The day's revenue and expenses: a plain table that scrolls on a phone. */
+.imed-table-wrap {
+	overflow-x: auto;
 }
-.imed-pd-band.is-week .imed-pd-card {
-	border-top: 3px solid #3b82f6;
-}
-.imed-pd-band.is-week .imed-pd-card__icon {
-	background: #dbeafe;
-	color: #1d4ed8;
+[data-slot="today"] .imed-yday {
+	display: grid;
+	gap: 20px;
 }
 
-/* The month: lavender, the quietest. */
-.imed-pd-band.is-month {
-	background: #f6f2ff;
-	border-color: #e9ddff;
-	color: #4c1d95;
-}
-.imed-pd-band.is-month .imed-pd-card {
-	border-top: 3px solid #8b5cf6;
-}
-.imed-pd-band.is-month .imed-pd-card__icon {
-	background: #ede9fe;
-	color: #6d28d9;
-}
-.imed-pd-band.is-month .imed-pd-card__main {
-	font-size: 18px;
-}
-
-[data-theme="dark"] .imed-pd-band.is-week {
-	background: #14213d;
-	border-color: #1e3a8a;
-	color: #bfdbfe;
-}
-[data-theme="dark"] .imed-pd-band.is-month {
-	background: #1f1633;
-	border-color: #3b2a63;
-	color: #ddd6fe;
-}
-[data-theme="dark"] .imed-pd-band.is-week .imed-pd-card__icon {
-	background: #1e3a8a;
-	color: #bfdbfe;
-}
-[data-theme="dark"] .imed-pd-band.is-month .imed-pd-card__icon {
-	background: #3b2a63;
-	color: #ddd6fe;
-}
-
-@media (max-width: 1100px) {
-	.imed-pd-grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+@keyframes imed-rise {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
 	}
 }
+@keyframes imed-grow {
+	from {
+		transform: scaleX(0);
+	}
+	to {
+		transform: scaleX(1);
+	}
+}
+@keyframes imed-pulse {
+	from {
+		transform: scale(1);
+		opacity: 0.7;
+	}
+	to {
+		transform: scale(2.6);
+		opacity: 0;
+	}
+}
+@keyframes imed-nudge-up {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-3px);
+	}
+}
+@keyframes imed-nudge-down {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(3px);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.imed-pd-band,
+	.imed-pd-card,
+	.imed-sec,
+	.imed-boxes li,
+	.imed-boxes__bar i,
+	.imed-stock,
+	.imed-live::after,
+	.imed-stock__trend .icon {
+		animation: none !important;
+	}
+}
+
+[data-theme="dark"] .imed-pd-band.is-today {
+	background: linear-gradient(180deg, rgba(29, 147, 134, 0.14), transparent 85%);
+	border-color: rgba(29, 147, 134, 0.3);
+}
+[data-theme="dark"] .imed-pd-card {
+	background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 16%, var(--card-bg)), var(--card-bg) 70%);
+}
+[data-theme="dark"] .imed-pd-card .imed-pd-num {
+	color: color-mix(in srgb, var(--tone) 70%, #fff);
+}
+[data-theme="dark"] .imed-stock,
+[data-theme="dark"] .imed-boxes__bar {
+	background: rgba(29, 147, 134, 0.1);
+}
+
+/* A phone: the same two to a row, a little tighter. */
 @media (max-width: 560px) {
-	.imed-pd-grid {
-		grid-template-columns: 1fr;
+	.imed-pd-grid,
+	.imed-stock-grid {
+		gap: 10px;
 	}
-	.imed-pd-band {
+	.imed-pd-card {
 		padding: 14px;
+		gap: 8px 10px;
+		border-radius: 18px;
+	}
+	.imed-pd-card__icon {
+		width: 36px;
+		height: 36px;
+		border-radius: 12px;
+	}
+	.imed-pd-card__label {
+		font-size: 14px;
+	}
+	.imed-pd-card .imed-pd-num {
+		font-size: 26px;
+	}
+	.imed-pd-band.is-today .imed-pd-card .imed-pd-num {
+		font-size: 30px;
+	}
+	.imed-pd-band.is-today {
+		padding: 12px;
+	}
+	.imed-sec {
+		padding: 16px;
+	}
+	.imed-stock__qty .imed-pd-num {
+		font-size: 26px;
 	}
 }

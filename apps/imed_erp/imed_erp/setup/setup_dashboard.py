@@ -238,21 +238,11 @@ content += spacer() + header("الفلوس")
 for c in created_cards:
     if c in money_cards:
         content.append({"type": "number_card", "data": {"number_card_name": c["real"], "col": 4}})
-for ch in created_charts:
-    if ch.get("report"):
-        content.append({"type": "chart", "data": {"chart_name": ch["real"], "col": 12}})
-
-content += spacer() + header("الحجوزات")
-for c in created_cards:
-    if c in booking_cards:
-        content.append({"type": "number_card", "data": {"number_card_name": c["real"], "col": 3}})
-
-other_charts = [ch for ch in created_charts if not ch.get("report")]
-if other_charts:
-    content += spacer() + header("الإيرادات والمخزون")
-    for ch in other_charts:
-        col = 12 if ch["ctype"] == "Line" else 6
-        content.append({"type": "chart", "data": {"chart_name": ch["real"], "col": col}})
+# The owner, 5 Nov 2026 ("simple as possible"): the money cards only. The bookings are on the page's today, week and
+# month cards, the cash of each box and the supplies on its own sections (imed_owner_dashboard.js, owner_periods.py):
+# the bookings' cards and the charts (an unreadable cash chart, a broken sales trend) are no longer placed here.
+PLACED_CHARTS = []
+PLACED_CARDS = [c for c in created_cards if c in money_cards]
 
 # ---------------- Workspace ----------------
 if frappe.db.exists("Workspace", "Owner Dashboard"):
@@ -272,8 +262,8 @@ ws = frappe.get_doc({
     "roles": [{"role": "Super Admin"}],
     "sequence_id": 1,
     "content": frappe.as_json(content),
-    "number_cards": [{"number_card_name": c["real"], "label": c["label"]} for c in created_cards],
-    "charts": [{"chart_name": ch["real"], "label": ch["label"]} for ch in created_charts],
+    "number_cards": [{"number_card_name": c["real"], "label": c["label"]} for c in PLACED_CARDS],
+    "charts": PLACED_CHARTS,
     "shortcuts": shortcuts,
 }).insert()
 
