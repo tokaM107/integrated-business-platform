@@ -28,7 +28,13 @@
 			const can_read = (frappe.boot && frappe.boot.user && frappe.boot.user.can_read) || [];
 			if (match && can_read.length && !can_read.some((name) => frappe.router.slug(name) === match[1])) return;
 		}
-		return make.apply(this, arguments);
+		const made = make.apply(this, arguments);
+		// Frappe opens every URL item in a new tab; one into this site (the hall and studio calendars) opens in the
+		// same page like the other items (the owner, 5 Nov 2026). A link to another site keeps its new tab.
+		if (it.link_type === "URL" && typeof it.url === "string" && it.url.startsWith("/") && this.wrapper) {
+			this.wrapper.find('a[target="_blank"]').removeAttr("target").removeAttr("rel");
+		}
+		return made;
 	};
 	Item.prototype.imed_url_patched = true;
 })();
@@ -72,4 +78,31 @@
 		return match;
 	};
 	Sidebar.prototype.imed_query_patched = true;
+
+	// Moving inside the site, Frappe lights the item before the address has changed (so the old address was read
+	// and the last of the items sharing the path won: the studio calendar lit on the hall calendar). Once the new
+	// address is in place, the item matching it exactly (path and filters) is lit, and only it among those sharing
+	// its path.
+	const relight = () => {
+		const here = where(window.location.href);
+		let best = null;
+		let best_count = 0;
+		const $same = $(".body-sidebar a[href]").filter((_, a) => {
+			const href = a.getAttribute("href") || "";
+			if (!href.startsWith("/")) return false;
+			const item = where(href);
+			if (item.path !== here.path) return false;
+			const keys = [...item.params.keys()];
+			if (keys.length > best_count && keys.every((k) => here.params.get(k) === item.params.get(k))) {
+				best = $(a);
+				best_count = keys.length;
+			}
+			return true;
+		});
+		if (!best) return;
+		$same.parent().removeClass("active-sidebar");
+		best.parent().addClass("active-sidebar");
+		if (frappe.app && frappe.app.sidebar) frappe.app.sidebar.active_item = best.parent();
+	};
+	if (frappe.router && frappe.router.on) frappe.router.on("change", () => setTimeout(relight, 120));
 })();
