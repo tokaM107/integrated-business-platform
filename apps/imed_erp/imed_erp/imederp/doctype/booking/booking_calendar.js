@@ -86,7 +86,7 @@ frappe.views.calendar["Booking"] = {
 	get_events_method: "imed_erp.imederp.doctype.booking.booking.get_events",
 
 	get_css_class(event) {
-		return event.conflict ? "red" : BOOKING_COLORS[event.status] || "blue";
+		return event.conflict ? "red" : event.no_phone ? "purple" : BOOKING_COLORS[event.status] || "blue";
 	},
 
 	prepare_events(events) {
@@ -150,8 +150,9 @@ frappe.views.calendar["Booking"] = {
 			eventsSet: () => me.show_state(),
 			eventDidMount(info) {
 				const p = info.event.extendedProps;
-				// The card's colour: its status's (booking_rules.py), red for an overlap, from Frappe's palette.
-				const color = p.conflict ? "red" : BOOKING_COLORS[p.status] || "blue";
+				// The card's colour: its status's (booking_rules.py), red for an overlap, purple for an XStudio walk-in
+				// without a phone (owner, 5 Nov 2026), from Frappe's palette.
+				const color = p.conflict ? "red" : p.no_phone ? "purple" : BOOKING_COLORS[p.status] || "blue";
 				info.el.style.setProperty("--ev", `var(--${color}-500)`);
 				info.el.style.setProperty("--ev-fg", `var(--${color}-700)`);
 				info.el.style.setProperty("--ev-on-dark", `var(--${color}-300)`);
@@ -198,6 +199,7 @@ frappe.views.calendar["Booking"] = {
 					.map(([status, color]) => `<span class="imed-cal-key" style="--ev: var(--${color}-500)">${esc_cal(__(status))}</span>`)
 					.concat(`<span class="imed-cal-key imed-booking-maintenance" style="--ev: var(--gray-500)">${esc_cal(__("Maintenance"))}</span>`)
 					.concat(`<span class="imed-cal-key" style="--ev: var(--red-500)">${esc_cal(__("Overlap"))}</span>`)
+					.concat(`<span class="imed-cal-key" style="--ev: var(--purple-500)">${esc_cal(__("Walk-in Without a Phone"))}</span>`)
 					.join("")
 			)
 			.appendTo(this.$head);

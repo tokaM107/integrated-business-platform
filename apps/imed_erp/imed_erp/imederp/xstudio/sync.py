@@ -392,6 +392,35 @@ def upsert_customer(context, customer):
 	return name
 
 
+WALK_IN = "walk-in"  # the walk-in customer's XStudio id: no XStudio customer has it (theirs are UUIDs)
+
+
+def walk_in_customer(context):
+	"""The one customer XStudio's walk-ins without a phone are kept under (owner, 5 Nov 2026)."""
+	if WALK_IN in context.customers:
+		return context.customers[WALK_IN]
+	name = frappe.db.get_value("Customer", {"xstudio_customer_id": WALK_IN}, "name")
+	if not name:
+		doc = frappe.get_doc(
+			{
+				"doctype": "Customer",
+				"customer_name": _("XStudio Walk-in (No Phone)"),
+				"customer_type": "Individual",
+				"customer_group": context.settings.customer_group,
+				"territory": default_territory(),
+				"xstudio_customer_id": WALK_IN,
+				"xstudio_needs_review": 0,
+				"xstudio_last_synced_at": now_datetime(),
+			}
+		)
+		doc.flags.ignore_permissions = True
+		doc.insert()
+		name = doc.name
+		context.run.created()
+	context.customers[WALK_IN] = name
+	return name
+
+
 def default_territory():
 	territory = frappe.db.get_single_value("Selling Settings", "territory")
 	if territory:
@@ -511,7 +540,8 @@ def booking_values(context, booking):
 	if not customer:
 		if booking.get("customer_id"):
 			frappe.throw(_("The booking's customer {0} could not be made here (see its own row).").format(booking.get("customer_id")))
-		frappe.throw(_("The booking has no customer account in XStudio (a walk-in without a phone); a booking here needs its customer."))
+		# A walk-in with no phone (owner, 5 Nov 2026): kept under one walk-in customer and marked, not refused.
+		customer = walk_in_customer(context)
 	booking_date, from_time, to_time, crosses = mappers.booking_times(booking)
 	status = mappers.booking_status(booking)
 	total, paid = mappers.booking_amounts(booking)
@@ -547,6 +577,7 @@ def booking_values(context, booking):
 		"xstudio_crosses_midnight": 1 if crosses else 0,
 		"xstudio_customer_name": cstr(booking.get("customer_name")),
 		"xstudio_customer_phone": cstr(booking.get("customer_phone")),
+		"xstudio_no_phone": 0 if booking.get("customer_id") else 1,
 		"xstudio_package_id": cstr(booking.get("package_id")) or None,
 		"xstudio_hours_deducted": flt(booking.get("hours_deducted"), PRECISION),
 		"xstudio_photographer": cstr(booking.get("photographer_id")) or None,

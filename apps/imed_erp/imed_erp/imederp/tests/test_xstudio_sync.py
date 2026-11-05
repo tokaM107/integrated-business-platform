@@ -527,24 +527,34 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		self.assertEqual((log.changed, log.status), (1, "Completed with Errors"))
 		self.assertEqual([r.kind for r in log.errors], ["Needs Review"])
 
-	def test_a_walk_in_without_a_customer_fails_alone_every_run_and_makes_nothing(self):
-		"""The walk-in of 26 Oct 2026 (b9f026fd): no customer account in XStudio, name only. It fails with its reason
-		on every run; the other bookings go on; no customer is made up for it; running again adds nothing."""
+	def test_walk_ins_without_a_phone_come_in_under_one_walk_in_customer_marked(self):
+		"""The walk-ins of 26 Oct 2026 (b9f026fd...): no customer account in XStudio, name only. The owner, 5 Nov 2026:
+		take them, under one walk-in customer, marked (purple on the calendar and the list). The walk-in customer is
+		made once, whatever the number of walk-ins or runs; a booking with its own customer is not marked."""
 		teacher = self.x.customer("_Test Beside Walk-in", self.phone(1))
 		ok = self.x.booking(teacher, start=(1, 8), end=(1, 9))
-		walk_in = self.x.booking(None, start=(1, 14), end=(1, 16), customer_name="Walk-in Guest")
+		walk_ins = [
+			self.x.booking(None, start=(1, 14), end=(1, 16), customer_name="Walk-in Guest"),
+			self.x.booking(None, start=(1, 17), end=(1, 18), customer_name="Another Guest"),
+		]
 		customers_before = frappe.db.count("Customer")
 		for _ in range(2):
 			log = self.run_sync()
-			failed = [r for r in log.errors if r.kind == "Failed"]
-			self.assertEqual(len(failed), 1)
-			self.assertIn("no customer account", failed[0].reason)
-			self.assertIsNone(self.erp_booking(walk_in))
-			self.assertIsNotNone(self.erp_booking(ok))
-		self.assertEqual(log.status, "Completed with Errors")
-		# Only the real customer was made, once.
-		self.assertEqual(frappe.db.count("Customer"), customers_before + 1)
-		self.assertEqual(frappe.db.count("Booking", {"import_key": mappers.import_key(ok["id"])}), 1)
+			self.assertEqual([r for r in log.errors if r.kind == "Failed"], [])
+		kept = [self.erp_booking(w) for w in walk_ins]
+		walk_in_customer = frappe.db.get_value("Customer", {"xstudio_customer_id": "walk-in"}, "name")
+		self.assertEqual({(b.customer, b.xstudio_no_phone) for b in kept}, {(walk_in_customer, 1)})
+		self.assertEqual(kept[0].xstudio_customer_name, "Walk-in Guest")  # the name XStudio has is kept on the booking
+		self.assertEqual(self.erp_booking(ok).xstudio_no_phone, 0)
+		# The real customer and the walk-in customer, once each.
+		self.assertEqual(frappe.db.count("Customer"), customers_before + 2)
+		self.assertEqual(frappe.db.count("Booking", {"import_key": mappers.import_key(walk_ins[0]["id"])}), 1)
+		# The calendar marks them.
+		from imed_erp.imederp.doctype.booking.booking import get_events
+
+		day = kept[0].booking_date
+		events = {e.name: e.no_phone for e in get_events(f"{day} 00:00:00", f"{frappe.utils.add_days(day, 1)} 00:00:00")}
+		self.assertEqual(events.get(kept[0].name), 1)
 
 	def test_missing_bookings_read_their_customers_once(self):
 		"""Review of 2 Nov 2026: one Customer query a missing booking."""
@@ -794,7 +804,8 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		b = self.x.customer("_Test Counted B", self.phone(2))
 		self.x.booking(a)
 		self.x.booking(b, start=(2, 10), end=(2, 12))
-		self.x.booking(None, start=(3, 10), end=(3, 12), customer_name="Walk-in", customer_phone="")  # fails: no customer
+		self.x.booking(None, start=(3, 10), end=(3, 12), customer_name="Walk-in", customer_phone="")  # the walk-in customer's
+		self.x.booking(a, hall=9, start=(4, 10), end=(4, 12))  # fails: hall 9 is not mapped
 		for _run in range(2):  # the second run: everything unchanged, still accounted for
 			log = self.run_sync()
 			self.assertEqual(
@@ -803,7 +814,7 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 				(log.rows_read, log.inserted, log.updated, log.skipped, log.changed, log.failed),
 			)
 		self.assertEqual(log.failed, 1)
-		self.assertGreaterEqual(log.skipped, 2)  # the two bookings unchanged (customers are not rows of their own)
+		self.assertGreaterEqual(log.skipped, 3)  # the three bookings unchanged (customers are not rows of their own)
 
 	def test_who_may_sync_by_hand(self):
 		frappe.set_user("gilan@imed.local")  # the studio's branch manager: not an owner nor the accountant
