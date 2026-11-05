@@ -278,6 +278,30 @@ class TestLibraryReceive(IntegrationTestCase):
 		self.assertTrue(after["مكتبة الأزاريطة"]["linked"] and after["مكتبة المواساة"]["linked"])
 		self.assertEqual(list(after), ["مكتبة الأزاريطة", "مكتبة المواساة"])
 
+	def test_the_library_reports_sum_each_item_and_each_doctor_sales_less_returns(self):
+		"""Tanmya's daily reports rebuilt here (library_sync/reports.py): per item and per doctor, issued sales less
+		returns, of the chosen library; a held sale and another library's do not count. On a day no real sale has."""
+		from imed_erp.imederp.report.library_doctor_sales.library_doctor_sales import execute as by_doctor
+		from imed_erp.imederp.report.library_sales_by_item.library_sales_by_item import execute as by_item
+
+		day = "2031-01-15"
+		returned = [{"TxtIdRefStockSub": "620001", "TxtProductCodeRefStockSub": "P-1", "TxtProductNameRefStockSub": "كتاب باثولوجي", "TxtProductQtyInRefStockSub": "1", "TxtProductTotalValueUpRefStockSub": "50", "TxtDoctorName": "د. أحمد"}]
+		sync.import_batch(
+			self.batch(
+				sale("94001", when=f"{day} 09:00:00"),
+				sale("94002", when=f"{day} 10:00:00"),
+				sale("94003", operation="21", lines=returned, when=f"{day} 11:00:00"),
+				sale("94004", status="1", when=f"{day} 12:00:00"),
+				sale("94005", branch="2", when=f"{day} 12:30:00"),
+			)
+		)
+		filters = {"from_date": day, "to_date": day, "cost_center": cost_center("مكتبة الأزاريطة")}
+		items = {r.product_code: (r.sold_qty, r.sold_value, r.returned_qty, r.returned_value, r.net_value) for r in by_item(filters)[1]}
+		self.assertEqual(items, {"P-1": (4.0, 200.0, 1.0, 50.0, 150.0), "P-2": (2.0, 100.0, 0.0, 0.0, 100.0)})
+		doctors = {r.doctor_name: (r.invoices, r.sold_value, r.returned_value, r.net_value) for r in by_doctor(filters)[1]}
+		self.assertEqual(doctors, {"د. أحمد": (2, 200.0, 50.0, 150.0), "Without a doctor": (2, 100.0, 0.0, 100.0)})
+		self.assertEqual([s["value"] for s in by_item(filters)[4]], [300.0, 50.0, 250.0])
+
 	def test_the_status_report_shows_the_source(self):
 		sync.import_batch(self.batch(sale()))
 		from imed_erp.imederp.report.integration_status.integration_status import get_data
