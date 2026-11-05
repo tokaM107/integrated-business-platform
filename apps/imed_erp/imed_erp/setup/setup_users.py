@@ -104,6 +104,10 @@ USERS = [
 	},
 	# A library's shared account: its library and its store only (password set apart: bench set-password).
 	{"email": "mowasah", "first_name": "مكتبة المواساة", "language": "ar", "roles": ["Library Staff"], "cost_centers": ["مكتبة المواساة"], "warehouses": ["خامات المواساة"]},
+	# Azarita's, the same (owner, 5 Nov 2026: each library opens on its مكتبتي): its library and its materials
+	# store (the store its paper is taken from, book_edition.LIBRARY_PAPER_STORE); its requests go to the store
+	# that supplies the branches, for Raghad's approval.
+	{"email": "azarita", "first_name": "مكتبة الأزاريطة", "language": "ar", "roles": ["Library Staff"], "cost_centers": ["مكتبة الأزاريطة"], "warehouses": ["خامات الأزاريطة"]},
 	{"email": "accountant", "first_name": "المحاسب", "roles": ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"]},
 	{"email": "hr", "first_name": "شؤون الموظفين", "roles": ["HR", "HR Manager"]},
 ]
