@@ -101,6 +101,16 @@ def get_desk():
 			"qty": flt(on_hand(i.name, mine.store) / factor, 2),
 		})
 	counter = open_day(mine.library)
+	# The day's readings a machine (the owner, 5 Nov 2026: the morning and the evening shown, and what was used):
+	# the day the counters screen works on (an earlier one still missing its evening comes first).
+	readings = []
+	if counter:
+		readings = frappe.get_all(
+			"Daily Counter Reading Item",
+			filters={"parent": counter.name, "parenttype": "Daily Counter Reading"},
+			fields=["machine", "opening_reading", "closing_reading", "consumed", "fault"],
+			order_by="idx",
+		)
 	requests = frappe.get_all(
 		"Material Request",
 		filters={"owner": frappe.session.user, "docstatus": ("<", 2)},
@@ -114,6 +124,11 @@ def get_desk():
 		"store": mine.store,
 		"items": items,
 		"counter_today": counter,
+		"counter_date": str(counter.reading_date) if counter else None,
+		"counter_rows": [
+			{"machine": r.machine, "morning": cint(r.opening_reading), "evening": cint(r.closing_reading) if counter.docstatus == 1 else None, "printed": cint(r.consumed) if counter.docstatus == 1 else None, "fault": cint(r.fault)}
+			for r in readings
+		],
 		"requests": requests,
 	}
 

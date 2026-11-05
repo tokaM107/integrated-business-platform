@@ -38,6 +38,30 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 			</button>`;
 	}
 
+	// The day's counters a machine: the morning's, the evening's and the sheets printed between them (the owner,
+	// 5 Nov 2026: "where are the morning and the evening"). Before the evening only the morning is known.
+	function counters_card() {
+		const rows = desk.counter_rows || [];
+		const done = desk.counter_today && desk.counter_today.docstatus === 1;
+		const other_day = desk.counter_date && desk.counter_date !== frappe.datetime.get_today();
+		const title = other_day ? __("عدادات يوم {0}", [frappe.datetime.str_to_user(desk.counter_date)]) : __("عدادات النهارده");
+		const total = rows.reduce((sum, r) => sum + (Number(r.printed) || 0), 0);
+		const cell = (v, cls = "") => `<td class="${cls}">${v == null ? `<span class="imed-library__wait">${esc(__("لسه"))}</span>` : esc(qty(v))}</td>`;
+		const body = rows.length
+			? `<table class="imed-library__counters">
+					<thead><tr><th>${esc(__("المكنة"))}</th><th>${esc(__("الصبح"))}</th><th>${esc(__("آخر اليوم"))}</th><th>${esc(__("اتطبع"))}</th></tr></thead>
+					<tbody>${rows
+						.map((r) => `<tr><td class="imed-library__machine">${icon("printer")}<span>${esc(r.machine)}</span>${r.fault ? `<span class="imed-library__badge tone-red">${esc(__("عطلت"))}</span>` : ""}</td>${cell(r.morning)}${cell(r.evening)}${cell(r.printed, "is-printed")}</tr>`)
+						.join("")}</tbody>
+					${done ? `<tfoot><tr><td colspan="3">${esc(__("اتطبع النهارده كله"))}</td><td class="is-printed">${esc(qty(total))} ${esc(__("ورقة"))}</td></tr></tfoot>` : ""}
+				</table>`
+			: `<p class="imed-library__empty">${icon("gauge")}${esc(__("لسه متسجلتش عدادات الصبح. دوس على «عدادات النهارده» فوق."))}</p>`;
+		return `<section class="imed-library__card imed-library__card--wide">
+				<h4>${icon("gauge")}${esc(title)}${done ? `<span class="imed-library__badge tone-green">${esc(__("اليوم اتقفل ✓"))}</span>` : rows.length ? `<span class="imed-library__badge tone-orange">${esc(__("مستني آخر اليوم"))}</span>` : ""}</h4>
+				${body}
+			</section>`;
+	}
+
 	function render() {
 		const counted = desk.counter_today;
 		const items = desk.items || [];
@@ -77,6 +101,7 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 				${tile("count", "blue", "clipboard-list", __("رصيد المخزون"), __("اكتب اللي عندنا دلوقتي"))}
 				${tile("ask", "violet", "send", __("اطلب حاجة"), __("حبر، ورق…"))}
 			</div>
+			${counters_card()}
 			<div class="imed-library__cards">
 				<section class="imed-library__card">
 					<h4>${icon("warehouse")}${esc(__("اللي عندنا في المخزن"))}</h4>

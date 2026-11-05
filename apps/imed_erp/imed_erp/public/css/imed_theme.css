@@ -5058,3 +5058,66 @@ a.imed-ov-lib:hover {
 		text-align: center;
 	}
 }
+/* مكتبتي: the day's counters (morning, evening, printed) as a full-width card above the two lists. */
+.imed-library__card--wide {
+	margin-bottom: 14px;
+}
+.imed-library__card h4 .imed-library__badge {
+	margin: 0;
+	margin-inline-start: 10px;
+	vertical-align: 2px;
+}
+.imed-library__counters {
+	width: 100%;
+	border-collapse: collapse;
+	font-variant-numeric: tabular-nums;
+}
+.imed-library__counters th {
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--imed-border);
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	text-align: start;
+}
+.imed-library__counters td {
+	padding: 11px 10px;
+	border-bottom: 1px solid var(--imed-border);
+	color: var(--heading-color);
+	font-weight: 700;
+}
+.imed-library__counters tbody tr:last-child td {
+	border-bottom: 0;
+}
+.imed-library__counters td.is-printed {
+	color: var(--imed-teal-700);
+	font-weight: 800;
+}
+.imed-library__counters tfoot td {
+	border-top: 2px solid var(--imed-border);
+	border-bottom: 0;
+	background: color-mix(in srgb, var(--imed-teal-500) 6%, transparent);
+}
+/* A table cell stays a cell (as a flex box it broke the row): the icon and the badge inline beside the name. */
+.imed-library__machine {
+	font-weight: 600 !important;
+	white-space: nowrap;
+}
+.imed-library__machine .icon {
+	width: 16px;
+	height: 16px;
+	margin-inline-end: 8px;
+	stroke: var(--text-muted);
+	vertical-align: -3px;
+}
+.imed-library__machine .imed-library__badge {
+	margin: 0;
+	margin-inline-start: 8px;
+}
+.imed-library__wait {
+	color: var(--text-light);
+	font-weight: 500;
+}
+[data-theme="dark"] .imed-library__counters td.is-printed {
+	color: var(--imed-teal-300);
+}
