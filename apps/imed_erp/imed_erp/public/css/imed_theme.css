@@ -4717,3 +4717,344 @@ a.imed-ov-lib:hover {
 		display: none;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 35. A library's screen, مكتبتي (imederp/page/imed_library)          */
+/* ------------------------------------------------------------------ */
+/* The owner, 5 Nov 2026: "professional". A header card in the brand's green (the library, a greeting, the date and
+   the store, today's counters as a pill), the four actions as cards with an icon in a tone each, then what the
+   store holds and the last requests as two cards. Colours from the tones of §27 (--tone-solid, --tone-soft,
+   --tone-fg). One column on a phone. */
+.imed-library {
+	max-width: 980px;
+	margin: 0 auto;
+	padding: 8px 4px 48px;
+}
+
+/* The header card */
+.imed-library__hero {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 14px 18px;
+	overflow: hidden;
+	margin-bottom: 18px;
+	padding: 22px 24px;
+	border-radius: 22px;
+	background:
+		radial-gradient(260px 160px at 0% 0%, rgba(255, 255, 255, 0.16), transparent 70%),
+		linear-gradient(135deg, var(--imed-teal-700), var(--imed-teal-500));
+	color: #ffffff;
+	box-shadow: 0 22px 40px -28px var(--imed-teal-700);
+}
+.imed-library__hero::after {
+	content: "";
+	position: absolute;
+	inset-block-start: -60px;
+	inset-inline-end: -40px;
+	width: 200px;
+	height: 200px;
+	border: 26px solid rgba(255, 255, 255, 0.08);
+	border-radius: 50%;
+	pointer-events: none;
+}
+.imed-library__hero-icon {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 58px;
+	height: 58px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.18);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.imed-library__hero-icon .icon {
+	width: 28px;
+	height: 28px;
+	stroke: #ffffff;
+}
+.imed-library__hero-text {
+	flex: 1;
+	min-width: 220px;
+}
+.imed-library__hero-text small {
+	display: block;
+	color: rgba(255, 255, 255, 0.85);
+	font-size: var(--text-sm);
+	font-weight: 600;
+}
+.imed-library__hero-text h2 {
+	margin: 2px 0 6px;
+	color: #ffffff;
+	font-size: 1.6rem;
+	font-weight: 800;
+}
+.imed-library__hero-meta {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	color: rgba(255, 255, 255, 0.88);
+	font-size: var(--text-sm);
+}
+.imed-library__hero-meta .icon {
+	width: 15px;
+	height: 15px;
+	stroke: currentColor;
+}
+.imed-library__hero-meta i {
+	width: 4px;
+	height: 4px;
+	margin: 0 6px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.6);
+}
+.imed-library__hero-state {
+	position: relative;
+	z-index: 1;
+	padding: 8px 14px;
+	border-radius: 999px;
+	background: #ffffff;
+	color: var(--tone-fg);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	white-space: nowrap;
+	box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.35);
+}
+
+/* The four actions */
+.imed-library__tiles {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+	margin-bottom: 18px;
+}
+.imed-library__tile {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	width: 100%;
+	min-height: 104px;
+	padding: 18px;
+	border: 1px solid var(--imed-border);
+	border-radius: 20px;
+	background: var(--card-bg);
+	color: inherit;
+	text-align: start;
+	cursor: pointer;
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04);
+	transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.imed-library__tile:hover {
+	border-color: color-mix(in srgb, var(--tone-solid) 45%, var(--imed-border));
+	box-shadow: 0 18px 30px -22px var(--tone-solid);
+	transform: translateY(-2px);
+}
+.imed-library__tile:focus-visible {
+	outline: none;
+	box-shadow: var(--imed-ring);
+}
+.imed-library__tile-icon {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 56px;
+	height: 56px;
+	border-radius: 16px;
+	background: var(--tone-solid);
+	color: #ffffff;
+	box-shadow: 0 10px 20px -12px var(--tone-solid);
+}
+.imed-library__tile-icon .icon {
+	width: 26px;
+	height: 26px;
+	stroke: #ffffff;
+}
+.imed-library__tile-text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 3px;
+	min-width: 0;
+}
+.imed-library__tile-text b {
+	color: var(--heading-color);
+	font-size: 1.1rem;
+	font-weight: 800;
+}
+.imed-library__tile-text small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-library__tile-go {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 999px;
+	background: var(--tone-soft);
+	color: var(--tone-fg);
+}
+.imed-library__tile-go .icon {
+	width: 16px;
+	height: 16px;
+	stroke: currentColor;
+}
+
+/* A pill: the counters' state, a request's state */
+.imed-library__badge {
+	display: inline-flex;
+	align-items: center;
+	margin-top: 4px;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--tone-soft);
+	color: var(--tone-fg);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* What the store holds, the last requests */
+.imed-library__cards {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+}
+.imed-library__card {
+	padding: 18px 20px;
+	border: 1px solid var(--imed-border);
+	border-radius: 20px;
+	background: var(--card-bg);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04);
+}
+/* The heading's icon inline beside its words (as a flex item Frappe's icon drifted to the middle). */
+.imed-library__card h4 {
+	display: block;
+	margin: 0 0 10px;
+	color: var(--heading-color);
+	font-size: var(--text-base);
+	font-weight: 800;
+}
+.imed-library__card h4 .icon {
+	width: 18px;
+	height: 18px;
+	margin-inline-end: 8px;
+	stroke: var(--imed-teal-600);
+	vertical-align: -3px;
+}
+.imed-library__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-library__list li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 11px 0;
+	border-bottom: 1px solid var(--imed-border);
+}
+.imed-library__list li:last-child {
+	border-bottom: 0;
+}
+.imed-library__item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	color: var(--text-color);
+	font-weight: 600;
+}
+.imed-library__item > .icon {
+	flex: none;
+	width: 18px;
+	height: 18px;
+	stroke: var(--text-muted);
+}
+.imed-library__item small {
+	display: block;
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 500;
+}
+.imed-library__list b {
+	color: var(--heading-color);
+	font-size: 1.05rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+}
+.imed-library__list li.is-out b {
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--red-500) 12%, transparent);
+	color: var(--red-600);
+	font-size: var(--text-xs);
+}
+.imed-library__empty {
+	margin: 8px 0 0;
+	color: var(--text-muted);
+}
+.imed-library__empty .icon {
+	margin-inline-end: 6px;
+	stroke: currentColor;
+	vertical-align: -3px;
+}
+
+/* Dark theme */
+/* In the dark the state's own (light) colour would vanish on white: a see-through pill, white words. */
+[data-theme="dark"] .imed-library__hero-state {
+	background: rgba(255, 255, 255, 0.16);
+	color: #ffffff;
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+[data-theme="dark"] .imed-library__tile-go,
+[data-theme="dark"] .imed-library__badge {
+	background: color-mix(in srgb, var(--tone-solid) 18%, transparent);
+	color: var(--tone-on-dark, var(--tone-solid));
+}
+[data-theme="dark"] .imed-library__list li.is-out b {
+	color: var(--red-400);
+}
+@media (prefers-reduced-motion: reduce) {
+	.imed-library__tile {
+		transition: none;
+	}
+	.imed-library__tile:hover {
+		transform: none;
+	}
+}
+/* A tablet: the lists one under the other; a phone: everything in one column */
+@media (max-width: 767.98px) {
+	.imed-library__cards {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+@media (max-width: 575.98px) {
+	.imed-library__tiles {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 10px;
+	}
+	.imed-library__tile {
+		min-height: 84px;
+		padding: 14px;
+	}
+	.imed-library__tile-icon {
+		width: 48px;
+		height: 48px;
+	}
+	.imed-library__hero {
+		padding: 18px;
+	}
+	.imed-library__hero-text h2 {
+		font-size: 1.35rem;
+	}
+	.imed-library__hero-state {
+		width: 100%;
+		text-align: center;
+	}
+}

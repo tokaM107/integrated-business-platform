@@ -106,3 +106,37 @@
 	};
 	if (frappe.router && frappe.router.on) frappe.router.on("change", () => setTimeout(relight, 120));
 })();
+
+// A library's account (role Library Staff) sees in its sidebar the library's things only, on every page (the owner,
+// 5 Nov 2026: "anything of the libraries only"; nothing of the studio or the center, nor ERPNext's own items): its
+// screen مكتبتي and the records it keeps, each only if the account may open it. The server still decides what
+// anyone opens; this only stops offering the rest. The owner and the managers keep their sidebar unchanged.
+(function () {
+	const Sidebar = frappe.ui && frappe.ui.Sidebar;
+	if (!Sidebar || Sidebar.prototype.imed_library_patched) return;
+	const is_library_account = () => {
+		const roles = frappe.user_roles || [];
+		return roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin");
+	};
+	const library_items = () => [
+		{ type: "Link", label: __("مكتبتي"), link_type: "Page", link_to: "imed-library", icon: "store" },
+		{ type: "Link", label: __("Daily Counter Reading"), link_type: "DocType", link_to: "Daily Counter Reading", icon: "gauge" },
+		{ type: "Link", label: __("Paper Counters"), link_type: "DocType", link_to: "Printer Reading", icon: "printer" },
+		{ type: "Link", label: __("Daily Printing"), link_type: "Report", link_to: "Daily Printing", icon: "file-text" },
+		{ type: "Link", label: __("Stock Counts"), link_type: "DocType", link_to: "Stock Count", icon: "package" },
+		{ type: "Link", label: __("طلباتي"), link_type: "DocType", link_to: "Material Request", icon: "send" },
+		{ type: "Link", label: __("Printing Machines"), link_type: "DocType", link_to: "Printing Machine", icon: "settings" },
+	];
+	const can_open = (item) => {
+		const user = (frappe.boot && frappe.boot.user) || {};
+		if (item.link_type === "DocType") return (user.can_read || []).includes(item.link_to);
+		if (item.link_type === "Report") return (user.can_get_report || []).includes(item.link_to);
+		return true;
+	};
+	const create_sidebar = Sidebar.prototype.create_sidebar;
+	Sidebar.prototype.create_sidebar = function (items) {
+		if (is_library_account() && !this.edit_mode && !(this.editor && this.editor.edit_mode)) items = library_items().filter(can_open);
+		return create_sidebar.call(this, items);
+	};
+	Sidebar.prototype.imed_library_patched = true;
+})();

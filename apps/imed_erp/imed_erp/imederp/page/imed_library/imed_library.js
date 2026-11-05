@@ -9,43 +9,84 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 	const $body = $(`<div class="imed-library"></div>`).appendTo(page.main);
 	let desk = null;
 
-	const STYLE = `
-		<style>
-			.imed-library { max-width: 760px; margin: 0 auto; padding: 8px 4px 40px; direction: rtl; }
-			.imed-library__head { font-size: 22px; font-weight: 700; margin: 6px 0 2px; }
-			.imed-library__date { color: var(--text-muted); margin-bottom: 18px; }
-			.imed-library__tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
-			.imed-library__tile { border: 1px solid var(--border-color); border-radius: 16px; padding: 22px 16px; text-align: center;
-				background: var(--card-bg); cursor: pointer; font-size: 19px; font-weight: 600; user-select: none; }
-			.imed-library__tile:hover { border-color: var(--primary); }
-			.imed-library__tile .emoji { display: block; font-size: 38px; margin-bottom: 8px; }
-			.imed-library__tile small { display: block; font-weight: 400; font-size: 13px; color: var(--text-muted); margin-top: 6px; }
-			.imed-library__tile.is-done small { color: var(--green-600, #2e7d32); }
-			.imed-library h4 { margin: 26px 0 10px; font-size: 16px; }
-			.imed-library__row { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--border-color); }
-			@media (max-width: 480px) { .imed-library__tile { font-size: 17px; padding: 18px 10px; } }
-		</style>`;
+	// The look (owner, 5 Nov 2026: "professional"; theme §35 in imed_theme.css): a header card with the library, a
+	// greeting and today's counters, the four actions as cards with an icon each, then what the store holds and the
+	// last requests side by side. The actions themselves are unchanged (ACTIONS below).
+	const icon = (name) => frappe.utils.icon(name, "md");
+	const greeting = () => (new Date().getHours() < 12 ? __("صباح الخير") : __("مساء الخير"));
+	const long_day = () => new Date().toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+	const store_name = (s) => (s || "").replace(/\s+-\s+[^-]+$/, "");
+	// A request's state as a coloured pill: approved green, waiting orange, rejected red, else grey.
+	const REQUEST_TONE = { Approved: "green", "Pending Approval": "orange", Rejected: "red" };
+	const REQUEST_KIND = { "Material Transfer": __("تحويل من المخزن"), Purchase: __("شراء") };
+
+	function counters_state(counted) {
+		if (counted && counted.docstatus === 1) return { tone: "green", text: __("عدادات النهارده اتسجلت ✓") };
+		if (counted) return { tone: "orange", text: __("فاضل عدادات آخر اليوم") };
+		return { tone: "blue", text: __("سجّل عدادات الصبح") };
+	}
+
+	function tile(action, tone, icon_name, title, hint, badge) {
+		return `<button type="button" class="imed-library__tile tone-${tone}" data-action="${action}">
+				<span class="imed-library__tile-icon">${icon(icon_name)}</span>
+				<span class="imed-library__tile-text">
+					<b>${esc(title)}</b>
+					<small>${esc(hint)}</small>
+					${badge ? `<span class="imed-library__badge tone-${badge.tone}">${esc(badge.text)}</span>` : ""}
+				</span>
+				<span class="imed-library__tile-go">${icon(frappe.utils.is_rtl() ? "chevron-left" : "chevron-right")}</span>
+			</button>`;
+	}
 
 	function render() {
 		const counted = desk.counter_today;
 		const items = desk.items || [];
 		const requests = desk.requests || [];
-		$body.html(`${STYLE}
-			<div class="imed-library__head">${esc(desk.library_name || desk.library)}</div>
-			<div class="imed-library__date">${esc(frappe.datetime.str_to_user(frappe.datetime.get_today()))}</div>
-			<div class="imed-library__tiles">
-				<div class="imed-library__tile ${counted && counted.docstatus === 1 ? "is-done" : ""}" data-action="counters">
-					<span class="emoji">📟</span>${__("عدادات النهارده")}
-					<small>${counted ? (counted.docstatus === 1 ? __("اتسجلت ✓") : __("سجّل آخر اليوم")) : __("سجّل الصبح")}</small>
+		const state = counters_state(counted);
+		const stock = items
+			.map((i) => {
+				const out = !(Number(i.qty) > 0);
+				return `<li class="${out ? "is-out" : ""}">
+						<span class="imed-library__item">${icon("package")}<span>${esc(i.item_name)}</span></span>
+						<b>${out ? esc(__("خلص")) : esc(qty(i.qty))}</b>
+					</li>`;
+			})
+			.join("");
+		const asked = requests
+			.map((r) => {
+				const status = r.custom_approval_status || r.status;
+				return `<li>
+						<span class="imed-library__item">${icon("file-text")}<span>${esc(REQUEST_KIND[r.material_request_type] || __("طلب"))}<small>${esc(frappe.datetime.str_to_user(r.transaction_date))}</small></span></span>
+						<span class="imed-library__badge tone-${REQUEST_TONE[status] || "gray"}">${esc(__(status))}</span>
+					</li>`;
+			})
+			.join("");
+		$body.html(`
+			<section class="imed-library__hero">
+				<div class="imed-library__hero-icon">${icon("store")}</div>
+				<div class="imed-library__hero-text">
+					<small>${esc(greeting())} 👋</small>
+					<h2>${esc(desk.library_name || desk.library)}</h2>
+					<span class="imed-library__hero-meta">${icon("calendar")}${esc(long_day())}<i></i>${icon("warehouse")}${esc(store_name(desk.store))}</span>
 				</div>
-				<div class="imed-library__tile" data-action="used"><span class="emoji">📦</span>${__("حاجة خلصت")}<small>${__("إزازة حبر، كرتونة ورق…")}</small></div>
-				<div class="imed-library__tile" data-action="count"><span class="emoji">🔢</span>${__("رصيد المخزون")}<small>${__("اكتب اللي عندنا دلوقتي")}</small></div>
-				<div class="imed-library__tile" data-action="ask"><span class="emoji">📝</span>${__("اطلب حاجة")}<small>${__("حبر، ورق…")}</small></div>
+				<span class="imed-library__hero-state tone-${state.tone}">${esc(state.text)}</span>
+			</section>
+			<div class="imed-library__tiles">
+				${tile("counters", "teal", "gauge", __("عدادات النهارده"), counted ? (counted.docstatus === 1 ? __("اتسجلت النهارده ✓") : __("سجّل آخر اليوم")) : __("سجّل الصبح"))}
+				${tile("used", "orange", "package-minus", __("حاجة خلصت"), __("إزازة حبر، كرتونة ورق…"))}
+				${tile("count", "blue", "clipboard-list", __("رصيد المخزون"), __("اكتب اللي عندنا دلوقتي"))}
+				${tile("ask", "violet", "send", __("اطلب حاجة"), __("حبر، ورق…"))}
 			</div>
-			<h4>${__("اللي عندنا في المخزن")}</h4>
-			${items.map((i) => `<div class="imed-library__row"><span>${esc(i.item_name)}</span><b>${qty(i.qty)}</b></div>`).join("") || `<div class="text-muted">${__("مفيش أصناف لسه.")}</div>`}
-			<h4>${__("طلباتي")}</h4>
-			${requests.map((r) => `<div class="imed-library__row"><span>${esc(frappe.datetime.str_to_user(r.transaction_date))}</span><span>${esc(__(r.custom_approval_status || r.status))}</span></div>`).join("") || `<div class="text-muted">${__("مفيش طلبات.")}</div>`}
+			<div class="imed-library__cards">
+				<section class="imed-library__card">
+					<h4>${icon("warehouse")}${esc(__("اللي عندنا في المخزن"))}</h4>
+					${stock ? `<ul class="imed-library__list">${stock}</ul>` : `<p class="imed-library__empty">${esc(__("مفيش أصناف لسه."))}</p>`}
+				</section>
+				<section class="imed-library__card">
+					<h4>${icon("list")}${esc(__("طلباتي"))}</h4>
+					${asked ? `<ul class="imed-library__list">${asked}</ul>` : `<p class="imed-library__empty">${icon("inbox")}${esc(__("مفيش طلبات."))}</p>`}
+				</section>
+			</div>
 		`);
 		$body.find("[data-action]").on("click", function () {
 			ACTIONS[$(this).data("action")]();
@@ -181,7 +222,18 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 	wrapper.imed_reload = () => desk && load();
 };
 
+// This page is in no sidebar, so opened directly (a reload, a link) Frappe found none to show and the sidebar came
+// up empty (the owner, 5 Nov 2026; after signing in it kept the one already shown). Then the Stock sidebar is shown,
+// as after signing in; a library's account gets its own pages on top of it (imed_desk_fixes.js).
+function imed_library_sidebar() {
+	const sidebar = frappe.app && frappe.app.sidebar;
+	const known = frappe.boot && frappe.boot.workspace_sidebar_item;
+	if (!sidebar || !sidebar.setup || !known || !known.stock) return;
+	if (!(sidebar.workspace_sidebar_items || []).length) sidebar.setup("Stock");
+}
+
 // Back to the page (after the counters' form, say): what it shows is read again.
 frappe.pages["imed-library"].on_page_show = function (wrapper) {
 	if (wrapper.imed_reload) wrapper.imed_reload();
+	setTimeout(imed_library_sidebar, 300);
 };
