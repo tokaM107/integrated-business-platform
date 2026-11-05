@@ -107,9 +107,10 @@
 	if (frappe.router && frappe.router.on) frappe.router.on("change", () => setTimeout(relight, 120));
 })();
 
-// A library's account (role Library Staff) sees in its sidebar, first, the pages of its library: its screen مكتبتي
-// and the records it keeps (the owner, 5 Nov 2026: the sidebar looked empty), then the sidebar's own items as they
-// were. Only the library accounts; the owner and the managers keep their sidebar unchanged.
+// A library's account (role Library Staff) sees in its sidebar the library's things only, on every page (the owner,
+// 5 Nov 2026: "anything of the libraries only"; nothing of the studio or the center, nor ERPNext's own items): its
+// screen مكتبتي and the records it keeps, each only if the account may open it. The server still decides what
+// anyone opens; this only stops offering the rest. The owner and the managers keep their sidebar unchanged.
 (function () {
 	const Sidebar = frappe.ui && frappe.ui.Sidebar;
 	if (!Sidebar || Sidebar.prototype.imed_library_patched) return;
@@ -121,44 +122,20 @@
 		{ type: "Link", label: __("مكتبتي"), link_type: "Page", link_to: "imed-library", icon: "store" },
 		{ type: "Link", label: __("Daily Counter Reading"), link_type: "DocType", link_to: "Daily Counter Reading", icon: "gauge" },
 		{ type: "Link", label: __("Paper Counters"), link_type: "DocType", link_to: "Printer Reading", icon: "printer" },
+		{ type: "Link", label: __("Daily Printing"), link_type: "Report", link_to: "Daily Printing", icon: "file-text" },
 		{ type: "Link", label: __("Stock Counts"), link_type: "DocType", link_to: "Stock Count", icon: "package" },
-		{ type: "Spacer" },
+		{ type: "Link", label: __("طلباتي"), link_type: "DocType", link_to: "Material Request", icon: "send" },
+		{ type: "Link", label: __("Printing Machines"), link_type: "DocType", link_to: "Printing Machine", icon: "settings" },
 	];
-	// Nothing of the center or the studio for a library (the owner, 5 Nov 2026): a link the account may not open
-	// is left out, and so is a section left with nothing in it (the halls' and the studio's bookings showed as
-	// empty headings). The server still decides what anyone opens; this only stops offering it.
 	const can_open = (item) => {
 		const user = (frappe.boot && frappe.boot.user) || {};
 		if (item.link_type === "DocType") return (user.can_read || []).includes(item.link_to);
 		if (item.link_type === "Report") return (user.can_get_report || []).includes(item.link_to);
-		if (item.link_type === "URL" && typeof item.url === "string") {
-			const match = item.url.match(/^\/desk\/([a-z0-9-]+)(?:[/?#]|$)/);
-			return !match || (user.can_read || []).some((name) => frappe.router.slug(name) === match[1]);
-		}
 		return true;
 	};
-	// A section holds its links in nested_items (as the boot sends the sidebar): those it may open are kept, and the
-	// section only if one is left.
-	const only_what_it_opens = (items) =>
-		items
-			.map((item) => {
-				if (item.type === "Section Break" && Array.isArray(item.nested_items)) {
-					const nested = only_what_it_opens(item.nested_items);
-					return nested.length ? { ...item, nested_items: nested } : null;
-				}
-				return item.type !== "Link" || can_open(item) ? item : null;
-			})
-			.filter(Boolean);
 	const create_sidebar = Sidebar.prototype.create_sidebar;
 	Sidebar.prototype.create_sidebar = function (items) {
-		if (is_library_account() && !this.edit_mode && !(this.editor && this.editor.edit_mode)) {
-			const mine = library_items();
-			// What the sidebar links to already, in its sections too: those are not added on top a second time.
-			const have = new Set();
-			const note = (list) => (list || []).forEach((i) => { have.add(`${i.link_type}:${i.link_to}`); note(i.nested_items); });
-			note(items);
-			items = [...mine.filter((i) => i.type !== "Link" || !have.has(`${i.link_type}:${i.link_to}`)), ...only_what_it_opens(items || [])];
-		}
+		if (is_library_account() && !this.edit_mode && !(this.editor && this.editor.edit_mode)) items = library_items().filter(can_open);
 		return create_sidebar.call(this, items);
 	};
 	Sidebar.prototype.imed_library_patched = true;
