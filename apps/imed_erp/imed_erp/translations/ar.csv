@@ -2223,5 +2223,4 @@ tentative,مبدئي
 {0} bookings,{0} حجز
 Walk-in Without a Phone,زبون من غير رقم موبايل
 Without a Phone,من غير رقم موبايل
-XStudio Walk-in (No Phone),زبون XStudio من غير رقم
 "XStudio has no customer account for this booking (a walk-in, no phone): it is kept under the walk-in customer, and shown in purple.",XStudio ملوش حساب زبون للحجز ده (زبون جه على طول من غير رقم): متسجل تحت زبون الـ walk-in، وبيظهر بالبنفسجي.

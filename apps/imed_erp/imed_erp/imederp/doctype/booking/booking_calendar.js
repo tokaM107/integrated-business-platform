@@ -306,7 +306,7 @@ frappe.views.calendar["Booking"] = {
 			const bars = placed
 				.map(([e, lane]) => {
 					const p = e.extendedProps;
-					const color = p.conflict ? "red" : BOOKING_COLORS[p.status] || "blue";
+					const color = p.conflict ? "red" : p.no_phone ? "purple" : BOOKING_COLORS[p.status] || "blue";
 					const start = hour(e.start);
 					const end = key(e.end) !== key(e.start) ? 24 : hour(e.end);
 					const time = short_span(e.start, e.end, lang);

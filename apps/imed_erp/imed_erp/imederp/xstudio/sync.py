@@ -393,6 +393,7 @@ def upsert_customer(context, customer):
 
 
 WALK_IN = "walk-in"  # the walk-in customer's XStudio id: no XStudio customer has it (theirs are UUIDs)
+WALK_IN_NAME = "زبون XStudio من غير رقم"  # a customer's name is data: the same whatever language the sync runs in
 
 
 def walk_in_customer(context):
@@ -404,7 +405,7 @@ def walk_in_customer(context):
 		doc = frappe.get_doc(
 			{
 				"doctype": "Customer",
-				"customer_name": _("XStudio Walk-in (No Phone)"),
+				"customer_name": WALK_IN_NAME,
 				"customer_type": "Individual",
 				"customer_group": context.settings.customer_group,
 				"territory": default_territory(),
