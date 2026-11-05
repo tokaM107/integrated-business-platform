@@ -1,0 +1,256 @@
+{
+ "actions": [],
+ "creation": "2026-11-05 18:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "issingle": 1,
+ "module": "ImedERP",
+ "name": "Sparkle Settings",
+ "owner": "Administrator",
+ "modified": "2026-11-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "field_order": [
+  "enabled",
+  "connection_section",
+  "db_host",
+  "db_port",
+  "column_break_conn",
+  "db_name",
+  "db_user",
+  "db_password",
+  "read_section",
+  "start_date",
+  "poll_minutes",
+  "column_break_read",
+  "customer_group",
+  "halls_section",
+  "hall_map",
+  "accounts_section",
+  "income_account",
+  "cost_center",
+  "custody_account",
+  "custody_until",
+  "column_break_acc",
+  "cash_account",
+  "instapay_account",
+  "wallet_account",
+  "other_account",
+  "status_section",
+  "health",
+  "last_attempt_at",
+  "last_success_at",
+  "column_break_status",
+  "consecutive_failures",
+  "last_message"
+ ],
+ "fields": [
+  {
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled",
+   "description": "Read Sparkle every few minutes. While on, the halls are booked on Sparkle only: a hall booking cannot be made here."
+  },
+  {
+   "fieldname": "connection_section",
+   "fieldtype": "Section Break",
+   "label": "Connection",
+   "description": "Sparkle's database (Supabase), through its read-only login erp_reader: it reads and can change nothing."
+  },
+  {
+   "fieldname": "db_host",
+   "fieldtype": "Data",
+   "label": "Host",
+   "default": "aws-0-eu-west-2.pooler.supabase.com"
+  },
+  {
+   "fieldname": "db_port",
+   "fieldtype": "Int",
+   "label": "Port",
+   "default": "5432"
+  },
+  {
+   "fieldname": "column_break_conn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "db_name",
+   "fieldtype": "Data",
+   "label": "Database",
+   "default": "postgres"
+  },
+  {
+   "fieldname": "db_user",
+   "fieldtype": "Data",
+   "label": "User",
+   "description": "erp_reader.<project ref>"
+  },
+  {
+   "fieldname": "db_password",
+   "fieldtype": "Password",
+   "label": "Password"
+  },
+  {
+   "fieldname": "read_section",
+   "fieldtype": "Section Break",
+   "label": "What Is Read"
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Bookings From",
+   "default": "2026-09-01",
+   "description": "Bookings on or after this day, with their payments (owner, 5 Nov 2026: September, October and on)."
+  },
+  {
+   "fieldname": "poll_minutes",
+   "fieldtype": "Int",
+   "label": "Every (Minutes)",
+   "default": "10"
+  },
+  {
+   "fieldname": "column_break_read",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer_group",
+   "fieldtype": "Link",
+   "label": "Customer Group",
+   "options": "Customer Group",
+   "description": "For a renter not known here yet (found by phone first)."
+  },
+  {
+   "fieldname": "halls_section",
+   "fieldtype": "Section Break",
+   "label": "Halls"
+  },
+  {
+   "fieldname": "hall_map",
+   "fieldtype": "Table",
+   "label": "Hall Map",
+   "options": "Sparkle Hall Map"
+  },
+  {
+   "fieldname": "accounts_section",
+   "fieldtype": "Section Break",
+   "label": "Accounts",
+   "description": "Each payment is hall revenue on the day it was paid, into the box of its method; a reversal, a refund or a voided duplicate takes it back. Paid on or before Custody Until: the owner's custody (the money was handed over already)."
+  },
+  {
+   "fieldname": "income_account",
+   "fieldtype": "Link",
+   "label": "Revenue Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "custody_account",
+   "fieldtype": "Link",
+   "label": "Owner's Custody",
+   "options": "Account"
+  },
+  {
+   "fieldname": "custody_until",
+   "fieldtype": "Date",
+   "label": "Custody Until",
+   "default": "2026-10-31"
+  },
+  {
+   "fieldname": "column_break_acc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "cash_account",
+   "fieldtype": "Link",
+   "label": "Cash",
+   "options": "Account"
+  },
+  {
+   "fieldname": "instapay_account",
+   "fieldtype": "Link",
+   "label": "InstaPay and Bank Transfer",
+   "options": "Account"
+  },
+  {
+   "fieldname": "wallet_account",
+   "fieldtype": "Link",
+   "label": "Wallet",
+   "options": "Account"
+  },
+  {
+   "fieldname": "other_account",
+   "fieldtype": "Link",
+   "label": "Other",
+   "options": "Account",
+   "description": "Empty: the cash box."
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "fieldname": "health",
+   "fieldtype": "Select",
+   "label": "Health",
+   "options": "\nHealthy\nDegraded\nDown",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_attempt_at",
+   "fieldtype": "Datetime",
+   "label": "Last Attempt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_success_at",
+   "fieldtype": "Datetime",
+   "label": "Last Success",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_status",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "consecutive_failures",
+   "fieldtype": "Int",
+   "label": "Failures in a Row",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_message",
+   "fieldtype": "Small Text",
+   "label": "Last Message",
+   "read_only": 1
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "email": 0,
+   "print": 0,
+   "share": 0
+  },
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "email": 0,
+   "print": 0,
+   "share": 0
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

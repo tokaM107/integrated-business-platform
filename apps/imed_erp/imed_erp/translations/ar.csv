@@ -2234,3 +2234,13 @@ From Date must be before To Date.,لازم تاريخ البداية يكون ق
 Invoices,الفواتير
 Product Code,كود الصنف
 Product,الصنف
+The Sparkle sync is not enabled (Sparkle Settings).,ربط Sparkle مش شغال (Sparkle Settings).
+A Sparkle sync is already running. Wait for it to finish.,فيه مزامنة Sparkle شغالة دلوقتي. استنى لما تخلص.
+Sparkle Settings has no Bookings From.,Sparkle Settings ناقصها تاريخ البداية (Bookings From).
+"The run stopped at {0}: the database rolled it back. Nothing of this run was kept; the next run is safe.",المزامنة وقفت عند {0}: قاعدة البيانات رجّعت كل حاجة. مفيش حاجة من المرة دي اتحفظت، والمرة الجاية هتكمل عادي.
+Sparkle hall {0} is not mapped to a hall here (Sparkle Settings): not imported.,قاعة Sparkle {0} مش مربوطة بقاعة هنا (Sparkle Settings): ما اتنقلتش.
+Unknown kind of payment in Sparkle: {0}.,نوع دفعة مش معروف في Sparkle: {0}.
+"Sparkle Settings needs its revenue account, cost center and the box for {0}.",Sparkle Settings ناقصها حساب الإيراد أو مركز التكلفة أو الخزنة بتاعة {0}.
+"The halls are booked on Sparkle, the halls' booking site; the booking comes here by itself within minutes. Book it there.",القاعات بتتحجز على Sparkle (موقع حجز القاعات)، والحجز بييجي هنا لوحده في خلال دقايق. احجز من هناك.
+Booked on Sparkle,بيتحجز على Sparkle
+Sparkle sync (halls),مزامنة Sparkle (القاعات)

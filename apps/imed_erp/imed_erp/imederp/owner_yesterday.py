@@ -48,6 +48,7 @@ JOB_LATE_HOURS = 36
 # The app's daily jobs (hooks.py scheduler_events) by what they do; another one shows its module's name.
 JOB_NAMES = {
 	"imed_erp.imederp.xstudio.sync.run_scheduled": "XStudio sync",
+	"imed_erp.imederp.sparkle.sync.run_scheduled": "Sparkle sync (halls)",
 	"imed_erp.imederp.doctor_accrual.run_daily": "Doctors' share of sales",
 	"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily": "Monthly bills reminder",
 }
