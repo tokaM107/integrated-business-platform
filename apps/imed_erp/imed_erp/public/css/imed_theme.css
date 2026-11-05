@@ -5210,12 +5210,13 @@ a.imed-ov-lib:hover {
 	--tone: var(--blue-600);
 	--tone-bg: var(--blue-50);
 	position: relative;
-	display: grid;
-	grid-template-columns: auto 1fr;
-	grid-template-areas: "icon label" "num num" "cap cap";
+	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 10px 12px;
-	padding: 18px;
+	justify-content: center;
+	text-align: center;
+	gap: 8px;
+	padding: 18px 14px;
 	border-radius: 20px;
 	background: linear-gradient(160deg, var(--tone-bg), var(--card-bg) 70%);
 	border: 1px solid var(--imed-border);
@@ -5226,6 +5227,19 @@ a.imed-ov-lib:hover {
 	animation: imed-rise 0.5s ease both;
 	animation-delay: calc(var(--n, 0) * 0.12s + var(--i, 0) * 0.06s);
 	transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+/* The business's logo, centred, filling its square. */
+.imed-pd-card__logo {
+	width: 72px;
+	height: 72px;
+	border-radius: 18px;
+	object-fit: cover;
+	background: #fff;
+	box-shadow: 0 0 0 1px var(--imed-border), 0 10px 20px -14px var(--tone);
+	transition: transform 0.25s ease;
+}
+.imed-pd-card:hover .imed-pd-card__logo {
+	transform: scale(1.06) rotate(-2deg);
 }
 .imed-pd-card:hover {
 	transform: translateY(-3px);
@@ -5251,12 +5265,11 @@ a.imed-ov-lib:hover {
 	--tone-bg: var(--green-50, #f0fdf4);
 }
 .imed-pd-card__icon {
-	grid-area: icon;
 	display: grid;
 	place-items: center;
-	width: 44px;
-	height: 44px;
-	border-radius: 14px;
+	width: 72px;
+	height: 72px;
+	border-radius: 18px;
 	background: var(--tone);
 	color: #fff;
 	box-shadow: 0 8px 18px -10px var(--tone);
@@ -5265,8 +5278,7 @@ a.imed-ov-lib:hover {
 	stroke: currentColor;
 }
 .imed-pd-card__label {
-	grid-area: label;
-	font-size: 16px;
+	font-size: 14px;
 	font-weight: 600;
 	color: var(--heading-color);
 }
@@ -5276,8 +5288,8 @@ a.imed-ov-lib:hover {
 	unicode-bidi: isolate;
 }
 .imed-pd-card .imed-pd-num {
-	grid-area: num;
-	font-size: 34px;
+	max-width: 100%;
+	font-size: 28px;
 	font-weight: 800;
 	line-height: 1.1;
 	color: var(--tone);
@@ -5286,11 +5298,10 @@ a.imed-ov-lib:hover {
 	text-overflow: ellipsis;
 }
 .imed-pd-band.is-today .imed-pd-card .imed-pd-num {
-	font-size: 40px;
+	font-size: 32px;
 }
 .imed-pd-card__caption {
-	grid-area: cap;
-	font-size: 13px;
+	font-size: 12px;
 	color: var(--text-muted);
 }
 .imed-pd-card__caption .is-in {
@@ -5588,23 +5599,27 @@ html[dir="ltr"] .imed-boxes__bar i {
 		gap: 10px;
 	}
 	.imed-pd-card {
-		padding: 14px;
-		gap: 8px 10px;
+		padding: 14px 10px;
+		gap: 6px;
 		border-radius: 18px;
 	}
+	.imed-pd-card__logo,
 	.imed-pd-card__icon {
-		width: 36px;
-		height: 36px;
-		border-radius: 12px;
+		width: 60px;
+		height: 60px;
+		border-radius: 16px;
 	}
 	.imed-pd-card__label {
-		font-size: 14px;
+		font-size: 13px;
 	}
 	.imed-pd-card .imed-pd-num {
-		font-size: 26px;
+		font-size: 22px;
 	}
 	.imed-pd-band.is-today .imed-pd-card .imed-pd-num {
-		font-size: 30px;
+		font-size: 26px;
+	}
+	.imed-pd-card__caption {
+		font-size: 11px;
 	}
 	.imed-pd-band.is-today {
 		padding: 12px;

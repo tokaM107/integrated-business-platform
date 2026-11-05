@@ -697,6 +697,13 @@
 	const qty = (value) => format_number(value || 0, null, (value || 0) % 1 ? 1 : 0);
 	const big = (value, currency) => `<b class="imed-pd-num" data-to="${Number(value) || 0}"${currency ? ` data-cur="${esc(currency)}"` : ""}>${currency ? whole(value, currency) : number(value)}</b>`;
 
+	// Each business's own logo in place of an icon (the owner, 5 Nov 2026); the app has none yet.
+	const LOGOS = {
+		studio: "/assets/imed_erp/images/logos/x-studio.jpg",
+		halls: "/assets/imed_erp/images/logos/imed-academy.jpg",
+		libraries: "/assets/imed_erp/images/logos/doctor-2-be.jpg",
+	};
+
 	// ---- Today, the week, the month: four cards each, two to a row, one big figure and one line under it ----
 	function period_card(b, p, c, i) {
 		const a = b.activity || {};
@@ -719,7 +726,11 @@
 			caption = a.state === "ok" ? esc(__("{0} new subscriptions", [number(a.subscriptions)])) : esc(__("Not set up yet"));
 		}
 		return `<a class="imed-pd-card tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route))}">
-				<span class="imed-pd-card__icon">${frappe.utils.icon(b.icon, "md")}</span>
+				${
+					LOGOS[b.key]
+						? `<img class="imed-pd-card__logo" src="${LOGOS[b.key]}" alt="" loading="lazy">`
+						: `<span class="imed-pd-card__icon">${frappe.utils.icon(b.icon, "md")}</span>`
+				}
 				<span class="imed-pd-card__label">${esc(b.label)}</span>
 				${figure}
 				<span class="imed-pd-card__caption">${caption}</span>
