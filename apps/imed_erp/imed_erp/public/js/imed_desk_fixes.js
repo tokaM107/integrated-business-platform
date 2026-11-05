@@ -106,3 +106,32 @@
 	};
 	if (frappe.router && frappe.router.on) frappe.router.on("change", () => setTimeout(relight, 120));
 })();
+
+// A library's account (role Library Staff) sees in its sidebar, first, the pages of its library: its screen مكتبتي
+// and the records it keeps (the owner, 5 Nov 2026: the sidebar looked empty), then the sidebar's own items as they
+// were. Only the library accounts; the owner and the managers keep their sidebar unchanged.
+(function () {
+	const Sidebar = frappe.ui && frappe.ui.Sidebar;
+	if (!Sidebar || Sidebar.prototype.imed_library_patched) return;
+	const is_library_account = () => {
+		const roles = frappe.user_roles || [];
+		return roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin");
+	};
+	const library_items = () => [
+		{ type: "Link", label: __("مكتبتي"), link_type: "Page", link_to: "imed-library", icon: "store" },
+		{ type: "Link", label: __("Daily Counter Reading"), link_type: "DocType", link_to: "Daily Counter Reading", icon: "gauge" },
+		{ type: "Link", label: __("Paper Counters"), link_type: "DocType", link_to: "Printer Reading", icon: "printer" },
+		{ type: "Link", label: __("Stock Counts"), link_type: "DocType", link_to: "Stock Count", icon: "package" },
+		{ type: "Spacer" },
+	];
+	const create_sidebar = Sidebar.prototype.create_sidebar;
+	Sidebar.prototype.create_sidebar = function (items) {
+		if (is_library_account() && !this.edit_mode && !(this.editor && this.editor.edit_mode)) {
+			const mine = library_items();
+			const have = new Set((items || []).map((i) => `${i.link_type}:${i.link_to}`));
+			items = [...mine.filter((i) => i.type !== "Link" || !have.has(`${i.link_type}:${i.link_to}`)), ...(items || [])];
+		}
+		return create_sidebar.call(this, items);
+	};
+	Sidebar.prototype.imed_library_patched = true;
+})();
