@@ -1,7 +1,17 @@
 // مكتبتي: a library's own screen (owner, 4 Nov 2026: one account a library, as simple as can be). Four big buttons
 // (today's counters, something finished, what we hold, ask for more), what the store holds, and the last requests.
 // Every action is checked on the server (imederp/library_desk.py); this page only asks and shows.
+// مكتبتي is a library account's screen only. Anyone else who reaches it (the owner signing in after the library's
+// account signed out on the same browser keeps its last address: 5 Nov 2026) is taken to their own first page.
+function imed_not_a_library() {
+	const roles = frappe.user_roles || [];
+	if (roles.includes("Library Staff")) return false;
+	window.location.replace("/desk");
+	return true;
+}
+
 frappe.pages["imed-library"].on_page_load = function (wrapper) {
+	if (imed_not_a_library()) return;
 	const API = "imed_erp.imederp.library_desk";
 	const page = frappe.ui.make_app_page({ parent: wrapper, title: __("مكتبتي"), single_column: true });
 	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
@@ -234,6 +244,7 @@ function imed_library_sidebar() {
 
 // Back to the page (after the counters' form, say): what it shows is read again.
 frappe.pages["imed-library"].on_page_show = function (wrapper) {
+	if (imed_not_a_library()) return;
 	if (wrapper.imed_reload) wrapper.imed_reload();
 	setTimeout(imed_library_sidebar, 300);
 };
