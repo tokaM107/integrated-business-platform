@@ -80,6 +80,15 @@ class TestLibraryMappers(IntegrationTestCase):
 		self.assertEqual(fields["import_key"], "tanmya:azarita:stock:90001")
 		self.assertEqual(notes, [])
 
+	def test_the_invoice_keeps_the_librarys_day_at_the_time_the_cashier_saved_it(self):
+		"""TxtRegDateRefStock is the day at 00:00; TxtOrderTime the clock of the save. Without it, the day alone."""
+		document = sale(when="2026-11-03 00:00:00")
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
+		document["TxtOrderTime"] = "2026-11-03T12:14:20.473000"
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 12:14:20")
+		document["TxtOrderTime"] = "not a time"
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
+
 	def test_a_held_and_a_cancelled_document_are_not_final(self):
 		held, _ = mappers.map_document("stock", sale(status="1"), settings())
 		cancelled, _ = mappers.map_document("stock", sale(status="3"), settings())
@@ -229,6 +238,18 @@ class TestLibraryReceive(IntegrationTestCase):
 		self.assertIsNotNone(after["last_synced_at"])
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, list_summary)
+
+	def test_the_list_band_of_one_library_counts_that_library_only(self):
+		"""The sidebar's "Mawasah Invoices" opens the list filtered to Mawasah: its band counts Mawasah alone."""
+		from imed_erp.imederp.doctype.library_sales_document.library_sales_document import list_summary
+
+		today = frappe.utils.nowdate()
+		mawasah = cost_center("مكتبة المواساة")
+		before_one, before_all = list_summary(mawasah), list_summary()
+		sync.import_batch(self.batch(sale("93001", branch="1", when=f"{today} 09:00:00"), sale("93002", branch="2", when=f"{today} 09:10:00")))
+		after_one, after_all = list_summary(mawasah), list_summary()
+		self.assertEqual((after_one["sales_count"] - before_one["sales_count"], after_all["sales_count"] - before_all["sales_count"]), (1, 2))
+		self.assertEqual(flt(after_one["sales_value"] - before_one["sales_value"], 2), 150.0)
 
 	def test_the_owner_sees_each_librarys_sales_today_apart(self):
 		"""The Owner Dashboard's first row (owner_overview.libraries): Azarita and Mawasah apart, by the cost center

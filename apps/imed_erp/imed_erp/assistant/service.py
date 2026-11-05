@@ -17,7 +17,8 @@ def memory_for(context: RequestContext, earlier: list[dict]) -> ConversationMemo
 	return ChatMemory() if context.chat else RequestMemory(earlier)
 
 
-def answer(provider: ModelProvider, question: str, context: RequestContext, earlier: list[dict] | None = None) -> tuple[str, str]:
-	"""(answer, facts). Raises ModelUnavailable when the model cannot be reached."""
+def answer(provider: ModelProvider, question: str, context: RequestContext, earlier: list[dict] | None = None, on_text=None) -> tuple[str, str]:
+	"""(answer, facts). Raises ModelUnavailable when the model cannot be reached. `on_text` receives the answer's
+	pieces as they are written, when the provider can stream."""
 	tools = ToolRegistry(discover(context), context)
-	return Orchestrator(provider.complete, tools, memory_for(context, earlier or [])).answer(question, context)
+	return Orchestrator(provider.complete, tools, memory_for(context, earlier or []), on_text=on_text).answer(question, context)

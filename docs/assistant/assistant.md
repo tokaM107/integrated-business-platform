@@ -82,16 +82,30 @@ not as the definition of the businesses. A test fails if a business, branch or r
   five messages, for that request only. Nothing is kept between requests, so tabs and callers never share context.
 - Memory is never a source of figures: a new question reads again.
 
-## Configuration (site config, never in git)
+## Configuration (environment or site config, never in git)
+
+Claude answers whenever an Anthropic key is set; Gemini reads answers aloud and writes out recordings whenever a
+Gemini key is set (Claude has no voice). On Coolify, set the keys in the application's environment (the compose file
+passes them to the backend):
 
 ```
-bench --site frontend set-config imed_assistant_provider gemini          # gemini, claude, or offline (unset = offline)
-bench --site frontend set-config imed_assistant_api_key AIza...          # Google AI Studio key (sk-ant-... for Claude)
-bench --site frontend set-config imed_assistant_model gemini-3.5-flash   # optional; the default
+ANTHROPIC_API_KEY=sk-ant-...            # Claude answers (default model claude-sonnet-4-6)
+GEMINI_API_KEY=AIza...                  # the Egyptian voice and the dictation
+IMED_ASSISTANT_PROVIDER=gemini          # optional: force a provider (gemini, claude, offline)
+IMED_ASSISTANT_CLAUDE_MODEL=...         # optional: another Claude model
+ELEVENLABS_API_KEY=...                  # the voice: answers read aloud (voice I3u6waC588j43py1kDN2, "Fatima - Expressive
+                                        # Egyptian") and recordings written out (Scribe); Gemini is never the voice
+                                        # when Claude answers. The library voice needs a paid ElevenLabs plan; on the
+                                        # free one the account's Sarah reads instead
+IMED_ELEVENLABS_VOICE_ID=...            # optional: another ElevenLabs voice (it must be in the key's account)
+IMED_ELEVENLABS_FALLBACK_VOICE_ID=...   # optional: the voice used while the chosen one is refused for the plan
 ```
 
-Values written before the reorganisation (`imed_erp.assistant.gemini.GeminiProvider`) are still accepted. A free
-Gemini key allows 5 requests a minute per model and a daily cap; a quota or overload answer is said as such.
+The same can live in the site config instead (`bench --site frontend set-config <name> <value>`):
+`imed_assistant_anthropic_key`, `imed_assistant_gemini_key`, `imed_assistant_claude_model`, `imed_assistant_model`
+(Gemini's), `imed_assistant_tts_model`, `imed_assistant_voice`, `imed_assistant_stt_model`. The older single
+`imed_assistant_api_key` still works and goes to the provider its prefix belongs to. A site config value wins over
+the environment for a key; the environment's `IMED_ASSISTANT_PROVIDER` wins over everything for the provider.
 
 Deployment: `bench migrate` creates the two chat DocTypes and the unique index; the chat window falls back to sending
 the whole conversation if they are missing. Rolling back the code leaves the two tables unused and harmless.

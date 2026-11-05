@@ -516,7 +516,7 @@ def get_events(start, end, filters=None, **kwargs):
 		filters = [[field, *value] if isinstance(value, list) else [field, "=", value] for field, value in filters.items()]
 	rows = frappe.get_list(
 		"Booking",
-		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status", "starts_at", "ends_at", "hall_booking_type", "activity", "doctor"],
+		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status", "starts_at", "ends_at", "hall_booking_type", "activity", "doctor", "xstudio_no_phone"],
 		filters=[*filters, ["booking_date", ">=", add_days(getdate(start), -1)], ["booking_date", "<=", getdate(end)]],
 		order_by="booking_date asc, from_time asc",
 		limit_page_length=0,
@@ -540,6 +540,7 @@ def get_events(start, end, filters=None, **kwargs):
 				title=event_title(row),
 				hall_booking_type=row.hall_booking_type,
 				doctor=row.doctor,
+				no_phone=row.xstudio_no_phone,
 				all_day=0,
 				# A booking's times are the hall's or the studio's clock, whatever the user's time zone.
 				convert_to_user_tz=0,

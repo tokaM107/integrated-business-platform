@@ -12,9 +12,10 @@ JsonSchema = dict[str, Any]
 
 
 class Completer(Protocol):
-	"""One model call: text in, text out; JSON of `json_schema`'s shape when one is given."""
+	"""One model call: text in, text out; JSON of `json_schema`'s shape when one is given. With `on_text`, the text is
+	also handed over piece by piece as it is written (the answer shown while it is written); the whole is returned."""
 
-	def __call__(self, system: str, prompt: str, json_schema: JsonSchema | None = None) -> str: ...
+	def __call__(self, system: str, prompt: str, json_schema: JsonSchema | None = None, on_text=None) -> str: ...
 
 
 @runtime_checkable

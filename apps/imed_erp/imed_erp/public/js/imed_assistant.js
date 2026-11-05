@@ -24,6 +24,8 @@
 		t("Paper stock in each store", "رصيد الورق في كل مخزن"),
 		t("Doctors due for settlement", "الدكاترة اللي عليهم تسوية"),
 	];
+	// An icon for each suggestion card on the welcome screen, in the same order (the owner, 4 Nov 2026).
+	const SUGGESTION_ICONS = ["trending-up", "hand-coins", "package", "stethoscope"];
 
 	// The character: a teal head with a face screen and an antenna ending in the logo's amber dot.
 	const character = (cls) => `
@@ -46,6 +48,8 @@
 		</svg>`;
 
 	const state = {
+		stream: null, // the answer being written: {id, text}
+		listening: false, // the realtime listener for streamed answers is set
 		status: null, // promise of get_status()
 		chat: null, // the saved chat open now (its name), or null before the first message
 		chats: [], // the user's saved chats [{name, title, last_message_at}]
@@ -84,6 +88,7 @@
 						<div class="imed-assistant-panel__titles">
 							<h2 id="imed-assistant-title">${esc(t("AI Assistant", "المساعد الذكي"))}</h2>
 							<small class="imed-assistant-panel__chat-title"></small>
+							<small class="imed-assistant-panel__status"><i></i><span>${esc(t("Ready to help", "جاهز يساعدك"))}</span></small>
 						</div>
 						<button type="button" class="imed-assistant-panel__chats" aria-label="${esc(t("Chats", "المحادثات"))}" title="${esc(t("Chats", "المحادثات"))}">
 							${frappe.utils.icon("list", "md")}
@@ -110,8 +115,8 @@
 								placeholder="${esc(t("Ask about sales, stock, doctors…", "اسأل عن المبيعات، المخازن، الدكاترة…"))}"
 								aria-label="${esc(t("Message", "الرسالة"))}"></textarea>
 							<button type="button" class="imed-assistant-mic" aria-pressed="false"
-								aria-label="${esc(t("Record a voice message", "سجّل رسالة صوتية"))}"
-								title="${esc(t("Record a voice message", "سجّل رسالة صوتية"))}">
+								aria-label="${esc(t("Speak your question", "قول سؤالك"))}"
+								title="${esc(t("Speak your question: it is written out for you to send", "قول سؤالك: هيتكتب وانت تبعته"))}">
 								${frappe.utils.icon("mic", "md")}
 							</button>
 							<button type="submit" class="imed-assistant-send" aria-label="${esc(t("Send", "إرسال"))}"
@@ -129,6 +134,12 @@
 		$(container).append($root);
 		bind($root);
 		render($root);
+		// The header's line under the name: ready, or the model not reached.
+		get_status().then((s) => {
+			if (s && s.allowed && s.connected === false) {
+				$root.find(".imed-assistant-panel__status").addClass("is-off").find("span").text(t("The model is not connected", "النموذج مش متصل"));
+			}
+		});
 	}
 
 	// ------------------------------------------------------------------ open / close
@@ -215,46 +226,72 @@
 							)
 						)}
 					</p>
+					<p class="imed-assistant-welcome__try">${esc(t("Try asking", "جرّب تسأل"))}</p>
+					<div class="imed-assistant-welcome__grid"></div>
 				</div>`);
+			// The suggestions as cards on the welcome screen, each with its icon.
+			const $grid = $log.find(".imed-assistant-welcome__grid");
+			SUGGESTIONS().forEach((s, i) =>
+				$(`<button type="button" class="imed-assistant-chip" dir="auto">
+						<span class="imed-assistant-chip__icon">${frappe.utils.icon(SUGGESTION_ICONS[i] || "message-circle", "sm")}</span>
+						<span class="imed-assistant-chip__text">${esc(s)}</span>
+					</button>`)
+					.on("click", () => send_text($root, s))
+					.appendTo($grid)
+			);
 		}
 
 		state.items.forEach((item) => $log.append(bubble(item)));
-		if (state.busy) {
+		if (state.busy && state.stream && state.stream.text) {
+			// The answer while it is written (api.streamer): replaced by the final one when it arrives.
 			$log.append(`
-				<div class="imed-assistant-msg is-assistant is-typing" aria-label="${esc(t("Typing", "بيكتب"))}">
-					<span></span><span></span><span></span>
+				<div class="imed-assistant-row is-assistant">
+					<span class="imed-assistant-row__avatar">${character("imed-bot--tiny")}</span>
+					<div class="imed-assistant-row__body"><div class="imed-assistant-msg is-assistant is-streaming" dir="auto">${esc(state.stream.text)}</div></div>
+				</div>`);
+		} else if (state.busy) {
+			$log.append(`
+				<div class="imed-assistant-row is-assistant">
+					<span class="imed-assistant-row__avatar">${character("imed-bot--tiny")}</span>
+					<div class="imed-assistant-msg is-assistant is-typing" aria-label="${esc(t("Typing", "بيكتب"))}">
+						<span></span><span></span><span></span>
+					</div>
 				</div>`);
 		}
 
-		const $sugg = $root.find(".imed-assistant-panel__suggestions").empty();
-		if (!state.items.length) {
-			SUGGESTIONS().forEach((s) =>
-				$(`<button type="button" class="imed-assistant-chip" dir="auto">${esc(s)}</button>`)
-					.on("click", () => send_text($root, s))
-					.appendTo($sugg)
-			);
-		}
+		$root.find(".imed-assistant-panel__suggestions").empty();
 
 		$root.find(".imed-assistant-send, .imed-assistant-mic").prop("disabled", state.busy);
 		bind_speak($root);
 		scroll_to_end($root);
 	}
 
+	// A message as a row: the user's on one side; the assistant's with its avatar beside it and, under an answer,
+	// the actions (read aloud, copy).
 	function bubble(item) {
-		const cls = item.role === "user" ? "is-user" : item.error ? "is-assistant is-error" : "is-assistant";
+		const mine = item.role === "user";
+		const cls = mine ? "is-user" : item.error ? "is-assistant is-error" : "is-assistant";
+		const avatar = mine ? "" : `<span class="imed-assistant-row__avatar">${character("imed-bot--tiny")}</span>`;
+		let body;
 		if (item.audio_url) {
-			return `
+			body = `
 				<div class="imed-assistant-msg ${cls} is-voice">
 					<audio controls preload="metadata" src="${esc(item.audio_url)}"></audio>
 					${item.transcript ? `<div class="imed-assistant-msg__transcript" dir="auto">${esc(item.transcript)}</div>` : ""}
 				</div>`;
+		} else {
+			// Under an answer: read aloud by the model's Egyptian voice (api.speak; the browser's own voice only when
+			// the server has none, 2 Nov 2026: the browser's read Arabic letter by letter, in no dialect), and copy.
+			// The speak button's sign (🔊, ⏳ while fetching, ⏹ while playing) is set by speak_answer.
+			const actions = !mine && !item.error
+				? `<div class="imed-assistant-msg__actions">
+						<button type="button" class="imed-assistant-speak" title="${esc(t("Read aloud", "اقرأ بصوت"))}" aria-label="${esc(t("Read aloud", "اقرأ بصوت"))}">🔊</button>
+						<button type="button" class="imed-assistant-copy" title="${esc(t("Copy", "انسخ"))}" aria-label="${esc(t("Copy", "انسخ"))}">${frappe.utils.icon("copy", "sm")}</button>
+					</div>`
+				: "";
+			body = `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}</div>${actions}`;
 		}
-		// An answer can be read aloud by the browser's own voice (no server, no model): the owner asked for the
-		// figures to be read to him (1 Nov 2026).
-		const speak = item.role === "assistant" && !item.error && window.speechSynthesis
-			? `<button type="button" class="imed-assistant-speak" title="${esc(t("Read aloud", "اقرأ بصوت"))}" aria-label="${esc(t("Read aloud", "اقرأ بصوت"))}">🔊</button>`
-			: "";
-		return `<div class="imed-assistant-msg ${cls}" dir="auto">${esc(item.text)}${speak}</div>`;
+		return `<div class="imed-assistant-row ${mine ? "is-user" : "is-assistant"}">${avatar}<div class="imed-assistant-row__body">${body}</div></div>`;
 	}
 
 	function speak_text(text) {
@@ -268,9 +305,61 @@
 		window.speechSynthesis.speak(utter);
 	}
 
+	// One answer plays at a time; each answer's audio is fetched once and kept for the page.
+	const spoken = new Map();
+	let playing = null; // {audio, $btn}
+
+	function stop_playing() {
+		if (window.speechSynthesis) window.speechSynthesis.cancel();
+		if (!playing) return;
+		playing.audio.pause();
+		playing.$btn.text("🔊").removeClass("is-playing");
+		playing = null;
+	}
+
+	function play(url, $btn) {
+		const audio = new Audio(url);
+		playing = { audio, $btn };
+		$btn.text("⏹").addClass("is-playing");
+		audio.addEventListener("ended", () => stop_playing());
+		audio.play().catch(() => stop_playing());
+	}
+
+	function speak_answer($btn, text) {
+		if (playing && playing.$btn[0] === $btn[0]) return stop_playing();
+		stop_playing();
+		if (spoken.has(text)) return play(spoken.get(text), $btn);
+		$btn.text("⏳").prop("disabled", true);
+		frappe
+			.xcall(`${API}.speak`, { text })
+			.then((r) => {
+				if (r && r.audio) {
+					const url = `data:${r.mime || "audio/wav"};base64,${r.audio}`;
+					spoken.set(text, url);
+					play(url, $btn);
+				} else {
+					if (r && r.message) frappe.show_alert({ message: r.message, indicator: "orange" });
+					speak_text(text); // no voice on the server: the browser's own
+				}
+			})
+			.catch(() => speak_text(text))
+			.finally(() => $btn.prop("disabled", false).text(playing && playing.$btn[0] === $btn[0] ? "⏹" : "🔊"));
+	}
+
 	function bind_speak($root) {
+		// The answer's text: its row's message, or the message holding the button (a message drawn without a row).
+		const text_of = (el) => {
+			const $row = $(el).closest(".imed-assistant-row");
+			const $msg = $row.length ? $row.find(".imed-assistant-msg") : $(el).closest(".imed-assistant-msg");
+			return $msg.text().replace(/[🔊⏳⏹]\s*$/u, "").trim();
+		};
 		$root.off("click.imed-speak").on("click.imed-speak", ".imed-assistant-speak", function () {
-			speak_text($(this).closest(".imed-assistant-msg").text().replace(/🔊\s*$/, "").trim());
+			speak_answer($(this), text_of(this));
+		});
+		$root.off("click.imed-copy").on("click.imed-copy", ".imed-assistant-copy", function () {
+			const done = () => frappe.show_alert({ message: t("Copied", "اتنسخ"), indicator: "green" }, 2);
+			if (navigator.clipboard) navigator.clipboard.writeText(text_of(this)).then(done, () => frappe.utils.copy_to_clipboard(text_of(this)));
+			else frappe.utils.copy_to_clipboard(text_of(this));
 		});
 	}
 
@@ -376,19 +465,59 @@
 		}, t("Rename the chat", "إعادة تسمية المحادثة"));
 	}
 
-	function send_voice($root, blob, mime) {
-		const item = { role: "user", audio_url: URL.createObjectURL(blob) };
-		state.audio_urls.push(item.audio_url);
-		state.items.push(item);
+	// A recording is written out into the message box (api.transcribe), for the user to read, correct and send,
+	// as in a chat app's dictation (owner, 2 Nov 2026); nothing is sent until they press Send.
+	function transcribe_to_input($root, blob, mime) {
+		const $input = $root.find("textarea");
+		const $mic = $root.find(".imed-assistant-mic");
+		const placeholder = $input.attr("placeholder");
+		$mic.prop("disabled", true).addClass("is-transcribing");
+		$input.prop("disabled", true).attr("placeholder", t("Writing out what you said…", "بكتب كلامك…"));
 		const reader = new FileReader();
 		reader.onloadend = () => {
 			const audio = String(reader.result).split(",")[1] || "";
-			ensure_chat($root).then((chat) => request($root, chat ? { chat, text: "", audio, audio_type: mime } : { messages: JSON.stringify(state.history), audio, audio_type: mime }, item));
+			frappe
+				.xcall(`${API}.transcribe`, { audio, audio_type: mime })
+				.then((r) => {
+					const text = ((r && r.text) || "").trim();
+					if (!text) {
+						frappe.show_alert({ message: (r && r.message) || t("Nothing was heard. Try again.", "ما سمعتش كلام واضح، جرّب تاني."), indicator: "orange" });
+						return;
+					}
+					const before = $input.val().trim();
+					$input.val(before ? `${before} ${text}` : text);
+				})
+				.catch(() => frappe.show_alert({ message: t("The recording could not be written out.", "ما قدرتش أكتب التسجيل."), indicator: "orange" }))
+				.finally(() => {
+					$mic.prop("disabled", state.busy).removeClass("is-transcribing");
+					$input.prop("disabled", false).attr("placeholder", placeholder);
+					autosize($input);
+					$input.trigger("focus");
+					const end = $input.val().length;
+					$input[0].setSelectionRange(end, end);
+				});
 		};
 		reader.readAsDataURL(blob);
 	}
 
+	// The answer's pieces as the server writes them (one listener for the page).
+	function listen_to_stream($root) {
+		if (state.listening || !frappe.realtime || !frappe.realtime.on) return;
+		state.listening = true;
+		frappe.realtime.on("imed_assistant_stream", (data) => {
+			if (!state.busy || !state.stream || !data || data.id !== state.stream.id) return;
+			state.stream.text += data.text || "";
+			const $live = $root.find(".imed-assistant-msg.is-streaming");
+			if ($live.length) $live.text(state.stream.text);
+			else render($root);
+			scroll_to_end($root);
+		});
+	}
+
 	function request($root, args, voice_item) {
+		listen_to_stream($root);
+		state.stream = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`, text: "" };
+		args = { ...args, stream_id: state.stream.id };
 		state.busy = true;
 		render($root);
 		frappe
@@ -419,6 +548,7 @@
 			})
 			.finally(() => {
 				state.busy = false;
+				state.stream = null;
 				render($root);
 			});
 	}
@@ -454,7 +584,7 @@
 			const blob = new Blob(state.chunks, { type });
 			state.recorder = null;
 			set_recording_ui($root, false);
-			if (!state.cancelled && blob.size) send_voice($root, blob, type);
+			if (!state.cancelled && blob.size) transcribe_to_input($root, blob, type);
 		};
 		recorder.start();
 		state.record_started = Date.now();
@@ -481,7 +611,7 @@
 		$root
 			.find(".imed-assistant-mic")
 			.attr("aria-pressed", on ? "true" : "false")
-			.attr("aria-label", on ? t("Stop and send", "وقّف وابعت") : t("Record a voice message", "سجّل رسالة صوتية"));
+			.attr("aria-label", on ? t("Stop and write it out", "وقّف واكتب الكلام") : t("Speak your question", "قول سؤالك"));
 		$root.find(".imed-assistant-recording__time").text("0:00");
 	}
 
