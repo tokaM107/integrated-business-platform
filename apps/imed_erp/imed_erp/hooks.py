@@ -400,6 +400,7 @@ period_closing_doctypes = [
 # (A name starting with "_" is not a hook: Frappe skips it.)
 _custom_fields = [
 	"imed_erp.imederp.material_issue.make_custom_fields",
+	"imed_erp.imederp.sparkle.fields.make_custom_fields",
 	"imed_erp.imederp.booking_accounts.make_custom_fields",
 	"imed_erp.imederp.damaged_stock.make_custom_fields",
 	"imed_erp.imederp.customers.make_custom_fields",
@@ -424,7 +425,11 @@ scheduler_events = {
 	"cron": {
 		# XStudio's bookings, customers and prepaid packages, read from its API (imederp/xstudio/sync.py); the
 		# settings say whether it is on and how many minutes between runs.
-		"*/10 * * * *": ["imed_erp.imederp.xstudio.sync.run_scheduled"],
+		"*/10 * * * *": [
+			"imed_erp.imederp.xstudio.sync.run_scheduled",
+			# The halls' bookings and payments, read from Sparkle (imederp/sparkle/sync.py, owner, 5 Nov 2026).
+			"imed_erp.imederp.sparkle.sync.run_scheduled",
+		],
 	},
 	"daily": [
 		"imed_erp.imederp.doctype.recurring_expense.recurring_expense.run_daily",
