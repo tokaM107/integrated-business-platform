@@ -1226,7 +1226,7 @@ Outstanding receivables,المستحقات اللي لسه متحصلتش
 Revenue by Period,الإيراد حسب الفترة
 Profit Before and After Shared Costs,الربح قبل وبعد مصروفات المقر
 Outstanding Receivables,المستحقات اللي لسه متحصلتش
-From Date must be before To Date.,من تاريخ لازم يكون قبل إلى تاريخ.
+From Date must be before To Date.,لازم تاريخ البداية يكون قبل تاريخ النهاية.
 Revenue,الإيراد
 Due Date,تاريخ الاستحقاق
 Payment Status,حالة الدفع
@@ -2224,3 +2224,13 @@ tentative,مبدئي
 Walk-in Without a Phone,زبون من غير رقم موبايل
 Without a Phone,من غير رقم موبايل
 "XStudio has no customer account for this booking (a walk-in, no phone): it is kept under the walk-in customer, and shown in purple.",XStudio ملوش حساب زبون للحجز ده (زبون جه على طول من غير رقم): متسجل تحت زبون الـ walk-in، وبيظهر بالبنفسجي.
+Library Sales by Item,مبيعات المكتبة بالصنف
+Library Doctor Sales,مبيعات الدكاترة
+Returned Qty,الكمية المرتجعة
+Net Qty,صافي الكمية
+Net Sales,صافي المبيعات
+Without a doctor,بدون دكتور
+From Date must be before To Date.,لازم تاريخ البداية يكون قبل تاريخ النهاية.
+Invoices,الفواتير
+Product Code,كود الصنف
+Product,الصنف

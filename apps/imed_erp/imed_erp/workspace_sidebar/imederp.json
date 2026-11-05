@@ -137,6 +137,22 @@
   {
    "child": 1,
    "collapsible": 1,
+   "label": "Library Sales by Item",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Library Sales by Item"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Library Doctor Sales",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Library Doctor Sales"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
    "label": "Daily Counters",
    "link_type": "DocType",
    "type": "Link",
@@ -597,7 +613,7 @@
    "link_to": "Platform Fee Schedule"
   }
  ],
- "modified": "2026-11-04 16:00:00.000000",
+ "modified": "2026-11-05 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",
