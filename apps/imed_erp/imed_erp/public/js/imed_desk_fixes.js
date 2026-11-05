@@ -124,12 +124,40 @@
 		{ type: "Link", label: __("Stock Counts"), link_type: "DocType", link_to: "Stock Count", icon: "package" },
 		{ type: "Spacer" },
 	];
+	// Nothing of the center or the studio for a library (the owner, 5 Nov 2026): a link the account may not open
+	// is left out, and so is a section left with nothing in it (the halls' and the studio's bookings showed as
+	// empty headings). The server still decides what anyone opens; this only stops offering it.
+	const can_open = (item) => {
+		const user = (frappe.boot && frappe.boot.user) || {};
+		if (item.link_type === "DocType") return (user.can_read || []).includes(item.link_to);
+		if (item.link_type === "Report") return (user.can_get_report || []).includes(item.link_to);
+		if (item.link_type === "URL" && typeof item.url === "string") {
+			const match = item.url.match(/^\/desk\/([a-z0-9-]+)(?:[/?#]|$)/);
+			return !match || (user.can_read || []).some((name) => frappe.router.slug(name) === match[1]);
+		}
+		return true;
+	};
+	// A section holds its links in nested_items (as the boot sends the sidebar): those it may open are kept, and the
+	// section only if one is left.
+	const only_what_it_opens = (items) =>
+		items
+			.map((item) => {
+				if (item.type === "Section Break" && Array.isArray(item.nested_items)) {
+					const nested = only_what_it_opens(item.nested_items);
+					return nested.length ? { ...item, nested_items: nested } : null;
+				}
+				return item.type !== "Link" || can_open(item) ? item : null;
+			})
+			.filter(Boolean);
 	const create_sidebar = Sidebar.prototype.create_sidebar;
 	Sidebar.prototype.create_sidebar = function (items) {
 		if (is_library_account() && !this.edit_mode && !(this.editor && this.editor.edit_mode)) {
 			const mine = library_items();
-			const have = new Set((items || []).map((i) => `${i.link_type}:${i.link_to}`));
-			items = [...mine.filter((i) => i.type !== "Link" || !have.has(`${i.link_type}:${i.link_to}`)), ...(items || [])];
+			// What the sidebar links to already, in its sections too: those are not added on top a second time.
+			const have = new Set();
+			const note = (list) => (list || []).forEach((i) => { have.add(`${i.link_type}:${i.link_to}`); note(i.nested_items); });
+			note(items);
+			items = [...mine.filter((i) => i.type !== "Link" || !have.has(`${i.link_type}:${i.link_to}`)), ...only_what_it_opens(items || [])];
 		}
 		return create_sidebar.call(this, items);
 	};

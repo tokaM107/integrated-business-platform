@@ -222,7 +222,18 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 	wrapper.imed_reload = () => desk && load();
 };
 
+// This page is in no sidebar, so opened directly (a reload, a link) Frappe found none to show and the sidebar came
+// up empty (the owner, 5 Nov 2026; after signing in it kept the one already shown). Then the Stock sidebar is shown,
+// as after signing in; a library's account gets its own pages on top of it (imed_desk_fixes.js).
+function imed_library_sidebar() {
+	const sidebar = frappe.app && frappe.app.sidebar;
+	const known = frappe.boot && frappe.boot.workspace_sidebar_item;
+	if (!sidebar || !sidebar.setup || !known || !known.stock) return;
+	if (!(sidebar.workspace_sidebar_items || []).length) sidebar.setup("Stock");
+}
+
 // Back to the page (after the counters' form, say): what it shows is read again.
 frappe.pages["imed-library"].on_page_show = function (wrapper) {
 	if (wrapper.imed_reload) wrapper.imed_reload();
+	setTimeout(imed_library_sidebar, 300);
 };
