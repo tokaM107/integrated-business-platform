@@ -2233,3 +2233,4 @@ Unknown kind of payment in Sparkle: {0}.,نوع دفعة مش معروف في Sp
 "Sparkle Settings needs its revenue account, cost center and the box for {0}.",Sparkle Settings ناقصها حساب الإيراد أو مركز التكلفة أو الخزنة بتاعة {0}.
 "The halls are booked on Sparkle, the halls' booking site; the booking comes here by itself within minutes. Book it there.",القاعات بتتحجز على Sparkle (موقع حجز القاعات)، والحجز بييجي هنا لوحده في خلال دقايق. احجز من هناك.
 Booked on Sparkle,بيتحجز على Sparkle
+Sparkle sync (halls),مزامنة Sparkle (القاعات)
