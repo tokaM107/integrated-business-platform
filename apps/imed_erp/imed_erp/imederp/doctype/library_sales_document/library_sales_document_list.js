@@ -61,6 +61,33 @@
 		return f ? f[3] : null;
 	}
 
+	// The sidebar's "فواتير الأزاريطة" and "فواتير المواساة" open this list filtered to their library, but Frappe
+	// drops the filter from the address and lit the last of them whatever the list showed (the owner, 5 Nov 2026):
+	// the item of the library the list is filtered to is lit here, after each refresh; none when it shows both.
+	function light_sidebar(listview) {
+		const library = library_of(listview);
+		const $links = $(".body-sidebar a[href]").filter((_, a) => /^\/desk\/library-sales-document(\/|\?|$)/.test(a.getAttribute("href") || ""));
+		if (!$links.length) return;
+		const $hit = $links.filter((_, a) => new URL(a.getAttribute("href"), window.location.origin).searchParams.get("cost_center") === library).first();
+		$(".body-sidebar .active-sidebar").removeClass("active-sidebar");
+		if ($hit.length) {
+			$hit.parent().addClass("active-sidebar");
+			if (frappe.app && frappe.app.sidebar) frappe.app.sidebar.active_item = $hit.parent();
+		}
+	}
+	// Lit here, so unlit here: on leaving the list, its items lose the light Frappe does not know it gave them.
+	function unlight_on_leave() {
+		if (unlight_on_leave.bound || !frappe.router || !frappe.router.on) return;
+		unlight_on_leave.bound = true;
+		frappe.router.on("change", () => {
+			if (frappe.get_route()[1] === "Library Sales Document") return;
+			$(".body-sidebar a[href]")
+				.filter((_, a) => /^\/desk\/library-sales-document(\/|\?|$)/.test(a.getAttribute("href") || ""))
+				.parent()
+				.removeClass("active-sidebar");
+		});
+	}
+
 	function load(listview, force) {
 		const now = Date.now();
 		const library = library_of(listview);
@@ -202,6 +229,8 @@
 			load(listview);
 			// Filters also change from the filter button or a column click: the chips follow them.
 			render_quick(listview);
+			light_sidebar(listview);
+			unlight_on_leave();
 		},
 	};
 })();
