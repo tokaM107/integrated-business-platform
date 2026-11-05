@@ -662,8 +662,9 @@
 				<div class="imed-ov-row">${pipeline_html(overview.pipeline)}${upcoming_html(overview.upcoming)}</div>
 				<div class="imed-ov-row">${collection_html(overview.collection)}${reports_html()}</div>
 			</div>`);
-		const $welcome = $page.find(".imed-dash-welcome").first();
-		if ($welcome.length) $panel.insertAfter($welcome);
+		// Under the periods when they are there, else under the welcome band.
+		const $above = $page.find(".imed-pd").first().length ? $page.find(".imed-pd").first() : $page.find(".imed-dash-welcome").first();
+		if ($above.length) $panel.insertAfter($above);
 		else $panel.insertBefore($page.find(".codex-editor").first());
 	}
 
@@ -687,11 +688,109 @@
 			.finally(() => (overview_busy = false));
 	}
 
+	// ---------------- By period (imederp/owner_periods.py; the owner, 5 Nov 2026) ----------------
+	// Right under the welcome band: today first and largest, then the week, then the month, each business on its
+	// own card (the studio, the halls, the libraries, the app). Each period has its own look (theme §40). A card
+	// opens the list behind its figures for that period.
+	let by_period = null;
+	let by_period_at = 0;
+	let by_period_busy = false;
+
+	function period_line(label, value, cls = "") {
+		return `<div class="imed-pd-line ${cls}"><span>${esc(label)}</span><b>${value}</b></div>`;
+	}
+
+	function period_card(b, p, c) {
+		const a = b.activity || {};
+		const span = ["between", [p.from, p.to]];
+		let main = "";
+		let lines = "";
+		let route = null;
+		if (b.key === "studio" || b.key === "halls") {
+			const type = b.key === "studio" ? "Studio Service" : "Hall";
+			route = ["Booking", { resource_type: type, booking_date: span }];
+			main = `${number(a.bookings)} <small>${esc(__("bookings"))} · ${esc(hours_text(a.hours))}</small>`;
+			if (b.key === "halls") lines += period_line(__("Bookings' value"), money(a.value, c));
+			lines += period_line(__("Paid"), money(a.paid, c), a.paid ? "is-in" : "");
+			lines += period_line(__("Still due"), money(a.due, c), a.due ? "is-due" : "");
+			if (a.cancelled) lines += period_line(__("Cancelled"), number(a.cancelled), "is-quiet");
+		} else if (b.key === "libraries") {
+			route = ["Library Sales Document", { reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]] }];
+			main = `${money(a.net, c)} <small>${esc(__("sales"))} · ${esc(__("{0} invoices", [number(a.invoices)]))}</small>`;
+			lines += (a.rows || []).map((r) => period_line(r.name, money(r.net, c))).join("");
+		} else if (b.key === "app") {
+			route = ["Doctor Ledger Entry", { entry_date: span }];
+			if (a.state !== "ok") main = `<small>${esc(__("Not set up yet"))}</small>`;
+			else {
+				main = `${money(a.charged, c)} <small>${esc(__("students' fees"))}</small>`;
+				lines += period_line(__("Collected from doctors"), money(a.collected, c), a.collected ? "is-in" : "");
+				lines += period_line(__("New subscriptions"), number(a.subscriptions));
+			}
+		}
+		// The ledger's side in one line, its net; revenue and expenses on hover.
+		const books = b.revenue || b.expenses
+			? `<div class="imed-pd-books" title="${esc(__("Revenue {0}, expenses {1}", [money(b.revenue, c), money(b.expenses, c)]))}">${period_line(__("Net in the accounts"), money(b.net, c), b.net > 0 ? "is-in" : b.net < 0 ? "is-out" : "")}</div>`
+			: `<div class="imed-pd-books is-quiet">${esc(__("Nothing in the accounts for this period"))}</div>`;
+		return `<a class="imed-pd-card is-${b.key}" href="#" data-route="${esc(JSON.stringify(route))}" title="${esc(__("Open the list"))}">
+				<div class="imed-pd-card__head"><span class="imed-pd-card__icon">${frappe.utils.icon(b.icon, "md")}</span><span>${esc(b.label)}</span></div>
+				<div class="imed-pd-card__main">${main}</div>
+				<div class="imed-pd-card__lines">${lines}</div>
+				${books}
+			</a>`;
+	}
+
+	function period_band(p, c) {
+		const from = frappe.datetime.str_to_user(p.from);
+		const to = frappe.datetime.str_to_user(p.to);
+		const icons = { today: "sun", week: "calendar-range", month: "calendar-days" };
+		return `<section class="imed-pd-band is-${p.key}">
+				<header class="imed-pd-band__head">
+					<h2>${frappe.utils.icon(icons[p.key] || "calendar", "md")}<span>${esc(p.label)}</span></h2>
+					<span class="imed-pd-band__dates">${esc(p.from === p.to ? from : `${from} – ${to}`)}</span>
+				</header>
+				<div class="imed-pd-grid">${p.businesses.map((b) => period_card(b, p, c)).join("")}</div>
+			</section>`;
+	}
+
+	function render_periods($page) {
+		if (!by_period) return;
+		$page.find(".imed-pd").remove();
+		const $panel = $(`<div class="imed-pd">${by_period.periods.map((p) => period_band(p, by_period.currency)).join("")}</div>`);
+		$panel.on("click", ".imed-pd-card", function (e) {
+			e.preventDefault();
+			const route = JSON.parse($(this).attr("data-route") || "null");
+			if (route) open_route(route);
+		});
+		const $welcome = $page.find(".imed-dash-welcome").first();
+		if ($welcome.length) $panel.insertAfter($welcome);
+		else $panel.insertBefore($page.find(".codex-editor").first());
+	}
+
+	function add_periods($page) {
+		if (!is_owner()) return;
+		if (Date.now() - by_period_at < REFRESH_MS) {
+			if (by_period && !$page.find(".imed-pd").length) render_periods($page);
+			return;
+		}
+		if (by_period_busy) return;
+		by_period_busy = true;
+		frappe
+			.xcall("imed_erp.imederp.owner_periods.get_periods")
+			.then((data) => {
+				by_period = data;
+				by_period_at = Date.now();
+				if (on_dashboard()) render_periods($(".page-container:visible .layout-main-section, .page-container:visible").first());
+			})
+			.catch(() => (by_period_at = Date.now()))
+			.finally(() => (by_period_busy = false));
+	}
+
 	function decorate() {
 		if (!on_dashboard()) return;
 		const $page = $(".page-container:visible .layout-main-section, .page-container:visible").first();
 		if (!$page.length) return;
 		add_welcome($page);
+		add_periods($page);
 		add_overview($page);
 		add_yesterday($page);
 		mark_headers($page);

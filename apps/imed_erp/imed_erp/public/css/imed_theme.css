@@ -5121,3 +5121,237 @@ a.imed-ov-lib:hover {
 [data-theme="dark"] .imed-library__counters td.is-printed {
 	color: var(--imed-teal-300);
 }
+
+/* §40 The Owner Dashboard by period (owner, 5 Nov 2026; imed_owner_dashboard.js, owner_periods.py): today first and
+   strongest (deep teal, white figures), the week calmer (blue), the month quietest (lavender). Each band: four cards,
+   one a business. */
+.imed-pd {
+	display: grid;
+	gap: 18px;
+	margin: 0 0 24px;
+}
+.imed-pd-band {
+	border-radius: 20px;
+	padding: 18px 18px 20px;
+	border: 1px solid transparent;
+}
+.imed-pd-band__head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+}
+.imed-pd-band__head h2 {
+	color: inherit;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+}
+.imed-pd-band__dates {
+	font-size: 13px;
+	opacity: 0.8;
+}
+.imed-pd-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 14px;
+}
+.imed-pd-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	border-radius: 16px;
+	background: var(--card-bg);
+	color: var(--text-color);
+	text-decoration: none !important;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+	min-width: 0;
+}
+.imed-pd-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 24px -16px rgba(16, 34, 42, 0.45);
+}
+.imed-pd-card__head {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-weight: 600;
+	font-size: 14px;
+}
+.imed-pd-card__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+}
+.imed-pd-card__main {
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+}
+.imed-pd-card__main small {
+	display: block;
+	font-size: 12px;
+	font-weight: 500;
+	opacity: 0.75;
+}
+.imed-pd-card__lines {
+	display: grid;
+	gap: 4px;
+	font-size: 13px;
+}
+.imed-pd-line {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+}
+.imed-pd-line span {
+	opacity: 0.75;
+	min-width: 0;
+}
+.imed-pd-line b {
+	white-space: nowrap;
+	direction: ltr;
+	unicode-bidi: isolate;
+}
+.imed-pd-line.is-out b {
+	color: var(--red-600, #dc2626);
+}
+.imed-pd-band.is-today .imed-pd-line.is-out b {
+	color: #fecaca;
+}
+.imed-pd-line.is-in b,
+.imed-pd-books .is-in {
+	color: var(--green-600, #16a34a);
+}
+.imed-pd-line.is-due b {
+	color: var(--orange-600, #ea580c);
+}
+.imed-pd-books .is-out {
+	color: var(--red-600, #dc2626);
+}
+.imed-pd-line.is-quiet,
+.imed-pd-books.is-quiet {
+	opacity: 0.6;
+}
+.imed-pd-books {
+	margin-top: auto;
+	padding-top: 8px;
+	border-top: 1px dashed var(--imed-border);
+	font-size: 12px;
+}
+
+/* Today: the strongest. */
+.imed-pd-band.is-today {
+	background: linear-gradient(135deg, var(--imed-teal-800), var(--imed-teal-600));
+	color: #fff;
+	box-shadow: 0 18px 40px -26px rgba(15, 98, 91, 0.8);
+}
+.imed-pd-band.is-today .imed-pd-card {
+	background: rgba(255, 255, 255, 0.11);
+	color: #fff;
+	border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.imed-pd-band.is-today .imed-pd-card:hover {
+	background: rgba(255, 255, 255, 0.17);
+}
+.imed-pd-band.is-today .imed-pd-card__icon {
+	background: rgba(255, 255, 255, 0.18);
+	color: #fff;
+}
+.imed-pd-band.is-today .imed-pd-card__main {
+	font-size: 26px;
+}
+.imed-pd-band.is-today .imed-pd-line.is-in b,
+.imed-pd-band.is-today .imed-pd-books .is-in {
+	color: #a7f3d0;
+}
+.imed-pd-band.is-today .imed-pd-line.is-due b {
+	color: #fed7aa;
+}
+.imed-pd-band.is-today .imed-pd-books .is-out {
+	color: #fecaca;
+}
+.imed-pd-band.is-today .imed-pd-books {
+	border-top-color: rgba(255, 255, 255, 0.25);
+}
+.imed-pd-band.is-today .is-positive {
+	color: #a7f3d0;
+}
+.imed-pd-band.is-today .is-negative {
+	color: #fecaca;
+}
+
+/* The week: blue, calmer. */
+.imed-pd-band.is-week {
+	background: #eef4ff;
+	border-color: #dbe6fe;
+	color: #1e3a8a;
+}
+.imed-pd-band.is-week .imed-pd-card {
+	border-top: 3px solid #3b82f6;
+}
+.imed-pd-band.is-week .imed-pd-card__icon {
+	background: #dbeafe;
+	color: #1d4ed8;
+}
+
+/* The month: lavender, the quietest. */
+.imed-pd-band.is-month {
+	background: #f6f2ff;
+	border-color: #e9ddff;
+	color: #4c1d95;
+}
+.imed-pd-band.is-month .imed-pd-card {
+	border-top: 3px solid #8b5cf6;
+}
+.imed-pd-band.is-month .imed-pd-card__icon {
+	background: #ede9fe;
+	color: #6d28d9;
+}
+.imed-pd-band.is-month .imed-pd-card__main {
+	font-size: 18px;
+}
+
+[data-theme="dark"] .imed-pd-band.is-week {
+	background: #14213d;
+	border-color: #1e3a8a;
+	color: #bfdbfe;
+}
+[data-theme="dark"] .imed-pd-band.is-month {
+	background: #1f1633;
+	border-color: #3b2a63;
+	color: #ddd6fe;
+}
+[data-theme="dark"] .imed-pd-band.is-week .imed-pd-card__icon {
+	background: #1e3a8a;
+	color: #bfdbfe;
+}
+[data-theme="dark"] .imed-pd-band.is-month .imed-pd-card__icon {
+	background: #3b2a63;
+	color: #ddd6fe;
+}
+
+@media (max-width: 1100px) {
+	.imed-pd-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 560px) {
+	.imed-pd-grid {
+		grid-template-columns: 1fr;
+	}
+	.imed-pd-band {
+		padding: 14px;
+	}
+}

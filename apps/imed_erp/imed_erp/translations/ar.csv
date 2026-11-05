@@ -2234,3 +2234,15 @@ Unknown kind of payment in Sparkle: {0}.,نوع دفعة مش معروف في Sp
 "The halls are booked on Sparkle, the halls' booking site; the booking comes here by itself within minutes. Book it there.",القاعات بتتحجز على Sparkle (موقع حجز القاعات)، والحجز بييجي هنا لوحده في خلال دقايق. احجز من هناك.
 Booked on Sparkle,بيتحجز على Sparkle
 Sparkle sync (halls),مزامنة Sparkle (القاعات)
+BA Plus App,تطبيق BA Plus
+Bookings' value,قيمة الحجوزات
+Still due,لسه باقي
+sales,مبيعات
+students' fees,رسوم الطلاب
+Collected from doctors,اتحصل من الدكاترة
+New subscriptions,اشتراكات جديدة
+Not set up yet,لسه مش متظبط
+In the accounts,في الحسابات
+Nothing in the accounts for this period,مفيش قيود في الحسابات للفترة دي
+"Revenue {0}, expenses {1}","إيراد {0}، مصروف {1}"
+Net in the accounts,الصافي في الحسابات
