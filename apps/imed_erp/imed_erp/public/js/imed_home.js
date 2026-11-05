@@ -237,6 +237,25 @@
 		return true;
 	}
 
+	// A library's account that reaches a dashboard or a page (the owner's dashboard, kept from the last account
+	// signed in on the same browser: one part, "owner-dashboard") goes back to مكتبتي. Its lists and forms (List,
+	// Form, two parts or more) stay as they are.
+	function library_home_only() {
+		const roles = frappe.user_roles || [];
+		const library_only = roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin");
+		const route = frappe.get_route ? frappe.get_route() : [];
+		if (library_only && route.length === 1 && route[0] && route[0] !== "imed-library") {
+			frappe.route_flags.replace_route = true;
+			frappe.set_route("imed-library");
+		}
+	}
+	// Frappe fires neither event alone for every page: a page the user may not open fires no page-change.
+	$(document).on("page-change", library_home_only);
+	$(() => {
+		if (frappe.router && frappe.router.on) frappe.router.on("change", library_home_only);
+		setTimeout(library_home_only, 500);
+	});
+
 	$(document).on("desktop_screen", (e, args) => {
 		if (leave_home_screen()) return;
 		decorate(args && args.desktop && args.desktop.page ? args.desktop.page.body : document);
