@@ -21,7 +21,7 @@ from frappe import _
 from frappe.utils import cint, flt, nowtime, today
 
 ROLE = "Library Staff"
-SUPPLY_GROUPS = ("ورق", "أحبار")
+SUPPLY_GROUPS = ("ورق", "أحبار", "خامات تجليد")  # binding wire and plastic covers too (owner, 9 Nov 2026)
 # What the role may do, nothing more (setup/setup_users.py applies it): its screen's documents, and reading what
 # they link to. No sales, accounts, cash or stock entries (a finished item is taken off by the system, used_up).
 STAFF_RIGHTS = {
@@ -56,11 +56,25 @@ def my_library() -> frappe._dict:
 	return frappe._dict(library=libraries[0], store=stores[0], company=frappe.db.get_value("Warehouse", stores[0], "company"))
 
 
-def supply_items() -> list[frappe._dict]:
+# An ink belongs to a kind of machine (owner, 9 Nov 2026: Azarita has no Epson inks, both libraries Riso): a library
+# sees an ink only when it has a machine of that kind in service. Other supplies are every library's.
+INK_MACHINE = {"INK-EPSON": "Epson", "INK-RISO": "Riso"}
+
+
+def machine_of(item_code):
+	return next((kind for prefix, kind in INK_MACHINE.items() if item_code.startswith(prefix)), None)
+
+
+def supply_items(library=None) -> list[frappe._dict]:
+	"""The supplies: paper, inks, binding. With a library, only the inks of the machines it has."""
 	groups = [g for g in SUPPLY_GROUPS if frappe.db.exists("Item Group", g)]
-	return frappe.get_all(
+	items = frappe.get_all(
 		"Item", filters={"item_group": ("in", groups), "disabled": 0, "is_stock_item": 1}, fields=["name", "item_name", "stock_uom"], order_by="item_group desc, item_name"
 	)
+	if not library:
+		return items
+	kinds = set(frappe.get_all("Printing Machine", filters={"cost_center": library, "disabled": 0}, pluck="machine_type"))
+	return [i for i in items if not machine_of(i.name) or machine_of(i.name) in kinds]
 
 
 UNIT_NAMES = {"Box": "كرتونة", "Ream": "رزمة", "Nos": "", "Unit": ""}
@@ -80,8 +94,8 @@ def on_hand(item_code, store):
 	return flt(frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": store}, "actual_qty"))
 
 
-def check_item(item_code):
-	if item_code not in {i.name for i in supply_items()}:
+def check_item(item_code, library=None):
+	if item_code not in {i.name for i in supply_items(library)}:
 		frappe.throw(_("{0} is not one of the library's supplies.").format(item_code))
 
 
@@ -91,7 +105,7 @@ def get_desk():
 	check_staff()
 	mine = my_library()
 	items = []
-	for i in supply_items():
+	for i in supply_items(mine.library):
 		unit, factor = screen_unit(i.name)
 		name = UNIT_NAMES.get(unit, unit)
 		items.append({
@@ -138,7 +152,7 @@ def used_up(item_code, qty=1):
 	"""Something finished in the library: taken off its store, never more than the store holds."""
 	check_staff()
 	mine = my_library()
-	check_item(item_code)
+	check_item(item_code, mine.library)
 	qty = flt(qty)
 	if qty <= 0:
 		frappe.throw(_("How many finished?"))
@@ -182,7 +196,7 @@ def count(quantities):
 	for item_code, qty in quantities.items():
 		if qty in (None, ""):
 			continue
-		check_item(item_code)
+		check_item(item_code, mine.library)
 		if flt(qty) < 0:
 			frappe.throw(_("A quantity cannot be negative."))
 		from imed_erp.imederp.doctype.stock_count.stock_count import first_rate
@@ -219,7 +233,7 @@ def ask_for(item_code, qty, note=None):
 	library's store is that store itself (Mawasah)."""
 	check_staff()
 	mine = my_library()
-	check_item(item_code)
+	check_item(item_code, mine.library)
 	qty = flt(qty)
 	if qty <= 0:
 		frappe.throw(_("How many do you need?"))

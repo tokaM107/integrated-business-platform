@@ -178,15 +178,16 @@ def libraries(period):
 		fields=["cost_center", "document_kind", {"COUNT": "*", "as": "n"}, {"SUM": "total", "as": "value"}],
 		group_by="cost_center, document_kind",
 	)
-	heard = {
-		r.cost_center: r.at
-		for r in frappe.get_all(
-			"Library Sales Document",
-			filters={"cost_center": ["in", list(centers.values()) or [""]]},
-			fields=["cost_center", {"MAX": "last_synced_at", "as": "at"}],
-			group_by="cost_center",
+	# When each library was last heard from: its latest document's reading, found through the (cost_center, reg_date)
+	# index (the greatest last_synced_at of all its documents read the whole table: 8.5 s on the live site, 9 Nov 2026).
+	heard = {}
+	for center in centers.values():
+		latest = frappe.db.sql(
+			"""select last_synced_at from `tabLibrary Sales Document` where cost_center = %s order by reg_date desc limit 1""",
+			center,
 		)
-	}
+		if latest:
+			heard[center] = latest[0][0]
 	rows = []
 	for name in LIBRARIES:
 		center = centers.get(name)

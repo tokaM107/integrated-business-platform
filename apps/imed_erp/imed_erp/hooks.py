@@ -45,6 +45,8 @@ app_include_js = [
 	asset("js/imed_sidebar.js"),
 	# Fixes to Frappe's desk seen in the browser (a broken icon in the sidebar menu).
 	asset("js/imed_desk_fixes.js"),
+	# Lists and reports: the filters in a side panel, a few of them; a report's PDF and Print (owner, 9 Nov 2026).
+	asset("js/imed_lists.js"),
 ]
 
 # include js, css files in header of web template (the theme there only touches the login page)
@@ -413,6 +415,8 @@ after_migrate = [
 	*_custom_fields,
 	# The home screen's tiles: what the group uses (imederp/home_screen.py).
 	"imed_erp.imederp.home_screen.tidy_home",
+	# The library documents' index by library and date (Frappe adds it only when the doctype itself changes).
+	"imed_erp.imederp.doctype.library_sales_document.library_sales_document.on_doctype_update",
 ]
 
 # The booking screens' statuses and colours, from imederp/booking_rules.py.
