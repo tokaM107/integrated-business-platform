@@ -265,6 +265,18 @@ WEEK = 7
 EPSON_PREFIX = "INK-EPSON-"
 
 
+def store_library(store):
+	"""The library a store supplies: by the library account working in both, else by its name (خامات المواساة ->
+	مكتبة المواساة)."""
+	users = frappe.get_all("User Permission", filters={"allow": "Warehouse", "for_value": store}, pluck="user")
+	if users:
+		library = frappe.get_all("User Permission", filters={"allow": "Cost Center", "user": ["in", users]}, pluck="for_value", limit=1)
+		if library:
+			return library[0]
+	place = (frappe.get_cached_value("Warehouse", store, "warehouse_name") or "").replace("خامات", "", 1).strip()
+	return frappe.db.get_value("Cost Center", {"company": company(), "is_group": 0, "cost_center_name": f"مكتبة {place}"}) if place else None
+
+
 def library_stores():
 	"""The stores the libraries keep their supplies in (خامات المواساة, خامات الأزاريطة), by the stores the library
 	accounts work in, else by name."""
@@ -287,13 +299,20 @@ def stock(today=None):
 	week_ago = add_days(today, -WEEK)
 	month_start = getdate(get_first_day(today))
 	groups = [g for g in SUPPLY_GROUPS if frappe.db.exists("Item Group", g)]
+	from imed_erp.imederp.library_desk import machine_of
+
 	items = frappe.get_all(
 		"Item", filters={"item_group": ["in", groups or [""]], "disabled": 0, "is_stock_item": 1}, fields=["name", "item_name", "item_group"], order_by="item_group desc, item_name"
 	)
 	result = []
 	for store in library_stores():
 		rows, colours = [], []
+		# Only the inks of the machines the store's library has (Azarita: Riso, no Epson).
+		library = store_library(store)
+		kinds = set(frappe.get_all("Printing Machine", filters={"cost_center": library, "disabled": 0}, pluck="machine_type")) if library else None
 		for item in items:
+			if kinds is not None and machine_of(item.name) and machine_of(item.name) not in kinds:
+				continue
 			unit, factor = screen_unit(item.name)
 			now = flt(frappe.db.get_value("Bin", {"item_code": item.name, "warehouse": store}, "actual_qty"))
 			before = flt(

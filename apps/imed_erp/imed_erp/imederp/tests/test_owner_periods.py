@@ -127,13 +127,16 @@ class IntegrationTestOwnerPeriodShapes(IntegrationTestCase):
 class IntegrationTestOwnerStockByStore(IntegrationTestCase):
 	def test_each_library_store_apart_the_epson_colours_and_the_requests(self):
 		from imed_erp.imederp import library_desk as desk
-		from imed_erp.imederp.tests.test_library_desk import ACCOUNT, INK, STORE, IntegrationTestLibraryDesk
+		from imed_erp.imederp.tests.test_library_desk import ACCOUNT, INK, LIBRARY, STORE, IntegrationTestLibraryDesk
 
 		case = IntegrationTestLibraryDesk("test_paper_is_counted_and_taken_off_in_boxes")
 		case.setUp()
 		try:
 			# An Epson colour of the test: two counted, one finished this month.
 			colour = "INK-EPSON-BK"
+			# The library's Epson inks need its Epson machine.
+			if not frappe.db.exists("Printing Machine", {"cost_center": LIBRARY, "machine_type": "Epson", "disabled": 0}):
+				frappe.get_doc({"doctype": "Printing Machine", "machine_name": "_Test Epson", "machine_type": "Epson", "cost_center": LIBRARY, "warehouse": STORE}).insert()
 			if not frappe.db.exists("Item", colour):
 				frappe.get_doc({"doctype": "Item", "item_code": colour, "item_name": "حبر إبسون أسود", "item_group": "أحبار", "stock_uom": "Nos", "is_stock_item": 1, "valuation_rate": 375}).insert()
 			frappe.set_user(ACCOUNT)
@@ -152,3 +155,27 @@ class IntegrationTestOwnerStockByStore(IntegrationTestCase):
 			self.assertIn(asked, [r.name for r in owner_periods.requests()])
 		finally:
 			case.tearDown()
+
+	def test_a_library_without_an_epson_machine_has_no_epson_inks(self):
+		"""The owner, 9 Nov 2026: Azarita has no Epson inks, both libraries have Riso. An ink is a library's only
+		when it has a machine of that kind in service."""
+		from imed_erp.imederp import library_desk as desk
+		from imed_erp.imederp.tests.test_library_desk import LIBRARY, STORE
+
+		for code, name in (("INK-EPSON-BK", "حبر إبسون أسود"), ("INK-RISO", "حبر ريزو (إزازة)")):
+			if not frappe.db.exists("Item", code):
+				frappe.get_doc({"doctype": "Item", "item_code": code, "item_name": name, "item_group": "أحبار", "stock_uom": "Nos", "is_stock_item": 1, "valuation_rate": 100}).insert()
+		for kind in ("Epson", "Riso"):
+			if not frappe.db.exists("Printing Machine", {"cost_center": LIBRARY, "machine_type": kind, "disabled": 0}):
+				frappe.get_doc({"doctype": "Printing Machine", "machine_name": f"_Test {kind}", "machine_type": kind, "cost_center": LIBRARY, "warehouse": STORE}).insert()
+		codes = lambda: {i.name for i in desk.supply_items(LIBRARY)}
+		shown = lambda: {r["item_code"] for st in owner_periods.stock() if st["store"] == STORE for r in st["items"] + st["epson"]}
+		self.assertIn("INK-EPSON-BK", codes())
+		self.assertIn("INK-EPSON-BK", shown())
+		# No Epson in service: the Epson inks go, the Riso stays.
+		for name in frappe.get_all("Printing Machine", filters={"cost_center": LIBRARY, "machine_type": "Epson"}, pluck="name"):
+			frappe.db.set_value("Printing Machine", name, "disabled", 1)
+		self.assertNotIn("INK-EPSON-BK", codes())
+		self.assertNotIn("INK-EPSON-BK", shown())
+		self.assertIn("INK-RISO", codes())
+		self.assertIn("INK-RISO", shown())
