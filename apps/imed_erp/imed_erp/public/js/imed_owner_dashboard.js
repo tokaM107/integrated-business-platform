@@ -625,22 +625,10 @@
 
 	function add_overview($page) {
 		if (!is_owner()) return;
-		if (Date.now() - overview_at < REFRESH_MS) {
-			if (overview && !$page.find('[data-slot="overview"] .imed-ov').length) render_overview($page);
-			return;
-		}
-		if (overview_busy) return;
-		overview_busy = true;
-		frappe
-			.xcall("imed_erp.imederp.owner_overview.get_overview")
-			.then((data) => {
-				overview = data;
-				overview_at = Date.now();
-				if (on_dashboard()) render_overview($(".page-container:visible .layout-main-section, .page-container:visible").first());
-			})
-			// Shown by Frappe; asked again on the next visit after the wait, not on every redraw.
-			.catch(() => (overview_at = Date.now()))
-			.finally(() => (overview_busy = false));
+		// Only the report tiles are left of the overview: drawn at once, nothing asked of the server (asking took 8 s
+		// on the live site, 9 Nov 2026, for figures no longer shown).
+		overview = overview || {};
+		if (!$page.find('[data-slot="overview"] .imed-ov').length) render_overview($page);
 	}
 
 	// ---------------- The owner's page, simplified (the owner, 5 Nov 2026) ----------------
