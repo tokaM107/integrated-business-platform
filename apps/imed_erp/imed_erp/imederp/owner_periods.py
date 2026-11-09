@@ -16,6 +16,7 @@ from frappe.utils import add_days, cint, flt, get_first_day, getdate, nowdate
 
 from imed_erp.imederp.booking_rules import NOT_HELD
 from imed_erp.imederp.business_figures import company, ledger
+from imed_erp.imederp.library_sync.contract import RETURN_KINDS, SALES_KINDS
 from imed_erp.imederp.owner_yesterday import check_owner
 
 # The businesses on the cards, by their cost centers' names (setup_core.py).
@@ -50,8 +51,12 @@ def periods(today=None):
 	for business, before in zip(month["businesses"], previous["businesses"]):
 		business["main"], business["previous"] = main_value(business), main_value(before)
 	month["previous_from"], month["previous_to"] = previous_start, getdate(previous_end)
+	libraries = [centers[n] for n in LIBRARIES if centers.get(n)]
 	return {
 		"today": today,
+		# What a click opens: the libraries' sales and returns the figures count, on their cost centers.
+		"library_centers": libraries,
+		"library_kinds": list(SALES_KINDS + RETURN_KINDS),
 		"currency": frappe.get_cached_value("Company", company(), "default_currency"),
 		"periods": [period("today", _("Today"), today, today, centers), week, month],
 		"tomorrow": tomorrow(add_days(today, 1)),
@@ -214,7 +219,7 @@ def libraries(start, end, centers):
 		)
 		sales = sum(flt(s.value) for s in sums if s.document_kind in SALES_KINDS)
 		returns = sum(flt(s.value) for s in sums if s.document_kind in RETURN_KINDS)
-		rows.append({"name": name, "invoices": sum(cint(s.n) for s in sums if s.document_kind in SALES_KINDS), "net": flt(sales - returns, 2)})
+		rows.append({"name": name, "cost_center": center, "invoices": sum(cint(s.n) for s in sums if s.document_kind in SALES_KINDS), "net": flt(sales - returns, 2)})
 	return {"rows": rows, "net": flt(sum(r["net"] for r in rows), 2), "invoices": sum(r["invoices"] for r in rows)}
 
 

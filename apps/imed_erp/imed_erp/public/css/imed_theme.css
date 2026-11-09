@@ -7082,3 +7082,32 @@ html[dir="ltr"] .imed-mo-track i {
 		font-size: 13px;
 	}
 }
+
+/* The owner's figures open their own records (9 Nov 2026): a day's bar, a library, last month's line. */
+.imed-pd-band [data-route] {
+	cursor: pointer;
+}
+.imed-pd-band [data-route]:focus-visible {
+	outline: 2px solid var(--tone, var(--imed-primary, #1d4a3b));
+	outline-offset: 2px;
+}
+.imed-wk-bar[data-route] {
+	border-radius: 8px;
+	transition: background 0.15s ease;
+}
+.imed-wk-bar[data-route]:hover {
+	background: color-mix(in srgb, var(--tone) 12%, transparent);
+}
+.imed-wk-bar[data-route]:hover i {
+	background: var(--tone);
+}
+.imed-mo-compare__row[data-route],
+.imed-pd-lib[data-route] {
+	border-radius: 8px;
+	padding: 2px 4px;
+	transition: background 0.15s ease;
+}
+.imed-mo-compare__row[data-route]:hover,
+.imed-pd-lib[data-route]:hover {
+	background: color-mix(in srgb, var(--tone) 12%, transparent);
+}
