@@ -5261,3 +5261,259 @@ a.imed-ov-lib:hover {
 		print-color-adjust: exact;
 	}
 }
+
+/* ------------------------------------------------------------------ */
+/* 37. The accountant's screen, شاشة المحاسب (imederp/page/imed_accountant) */
+/* ------------------------------------------------------------------ */
+/* As مكتبتي (§35): a header card in the brand's green, the company's money as five figures, then what waits on him
+   and what he makes most side by side, and the cash boxes. Tones from §27. One column on a phone. */
+.imed-accountant {
+	max-width: 1100px;
+	margin: 0 auto;
+	padding: 8px 4px 48px;
+}
+.imed-accountant__loading {
+	padding: 48px;
+	color: var(--text-muted);
+	text-align: center;
+}
+.imed-accountant__hero {
+	position: relative;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 14px 18px;
+	overflow: hidden;
+	margin-bottom: 16px;
+	padding: 22px 24px;
+	border-radius: 22px;
+	background:
+		radial-gradient(260px 160px at 0% 0%, rgba(255, 255, 255, 0.16), transparent 70%),
+		linear-gradient(135deg, var(--imed-teal-700), var(--imed-teal-500));
+	color: #ffffff;
+	box-shadow: 0 22px 40px -28px var(--imed-teal-700);
+}
+.imed-accountant__hero-icon {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 58px;
+	height: 58px;
+	border-radius: 18px;
+	background: rgba(255, 255, 255, 0.18);
+	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.imed-accountant__hero-icon .icon {
+	width: 28px;
+	height: 28px;
+	stroke: #ffffff;
+}
+.imed-accountant__hero-text {
+	flex: 1;
+	min-width: 200px;
+	color: rgba(255, 255, 255, 0.88);
+	font-size: var(--text-sm);
+}
+.imed-accountant__hero-text small {
+	display: block;
+	font-weight: 600;
+}
+.imed-accountant__hero-text h2 {
+	margin: 2px 0 4px;
+	color: #ffffff;
+	font-size: 1.6rem;
+	font-weight: 800;
+}
+.imed-accountant__state {
+	padding: 8px 14px;
+	border-radius: 999px;
+	background: #ffffff;
+	color: var(--tone-fg);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+/* The five figures */
+.imed-accountant__figures {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 12px;
+	margin-bottom: 16px;
+}
+.imed-accountant__figure {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	min-width: 0;
+	padding: 14px 16px;
+	border: 1px solid var(--imed-border);
+	border-block-start: 4px solid var(--tone-solid);
+	border-radius: 16px;
+	background: var(--card-bg);
+	color: inherit;
+	text-align: start;
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.imed-accountant__figure:hover {
+	box-shadow: 0 16px 28px -22px var(--tone-solid);
+	transform: translateY(-2px);
+}
+.imed-accountant__figure-icon {
+	display: grid;
+	place-items: center;
+	width: 34px;
+	height: 34px;
+	margin-bottom: 4px;
+	border-radius: 10px;
+	background: var(--tone-soft);
+}
+.imed-accountant__figure-icon .icon {
+	width: 18px;
+	height: 18px;
+	stroke: var(--tone-fg);
+}
+.imed-accountant__figure small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 600;
+}
+.imed-accountant__figure b {
+	overflow: hidden;
+	max-width: 100%;
+	font-size: 1.2rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Cards: what waits, what he makes, the boxes */
+.imed-accountant__grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+.imed-accountant__card {
+	padding: 18px;
+	border: 1px solid var(--imed-border);
+	border-radius: 20px;
+	background: var(--card-bg);
+}
+.imed-accountant__card h4 {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin: 0 0 12px;
+	font-size: var(--text-lg);
+	font-weight: 800;
+}
+.imed-accountant__more {
+	font-size: var(--text-sm);
+	font-weight: 600;
+	cursor: pointer;
+}
+.imed-accountant__tasks,
+.imed-accountant__actions {
+	display: grid;
+	gap: 8px;
+}
+.imed-accountant__task,
+.imed-accountant__action {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid var(--imed-border);
+	border-radius: 14px;
+	background: var(--card-bg);
+	color: inherit;
+	text-align: start;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+.imed-accountant__task:hover,
+.imed-accountant__action:hover {
+	border-color: color-mix(in srgb, var(--tone-solid) 45%, var(--imed-border));
+	background: var(--tone-soft);
+}
+.imed-accountant__task-icon,
+.imed-accountant__action-icon {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 11px;
+	background: var(--tone-soft);
+}
+.imed-accountant__task-icon .icon,
+.imed-accountant__action-icon .icon {
+	width: 18px;
+	height: 18px;
+	stroke: var(--tone-fg);
+}
+.imed-accountant__task-text {
+	flex: 1;
+	font-weight: 600;
+}
+.imed-accountant__count {
+	min-width: 32px;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: var(--tone-solid);
+	color: #ffffff;
+	font-weight: 800;
+	text-align: center;
+}
+.imed-accountant__task.is-done {
+	opacity: 0.7;
+}
+.imed-accountant__task.is-done .imed-accountant__count {
+	background: var(--imed-border);
+	color: var(--text-muted);
+}
+.imed-accountant__action > span:nth-child(2) {
+	flex: 1;
+}
+.imed-accountant__action b,
+.imed-accountant__action small {
+	display: block;
+}
+.imed-accountant__action small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-accountant__go .icon {
+	stroke: var(--text-muted);
+}
+.imed-accountant__boxes {
+	width: 100%;
+}
+.imed-accountant__boxes td {
+	padding: 9px 4px;
+	border-block-end: 1px solid var(--imed-border);
+}
+.imed-accountant__boxes tr:last-child td {
+	border-block-end: 0;
+}
+.imed-accountant__boxes .num {
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+}
+.imed-accountant__boxes .neg {
+	color: var(--red-600, #dc2626);
+}
+@media (max-width: 991px) {
+	.imed-accountant__figures {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	.imed-accountant__grid {
+		grid-template-columns: 1fr;
+	}
+}
