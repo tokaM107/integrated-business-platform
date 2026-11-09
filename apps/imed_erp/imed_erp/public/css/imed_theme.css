@@ -6193,3 +6193,252 @@ html[dir="ltr"] .imed-mo-track i {
 		font-size: 9px;
 	}
 }
+
+/* §41 Lists and reports, simple (owner, 9 Nov 2026; imed_lists.js): the filters in a panel beside the table, a few of
+   them; on a phone, a "Filters" button opens the panel from the side. */
+@media (min-width: 992px) {
+	.layout-main-section.imed-side-filters {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 250px;
+		align-items: start;
+		column-gap: 18px;
+	}
+	.layout-main-section.imed-side-filters > * {
+		grid-column: 1;
+		min-width: 0;
+	}
+	.layout-main-section.imed-side-filters > .page-form {
+		grid-column: 2;
+		grid-row: 1 / span 20;
+		position: sticky;
+		top: calc(var(--navbar-height, 48px) + 70px);
+		display: flex !important;
+		flex-direction: column;
+		flex-wrap: nowrap;
+		gap: 10px;
+		margin: 0 !important;
+		padding: 16px !important;
+		border-radius: 18px;
+		border: 1px solid var(--imed-border);
+		background: var(--card-bg);
+		box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
+		animation: imed-rise 0.4s ease both;
+	}
+	.layout-main-section.imed-side-filters > .imed-filters-toggle,
+	.layout-main-section.imed-side-filters .imed-filters-close,
+	.layout-main-section.imed-side-filters > .imed-filters-backdrop {
+		display: none !important;
+	}
+}
+.imed-side-filters > .page-form .standard-filter-section,
+.imed-side-filters > .page-form .filter-section {
+	display: flex !important;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 10px;
+	width: 100%;
+	margin: 0 !important;
+}
+.imed-side-filters > .page-form .standard-filter-section > *,
+.imed-side-filters > .page-form > .form-group,
+.imed-side-filters > .page-form .filter-section > * {
+	width: 100% !important;
+	max-width: none !important;
+	flex: none !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+.imed-side-filters > .page-form .filter-section {
+	padding-top: 10px !important;
+	border-top: 1px dashed var(--imed-border);
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.imed-side-filters > .page-form .filter-section > * {
+	width: auto !important;
+}
+.imed-side-filters .imed-filter-hidden,
+.imed-side-filters > .page-form [data-fieldname="name"] {
+	display: none !important;
+}
+.imed-filters-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	font-size: 15px;
+	color: var(--heading-color);
+}
+.imed-filters-head > span {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.imed-filters-head .icon {
+	margin: 0;
+	color: var(--imed-teal-600);
+}
+
+/* A phone or a tablet: the panel comes in from the side over the page. */
+@media (max-width: 991.98px) {
+	.layout-main-section.imed-side-filters > .page-form {
+		position: fixed !important;
+		top: 0 !important;
+		bottom: 0 !important;
+		inset-inline-end: 0;
+		z-index: 1060;
+		height: 100vh !important;
+		max-height: none !important;
+		width: min(86vw, 320px);
+		border-radius: 0;
+		margin: 0 !important;
+		padding: 18px !important;
+		display: flex !important;
+		flex-direction: column;
+		flex-wrap: nowrap;
+		gap: 12px;
+		overflow-y: auto;
+		background: var(--card-bg);
+		box-shadow: 0 0 40px rgba(16, 34, 42, 0.25);
+		transform: translateX(-110%);
+		transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	html[dir="ltr"] .layout-main-section.imed-side-filters > .page-form {
+		transform: translateX(110%);
+	}
+	.layout-main-section.imed-side-filters.imed-filters-open > .page-form {
+		transform: none;
+	}
+	.imed-side-filters > .page-form .standard-filter-section > *:not(.imed-filter-hidden) {
+		display: block !important;
+	}
+	.imed-filters-backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 1055;
+		background: rgba(16, 34, 42, 0.35);
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.25s ease;
+	}
+	.imed-filters-open > .imed-filters-backdrop {
+		opacity: 1;
+		pointer-events: auto;
+	}
+	.imed-filters-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin: 0 0 10px;
+		border-radius: 999px;
+	}
+}
+
+/* A report's PDF and Print in its head. */
+.imed-print-btns {
+	display: inline-flex;
+	gap: 6px;
+	margin-inline-end: 8px;
+}
+.imed-print-btns .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border-radius: 999px;
+}
+.imed-print-btns .icon {
+	margin: 0;
+}
+/* The tables, plain: a calm header, rows that breathe, the row under the pointer marked. */
+.imed-side-filters .dt-scrollable .dt-row:nth-child(even) .dt-cell {
+	background: rgba(16, 34, 42, 0.018);
+}
+.imed-side-filters .dt-cell--header .dt-cell__content {
+	font-weight: 700;
+}
+.imed-side-filters .list-row-container,
+.imed-side-filters .dt-row {
+	animation: imed-rise 0.35s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+	.imed-side-filters .list-row-container,
+	.imed-side-filters .dt-row,
+	.layout-main-section.imed-side-filters > .page-form {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+/* §42 The owner's page in motion (owner, 9 Nov 2026: "lots of animation"; imed_owner_dashboard.js): each section and
+   card waits out of sight and rises in when it scrolls into view; a shimmering outline while the figures come;
+   a card gives a little under the finger. */
+.imed-reveal:not(.is-in) {
+	opacity: 0;
+	animation: none !important;
+}
+.imed-mo-tile {
+	color: inherit;
+	text-decoration: none !important;
+	transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.imed-mo-tile:hover,
+.imed-stock:hover,
+.imed-tm-col:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.05), 0 18px 32px -20px rgba(16, 34, 42, 0.45);
+}
+.imed-mo-tile:active,
+.imed-stock:active,
+.imed-wk-row:active,
+.imed-req a:active,
+.imed-tm-col a:active,
+.imed-boxes a:active {
+	transform: scale(0.98);
+	transition-duration: 0.08s;
+}
+.imed-skel {
+	display: grid;
+	gap: 12px;
+}
+.imed-skel.is-cards {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.imed-skel + .imed-skel {
+	margin-top: 16px;
+}
+.imed-skel span {
+	display: block;
+	height: 130px;
+	border-radius: 18px;
+	background: linear-gradient(100deg, rgba(16, 34, 42, 0.05) 30%, rgba(16, 34, 42, 0.11) 50%, rgba(16, 34, 42, 0.05) 70%);
+	background-size: 300% 100%;
+	animation: imed-shimmer 1.3s linear infinite;
+}
+.imed-skel.is-wide span {
+	height: 180px;
+}
+@keyframes imed-shimmer {
+	from {
+		background-position: 100% 0;
+	}
+	to {
+		background-position: 0 0;
+	}
+}
+@media (max-width: 560px) {
+	.imed-skel.is-cards {
+		gap: 6px;
+	}
+	.imed-skel span {
+		height: 100px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.imed-reveal:not(.is-in) {
+		opacity: 1;
+	}
+	.imed-skel span {
+		animation: none;
+	}
+}

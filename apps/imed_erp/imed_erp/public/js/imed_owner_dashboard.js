@@ -661,38 +661,61 @@
 		const $editor = $page.find(".codex-editor").first();
 		if (!$editor.length) return $();
 		if (!$page.find(".imed-slot-top").length) {
-			const $top = $(`<div class="imed-slot-top"><div data-slot="periods"></div></div>`);
+			const $top = $(`<div class="imed-slot-top"><div data-slot="periods">${skeleton(4, "is-cards")}${skeleton(1, "is-wide")}</div></div>`);
 			const $welcome = $page.find(".imed-dash-welcome").first();
 			$welcome.length ? $top.insertAfter($welcome) : $top.insertBefore($editor);
 		}
 		if (!$page.find(".imed-slot-after").length) {
 			$(`<div class="imed-slot-after">
-					<div data-slot="boxes"></div><div data-slot="stock"></div><div data-slot="requests"></div><div data-slot="today"></div><div data-slot="overview"></div>
+					<div data-slot="boxes">${skeleton(1, "is-wide")}</div><div data-slot="stock">${skeleton(4, "is-cards")}</div><div data-slot="requests"></div><div data-slot="today"></div><div data-slot="overview"></div>
 				</div>`).insertAfter($editor);
 		}
 		return $page.find(`[data-slot="${name}"]`).first();
 	}
 
 	// A number counts up to its value when it comes into view: data-to, and data-cur for money.
+	// Each section and card comes in as it scrolls into view, and its numbers count up then, not before (the owner,
+	// 9 Nov 2026: "lots of animation").
+	const REVEAL = ".imed-sec, .imed-pd-band, .imed-tm-col, .imed-mo-tile, .imed-stock, .imed-req li, .imed-wk-row, .imed-pd-card";
+	const seen = "IntersectionObserver" in window
+		? new IntersectionObserver(
+				(entries) =>
+					entries.forEach((e) => {
+						if (!e.isIntersecting) return;
+						e.target.classList.add("is-in");
+						seen.unobserve(e.target);
+						if (e.target.matches("[data-to]")) run_count(e.target);
+					}),
+				{ threshold: 0.15 }
+		  )
+		: null;
+	function run_count(el) {
+		const to = Number(el.dataset.to) || 0;
+		const cur = el.dataset.cur;
+		const dec = Number(el.dataset.dec) || 0;
+		const show = (v) => (el.textContent = cur ? whole(v, cur) : format_number(v, null, dec));
+		if (reduced_motion() || !to) return show(to);
+		const start = performance.now();
+		const run = (t) => {
+			const k = Math.min(1, (t - start) / 900);
+			show(to * (1 - Math.pow(1 - k, 3)));
+			if (k < 1) requestAnimationFrame(run);
+			else show(to);
+		};
+		show(0);
+		requestAnimationFrame(run);
+	}
 	function count_up($root) {
+		$root.find(REVEAL).addClass("imed-reveal").each(function () {
+			seen ? seen.observe(this) : this.classList.add("is-in");
+		});
 		$root.find("[data-to]").each(function () {
-			const el = this;
-			const to = Number(el.dataset.to) || 0;
-			const cur = el.dataset.cur;
-			const dec = Number(el.dataset.dec) || 0;
-			const show = (v) => (el.textContent = cur ? whole(v, cur) : format_number(v, null, dec));
-			if (reduced_motion() || !to) return show(to);
-			const start = performance.now();
-			const run = (t) => {
-				const k = Math.min(1, (t - start) / 900);
-				show(to * (1 - Math.pow(1 - k, 3)));
-				if (k < 1) requestAnimationFrame(run);
-				else show(to);
-			};
-			show(0);
-			requestAnimationFrame(run);
+			seen ? seen.observe(this) : run_count(this);
 		});
 	}
+	// While the figures are on their way: a shimmering outline of what comes.
+	const skeleton = (cards, cls = "") => `<div class="imed-skel ${cls}">${'<span></span>'.repeat(cards)}</div>`;
+
 	// A quantity: one decimal when it is not whole (0.1 of a box of paper is not 0).
 	const qty = (value) => format_number(value || 0, null, (value || 0) % 1 ? 1 : 0);
 	const big = (value, currency) => `<b class="imed-pd-num" data-to="${Number(value) || 0}"${currency ? ` data-cur="${esc(currency)}"` : ""}>${currency ? whole(value, currency) : number(value)}</b>`;
@@ -708,6 +731,14 @@
 		LOGOS[b.key] ? `<img class="${cls}" src="${LOGOS[b.key]}" alt="" loading="lazy">` : `<span class="${cls} is-icon">${frappe.utils.icon(b.icon, "md")}</span>`;
 
 	// ---- Today, the week, the month: four cards each, two to a row, one big figure and one line under it ----
+	// The list behind a business's figure for a period: its bookings, its sales, its students' fees.
+	function route_for(key, p) {
+		const span = ["between", [p.from, p.to]];
+		if (key === "studio" || key === "halls") return ["Booking", { resource_type: key === "studio" ? "Studio Service" : "Hall", booking_date: span }];
+		if (key === "libraries") return ["Library Sales Document", { reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]] }];
+		return ["Doctor Ledger Entry", { entry_date: span }];
+	}
+
 	// Today: four cards side by side, a logo, the business, one figure and its line.
 	function period_card(b, p, c, i) {
 		const a = b.activity || {};
@@ -787,9 +818,7 @@
 							</span>`;
 					})
 					.join("");
-				return `<a class="imed-wk-row tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(
-					JSON.stringify(b.key === "studio" || b.key === "halls" ? ["Booking", { resource_type: b.key === "studio" ? "Studio Service" : "Hall", booking_date: ["between", [p.from, p.to]] }] : null)
-				)}">
+				return `<a class="imed-wk-row tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route_for(b.key, p)))}">
 						${logo(b, "imed-wk-logo")}
 						<span class="imed-wk-name"><span>${esc(b.label)}</span>${money_kind ? big(total, c) : big(total)}<small>${esc(money_kind ? (b.key === "app" ? __("students' fees") : __("sales")) : __("bookings"))}</small></span>
 						<span class="imed-wk-bars">${bars}</span>
@@ -816,14 +845,14 @@
 								change === null ? esc(__("New this month")) : `${Math.abs(change)}%`
 						  }</span></span>`;
 				const top = Math.max(now, before) || 1;
-				return `<div class="imed-mo-tile tone-${b.key}" style="--i:${i}">
+				return `<a class="imed-mo-tile tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route_for(b.key, p)))}">
 						<div class="imed-mo-tile__head">${logo(b, "imed-mo-logo")}<span>${esc(b.label)}</span>${pill}</div>
 						${money_kind ? big(now, c) : big(now)}
 						<div class="imed-mo-compare">
 							<span class="imed-mo-compare__row"><small>${esc(__("This month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((now / top) * 100)}%"></i></span></span>
 							<span class="imed-mo-compare__row is-before"><small>${esc(__("Last month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((before / top) * 100)}%"></i></span><b>${fmt(before)}</b></span>
 						</div>
-					</div>`;
+					</a>`;
 			})
 			.join("");
 		return `<div class="imed-mo">${tiles}</div>`;
@@ -838,7 +867,7 @@
 				.map((p, n) => (n === 1 ? tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
 				.join("")
 		);
-		$slot.off("click").on("click", ".imed-pd-card, .imed-wk-row", function (e) {
+		$slot.off("click").on("click", ".imed-pd-card, .imed-wk-row, .imed-mo-tile", function (e) {
 			e.preventDefault();
 			const route = JSON.parse($(this).attr("data-route") || "null");
 			if (route) open_route(route);
@@ -896,11 +925,11 @@
 	// ---- The supplies, each library apart: what is left, the week's arrow, how long it lasts; the Epson colours ----
 	function stock_tile(s, i) {
 		if (!s.counted) {
-			return `<div class="imed-stock is-uncounted" style="--i:${i}">
+			return `<a class="imed-stock is-uncounted" style="--i:${i}" href="/desk/query-report/Stock Balance?item_code=${encodeURIComponent(s.item_code)}">
 					<span class="imed-stock__name">${esc(s.name)}</span>
 					<span class="imed-stock__qty"><b class="imed-pd-num">—</b></span>
 					<span class="imed-stock__lasts">${frappe.utils.icon("clock", "xs")}<span>${esc(__("Not counted yet"))}</span></span>
-				</div>`;
+				</a>`;
 		}
 		const unit = s.unit ? ` ${esc(s.unit)}` : "";
 		const dir = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
@@ -938,11 +967,11 @@
 		const note = first.finished_month
 			? `<span class="imed-stock__lasts is-first">${frappe.utils.icon("triangle-alert", "xs")}<span>${esc(__("Runs out first: {0}", [first.name.replace(/^حبر إبسون\s*/, "")]))}</span></span>`
 			: "";
-		return `<div class="imed-stock imed-epson" style="--i:${i}">
+		return `<a class="imed-stock imed-epson" style="--i:${i}" href="/desk/query-report/Stock Balance?item_group=${encodeURIComponent("أحبار")}">
 				<span class="imed-stock__name">${esc(__("Epson inks"))}</span>
 				<span class="imed-epson__rows">${rows}</span>
 				${note}
-			</div>`;
+			</a>`;
 	}
 
 	function render_stock($page) {
@@ -1042,6 +1071,8 @@
 		const $page = $(".page-container:visible .layout-main-section, .page-container:visible").first();
 		if (!$page.length) return;
 		add_welcome($page);
+		// The slots, with their shimmer, before any answer comes.
+		if (is_owner()) slot($page, "periods");
 		add_periods($page);
 		add_boxes($page);
 		add_overview($page);
