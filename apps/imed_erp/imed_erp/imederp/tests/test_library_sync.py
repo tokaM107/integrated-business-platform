@@ -4,6 +4,7 @@
 #
 #   bench --site frontend run-tests --module imed_erp.imederp.tests.test_library_sync
 import copy
+import json
 
 import frappe
 from frappe.tests import IntegrationTestCase
@@ -238,6 +239,29 @@ class TestLibraryReceive(IntegrationTestCase):
 		self.assertIsNotNone(after["last_synced_at"])
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, list_summary)
+
+	def test_the_list_band_counts_the_dates_the_list_shows(self):
+		"""The band follows the list's dates (the owner, 9 Nov 2026: "the revenue from this date to that"): a range
+		counts its days' sales, a day before it or after it does not; with no dates it is today's; an unknown
+		condition is refused."""
+		from imed_erp.imederp.doctype.library_sales_document.library_sales_document import list_summary
+
+		day = lambda n: frappe.utils.add_days("2026-03-10", n)
+		span = json.dumps(["between", [day(0), day(2)]])
+		before, before_today = list_summary(date_filter=span), list_summary()
+		sync.import_batch(
+			self.batch(
+				sale("94001", when=f"{day(0)} 09:00:00"),
+				sale("94002", when=f"{day(2)} 23:30:00"),
+				sale("94003", when=f"{day(-1)} 18:00:00"),
+				sale("94004", when=f"{day(3)} 08:00:00"),
+			)
+		)
+		after, after_today = list_summary(date_filter=span), list_summary()
+		self.assertEqual((after["sales_count"] - before["sales_count"], flt(after["sales_value"] - before["sales_value"], 2)), (2, 300.0))
+		self.assertEqual((after["is_today"], after_today["is_today"]), (False, True))
+		self.assertEqual(after_today["sales_count"], before_today["sales_count"])
+		self.assertRaises(frappe.ValidationError, list_summary, date_filter=json.dumps(["like", "%"]))
 
 	def test_the_list_band_of_one_library_counts_that_library_only(self):
 		"""The sidebar's "Mawasah Invoices" opens the list filtered to Mawasah: its band counts Mawasah alone."""
