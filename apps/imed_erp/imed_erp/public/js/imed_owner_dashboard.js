@@ -667,7 +667,7 @@
 		}
 		if (!$page.find(".imed-slot-after").length) {
 			$(`<div class="imed-slot-after">
-					<div data-slot="boxes"></div><div data-slot="stock"></div><div data-slot="today"></div><div data-slot="overview"></div>
+					<div data-slot="boxes"></div><div data-slot="stock"></div><div data-slot="requests"></div><div data-slot="today"></div><div data-slot="overview"></div>
 				</div>`).insertAfter($editor);
 		}
 		return $page.find(`[data-slot="${name}"]`).first();
@@ -893,38 +893,110 @@
 		count_up($slot);
 	}
 
-	// ---- The supplies: what is left, the week's arrow, how long it lasts ----
+	// ---- The supplies, each library apart: what is left, the week's arrow, how long it lasts; the Epson colours ----
+	function stock_tile(s, i) {
+		if (!s.counted) {
+			return `<div class="imed-stock is-uncounted" style="--i:${i}">
+					<span class="imed-stock__name">${esc(s.name)}</span>
+					<span class="imed-stock__qty"><b class="imed-pd-num">—</b></span>
+					<span class="imed-stock__lasts">${frappe.utils.icon("clock", "xs")}<span>${esc(__("Not counted yet"))}</span></span>
+				</div>`;
+		}
+		const unit = s.unit ? ` ${esc(s.unit)}` : "";
+		const dir = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
+		const arrow = { up: "arrow-up", down: "arrow-down", flat: "minus" }[dir];
+		const low = s.days_left !== null && s.days_left !== undefined && s.days_left <= 7;
+		const lasts =
+			s.days_left === null || s.days_left === undefined
+				? esc(__("Not used this week"))
+				: s.days_left === 0
+				? esc(__("Runs out today"))
+				: esc(__("Lasts about {0} days", [number(s.days_left)]));
+		return `<a class="imed-stock ${low ? "is-low" : ""} ${s.qty <= 0 ? "is-empty" : ""}" style="--i:${i}" href="/desk/query-report/Stock Balance?item_code=${encodeURIComponent(s.item_code)}">
+				<span class="imed-stock__name">${esc(s.name)}</span>
+				<span class="imed-stock__qty"><b class="imed-pd-num" data-to="${Number(s.qty) || 0}" data-dec="${s.qty % 1 ? 1 : 0}">${qty(s.qty)}</b>${unit}</span>
+				<span class="imed-stock__trend is-${dir}" title="${esc(__("A week ago: {0}", [qty(s.week_ago)]))}">${frappe.utils.icon(arrow, "xs")}<span>${dir === "flat" ? esc(__("No change this week")) : `${qty(Math.abs(s.change))}${unit} ${esc(dir === "up" ? __("more than last week") : __("less than last week"))}`}</span></span>
+				<span class="imed-stock__lasts">${frappe.utils.icon(low ? "triangle-alert" : "clock", "xs")}<span>${lasts}</span></span>
+			</a>`;
+	}
+
+	// The Epson set's four colours on one tile: what each holds, the one that finished most this month first.
+	const EPSON_DOTS = { "INK-EPSON-BK": "#1f2937", "INK-EPSON-C": "#06b6d4", "INK-EPSON-M": "#db2777", "INK-EPSON-Y": "#eab308" };
+	function epson_tile(colours, i) {
+		if (!colours.length) return "";
+		const first = colours[0];
+		const rows = colours
+			.map(
+				(c) => `<span class="imed-epson__row ${c.qty <= 0 ? "is-empty" : ""}">
+						<i style="--dot:${EPSON_DOTS[c.item_code] || "#64748b"}"></i>
+						<span>${esc(c.name.replace(/^حبر إبسون\s*/, ""))}</span>
+						<b>${qty(c.qty)}</b>
+						${c.finished_month ? `<small>${esc(__("finished {0} this month", [qty(c.finished_month)]))}</small>` : ""}
+					</span>`
+			)
+			.join("");
+		const note = first.finished_month
+			? `<span class="imed-stock__lasts is-first">${frappe.utils.icon("triangle-alert", "xs")}<span>${esc(__("Runs out first: {0}", [first.name.replace(/^حبر إبسون\s*/, "")]))}</span></span>`
+			: "";
+		return `<div class="imed-stock imed-epson" style="--i:${i}">
+				<span class="imed-stock__name">${esc(__("Epson inks"))}</span>
+				<span class="imed-epson__rows">${rows}</span>
+				${note}
+			</div>`;
+	}
+
 	function render_stock($page) {
 		const $slot = slot($page, "stock");
 		if (!boxes || !$slot.length) return;
-		const items = boxes.stock || [];
-		const tiles = items
-			.map((s, i) => {
-				const unit = s.unit ? ` ${esc(s.unit)}` : "";
-				const dir = s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
-				const arrow = { up: "arrow-up", down: "arrow-down", flat: "minus" }[dir];
-				const low = s.days_left !== null && s.days_left !== undefined && s.days_left <= 7;
-				const lasts =
-					s.days_left === null || s.days_left === undefined
-						? esc(__("Not used this week"))
-						: s.days_left === 0
-						? esc(__("Runs out today"))
-						: esc(__("Lasts about {0} days", [number(s.days_left)]));
-				const stores = (s.stores || []).map((st) => `<span>${esc(st.store)} <b>${qty(st.qty)}</b></span>`).join("");
-				return `<a class="imed-stock ${low ? "is-low" : ""} ${s.qty <= 0 ? "is-empty" : ""}" style="--i:${i}" href="/desk/query-report/Stock Balance?item_code=${encodeURIComponent(s.item_code)}">
-						<span class="imed-stock__name">${esc(s.name)}</span>
-						<span class="imed-stock__qty"><b class="imed-pd-num" data-to="${Number(s.qty) || 0}" data-dec="${s.qty % 1 ? 1 : 0}">${qty(s.qty)}</b>${unit}</span>
-						<span class="imed-stock__trend is-${dir}" title="${esc(__("A week ago: {0}", [qty(s.week_ago)]))}">${frappe.utils.icon(arrow, "xs")}<span>${dir === "flat" ? esc(__("No change this week")) : `${qty(Math.abs(s.change))}${unit} ${esc(dir === "up" ? __("more than last week") : __("less than last week"))}`}</span></span>
-						<span class="imed-stock__lasts">${frappe.utils.icon(low ? "triangle-alert" : "clock", "xs")}<span>${lasts}</span></span>
-						${stores ? `<span class="imed-stock__stores">${stores}</span>` : ""}
-					</a>`;
-			})
+		const stores = boxes.stock || [];
+		const html = stores
+			.map(
+				(st) => `<div class="imed-stock-store">
+						<h3>${frappe.utils.icon("store", "sm")}<span>${esc(st.name)}</span></h3>
+						<div class="imed-stock-grid">${st.items.map((s, i) => stock_tile(s, i)).join("")}${epson_tile(st.epson || [], st.items.length)}</div>
+					</div>`
+			)
 			.join("");
 		$slot.html(`<section class="imed-sec">
 				<header class="imed-sec__head"><h2>${frappe.utils.icon("package", "sm")}<span>${esc(__("Stock"))}</span></h2></header>
-				${tiles ? `<div class="imed-stock-grid">${tiles}</div>` : `<p class="imed-sec__empty">${esc(__("No supplies are set up."))}</p>`}
+				${html || `<p class="imed-sec__empty">${esc(__("No supplies are set up."))}</p>`}
 			</section>`);
 		count_up($slot);
+	}
+
+	// ---- The libraries' requests for supplies, still open, the newest first ----
+	function render_requests($page) {
+		const $slot = slot($page, "requests");
+		if (!boxes || !$slot.length) return;
+		const rows = boxes.requests || [];
+		// A request's own words (Frappe's "Pending" reads "not paid yet" elsewhere in the app).
+		const STATES = {
+			"Pending Approval": __("Waiting for approval"),
+			Approved: __("Approved"),
+			Pending: __("Not done yet"),
+			"Partially Ordered": __("Partly bought"),
+			Ordered: __("Bought"),
+			"Partially Received": __("Partly received"),
+			Draft: __("Draft"),
+			Rejected: __("Rejected"),
+		};
+		const state = (r) => STATES[r.state] || STATES[r.status] || __(r.state || r.status);
+		$slot.html(`<section class="imed-sec">
+				<header class="imed-sec__head"><h2>${frappe.utils.icon("clipboard-list", "sm")}<span>${esc(__("Libraries' requests"))}</span></h2>${rows.length ? `<b class="imed-req-count">${number(rows.length)}</b>` : ""}</header>
+				${
+					rows.length
+						? `<ul class="imed-req">${rows
+								.map(
+									(r, i) => `<li style="--i:${i}"><a href="/desk/material-request/${encodeURIComponent(r.name)}">
+										<span class="imed-req__store">${esc(r.store)}<small>${esc(frappe.datetime.str_to_user(r.transaction_date))}</small></span>
+										<span class="imed-req__items">${r.items.map((it) => `<span><b>${qty(it.qty)}${it.unit ? " " + esc(it.unit) : ""}</b> ${esc(it.name)}</span>`).join("")}</span>
+										<span class="imed-req__state">${esc(state(r))}</span>
+									</a></li>`
+								)
+								.join("")}</ul>`
+						: `<p class="imed-sec__empty">${esc(__("No open request."))}</p>`
+				}
+			</section>`);
 	}
 
 	function fetch_once(state, method, done) {
@@ -960,6 +1032,7 @@
 			() => {
 				render_boxes(page_now());
 				render_stock(page_now());
+				render_requests(page_now());
 			}
 		);
 	}

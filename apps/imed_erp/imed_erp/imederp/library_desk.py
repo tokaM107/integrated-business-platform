@@ -21,7 +21,7 @@ from frappe import _
 from frappe.utils import cint, flt, nowtime, today
 
 ROLE = "Library Staff"
-SUPPLY_GROUPS = ("ورق", "أحبار")
+SUPPLY_GROUPS = ("ورق", "أحبار", "خامات تجليد")  # binding wire and plastic covers too (owner, 9 Nov 2026)
 # What the role may do, nothing more (setup/setup_users.py applies it): its screen's documents, and reading what
 # they link to. No sales, accounts, cash or stock entries (a finished item is taken off by the system, used_up).
 STAFF_RIGHTS = {

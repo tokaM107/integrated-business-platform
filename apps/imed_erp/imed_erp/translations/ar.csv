@@ -2267,3 +2267,18 @@ Last month,الشهر اللي فات
 pounds,جنيه
 Tomorrow's bookings,حجوزات بكرة
 Nothing booked,مفيش حجوزات
+Epson inks,أحبار الإبسون
+finished {0} this month,خلص {0} الشهر ده
+Runs out first: {0},أول لون بيخلص: {0}
+Libraries' requests,طلبات المكتبات
+No open request.,مفيش طلبات مفتوحة.
+Binding Supplies,خامات التجليد
+"Binding Wire, One Piece",سلك التغليف (القطعة)
+"Plastic Cover, One Piece",الكافر البلاستك (القطعة)
+"What the libraries pay for one piece: their stock is valued at it (setup/setup_inks.py).",اللي المكتبة بتدفعه في القطعة الواحدة: المخزون بيتحسب بيه.
+Not counted yet,لسه ما اتعدّش
+Waiting for approval,مستني الموافقة
+Not done yet,لسه ما اتنفذش
+Partly bought,اتشترى جزء
+Bought,اتشترى
+Partly received,وصل جزء

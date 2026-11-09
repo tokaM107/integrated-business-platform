@@ -5431,6 +5431,13 @@ html[dir="ltr"] .imed-boxes__bar i {
 	border-color: var(--orange-200, #fed7aa);
 	background: linear-gradient(160deg, var(--orange-50, #fff7ed), var(--card-bg) 70%);
 }
+.imed-stock.is-uncounted {
+	background: var(--card-bg);
+	border-style: dashed;
+}
+.imed-stock.is-uncounted .imed-pd-num {
+	color: var(--text-muted);
+}
 .imed-stock.is-empty {
 	border-color: var(--red-200, #fecaca);
 	background: linear-gradient(160deg, var(--red-50, #fef2f2), var(--card-bg) 70%);
@@ -5507,6 +5514,149 @@ html[dir="ltr"] .imed-boxes__bar i {
 	padding: 3px 9px;
 	border-radius: 999px;
 	background: var(--subtle-fg, rgba(16, 34, 42, 0.05));
+}
+
+/* Each library's store apart. */
+.imed-stock-store + .imed-stock-store {
+	margin-top: 18px;
+	padding-top: 16px;
+	border-top: 1px dashed var(--imed-border);
+}
+.imed-stock-store h3 {
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 12px;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--heading-color);
+}
+.imed-stock-store h3 .icon {
+	margin: 0;
+	color: var(--imed-teal-600);
+}
+/* The Epson colours: a dot, the colour, what is left, how many finished this month. */
+.imed-epson__rows {
+	display: grid;
+	gap: 6px;
+}
+.imed-epson__row {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	grid-template-areas: "dot name qty" ". note note";
+	align-items: center;
+	gap: 0 8px;
+	font-size: 13px;
+}
+.imed-epson__row i {
+	grid-area: dot;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--dot);
+	box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--dot) 40%, transparent);
+}
+.imed-epson__row b {
+	grid-area: qty;
+	font-size: 16px;
+	font-weight: 800;
+}
+.imed-epson__row.is-empty b {
+	color: var(--red-600, #dc2626);
+}
+.imed-epson__row small {
+	grid-area: note;
+	font-size: 11px;
+	color: var(--orange-700, #c2410c);
+}
+.imed-stock__lasts.is-first {
+	color: var(--red-700, #b91c1c);
+	font-weight: 700;
+}
+
+/* The libraries' requests: the store and day, what and how much, where it stands. */
+.imed-req-count {
+	min-width: 30px;
+	padding: 2px 10px;
+	border-radius: 999px;
+	text-align: center;
+	color: #fff;
+	background: var(--orange-500, #f97316);
+	animation: imed-pulse-badge 2s ease-in-out infinite;
+}
+.imed-req {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 8px;
+}
+.imed-req li {
+	animation: imed-rise 0.4s ease both;
+	animation-delay: calc(var(--i, 0) * 0.05s);
+}
+.imed-req a {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 12px;
+	border-radius: 14px;
+	border: 1px solid var(--imed-border);
+	color: inherit;
+	text-decoration: none !important;
+	transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.imed-req a:hover {
+	transform: translateY(-1px);
+	border-color: var(--orange-300, #fdba74);
+}
+.imed-req__store {
+	display: grid;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--heading-color);
+}
+.imed-req__store small {
+	font-size: 11px;
+	font-weight: 400;
+	color: var(--text-muted);
+}
+.imed-req__items {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: 13px;
+}
+.imed-req__items span {
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: var(--orange-50, #fff7ed);
+}
+.imed-req__state {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--orange-700, #c2410c);
+	white-space: nowrap;
+}
+@keyframes imed-pulse-badge {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.45);
+	}
+	50% {
+		box-shadow: 0 0 0 6px rgba(249, 115, 22, 0);
+	}
+}
+@media (max-width: 560px) {
+	.imed-req a {
+		grid-template-columns: 1fr auto;
+	}
+	.imed-req__items {
+		grid-column: 1 / -1;
+		order: 3;
+	}
 }
 
 /* The day's revenue and expenses: a plain table that scrolls on a phone. */
@@ -5938,7 +6088,9 @@ html[dir="ltr"] .imed-mo-track i {
 	.imed-mo-track i,
 	.imed-mo-pill .icon,
 	.imed-tm-col,
-	.imed-tm-col li {
+	.imed-tm-col li,
+	.imed-req li,
+	.imed-req-count {
 		animation: none !important;
 	}
 }

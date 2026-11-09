@@ -58,17 +58,16 @@ class IntegrationTestOwnerPeriods(IntegrationTestCase):
 		case = IntegrationTestLibraryDesk("test_paper_is_counted_and_taken_off_in_boxes")
 		case.setUp()
 		try:
-			before = next(s for s in owner_periods.stock() if s["item_code"] == "A4-PAPER")
+			before = paper_in(owner_periods.stock())
 			frappe.set_user(ACCOUNT)
 			desk.count({"A4-PAPER": flt_box(before) + 3})
 			desk.used_up("A4-PAPER", 1)
 			frappe.set_user("Administrator")
-			after = next(s for s in owner_periods.stock() if s["item_code"] == "A4-PAPER")
+			after = paper_in(owner_periods.stock())
 			self.assertEqual(after["unit"], "كرتونة")
 			self.assertAlmostEqual(after["qty"], flt_box(before) + 2, places=1)
 			self.assertGreaterEqual(after["used_week"], before["used_week"] + 1)
 			self.assertIsNotNone(after["days_left"])
-			self.assertTrue(any(s["store"] for s in after["stores"]))
 		finally:
 			case.tearDown()
 
@@ -76,6 +75,13 @@ class IntegrationTestOwnerPeriods(IntegrationTestCase):
 		rows = owner_periods.boxes()
 		self.assertEqual([r["balance"] for r in rows], sorted((r["balance"] for r in rows), reverse=True))
 		self.assertTrue(all(" - " not in r["name"] for r in rows))
+
+
+def paper_in(stores):
+	"""The paper of the test library's store (Mawasah's)."""
+	from imed_erp.imederp.tests.test_library_desk import STORE
+
+	return next(r for st in stores if st["store"] == STORE for r in st["items"] if r["item_code"] == "A4-PAPER")
 
 
 def flt_box(row):
@@ -114,5 +120,35 @@ class IntegrationTestOwnerPeriodShapes(IntegrationTestCase):
 			mine = [r for r in listed["halls"] if r.from_time == "09:00" and r.resource.startswith("_Test Sparkle Hall")]
 			self.assertEqual(len(mine), 1)
 			self.assertTrue(all(r.resource_type == "Studio Service" for r in listed["studio"]))
+		finally:
+			case.tearDown()
+
+
+class IntegrationTestOwnerStockByStore(IntegrationTestCase):
+	def test_each_library_store_apart_the_epson_colours_and_the_requests(self):
+		from imed_erp.imederp import library_desk as desk
+		from imed_erp.imederp.tests.test_library_desk import ACCOUNT, INK, STORE, IntegrationTestLibraryDesk
+
+		case = IntegrationTestLibraryDesk("test_paper_is_counted_and_taken_off_in_boxes")
+		case.setUp()
+		try:
+			# An Epson colour of the test: two counted, one finished this month.
+			colour = "INK-EPSON-BK"
+			if not frappe.db.exists("Item", colour):
+				frappe.get_doc({"doctype": "Item", "item_code": colour, "item_name": "حبر إبسون أسود", "item_group": "أحبار", "stock_uom": "Nos", "is_stock_item": 1, "valuation_rate": 375}).insert()
+			frappe.set_user(ACCOUNT)
+			desk.count({colour: 2, INK: 3})
+			desk.used_up(colour, 1)
+			asked = desk.ask_for(INK, 2)["request"]
+			frappe.set_user("Administrator")
+			stores = {s["store"]: s for s in owner_periods.stock()}
+			self.assertIn(STORE, stores)
+			mine = stores[STORE]
+			black = next(c for c in mine["epson"] if c["item_code"] == colour)
+			self.assertEqual((black["qty"], black["finished_month"]), (1, 1))
+			self.assertNotIn(colour, [r["item_code"] for r in mine["items"]])
+			ink = next(r for r in mine["items"] if r["item_code"] == INK)
+			self.assertEqual((ink["qty"], ink["counted"]), (3, 1))
+			self.assertIn(asked, [r.name for r in owner_periods.requests()])
 		finally:
 			case.tearDown()

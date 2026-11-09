@@ -1,4 +1,4 @@
-# The libraries' inks as stock items, like the paper (owner, 4 Nov 2026: the ink prices were only a cost per sheet
+# The libraries' inks and binding supplies as stock items, like the paper (owner, 4 Nov 2026: the ink prices were only a cost per sheet
 # in Printing Cost Settings, so nothing knew how much ink a library holds, where, or when it runs out).
 #
 #   أحبار (item group, beside the paper's)
@@ -19,31 +19,39 @@ from frappe.utils import flt
 
 INK_GROUP = "أحبار"
 PAPER_GROUP = "ورق"
+BINDING_GROUP = "خامات تجليد"
+# An Epson set is four colours, and one runs out before another (owner, 9 Nov 2026): each colour is its own item,
+# a quarter of the set's price, so the owner sees which finishes first. The set itself (INK-EPSON) is disabled
+# while nothing was ever counted of it.
+EPSON_COLOURS = [("INK-EPSON-BK", "حبر إبسون أسود"), ("INK-EPSON-C", "حبر إبسون سماوي"), ("INK-EPSON-M", "حبر إبسون ماجنتا"), ("INK-EPSON-Y", "حبر إبسون أصفر")]
 INKS = [
-	# code, name, the settings' field that holds its price
-	("INK-RISO", "حبر ريزو (إزازة)", "riso_ink_price"),
-	("INK-EPSON", "طقم حبر إبسون", "epson_ink_set_price"),
+	# code, name, group, the settings' field that holds its price, the part of that price one piece costs
+	("INK-RISO", "حبر ريزو (إزازة)", INK_GROUP, "riso_ink_price", 1),
+	*[(code, name, INK_GROUP, "epson_ink_set_price", 4) for code, name in EPSON_COLOURS],
+	("BIND-WIRE", "سلك تغليف", BINDING_GROUP, "binding_wire_price", 1),
+	("BIND-COVER", "كافر بلاستك", BINDING_GROUP, "binding_cover_price", 1),
 ]
 
 
-def ensure_group():
-	if frappe.db.exists("Item Group", INK_GROUP):
-		print(f"exists Item Group {INK_GROUP}")
+def ensure_group(group):
+	if frappe.db.exists("Item Group", group):
+		print(f"exists Item Group {group}")
 		return
 	parent = frappe.db.get_value("Item Group", PAPER_GROUP, "parent_item_group") or "All Item Groups"
-	frappe.get_doc({"doctype": "Item Group", "item_group_name": INK_GROUP, "parent_item_group": parent, "is_group": 0}).insert()
-	print(f"create Item Group {INK_GROUP} under {parent}")
+	frappe.get_doc({"doctype": "Item Group", "item_group_name": group, "parent_item_group": parent, "is_group": 0}).insert()
+	print(f"create Item Group {group} under {parent}")
 
 
-def ensure_item(code, name, price_field):
+def ensure_item(code, name, group, price_field, parts=1):
 	price = flt(frappe.db.get_single_value("Printing Cost Settings", price_field)) if frappe.db.exists("DocType", "Printing Cost Settings") else 0
+	price = flt(price / parts, 2)
 	if not frappe.db.exists("Item", code):
 		frappe.get_doc(
 			{
 				"doctype": "Item",
 				"item_code": code,
 				"item_name": name,
-				"item_group": INK_GROUP,
+				"item_group": group,
 				"stock_uom": "Nos",
 				"is_stock_item": 1,
 				"include_item_in_manufacturing": 0,
@@ -63,10 +71,21 @@ def ensure_item(code, name, price_field):
 		print(f"exists Item {code}")
 
 
+def retire_epson_set():
+	if frappe.db.exists("Item", "INK-EPSON") and not frappe.db.get_value("Item", "INK-EPSON", "disabled"):
+		if frappe.db.exists("Stock Ledger Entry", {"item_code": "INK-EPSON", "is_cancelled": 0}):
+			print("KEEP   INK-EPSON: the set has stock movements; count its colours, then disable it by hand")
+			return
+		frappe.db.set_value("Item", "INK-EPSON", "disabled", 1)
+		print("disable Item INK-EPSON: the set is counted by its four colours")
+
+
 def run():
-	ensure_group()
-	for code, name, field in INKS:
-		ensure_item(code, name, field)
+	for group in (INK_GROUP, BINDING_GROUP):
+		ensure_group(group)
+	for code, name, group, field, parts in INKS:
+		ensure_item(code, name, group, field, parts)
+	retire_epson_set()
 	frappe.db.commit()
 	print("DONE   Inks set up.")
 

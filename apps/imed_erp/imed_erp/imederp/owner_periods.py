@@ -245,7 +245,7 @@ def app(start, end):
 @frappe.whitelist()
 def get_boxes_and_stock():
 	check_owner()
-	return {"currency": frappe.get_cached_value("Company", company(), "default_currency"), "boxes": boxes(), "stock": stock()}
+	return {"currency": frappe.get_cached_value("Company", company(), "default_currency"), "boxes": boxes(), "stock": stock(), "requests": requests()}
 
 
 def boxes():
@@ -261,63 +261,52 @@ def boxes():
 
 
 WEEK = 7
+# The Epson set's four colours (setup/setup_inks.py): shown together, which finished most this month first.
+EPSON_PREFIX = "INK-EPSON-"
+
+
+def library_stores():
+	"""The stores the libraries keep their supplies in (خامات المواساة, خامات الأزاريطة), by the stores the library
+	accounts work in, else by name."""
+	stores = frappe.get_all(
+		"User Permission",
+		filters={"allow": "Warehouse", "user": ["in", frappe.get_all("Has Role", filters={"role": "Library Staff", "parenttype": "User"}, pluck="parent") or [""]]},
+		pluck="for_value",
+	)
+	stores += frappe.get_all("Warehouse", filters={"company": company(), "is_group": 0, "warehouse_name": ["like", "خامات%"]}, pluck="name")
+	return [w for w in dict.fromkeys(stores) if not frappe.db.get_value("Warehouse", w, "is_group")]
 
 
 def stock(today=None):
-	"""Each supply (paper, inks, and any binding supplies), in the unit the libraries count it in (paper in boxes):
-	what the group's stores hold now, what they held a week ago (the arrow), what a week used, how many days that
-	lasts, and each store's part."""
+	"""Each library store apart (owner, 9 Nov 2026: Mawasah's stock apart from Azarita's), each supply in the unit the
+	library counts it in (paper in boxes): what it holds now, against a week ago (the arrow), what the week used, how
+	many days that lasts. The Epson colours together: what each holds and how many finished this month."""
 	from imed_erp.imederp.library_desk import SUPPLY_GROUPS, UNIT_NAMES, screen_unit
 
 	today = getdate(today or nowdate())
 	week_ago = add_days(today, -WEEK)
+	month_start = getdate(get_first_day(today))
 	groups = [g for g in SUPPLY_GROUPS if frappe.db.exists("Item Group", g)]
-	groups += frappe.get_all("Item Group", filters={"is_group": 0, "item_group_name": ["like", "%سلك%"]}, pluck="name")
-	groups += frappe.get_all("Item Group", filters={"is_group": 0, "item_group_name": ["like", "%تجليد%"]}, pluck="name")
-	stores = frappe.get_all("Warehouse", filters={"company": company(), "is_group": 0}, pluck="name")
-	if not groups or not stores:
-		return []
-	rows = []
-	for item in frappe.get_all(
-		"Item", filters={"item_group": ["in", list(dict.fromkeys(groups))], "disabled": 0, "is_stock_item": 1}, fields=["name", "item_name", "item_group"], order_by="item_group desc, item_name"
-	):
-		unit, factor = screen_unit(item.name)
-		per_store = frappe.db.sql(
-			"select warehouse, actual_qty from `tabBin` where item_code = %s and warehouse in %s and actual_qty != 0", (item.name, tuple(stores)), as_dict=True
-		)
-		now = sum(flt(b.actual_qty) for b in per_store)
-		before = sum(
-			flt(r[0])
-			for r in frappe.db.sql(
-				"""select (select qty_after_transaction from `tabStock Ledger Entry` s
-					where s.item_code = %(item)s and s.warehouse = w.name and s.is_cancelled = 0 and s.posting_date <= %(day)s
-					order by s.posting_date desc, s.posting_time desc, s.creation desc limit 1)
-				from `tabWarehouse` w where w.name in %(stores)s""",
-				{"item": item.name, "day": week_ago, "stores": tuple(stores)},
+	items = frappe.get_all(
+		"Item", filters={"item_group": ["in", groups or [""]], "disabled": 0, "is_stock_item": 1}, fields=["name", "item_name", "item_group"], order_by="item_group desc, item_name"
+	)
+	result = []
+	for store in library_stores():
+		rows, colours = [], []
+		for item in items:
+			unit, factor = screen_unit(item.name)
+			now = flt(frappe.db.get_value("Bin", {"item_code": item.name, "warehouse": store}, "actual_qty"))
+			before = flt(
+				frappe.db.sql(
+					"""select qty_after_transaction from `tabStock Ledger Entry` where item_code = %s and warehouse = %s and is_cancelled = 0
+					and posting_date <= %s order by posting_date desc, posting_time desc, creation desc limit 1""",
+					(item.name, store, week_ago),
+				)[0][0]
+				if frappe.db.exists("Stock Ledger Entry", {"item_code": item.name, "warehouse": store, "is_cancelled": 0, "posting_date": ["<=", week_ago]})
+				else 0
 			)
-			if r[0] is not None
-		)
-		used = -flt(
-			frappe.db.sql(
-				"""select coalesce(sum(actual_qty), 0) from `tabStock Ledger Entry`
-				where item_code = %s and warehouse in %s and is_cancelled = 0 and actual_qty < 0 and voucher_type not in ('Stock Entry', 'Stock Reconciliation')
-					and posting_date > %s and posting_date <= %s""",
-				(item.name, tuple(stores), week_ago, today),
-			)[0][0]
-		)
-		# A transfer between the group's stores moves it and a count corrects it: neither is use. What a sale took,
-		# and what a library took off as finished (a Material Issue), is.
-		used += -flt(
-			frappe.db.sql(
-				"""select coalesce(sum(sle.actual_qty), 0) from `tabStock Ledger Entry` sle join `tabStock Entry` se on se.name = sle.voucher_no
-				where sle.item_code = %s and sle.warehouse in %s and sle.is_cancelled = 0 and sle.actual_qty < 0 and sle.voucher_type = 'Stock Entry'
-					and se.stock_entry_type = 'Material Issue' and sle.posting_date > %s and sle.posting_date <= %s""",
-				(item.name, tuple(stores), week_ago, today),
-			)[0][0]
-		)
-		daily = used / WEEK
-		rows.append(
-			{
+			used = used_between(item.name, store, add_days(week_ago, 1), today)
+			row = {
 				"item_code": item.name,
 				"name": item.item_name,
 				"group": item.item_group,
@@ -326,11 +315,74 @@ def stock(today=None):
 				"week_ago": flt(before / factor, 2),
 				"change": flt((now - before) / factor, 2),
 				"used_week": flt(used / factor, 2),
-				"days_left": cint(now / daily) if daily > 0 else None,
-				"stores": [
-					{"store": frappe.get_cached_value("Warehouse", b.warehouse, "warehouse_name") or b.warehouse, "qty": flt(flt(b.actual_qty) / factor, 2)}
-					for b in sorted(per_store, key=lambda b: -flt(b.actual_qty))
-				],
+				"days_left": cint(now / (used / WEEK)) if used > 0 else None,
+				# Never counted nor moved in this store: not "ran out", "not counted yet".
+				"counted": 1 if frappe.db.exists("Stock Ledger Entry", {"item_code": item.name, "warehouse": store, "is_cancelled": 0}) else 0,
 			}
+			if item.name.startswith(EPSON_PREFIX):
+				row["finished_month"] = flt(used_between(item.name, store, month_start, today) / factor, 2)
+				colours.append(row)
+			else:
+				rows.append(row)
+		if colours:
+			# The colour that finished most this month first.
+			colours.sort(key=lambda c: (-c["finished_month"], c["qty"]))
+		result.append(
+			{"store": store, "name": frappe.get_cached_value("Warehouse", store, "warehouse_name") or store, "items": rows, "epson": colours}
 		)
+	return result
+
+
+def used_between(item_code, store, start, end):
+	"""What left a store as used between two days: sold, or taken off as finished (a Material Issue); a transfer moves
+	it and a count corrects it, neither is use."""
+	sold = -flt(
+		frappe.db.sql(
+			"""select coalesce(sum(actual_qty), 0) from `tabStock Ledger Entry` where item_code = %s and warehouse = %s and is_cancelled = 0
+			and actual_qty < 0 and voucher_type not in ('Stock Entry', 'Stock Reconciliation') and posting_date between %s and %s""",
+			(item_code, store, start, end),
+		)[0][0]
+	)
+	issued = -flt(
+		frappe.db.sql(
+			"""select coalesce(sum(sle.actual_qty), 0) from `tabStock Ledger Entry` sle join `tabStock Entry` se on se.name = sle.voucher_no
+			where sle.item_code = %s and sle.warehouse = %s and sle.is_cancelled = 0 and sle.actual_qty < 0 and sle.voucher_type = 'Stock Entry'
+			and se.stock_entry_type = 'Material Issue' and sle.posting_date between %s and %s""",
+			(item_code, store, start, end),
+		)[0][0]
+	)
+	return sold + issued
+
+
+@frappe.whitelist()
+def get_requests():
+	check_owner()
+	return requests()
+
+
+def requests(limit=15):
+	"""The libraries' requests for supplies still open (owner, 9 Nov 2026: the owner sees them at once): the newest
+	first, each with its library's store, what and how much, and where it stands."""
+	stores = library_stores()
+	rows = frappe.db.sql(
+		"""select mr.name, mr.transaction_date, mr.creation, mr.status, mr.docstatus, mr.material_request_type,
+			mr.set_warehouse, mr.per_ordered, mr.per_received, {approval}
+		from `tabMaterial Request` mr
+		where mr.company = %(company)s and mr.docstatus < 2 and mr.set_warehouse in %(stores)s
+			and mr.status not in ('Stopped', 'Cancelled', 'Transferred', 'Received', 'Issued')
+		order by mr.creation desc limit %(limit)s""".format(
+			approval="mr.custom_approval_status" if frappe.get_meta("Material Request").has_field("custom_approval_status") else "null as custom_approval_status"
+		),
+		{"company": company(), "stores": tuple(stores or [""]), "limit": limit},
+		as_dict=True,
+	)
+	from imed_erp.imederp.library_desk import UNIT_NAMES
+
+	for row in rows:
+		row.store = frappe.get_cached_value("Warehouse", row.set_warehouse, "warehouse_name") or row.set_warehouse
+		row.items = [
+			{"name": i.item_name, "qty": flt(i.qty, 2), "unit": UNIT_NAMES.get(i.uom, i.uom) or ""}
+			for i in frappe.get_all("Material Request Item", filters={"parent": row.name}, fields=["item_name", "qty", "uom"], order_by="idx")
+		]
+		row.state = row.custom_approval_status or row.status
 	return rows
