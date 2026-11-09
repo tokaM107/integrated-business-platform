@@ -702,9 +702,13 @@
 		studio: "/assets/imed_erp/images/logos/x-studio.jpg",
 		halls: "/assets/imed_erp/images/logos/imed-academy.jpg",
 		libraries: "/assets/imed_erp/images/logos/doctor-2-be.jpg",
+		app: "/assets/imed_erp/images/logos/ba-plus.jpg",
 	};
+	const logo = (b, cls) =>
+		LOGOS[b.key] ? `<img class="${cls}" src="${LOGOS[b.key]}" alt="" loading="lazy">` : `<span class="${cls} is-icon">${frappe.utils.icon(b.icon, "md")}</span>`;
 
 	// ---- Today, the week, the month: four cards each, two to a row, one big figure and one line under it ----
+	// Today: four cards side by side, a logo, the business, one figure and its line.
 	function period_card(b, p, c, i) {
 		const a = b.activity || {};
 		const span = ["between", [p.from, p.to]];
@@ -715,26 +719,84 @@
 			route = ["Booking", { resource_type: b.key === "studio" ? "Studio Service" : "Hall", booking_date: span }];
 			figure = big(a.bookings);
 			caption = `${esc(__("bookings"))} · ${esc(hours_text(a.hours))}`;
-			if (a.paid) caption += ` · <span class="is-in">${esc(__("Paid"))} ${whole(a.paid, c)}</span>`;
 		} else if (b.key === "libraries") {
 			route = ["Library Sales Document", { reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]] }];
-			figure = big(a.net, c);
-			caption = esc(__("{0} invoices", [number(a.invoices)]));
+			figure = big(a.net);
+			caption = `${esc(__("pounds"))} · ${esc(__("{0} invoices", [number(a.invoices)]))}`;
 		} else {
 			route = ["Doctor Ledger Entry", { entry_date: span }];
-			figure = a.state === "ok" ? big(a.charged, c) : `<b class="imed-pd-num">—</b>`;
-			caption = a.state === "ok" ? esc(__("{0} new subscriptions", [number(a.subscriptions)])) : esc(__("Not set up yet"));
+			figure = a.state === "ok" ? big(a.charged) : `<b class="imed-pd-num">—</b>`;
+			caption = a.state === "ok" ? `${esc(__("pounds"))} · ${esc(__("{0} new subscriptions", [number(a.subscriptions)]))}` : esc(__("Not set up yet"));
 		}
 		return `<a class="imed-pd-card tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route))}">
-				${
-					LOGOS[b.key]
-						? `<img class="imed-pd-card__logo" src="${LOGOS[b.key]}" alt="" loading="lazy">`
-						: `<span class="imed-pd-card__icon">${frappe.utils.icon(b.icon, "md")}</span>`
-				}
+				${logo(b, "imed-pd-card__logo")}
 				<span class="imed-pd-card__label">${esc(b.label)}</span>
 				${figure}
 				<span class="imed-pd-card__caption">${caption}</span>
 			</a>`;
+	}
+
+	// The week: each business's days as bars, Saturday to Friday, today marked, the days to come faint.
+	const weekday = (d) => new Date(`${d}T00:00:00`).toLocaleDateString(frappe.boot.lang || "en", { weekday: "narrow" });
+	function week_html(p, c) {
+		const today = by_period.today;
+		const dates = p.days.dates;
+		const rows = p.businesses
+			.map((b, i) => {
+				const values = p.days[b.key] || [];
+				const top = Math.max(...values, 0) || 1;
+				const total = values.reduce((t, v) => t + v, 0);
+				const money_kind = b.key === "libraries" || b.key === "app";
+				const bars = dates
+					.map((d, k) => {
+						const v = values[k] || 0;
+						const state = d > today ? "is-future" : d === today ? "is-today" : "";
+						const label = money_kind ? whole(v, c) : number(v);
+						return `<span class="imed-wk-bar ${state}" title="${esc(`${frappe.datetime.str_to_user(d)}: ${label}`)}">
+								<i style="--h:${Math.round((v / top) * 100)}%; --k:${k}"></i><small>${esc(weekday(d))}</small>
+							</span>`;
+					})
+					.join("");
+				return `<a class="imed-wk-row tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(
+					JSON.stringify(b.key === "studio" || b.key === "halls" ? ["Booking", { resource_type: b.key === "studio" ? "Studio Service" : "Hall", booking_date: ["between", [p.from, p.to]] }] : null)
+				)}">
+						${logo(b, "imed-wk-logo")}
+						<span class="imed-wk-name"><span>${esc(b.label)}</span>${money_kind ? big(total, c) : big(total)}<small>${esc(money_kind ? (b.key === "app" ? __("students' fees") : __("sales")) : __("bookings"))}</small></span>
+						<span class="imed-wk-bars">${bars}</span>
+					</a>`;
+			})
+			.join("");
+		return `<div class="imed-wk">${rows}</div>`;
+	}
+
+	// The month: each business against the same days of last month, an arrow and the change.
+	function month_html(p, c) {
+		const tiles = p.businesses
+			.map((b, i) => {
+				const money_kind = b.key === "libraries" || b.key === "app";
+				const now = b.main || 0;
+				const before = b.previous || 0;
+				const dir = now > before ? "up" : now < before ? "down" : "flat";
+				const change = before ? Math.round(((now - before) / before) * 100) : null;
+				const fmt = (v) => (money_kind ? whole(v, c) : number(v));
+				const pill =
+					dir === "flat"
+						? `<span class="imed-mo-pill is-flat">${frappe.utils.icon("minus", "xs")}<span>${esc(__("Same as last month"))}</span></span>`
+						: `<span class="imed-mo-pill is-${dir}">${frappe.utils.icon(dir === "up" ? "arrow-up" : "arrow-down", "xs")}<span>${
+								change === null ? esc(__("New this month")) : `${Math.abs(change)}%`
+						  }</span></span>`;
+				const top = Math.max(now, before) || 1;
+				return `<div class="imed-mo-tile tone-${b.key}" style="--i:${i}">
+						<div class="imed-mo-tile__head">${logo(b, "imed-mo-logo")}<span>${esc(b.label)}</span>${pill}</div>
+						${money_kind ? big(now, c) : big(now)}
+						<div class="imed-mo-compare">
+							<span class="imed-mo-compare__row"><small>${esc(__("This month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((now / top) * 100)}%"></i></span></span>
+							<span class="imed-mo-compare__row is-before"><small>${esc(__("Last month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((before / top) * 100)}%"></i></span><b>${fmt(before)}</b></span>
+						</div>
+					</div>`;
+			})
+			.join("");
+		return `<div class="imed-mo">${tiles}</div>`;
 	}
 
 	function render_periods($page) {
@@ -752,12 +814,18 @@
 								<h2>${p.key === "today" ? `<span class="imed-live" aria-hidden="true"></span>` : frappe.utils.icon(icons[p.key], "sm")}<span>${esc(p.label)}</span></h2>
 								<span class="imed-pd-band__dates">${esc(p.from === p.to ? from : `${from} – ${to}`)}</span>
 							</header>
-							<div class="imed-pd-grid">${p.businesses.map((b, i) => period_card(b, p, c, i)).join("")}</div>
+							${
+								p.key === "week"
+									? week_html(p, c)
+									: p.key === "month"
+									? month_html(p, c)
+									: `<div class="imed-pd-grid">${p.businesses.map((b, i) => period_card(b, p, c, i)).join("")}</div>`
+							}
 						</section>`;
 				})
 				.join("")
 		);
-		$slot.off("click").on("click", ".imed-pd-card", function (e) {
+		$slot.off("click").on("click", ".imed-pd-card, .imed-wk-row", function (e) {
 			e.preventDefault();
 			const route = JSON.parse($(this).attr("data-route") || "null");
 			if (route) open_route(route);

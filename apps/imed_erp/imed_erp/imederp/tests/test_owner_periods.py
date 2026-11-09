@@ -80,3 +80,21 @@ class IntegrationTestOwnerPeriods(IntegrationTestCase):
 
 def flt_box(row):
 	return round(row["qty"], 2)
+
+
+class IntegrationTestOwnerPeriodShapes(IntegrationTestCase):
+	def test_the_week_is_drawn_day_by_day_and_the_month_against_last_month(self):
+		data = owner_periods.periods("2026-11-09")  # a Monday
+		week, month = data["periods"][1], data["periods"][2]
+		self.assertEqual([str(d) for d in week["days"]["dates"]][0], "2026-11-07")
+		self.assertEqual(len(week["days"]["dates"]), 7)
+		for key in ("studio", "halls", "libraries", "app"):
+			self.assertEqual(len(week["days"][key]), 7)
+		# The same stretch of last month: the 1st to the 9th of October.
+		self.assertEqual((str(month["previous_from"]), str(month["previous_to"])), ("2026-10-01", "2026-10-09"))
+		for b in month["businesses"]:
+			self.assertIn("main", b)
+			self.assertIn("previous", b)
+		# The 31st against a shorter month: its last day.
+		march = owner_periods.periods("2027-03-31")["periods"][2]
+		self.assertEqual(str(march["previous_to"]), "2027-02-28")

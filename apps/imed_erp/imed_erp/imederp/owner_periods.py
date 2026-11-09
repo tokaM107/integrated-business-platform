@@ -37,15 +37,69 @@ def periods(today=None):
 		r.cost_center_name: r.name
 		for r in frappe.get_all("Cost Center", filters={"company": company(), "is_group": 0}, fields=["name", "cost_center_name"])
 	}
+	week_start = getdate(week_start)
+	month_start = getdate(get_first_day(today))
+	week = period("week", _("This Week"), week_start, today, centers)
+	# The week drawn day by day, Saturday to Friday (the days to come empty): each business's main figure.
+	week["days"] = daily(week_start, add_days(week_start, 6), centers)
+	month = period("month", _("This Month"), month_start, today, centers)
+	# The month against the same stretch of the month before (the 1st to the same day, or its last day).
+	previous_start = getdate(get_first_day(add_days(month_start, -1)))
+	previous_end = min(add_days(previous_start, (today - month_start).days), add_days(month_start, -1))
+	previous = period("previous", "", previous_start, getdate(previous_end), centers)
+	for business, before in zip(month["businesses"], previous["businesses"]):
+		business["main"], business["previous"] = main_value(business), main_value(before)
+	month["previous_from"], month["previous_to"] = previous_start, getdate(previous_end)
 	return {
 		"today": today,
 		"currency": frappe.get_cached_value("Company", company(), "default_currency"),
-		"periods": [
-			period("today", _("Today"), today, today, centers),
-			period("week", _("This Week"), getdate(week_start), today, centers),
-			period("month", _("This Month"), getdate(get_first_day(today)), today, centers),
-		],
+		"periods": [period("today", _("Today"), today, today, centers), week, month],
 	}
+
+
+def main_value(business):
+	"""Each business's one figure: bookings for the studio and the halls, sales for the libraries, students' fees
+	for the app."""
+	a = business["activity"]
+	return flt({"studio": a.get("bookings"), "halls": a.get("bookings"), "libraries": a.get("net"), "app": a.get("charged")}.get(business["key"]), 2)
+
+
+def daily(start, end, centers):
+	"""{business: [the main figure of each day from start to end]}, one grouped query a business."""
+	from imed_erp.imederp.library_sync.contract import RETURN_KINDS, SALES_KINDS
+
+	days = [getdate(add_days(start, i)) for i in range((getdate(end) - getdate(start)).days + 1)]
+	series = {key: {d: 0.0 for d in days} for key in ("studio", "halls", "libraries", "app")}
+	for day, resource_type, n in frappe.db.sql(
+		"""select booking_date, resource_type, count(*) from `tabBooking`
+		where booking_date between %s and %s and status not in %s group by booking_date, resource_type""",
+		(start, end, NOT_HELD),
+	):
+		key = {"Studio Service": "studio", "Hall": "halls"}.get(resource_type)
+		if key and getdate(day) in series[key]:
+			series[key][getdate(day)] += cint(n)
+	libraries = [centers[n] for n in LIBRARIES if centers.get(n)]
+	if libraries:
+		for day, kind, value in frappe.db.sql(
+			"""select date(reg_date), document_kind, coalesce(sum(total), 0) from `tabLibrary Sales Document`
+			where cost_center in %s and is_final = 1 and is_cancelled = 0 and reg_date between %s and %s
+			group by date(reg_date), document_kind""",
+			(tuple(libraries), f"{start} 00:00:00", f"{end} 23:59:59"),
+		):
+			sign = 1 if kind in SALES_KINDS else -1 if kind in RETURN_KINDS else 0
+			if getdate(day) in series["libraries"]:
+				series["libraries"][getdate(day)] += sign * flt(value)
+	agreements = frappe.get_all("Doctor Agreement", filters={"agreement_type": "App"}, pluck="name")
+	if agreements:
+		for day, value in frappe.db.sql(
+			"""select entry_date, coalesce(sum(amount), 0) from `tabDoctor Ledger Entry`
+			where docstatus = 1 and entry_type in ('Accrual', 'Adjustment') and agreement in %s and entry_date between %s and %s
+			group by entry_date""",
+			(tuple(agreements), start, end),
+		):
+			if getdate(day) in series["app"]:
+				series["app"][getdate(day)] += flt(value)
+	return {"dates": days, **{key: [flt(values[d], 2) for d in days] for key, values in series.items()}}
 
 
 def period(key, label, start, end, centers):
