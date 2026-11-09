@@ -6791,3 +6791,155 @@ html[dir="ltr"] .imed-mo-track i {
 		font-size: 17px;
 	}
 }
+
+/* §45 الأسعار, the owner's prices (owner, 9 Nov 2026; page imed-prices): a business at a time, its logo on its tab. */
+.imed-prices {
+	max-width: 980px;
+	margin: 0 auto;
+	padding: 6px 0 40px;
+	display: grid;
+	gap: 18px;
+}
+.imed-prices__tabs {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+}
+.imed-prices__tabs button {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 6px;
+	border-radius: 18px;
+	border: 2px solid var(--imed-border);
+	background: var(--card-bg);
+	font-weight: 600;
+	color: var(--heading-color);
+	transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.imed-prices__tabs button:hover {
+	transform: translateY(-2px);
+}
+.imed-prices__tabs button.is-active {
+	border-color: var(--imed-teal-600);
+	box-shadow: 0 12px 24px -16px var(--imed-teal-700);
+}
+.imed-prices__tabs img {
+	width: 52px;
+	height: 52px;
+	border-radius: 14px;
+	object-fit: cover;
+}
+.imed-prices__body {
+	display: grid;
+	gap: 16px;
+	animation: imed-rise 0.35s ease both;
+}
+.imed-prices__note {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 10px 14px;
+	border-radius: 14px;
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-800);
+	font-size: 13px;
+}
+.imed-prices__note .icon {
+	margin: 0;
+	flex: none;
+}
+.imed-prices__table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.imed-prices__table th {
+	padding: 8px;
+	font-size: 12px;
+	color: var(--text-muted);
+	text-align: start;
+}
+.imed-prices__table td {
+	padding: 10px 8px;
+	border-top: 1px solid var(--imed-border);
+	vertical-align: middle;
+}
+.imed-prices__table td small {
+	display: block;
+	font-size: 11px;
+	color: var(--text-muted);
+}
+.imed-prices__table .is-num {
+	text-align: end;
+	white-space: nowrap;
+}
+.imed-prices__table .is-in {
+	color: var(--green-600, #16a34a);
+	font-weight: 700;
+}
+.imed-prices__table .is-out {
+	color: var(--red-600, #dc2626);
+	font-weight: 700;
+}
+.imed-prices__input {
+	width: 120px;
+	margin-inline-start: auto;
+	text-align: center;
+	font-weight: 700;
+	direction: ltr;
+}
+.imed-prices__sheets {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+.imed-prices__sheet {
+	display: grid;
+	gap: 4px;
+	padding: 14px;
+	border-radius: 16px;
+	background: linear-gradient(160deg, var(--imed-teal-50), var(--card-bg) 70%);
+	border: 1px solid var(--imed-border);
+	text-align: center;
+}
+.imed-prices__big {
+	font-size: 24px;
+	font-weight: 800;
+	color: var(--imed-teal-700);
+	direction: ltr;
+}
+.imed-prices__sheet small {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+.imed-prices__foot {
+	display: flex;
+	justify-content: flex-end;
+	margin-top: 12px;
+}
+@media (max-width: 560px) {
+	.imed-prices__tabs {
+		gap: 6px;
+	}
+	.imed-prices__tabs img {
+		width: 40px;
+		height: 40px;
+	}
+	.imed-prices__tabs button {
+		font-size: 12px;
+		padding: 8px 4px;
+	}
+	.imed-prices__input {
+		width: 90px;
+	}
+	.imed-prices__sheets {
+		grid-template-columns: 1fr;
+	}
+	.imed-prices__table td,
+	.imed-prices__table th {
+		padding: 8px 4px;
+		font-size: 13px;
+	}
+}
