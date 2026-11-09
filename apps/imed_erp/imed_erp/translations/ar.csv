@@ -2307,3 +2307,45 @@ At most,لحد
 Nothing to choose,مفيش اختيارات
 Clear filter,مسح
 Apply filter,تطبيق
+"A4 paper, one box (2,500 sheets)","ورق A4، كرتونة (2,500 ورقة)"
+box,كرتونة
+bottle,إزازة
+set,طقم
+piece,قطعة
+"Riso ink, one bottle",حبر ريزو، الإزازة
+Epson ink set (4 colours),حبر إبسون، الطقم (4 ألوان)
+"Binding wire, one piece",سلك التغليف، القطعة
+"Plastic cover, one piece",الكافر البلاستك، القطعة
+Sheets one Riso bottle prints,إزازة الريزو بتطبع كام ورقة
+Sheets one Epson set prints,طقم الإبسون بيطبع كام ورقة
+paper,ورق
+ink,حبر
+waste,هالك
+overheads,مصاريف
+since {0},من {0}
+"A price changed here is in force from today, for every account; what was sold before keeps its price.",أي سعر يتغير هنا بيبدأ من النهارده وعند كل الحسابات، واللي اتباع قبل كده بيفضل بسعره.
+What we buy at,بنشتري بكام
+What a printed sheet costs,الورقة المطبوعة بتكلف كام
+What we sell at,بنبيع بكام
+Service,الخدمة
+Cost,التكلفة
+Price,السعر
+Margin,المكسب
+From {0} to {1} students,من {0} لـ {1} طالب
+A new fee per student is in force from today; the courses charged before keep theirs.,سعر الطالب الجديد بيبدأ من النهارده، والكورسات اللي اتحسبت قبل كده بتفضل بسعرها.
+Fee per student,سعر الطالب
+"The halls' prices are changed on Sparkle, where they are booked.",أسعار القاعات بتتغير من Sparkle، مكان الحجز.
+"The studio's prices are changed on XStudio, where it is booked.",أسعار الاستوديو بتتغير من XStudio، مكان الحجز.
+First hour,أول ساعة
+Two hours,ساعتين
+Each extra hour,كل ساعة زيادة
+Per hour,الساعة
+"Saved, from today.",اتحفظ، من النهارده.
+Sparkle's prices cannot be read yet: {0},أسعار Sparkle مش متاحة لسه: {0}
+XStudio's prices cannot be read now: {0},أسعار XStudio مش متاحة دلوقتي: {0}
+A price cannot be negative.,السعر ماينفعش يبقى بالسالب.
+Unknown price.,سعر مش معروف.
+The fee per student was already changed today ({0}). It can change again from tomorrow.,سعر الطالب اتغير النهارده خلاص ({0}). ممكن يتغير تاني من بكرة.
+Changed Today,اتغير النهارده
+These prices are changed where the business is booked.,الأسعار دي بتتغير من مكان الحجز.
+Prices,الأسعار

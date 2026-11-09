@@ -8,6 +8,13 @@ from frappe.utils import flt, nowdate
 from imed_erp.imederp.library_sync.contract import RETURN_KINDS, SALES_KINDS
 
 
+def on_doctype_update():
+	"""A library's documents of a day or a stretch of days: the owner's page reads them by library and date (owner_periods,
+	owner_overview). Without this index each of those reads went through the whole table: 54,063 documents on the live
+	site on 9 Nov 2026, over a minute for the page."""
+	frappe.db.add_index("Library Sales Document", ["cost_center", "reg_date"])
+
+
 class LibrarySalesDocument(Document):
 	def validate(self):
 		if not frappe.flags.library_sync and not frappe.flags.in_install and not frappe.flags.in_migrate:

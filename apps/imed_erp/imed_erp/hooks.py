@@ -415,6 +415,8 @@ after_migrate = [
 	*_custom_fields,
 	# The home screen's tiles: what the group uses (imederp/home_screen.py).
 	"imed_erp.imederp.home_screen.tidy_home",
+	# The library documents' index by library and date (Frappe adds it only when the doctype itself changes).
+	"imed_erp.imederp.doctype.library_sales_document.library_sales_document.on_doctype_update",
 ]
 
 # The booking screens' statuses and colours, from imederp/booking_rules.py.

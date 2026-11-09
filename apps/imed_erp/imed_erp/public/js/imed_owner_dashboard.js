@@ -602,10 +602,12 @@
 		["Outstanding Receivables", "hand-coins", "amber"],
 		["Cash Box Balances", "wallet", "violet"],
 	];
+	// The owner's prices page (page imed-prices; 9 Nov 2026), first among the tiles.
+	const PRICES_TILE = ["Prices", "tag", "teal", "/desk/imed-prices"];
 
 	function reports_html() {
-		const tiles = REPORTS.map(
-			([report, icon, tone]) => `<a class="imed-ov-report tone-${tone}" href="/desk/query-report/${encodeURIComponent(report)}">
+		const tiles = [PRICES_TILE, ...REPORTS].map(
+			([report, icon, tone, href]) => `<a class="imed-ov-report tone-${tone}" href="${href || `/desk/query-report/${encodeURIComponent(report)}`}">
 					<span class="imed-ov-report__icon">${frappe.utils.icon(icon, "md")}</span><span>${esc(__(report))}</span>
 				</a>`
 		).join("");
