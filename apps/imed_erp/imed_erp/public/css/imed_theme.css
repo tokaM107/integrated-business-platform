@@ -7165,3 +7165,29 @@ html[dir="ltr"] .imed-mo-track i {
 		margin: 0;
 	}
 }
+
+/* The library documents' band: the dates its figures are for, above it (9 Nov 2026). */
+.imed-lib-period {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 10px;
+	font-size: 14px;
+	color: var(--text-muted);
+}
+.imed-lib-period b {
+	color: #1d4a3b;
+	font-size: 15px;
+	font-weight: 800;
+}
+.imed-lib-band-wrap .imed-lib-period {
+	margin: 16px 15px 0;
+}
+.imed-lib-band-wrap .imed-lib-band {
+	margin-top: 10px;
+}
+.imed-lib-period > .icon {
+	margin: 0 !important;
+	flex: none;
+	color: #1d4a3b;
+}
