@@ -415,7 +415,13 @@ class IntegrationTestHallBookings(IntegrationTestCase):
 				self.assertTrue(item["url"].startswith("/desk/booking/view/calendar/"), item["url"])
 				targets.append(item["url"])
 				continue
-			exists = {"DocType": lambda n: frappe.db.exists("DocType", n), "Report": lambda n: frappe.db.exists("Report", {"name": n, "disabled": 0}), "Workspace": lambda n: frappe.db.exists("Workspace", n)}
+			exists = {
+				"DocType": lambda n: frappe.db.exists("DocType", n),
+				"Report": lambda n: frappe.db.exists("Report", {"name": n, "disabled": 0}),
+				"Workspace": lambda n: frappe.db.exists("Workspace", n),
+				# A page of its own (the libraries' daily sales, تقرير المبيعات اليومية).
+				"Page": lambda n: frappe.db.exists("Page", n),
+			}
 			self.assertTrue(exists[item["link_type"]](item["link_to"]), f"{item['label']} -> {item['link_type']} {item['link_to']}")
 			# A link filters its list by `filters` or by `route_options` (the libraries' invoices, one link a library:
 			# the same list, each on its own library), so the two together say which page it opens.
@@ -424,7 +430,8 @@ class IntegrationTestHallBookings(IntegrationTestCase):
 				[[doctype, field, operator, value]] = json.loads(item["filters"])
 				self.assertEqual(doctype, item["link_to"])
 				self.assertTrue(frappe.get_meta(doctype).has_field(field), field)
-			for field in json.loads(item.get("route_options") or "{}"):
+			# A doctype's route options are its fields; a page (the daily sales) reads its own.
+			for field in json.loads(item.get("route_options") or "{}") if item["link_type"] == "DocType" else []:
 				self.assertTrue(frappe.get_meta(item["link_to"]).has_field(field), f"{item['label']}: {field}")
 		self.assertEqual(len(targets), len(set(targets)), "the same page twice with the same filter")
 		halls = [i["label"] for i in items[items.index(next(i for i in items if i["label"] == "IMED Hall Bookings")) + 1 :]][:4]
