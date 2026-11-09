@@ -138,6 +138,9 @@ STOCK_LINE = {
 	"TxtAdjustmentResonCodeRefStockSub": "adjustment_reason_code",
 	"TxtDoctorCode": "doctor_code",
 	"TxtDoctorName": "doctor_name",
+	"DoctorValueAFDiscount": "doctor_share",
+	"TxtProductCategoryCode": "category_code",
+	"TxtProductCategoryName": "category_name",
 }
 CASH_LINE = {
 	"Receipt": {"TxtIdRefCashReceiptSub": "external_id", "TxtAccNumberLevel5CodeRefCashReceiptSub": "account_l5_code", "TxtAccNumberLevel5NameRefCashReceiptSub": "account_l5_name", "TxtAccNumberLevel6CodeRefCashReceiptSub": "account_l6_code", "TxtAccNumberLevel6NameRefCashReceiptSub": "account_l6_name", "TxtAccNumberLevel7CodeRefCashReceiptSub": "account_l7_code", "TxtAccNumberLevel7NameRefCashReceiptSub": "account_l7_name", "TxtDebitValueRefCashReceiptSub": "debit", "TxtCreditValueRefCashReceiptSub": "credit", "TxtRemarksRefCashReceiptSub": "remarks"},
