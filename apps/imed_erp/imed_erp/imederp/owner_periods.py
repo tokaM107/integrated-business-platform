@@ -58,6 +58,14 @@ def periods(today=None):
 	}
 
 
+def hh_mm(value):
+	"""A time as 09:00: the database gives 9:00:00 (a timedelta) for a time before ten."""
+	if value is None:
+		return None
+	hours, minutes = str(value).split(":")[:2]
+	return f"{cint(hours):02d}:{minutes}"
+
+
 def tomorrow(day):
 	"""Tomorrow's bookings that hold their time, the halls' and the studio's apart, in the order of the day (the
 	owner, 9 Nov 2026: in place of the next bookings)."""
@@ -71,8 +79,7 @@ def tomorrow(day):
 		as_dict=True,
 	)
 	for row in rows:
-		row.from_time = str(row.from_time)[:5] if row.from_time else None
-		row.to_time = str(row.to_time)[:5] if row.to_time else None
+		row.from_time, row.to_time = hh_mm(row.from_time), hh_mm(row.to_time)
 	return {
 		"date": getdate(day),
 		"halls": [r for r in rows if r.resource_type == "Hall"],
