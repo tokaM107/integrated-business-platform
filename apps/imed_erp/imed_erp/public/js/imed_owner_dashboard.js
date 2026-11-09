@@ -734,42 +734,55 @@
 
 	// ---- Today, the week, the month: four cards each, two to a row, one big figure and one line under it ----
 	// The list behind a business's figure for a period: its bookings, its sales, its students' fees.
-	function route_for(key, p) {
+	// The same records the figure counts, and only them (the owner, 9 Nov 2026: "Monday opens Monday's sales only"):
+	// the bookings that hold their time, the libraries' issued sales and returns (one library's, when `center`).
+	function route_for(key, p, center) {
 		const span = ["between", [p.from, p.to]];
-		if (key === "studio" || key === "halls") return ["Booking", { resource_type: key === "studio" ? "Studio Service" : "Hall", booking_date: span }];
-		if (key === "libraries") return ["Library Sales Document", { reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]] }];
-		return ["Doctor Ledger Entry", { entry_date: span }];
+		if (key === "studio" || key === "halls")
+			return ["Booking", { resource_type: key === "studio" ? "Studio Service" : "Hall", booking_date: span, status: HELD }];
+		if (key === "libraries")
+			return [
+				"Library Sales Document",
+				{
+					reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]],
+					cost_center: center ? center : ["in", by_period.library_centers || []],
+					document_kind: ["in", by_period.library_kinds || []],
+					is_final: 1,
+					is_cancelled: 0,
+				},
+			];
+		return ["Doctor Ledger Entry", { entry_date: span, entry_type: ["in", ["Accrual", "Adjustment"]], docstatus: 1 }];
 	}
+	const link_attr = (route) => `data-route="${esc(JSON.stringify(route))}" role="link" tabindex="0"`;
 
 	// Today: four cards side by side, a logo, the business, one figure and its line.
 	function period_card(b, p, c, i) {
 		const a = b.activity || {};
-		const span = ["between", [p.from, p.to]];
 		let figure = "";
 		let caption = "";
-		let route = null;
+		const route = route_for(b.key, p);
 		if (b.key === "studio" || b.key === "halls") {
-			route = ["Booking", { resource_type: b.key === "studio" ? "Studio Service" : "Hall", booking_date: span }];
 			figure = big(a.bookings);
 			caption = `${esc(__("bookings"))} · ${esc(hours_text(a.hours))}`;
 		} else if (b.key === "libraries") {
-			// Azarita's and Mawasah's apart (the owner, 9 Nov 2026).
-			route = ["Library Sales Document", { reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]] }];
+			// Azarita's and Mawasah's apart (the owner, 9 Nov 2026), each opening its own library's sales.
 			figure = `<span class="imed-pd-libs">${(a.rows || [])
-				.map((r) => `<span><small>${esc(r.name.replace(/^مكتبة\s+/, ""))}</small>${big(r.net)}</span>`)
+				.map(
+					(r) => `<span class="imed-pd-lib" ${r.cost_center ? link_attr(route_for("libraries", p, r.cost_center)) : ""}>
+							<small>${esc(r.name.replace(/^مكتبة\s+/, ""))}</small>${big(r.net)}</span>`
+				)
 				.join("")}</span>`;
 			caption = esc(__("pounds"));
 		} else {
-			route = ["Doctor Ledger Entry", { entry_date: span }];
 			figure = a.state === "ok" ? big(a.charged) : `<b class="imed-pd-num">—</b>`;
 			caption = a.state === "ok" ? `${esc(__("pounds"))} · ${esc(__("{0} new subscriptions", [number(a.subscriptions)]))}` : esc(__("Not set up yet"));
 		}
-		return `<a class="imed-pd-card tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route))}">
+		return `<div class="imed-pd-card tone-${b.key}" style="--i:${i}" ${link_attr(route)}>
 				${logo(b, "imed-pd-card__logo")}
 				<span class="imed-pd-card__label">${esc(b.label)}</span>
 				${figure}
 				<span class="imed-pd-card__caption">${caption}</span>
-			</a>`;
+			</div>`;
 	}
 
 	// Tomorrow's bookings, the halls' and the studio's side by side (the owner, 9 Nov 2026).
@@ -815,16 +828,18 @@
 						const v = values[k] || 0;
 						const state = d > today ? "is-future" : d === today ? "is-today" : "";
 						const label = money_kind ? whole(v, c) : number(v);
-						return `<span class="imed-wk-bar ${state}" title="${esc(`${frappe.datetime.str_to_user(d)}: ${label}`)}">
+						// A day opens that day's records alone; a day to come opens nothing.
+						const open = d > today ? "" : link_attr(route_for(b.key, { from: d, to: d }));
+						return `<span class="imed-wk-bar ${state}" ${open} title="${esc(`${frappe.datetime.str_to_user(d)}: ${label}`)}">
 								<i style="--h:${Math.round((v / top) * 100)}%; --k:${k}"></i><small>${esc(weekday(d))}</small>
 							</span>`;
 					})
 					.join("");
-				return `<a class="imed-wk-row tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route_for(b.key, p)))}">
+				return `<div class="imed-wk-row tone-${b.key}" style="--i:${i}" ${link_attr(route_for(b.key, p))}>
 						${logo(b, "imed-wk-logo")}
 						<span class="imed-wk-name"><span>${esc(b.label)}</span>${money_kind ? big(total, c) : big(total)}<small>${esc(money_kind ? (b.key === "app" ? __("students' fees") : __("sales")) : __("bookings"))}</small></span>
 						<span class="imed-wk-bars">${bars}</span>
-					</a>`;
+					</div>`;
 			})
 			.join("");
 		return `<div class="imed-wk">${rows}</div>`;
@@ -847,14 +862,16 @@
 								change === null ? esc(__("New this month")) : `${Math.abs(change)}%`
 						  }</span></span>`;
 				const top = Math.max(now, before) || 1;
-				return `<a class="imed-mo-tile tone-${b.key}" style="--i:${i}" href="#" data-route="${esc(JSON.stringify(route_for(b.key, p)))}">
+				// The tile opens this month's records; the last month's line, the same days of last month.
+				const last = { from: p.previous_from, to: p.previous_to };
+				return `<div class="imed-mo-tile tone-${b.key}" style="--i:${i}" ${link_attr(route_for(b.key, p))}>
 						<div class="imed-mo-tile__head">${logo(b, "imed-mo-logo")}<span>${esc(b.label)}</span>${pill}</div>
 						${money_kind ? big(now, c) : big(now)}
 						<div class="imed-mo-compare">
 							<span class="imed-mo-compare__row"><small>${esc(__("This month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((now / top) * 100)}%"></i></span></span>
-							<span class="imed-mo-compare__row is-before"><small>${esc(__("Last month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((before / top) * 100)}%"></i></span><b>${fmt(before)}</b></span>
+							<span class="imed-mo-compare__row is-before" ${last.from ? link_attr(route_for(b.key, last)) : ""}><small>${esc(__("Last month"))}</small><span class="imed-mo-track"><i style="--w:${Math.round((before / top) * 100)}%"></i></span><b>${fmt(before)}</b></span>
 						</div>
-					</a>`;
+					</div>`;
 			})
 			.join("");
 		return `<div class="imed-mo">${tiles}</div>`;
@@ -869,11 +886,15 @@
 				.map((p, n) => (n === 1 ? tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
 				.join("")
 		);
-		$slot.off("click").on("click", ".imed-pd-card, .imed-wk-row, .imed-mo-tile", function (e) {
+		// The innermost link wins: a day's bar before its week, a library before the libraries' card.
+		const go = function (e) {
+			if (e.type === "keydown" && e.key !== "Enter") return;
 			e.preventDefault();
+			e.stopPropagation();
 			const route = JSON.parse($(this).attr("data-route") || "null");
 			if (route) open_route(route);
-		});
+		};
+		$slot.off("click keydown").on("click keydown", "[data-route]", go);
 		count_up($slot);
 	}
 
