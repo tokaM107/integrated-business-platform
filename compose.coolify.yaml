@@ -89,6 +89,34 @@ services:
     volumes:
     - sites:/home/frappe/frappe-bench/sites
     - logs:/home/frappe/frappe-bench/logs
+  migrator:
+    # One-time job on every deploy (the owner, 9 Nov 2026: new reports did not appear because the migrate after the
+    # Redeploy had not been run by hand): brings the site's database up to the new code (new doctypes, fields,
+    # reports, sidebars, translations), then exits. Before the restore there is no site and it does nothing. If it
+    # fails, the site keeps running on the old schema and the error is in this container's log in Coolify; the
+    # migrate can then be run by hand as before. restart "no" keeps it out of the stack's health, like configurator.
+    build:
+      context: .
+      dockerfile: deploy/Containerfile
+    command:
+    - 'if [ -f sites/frontend/site_config.json ]; then bench --site frontend migrate; else echo "no site yet: nothing to migrate"; fi'
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    entrypoint:
+    - bash
+    - -c
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: "no"
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
   db:
     command:
     - --character-set-server=utf8mb4
