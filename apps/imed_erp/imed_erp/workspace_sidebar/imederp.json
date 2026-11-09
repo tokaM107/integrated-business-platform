@@ -137,18 +137,38 @@
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Library Sales by Item",
+   "label": "Azarita Daily Sales",
    "link_type": "Report",
    "type": "Link",
-   "link_to": "Library Sales by Item"
+   "link_to": "Library Sales by Item",
+   "route_options": "{\"cost_center\":\"مكتبة الأزاريطة - MMG\"}"
   },
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Library Doctor Sales",
+   "label": "Mawasah Daily Sales",
    "link_type": "Report",
    "type": "Link",
-   "link_to": "Library Doctor Sales"
+   "link_to": "Library Sales by Item",
+   "route_options": "{\"cost_center\":\"مكتبة المواساة - MMG\"}"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Azarita Doctor Sales",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Library Doctor Sales",
+   "route_options": "{\"cost_center\":\"مكتبة الأزاريطة - MMG\"}"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Mawasah Doctor Sales",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Library Doctor Sales",
+   "route_options": "{\"cost_center\":\"مكتبة المواساة - MMG\"}"
   },
   {
    "child": 1,
@@ -613,7 +633,7 @@
    "link_to": "Platform Fee Schedule"
   }
  ],
- "modified": "2026-11-05 18:00:00.000000",
+ "modified": "2026-11-09 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",
