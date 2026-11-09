@@ -64,7 +64,11 @@
 		// How many filters are set, on the button.
 		const set = (page.type === "list" && window.cur_list && cur_list.filter_area ? cur_list.filter_area.get().length : 0) || 0;
 		$main.find(".imed-filters-count").text(set ? set : "");
-		if (page.type === "list") load_all($page);
+		if (page.type === "list") {
+			load_all($page);
+			column_filters($page, page.doctype);
+		}
+		$main.toggleClass("imed-is-list", page.type === "list");
 		if (!$main.children(".imed-filters-backdrop").length) {
 			$(`<div class="imed-filters-backdrop"></div>`).on("click", () => $main.removeClass("imed-filters-open")).appendTo($main);
 		}
@@ -104,6 +108,140 @@
 			this.dataset.imedWatched = "1";
 			this.classList.add("imed-paging");
 			ends && ends.observe(this);
+		});
+	}
+
+	// ---- A filter in each column's head (the owner, 9 Nov 2026: "the filter inside the column itself") ----
+	// The column's name opens a small menu under it: tick its values (a status, a hall), a from/to for a date, a
+	// lowest/highest for an amount. It goes through Frappe's own filters, so the address and saved filters follow.
+	// A phone shows no columns: there the Filters button stays.
+	const TEXT = ["Link", "Data", "Select", "Dynamic Link", "Small Text"];
+	const DATE = ["Date", "Datetime"];
+	const NUMBER = ["Currency", "Float", "Int", "Percent"];
+	let $menu = null;
+
+	function field_of($col, doctype) {
+		const meta = frappe.get_meta(doctype);
+		let name = $col.attr("data-fieldname");
+		if (!name && $col.text().trim() === __("Status") && meta && frappe.meta.has_field(doctype, "status")) name = "status";
+		if (!name || name === "name") return null;
+		const df = frappe.meta.get_docfield(doctype, name);
+		if (!df || ![...TEXT, ...DATE, ...NUMBER, "Check"].includes(df.fieldtype)) return null;
+		return df;
+	}
+
+	const filters_on = (fieldname) => (window.cur_list ? cur_list.filter_area.get().filter((f) => f[1] === fieldname) : []);
+
+	function column_filters($page, doctype) {
+		$page.find(".list-row-head .list-row-col").each(function () {
+			const $col = $(this);
+			const df = field_of($col, doctype);
+			if (!df) return;
+			const set = filters_on(df.fieldname);
+			let $btn = $col.children(".imed-col-filter");
+			if (!$btn.length) {
+				$btn = $(`<button type="button" class="imed-col-filter" title="${esc(__("Filter"))}">${frappe.utils.icon("filter", "xs")}<b></b></button>`)
+					.on("click", (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						open_menu($col, df, doctype);
+					})
+					.appendTo($col);
+			}
+			const n = set.length ? (set[0][2] === "in" && Array.isArray(set[0][3]) ? set[0][3].length : 1) : 0;
+			$btn.find("b").text(n || "");
+			$col.toggleClass("imed-col-active", !!n);
+		});
+	}
+
+	function close_menu() {
+		if ($menu) $menu.remove();
+		$menu = null;
+	}
+	$(document).on("click", (e) => {
+		if ($menu && !$(e.target).closest(".imed-col-menu, .imed-col-filter").length) close_menu();
+	});
+	frappe.router && frappe.router.on && frappe.router.on("change", close_menu);
+
+	async function open_menu($col, df, doctype) {
+		close_menu();
+		const set = filters_on(df.fieldname)[0];
+		const label = __(df.label);
+		$menu = $(`<div class="imed-col-menu"><div class="imed-col-menu__title">${esc(label)}</div><div class="imed-col-menu__body"></div>
+				<div class="imed-col-menu__foot">
+					<button type="button" class="btn btn-xs btn-default" data-do="clear">${esc(__("Clear filter"))}</button>
+					<button type="button" class="btn btn-xs btn-primary" data-do="apply">${esc(__("Apply filter"))}</button>
+				</div></div>`).appendTo(document.body);
+		const r = $col[0].getBoundingClientRect();
+		const width = 260;
+		const left = Math.max(8, Math.min(window.innerWidth - width - 8, frappe.utils.is_rtl() ? r.right - width : r.left));
+		$menu.css({ top: r.bottom + 6, left, width });
+		const $body = $menu.find(".imed-col-menu__body");
+		let read;
+		if (DATE.includes(df.fieldtype) || NUMBER.includes(df.fieldtype)) {
+			const type = DATE.includes(df.fieldtype) ? "date" : "number";
+			const [lo, hi] = !set ? ["", ""] : set[2] === "between" ? set[3] : set[2] === ">=" ? [set[3], ""] : ["", set[3]];
+			$body.html(`<label>${esc(type === "date" ? __("From") : __("At least"))}<input type="${type}" class="form-control input-xs" data-k="lo" value="${esc(lo || "")}"></label>
+				<label>${esc(type === "date" ? __("To") : __("At most"))}<input type="${type}" class="form-control input-xs" data-k="hi" value="${esc(hi || "")}"></label>`);
+			read = () => {
+				const lo2 = $body.find('[data-k="lo"]').val();
+				const hi2 = $body.find('[data-k="hi"]').val();
+				if (lo2 && hi2) return ["between", [lo2, hi2]];
+				if (lo2) return [">=", lo2];
+				if (hi2) return ["<=", hi2];
+				return null;
+			};
+		} else if (df.fieldtype === "Check") {
+			const v = set ? String(set[3]) : "";
+			$body.html(["1", "0"].map((x) => `<label class="imed-col-opt"><input type="radio" name="imed-chk" value="${x}" ${v === x ? "checked" : ""}><span>${esc(x === "1" ? __("Yes") : __("No"))}</span></label>`).join(""));
+			read = () => {
+				const x = $body.find("input:checked").val();
+				return x === undefined ? null : ["=", Number(x)];
+			};
+		} else {
+			// The values to tick: a Select's options, else the values the column holds (the first fifty).
+			let values = df.fieldtype === "Select" ? (df.options || "").split("\n").filter(Boolean) : null;
+			if (!values) {
+				$body.html(`<div class="text-muted small">${esc(__("Loading..."))}</div>`);
+				// The values of the rows the other filters leave (the halls' list offers no studio rooms).
+				const others = cur_list.filter_area.get().filter((f) => f[1] !== df.fieldname);
+				const rows = await frappe.db
+					.get_list(doctype, { fields: [df.fieldname], filters: others, group_by: df.fieldname, order_by: `${df.fieldname} asc`, limit: 50 })
+					.catch(() => []);
+				values = rows.map((row) => row[df.fieldname]).filter((v) => v !== null && v !== "");
+			}
+			const chosen = !set ? [] : set[2] === "in" ? set[3] : [set[3]];
+			$body.html(`${values.length > 8 ? `<input type="search" class="form-control input-xs imed-col-search" placeholder="${esc(__("Search"))}">` : ""}
+				<div class="imed-col-opts">${values
+					.map(
+						(v) => `<label class="imed-col-opt"><input type="checkbox" value="${esc(v)}" ${chosen.includes(v) ? "checked" : ""}><span>${esc(df.fieldtype === "Select" ? __(v) : v)}</span></label>`
+					)
+					.join("") || `<div class="text-muted small">${esc(__("Nothing to choose"))}</div>`}</div>`);
+			$body.find(".imed-col-search").on("input", function () {
+				const q = this.value.trim().toLowerCase();
+				$body.find(".imed-col-opt").each(function () {
+					$(this).toggle(!q || $(this).text().toLowerCase().includes(q));
+				});
+			});
+			read = () => {
+				const ticked = $body.find("input[type=checkbox]:checked").map((i, el) => el.value).get();
+				return ticked.length ? ["in", ticked] : null;
+			};
+		}
+		$menu.on("click", "[data-do]", async function () {
+			const value = this.dataset.do === "apply" ? read() : null;
+			close_menu();
+			await cur_list.filter_area.remove(df.fieldname);
+			if (!value) return;
+			// One value is "equals" (a standard filter takes it); several go to Frappe's filter list, which keeps "in"
+			// (a standard filter would drop a list of values).
+			if (value[0] === "in" && value[1].length === 1) value.splice(0, 2, "=", value[1][0]);
+			if (value[0] === "in") {
+				await cur_list.filter_area.filter_list.add_filters([[doctype, df.fieldname, "in", value[1]]]);
+				cur_list.refresh();
+			} else {
+				await cur_list.filter_area.add([[doctype, df.fieldname, value[0], value[1]]]);
+			}
 		});
 	}
 
