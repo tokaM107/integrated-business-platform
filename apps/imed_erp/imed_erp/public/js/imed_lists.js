@@ -76,6 +76,7 @@
 		if (page.type === "list") {
 			load_all($page);
 			column_filters($page, page.doctype);
+			range_bar($page, page.doctype);
 		}
 		$main.toggleClass("imed-is-list", page.type === "list");
 		// Every list and report page alike: only its main button (lists) or PDF and Print (reports) in the head.
@@ -92,8 +93,11 @@
 		const names = $items.map((i, el) => el.getAttribute("data-fieldname")).get();
 		const wanted = (SIMPLE[doctype] || names.filter((n) => n !== "name")).filter((n) => names.includes(n)).slice(0, MAX);
 		const keep = wanted.length ? wanted : names.slice(0, MAX);
+		const range = date_field(doctype);
 		$items.each(function () {
-			$(this).toggleClass("imed-filter-hidden", !keep.includes(this.getAttribute("data-fieldname")));
+			const name = this.getAttribute("data-fieldname");
+			// The date is chosen from/to on the bar above the table, not as one day here.
+			$(this).toggleClass("imed-filter-hidden", !keep.includes(name) || name === range);
 		});
 	}
 
@@ -191,7 +195,10 @@
 		let read;
 		if (DATE.includes(df.fieldtype) || NUMBER.includes(df.fieldtype)) {
 			const type = DATE.includes(df.fieldtype) ? "date" : "number";
-			const [lo, hi] = !set ? ["", ""] : set[2] === "between" ? set[3] : set[2] === ">=" ? [set[3], ""] : ["", set[3]];
+			const op = set ? String(set[2]).toLowerCase() : "";
+			const [lo, hi] = (!set ? ["", ""] : op === "between" ? set[3] : op === ">=" ? [set[3], ""] : ["", set[3]]).map((v) =>
+				type === "date" && v ? String(v).slice(0, 10) : v
+			);
 			$body.html(`<label>${esc(type === "date" ? __("From") : __("At least"))}<input type="${type}" class="form-control input-xs" data-k="lo" value="${esc(lo || "")}"></label>
 				<label>${esc(type === "date" ? __("To") : __("At most"))}<input type="${type}" class="form-control input-xs" data-k="hi" value="${esc(hi || "")}"></label>`);
 			read = () => {
@@ -254,6 +261,84 @@
 				await cur_list.filter_area.add([[doctype, df.fieldname, value[0], value[1]]]);
 			}
 		});
+	}
+
+	// ---- The dates a list shows, from/to, above its table (the owner, 9 Nov 2026: "the sales from this date to
+	// that, and the date filter showing from this to that") ----
+	// The doctype's date (its simple filters' first date, else its first date filter); a range set by a link (the
+	// owner's dashboard) or here shows in both boxes, and a change here is Frappe's own "between" filter.
+	function date_field(doctype) {
+		const meta = frappe.get_meta(doctype);
+		if (!meta) return null;
+		const is_date = (name) => {
+			const df = name && frappe.meta.get_docfield(doctype, name);
+			return df && DATE.includes(df.fieldtype);
+		};
+		const simple = (SIMPLE[doctype] || []).find(is_date);
+		if (simple) return simple;
+		const df = (meta.fields || []).find((f) => f.in_standard_filter && DATE.includes(f.fieldtype));
+		return df ? df.fieldname : null;
+	}
+
+	function range_of(fieldname) {
+		const set = filters_on(fieldname)[0];
+		if (!set) return ["", ""];
+		const op = String(set[2]).toLowerCase();
+		const day = (v) => (v ? String(v).slice(0, 10) : "");
+		if (op === "between" && Array.isArray(set[3])) return [day(set[3][0]), day(set[3][1])];
+		if (op === ">=" || op === ">") return [day(set[3]), ""];
+		if (op === "<=" || op === "<") return ["", day(set[3])];
+		if (op === "=") return [day(set[3]), day(set[3])];
+		return ["", ""];
+	}
+
+	function range_bar($page, doctype) {
+		const fieldname = date_field(doctype);
+		const $list = $page.find(".frappe-list").first();
+		if (!fieldname || !$list.length || !window.cur_list || cur_list.doctype !== doctype) return;
+		let $bar = $list.children(".imed-range");
+		if ($bar.length && $bar.attr("data-doctype") !== doctype) {
+			$bar.remove();
+			$bar = $();
+		}
+		if (!$bar.length) {
+			const label = __(frappe.meta.get_docfield(doctype, fieldname).label);
+			$bar = $(`<div class="imed-range" data-doctype="${esc(doctype)}">
+					<span class="imed-range__label">${frappe.utils.icon("calendar", "sm")}<b>${esc(label)}</b></span>
+					<label><span>${esc(__("From"))}</span><input type="date" class="form-control input-sm" data-k="from"></label>
+					<label><span>${esc(__("To"))}</span><input type="date" class="form-control input-sm" data-k="to"></label>
+					<button type="button" class="btn btn-xs btn-default imed-range__clear">${esc(__("All dates"))}</button>
+					<span class="imed-range__text"></span>
+				</div>`).prependTo($list);
+			const apply = async () => {
+				const from = $bar.find('[data-k="from"]').val();
+				const to = $bar.find('[data-k="to"]').val();
+				await cur_list.filter_area.remove(fieldname);
+				if (from && to) await cur_list.filter_area.add([[doctype, fieldname, "between", from <= to ? [from, to] : [to, from]]]);
+				else if (from) await cur_list.filter_area.add([[doctype, fieldname, ">=", from]]);
+				else if (to) await cur_list.filter_area.add([[doctype, fieldname, "<=", to]]);
+				else cur_list.refresh();
+			};
+			$bar.on("change", "input", apply);
+			$bar.on("click", ".imed-range__clear", () => {
+				$bar.find("input").val("");
+				apply();
+			});
+		}
+		// The boxes follow the filter (set by a link, a column's menu, the side panel), unless being typed in.
+		const [from, to] = range_of(fieldname);
+		$bar.find("input").each(function () {
+			const value = this.dataset.k === "from" ? from : to;
+			if (document.activeElement !== this && this.value !== value) this.value = value;
+		});
+		// A date kept left to right inside the Arabic sentence (else it reads 2026-11-08).
+		const user = (d) => `\u2066${frappe.datetime.str_to_user(d)}\u2069`;
+		const text = from && to ? (from === to ? __("On {0}", [user(from)]) : __("From {0} to {1}", [user(from), user(to)]))
+			: from ? __("From {0}", [user(from)]) : to ? __("Up to {0}", [user(to)]) : __("All dates");
+		const $text = $bar.find(".imed-range__text");
+		if ($text.text() !== text) $text.text(text);
+		$bar.toggleClass("is-set", !!(from || to));
+		$bar.find(".imed-range__clear").toggle(!!(from || to));
 	}
 
 	// A report's PDF and Print, with no settings to choose: a wide report lies on its side.
