@@ -7240,3 +7240,55 @@ html[dir="ltr"] .imed-mo-track i {
 .imed-active__clear {
 	margin-inline-start: auto;
 }
+
+/* The libraries as tabs at the top of a library's page (9 Nov 2026). */
+.imed-lib-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 14px 15px 4px;
+}
+.imed-lib-tabs button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 22px;
+	border: 1px solid var(--imed-border, var(--border-color));
+	border-radius: 999px;
+	background: var(--card-bg);
+	color: var(--text-color);
+	font-size: 15px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.imed-lib-tabs button .icon {
+	margin: 0 !important;
+}
+.imed-lib-tabs button:hover {
+	background: color-mix(in srgb, #1d4a3b 8%, var(--card-bg));
+}
+.imed-lib-tabs button.is-active {
+	background: linear-gradient(90deg, #1d4a3b, #194234 60%, #133429);
+	border-color: #133429;
+	color: #fff;
+	box-shadow: 0 8px 18px -12px #133429;
+}
+.imed-lib-tabs button.is-active .icon {
+	stroke: #fff;
+}
+@media (max-width: 640px) {
+	.imed-lib-tabs button {
+		flex: 1 1 0;
+		justify-content: center;
+		padding: 9px 10px;
+	}
+}
+
+/* The owner's page with no title bar on a computer (the owner, 9 Nov 2026: "remove this line, bring the page up");
+   a phone keeps it, it holds the sidebar's button. */
+@media (min-width: 992px) {
+	body[data-route="Workspaces/Owner Dashboard"] .page-container:has(.imed-slot-top) .page-head {
+		display: none;
+	}
+}

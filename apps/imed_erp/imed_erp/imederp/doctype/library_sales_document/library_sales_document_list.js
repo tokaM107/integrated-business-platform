@@ -72,7 +72,7 @@
 			</div>`;
 		let $band = listview.page.main.find(".imed-lib-band-wrap");
 		if ($band.length) $band.replaceWith(html);
-		else listview.page.main.prepend(html);
+		else slot(listview).after(html);
 	}
 
 	// The list's date filter as [condition, value] (the bar above the table, a chip, a link), or null for every date.
@@ -81,37 +81,37 @@
 		return f ? [f[2], f[3]] : null;
 	}
 
-	// The library the list is filtered to (the sidebar's "Azarita Invoices" / "Mawasah Invoices"), if one.
+	// The library the list is filtered to (its tab at the top), if one.
 	function library_of(listview) {
-		const f = listview.filter_area.get().find((x) => x[1] === "cost_center" && x[2] === "=");
+		// "=" from a link; the list's own library field files it as "descendants of (inclusive)" (Cost Center is a tree).
+		const f = listview.filter_area.get().find((x) => x[1] === "cost_center" && (x[2] === "=" || x[2] === "descendants of (inclusive)"));
 		return f ? f[3] : null;
 	}
 
-	// The sidebar's "فواتير الأزاريطة" and "فواتير المواساة" open this list filtered to their library, but Frappe
-	// drops the filter from the address and lit the last of them whatever the list showed (the owner, 5 Nov 2026):
-	// the item of the library the list is filtered to is lit here, after each refresh; none when it shows both.
-	function light_sidebar(listview) {
-		const library = library_of(listview);
-		const $links = $(".body-sidebar a[href]").filter((_, a) => /^\/desk\/library-sales-document(\/|\?|$)/.test(a.getAttribute("href") || ""));
-		if (!$links.length) return;
-		const $hit = $links.filter((_, a) => new URL(a.getAttribute("href"), window.location.origin).searchParams.get("cost_center") === library).first();
-		$(".body-sidebar .active-sidebar").removeClass("active-sidebar");
-		if ($hit.length) {
-			$hit.parent().addClass("active-sidebar");
-			if (frappe.app && frappe.app.sidebar) frappe.app.sidebar.active_item = $hit.parent();
-		}
+	// The libraries as tabs at the top (one sidebar item, "Invoices"; the owner, 9 Nov 2026): the tab of the library
+	// the list is filtered to lit, "both" when none; a tab sets the list's library.
+	function slot(listview) {
+		let $slot = listview.page.main.children(".imed-lib-tabs-slot");
+		if (!$slot.length) $slot = $(`<div class="imed-lib-tabs-slot"></div>`).prependTo(listview.page.main);
+		return $slot;
 	}
-	// Lit here, so unlit here: on leaving the list, its items lose the light Frappe does not know it gave them.
-	function unlight_on_leave() {
-		if (unlight_on_leave.bound || !frappe.router || !frappe.router.on) return;
-		unlight_on_leave.bound = true;
-		frappe.router.on("change", () => {
-			if (frappe.get_route()[1] === "Library Sales Document") return;
-			$(".body-sidebar a[href]")
-				.filter((_, a) => /^\/desk\/library-sales-document(\/|\?|$)/.test(a.getAttribute("href") || ""))
-				.parent()
-				.removeClass("active-sidebar");
-		});
+	// The page's title is the library shown (the owner, 9 Nov 2026): "مكتبة الأزاريطة", or "المكتبات" for both.
+	function title(listview) {
+		const library = library_of(listview);
+		const text = library ? library.replace(/\s+-\s+[^-]+$/, "") : __("Libraries");
+		window.imed_head_title ? window.imed_head_title(listview.page, text) : listview.page.set_title(text);
+	}
+	function tabs(listview) {
+		title(listview);
+		if (!window.imed_library_tabs) return;
+		window.imed_library_tabs(slot(listview), library_of(listview) || "", async (cc) => {
+			if ((library_of(listview) || "") === cc) return;
+			// The list's own library field when it shows one (removing and adding raced on it), else its filters.
+			const field = listview.page.fields_dict && listview.page.fields_dict.cost_center;
+			if (field) return field.set_value(cc || "");
+			await listview.filter_area.remove("cost_center");
+			if (cc) await listview.filter_area.add([[DOCTYPE, "cost_center", "=", cc]]);
+		}, true);
 	}
 
 	function load(listview, force) {
@@ -263,8 +263,7 @@
 			load(listview);
 			// Filters also change from the filter button or a column click: the chips follow them.
 			render_quick(listview);
-			light_sidebar(listview);
-			unlight_on_leave();
+			tabs(listview);
 		},
 	};
 })();

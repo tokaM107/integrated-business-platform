@@ -392,6 +392,46 @@
 		});
 	}
 
+	// ---- The libraries as tabs at the top of a library's page (the owner, 9 Nov 2026: "Azarita here, Mawasah there";
+	// one sidebar item a page, the library chosen on the page) ----
+	// imed_library_tabs($where, current, pick, with_all): tabs before $where, the current library lit; pick(cost_center)
+	// on a click ("" for both, when with_all).
+	let libraries_asked = null;
+	const libraries = () =>
+		(libraries_asked =
+			libraries_asked ||
+			frappe.db
+				.get_list("Cost Center", { filters: { is_group: 0, cost_center_name: ["like", "مكتبة%"] }, fields: ["name", "cost_center_name"], order_by: "creation asc", limit: 20 })
+				.catch(() => []));
+	// A page's heading as shown: Frappe's title and, on a page or a report, the breadcrumb that stands for it.
+	window.imed_head_title = function (page, text) {
+		if (page && page.set_title) page.set_title(text);
+		const $last = $(".page-head:visible .navbar-breadcrumbs li").last();
+		if ($last.length) ($last.find("a").length ? $last.find("a").last() : $last).text(text);
+	};
+	window.imed_library_tabs = async function ($where, current, pick, with_all) {
+		const rows = await libraries();
+		if (!rows.length || !$where || !$where.length) return;
+		const tabs = [...(with_all ? [["", __("Both libraries")]] : []), ...rows.map((r) => [r.name, r.cost_center_name.replace(/^مكتبة\s+/, "")])];
+		let $tabs = $where.prevAll(".imed-lib-tabs").first();
+		if (!$tabs.length) {
+			$tabs = $(`<div class="imed-lib-tabs" role="tablist"></div>`).insertBefore($where);
+			$tabs.on("click", "button", function () {
+				$tabs.find("button").removeClass("is-active").attr("aria-selected", "false");
+				$(this).addClass("is-active").attr("aria-selected", "true");
+				pick(this.dataset.cc);
+			});
+		}
+		$tabs.html(
+			tabs
+				.map(
+					([cc, label]) => `<button type="button" role="tab" data-cc="${esc(cc)}" class="${(current || "") === cc ? "is-active" : ""}" aria-selected="${(current || "") === cc}">
+							${frappe.utils.icon("store", "sm")}<span>${esc(label)}</span></button>`
+				)
+				.join("")
+		);
+	};
+
 	// A report's PDF and Print, with no settings to choose: a wide report lies on its side.
 	function add_print($page) {
 		const $actions = $page.find(".page-head .page-actions").first();
