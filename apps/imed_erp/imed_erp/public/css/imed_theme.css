@@ -7052,3 +7052,52 @@ html[dir="ltr"] .imed-mo-track i {
 	flex: none;
 	color: #1d4a3b;
 }
+
+/* Every filter a list is under, each with its remove (9 Nov 2026). */
+.imed-active {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
+	margin: 0 0 10px;
+	padding: 8px 12px;
+	border-radius: 12px;
+	background: #fff8eb;
+	border: 1px solid #f3d9a4;
+	font-size: 12px;
+}
+.imed-active__title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 700;
+	color: #8a5a00;
+}
+.imed-active__title .icon {
+	margin: 0 !important;
+}
+.imed-active__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+	padding: 3px 10px;
+	border: 1px solid #f0c977;
+	border-radius: 999px;
+	background: #fff;
+	color: var(--text-color);
+	font-size: 12px;
+	cursor: pointer;
+}
+.imed-active__chip span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 320px;
+}
+.imed-active__chip:hover {
+	background: #fdecc8;
+}
+.imed-active__clear {
+	margin-inline-start: auto;
+}

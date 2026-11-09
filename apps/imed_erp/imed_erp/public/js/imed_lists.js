@@ -77,6 +77,7 @@
 			load_all($page);
 			column_filters($page, page.doctype);
 			range_bar($page, page.doctype);
+			active_filters($page, page.doctype);
 		}
 		$main.toggleClass("imed-is-list", page.type === "list");
 		// Every list and report page alike: only its main button (lists) or PDF and Print (reports) in the head.
@@ -339,6 +340,56 @@
 		if ($text.text() !== text) $text.text(text);
 		$bar.toggleClass("is-set", !!(from || to));
 		$bar.find(".imed-range__clear").toggle(!!(from || to));
+	}
+
+	// ---- Every filter the list is under, in words, each with its own remove, and "clear all" (the owner, 9 Nov 2026:
+	// the customers' list stayed on one customer, filtered by a name the page did not show) ----
+	function filter_words(doctype, f) {
+		const [, fieldname, condition, value] = f;
+		const df = fieldname === "name" ? { label: __("Name"), fieldtype: "Data" } : frappe.meta.get_docfield(doctype, fieldname) || { label: fieldname };
+		const one = (v) => {
+			if (df.fieldtype === "Check") return cint(v) ? __("Yes") : __("No");
+			if (df.fieldtype === "Select") return __(v);
+			if (df.fieldtype === "Link" && typeof v === "string") return v.replace(/\s+-\s+[^-]+$/, "");
+			return String(v).replace(/^%|%$/g, "");
+		};
+		const op = String(condition).toLowerCase();
+		const list = Array.isArray(value) ? value.map(one).join("، ") : one(value);
+		const text = op === "not in" || op === "!=" ? `${__("Not")} ${list}` : op === "like" ? list : op === ">=" ? `≥ ${list}` : op === "<=" ? `≤ ${list}` : list;
+		// The value kept in its own direction (an English name read backwards beside the Arabic label).
+		return `${__(df.label)}: \u2068${text}\u2069`;
+	}
+
+	function active_filters($page, doctype) {
+		const $list = $page.find(".frappe-list").first();
+		if (!$list.length || !window.cur_list || cur_list.doctype !== doctype) return;
+		// The date shows on its own bar (range_bar); every other filter here.
+		const range = date_field(doctype);
+		const set = cur_list.filter_area.get().filter((f) => f[1] !== range);
+		const key = JSON.stringify(set);
+		let $row = $list.children(".imed-active");
+		if ($row.length && $row.attr("data-key") === key) return;
+		$row.remove();
+		if (!set.length) return;
+		$row = $(`<div class="imed-active">
+				<span class="imed-active__title">${frappe.utils.icon("filter", "sm")}${esc(__("Showing only"))}</span>
+				${set
+					.map(
+						(f) => `<button type="button" class="imed-active__chip" data-field="${esc(f[1])}" title="${esc(__("Remove filter"))}">
+								<span>${esc(filter_words(doctype, f))}</span>${frappe.utils.icon("x", "xs")}</button>`
+					)
+					.join("")}
+				<button type="button" class="btn btn-xs btn-default imed-active__clear">${esc(__("Clear all filters"))}</button>
+			</div>`).attr("data-key", key);
+		const $range = $list.children(".imed-range");
+		$range.length ? $row.insertAfter($range) : $row.prependTo($list);
+		$row.on("click", ".imed-active__chip", async function () {
+			await cur_list.filter_area.remove(this.dataset.field);
+		});
+		$row.on("click", ".imed-active__clear", async () => {
+			await cur_list.filter_area.clear();
+			$list.find(".imed-range input").val("");
+		});
 	}
 
 	// A report's PDF and Print, with no settings to choose: a wide report lies on its side.
