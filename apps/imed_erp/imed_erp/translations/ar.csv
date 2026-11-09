@@ -2230,7 +2230,6 @@ Returned Qty,الكمية المرتجعة
 Net Qty,صافي الكمية
 Net Sales,صافي المبيعات
 Without a doctor,بدون دكتور
-From Date must be before To Date.,لازم تاريخ البداية يكون قبل تاريخ النهاية.
 Invoices,الفواتير
 Product Code,كود الصنف
 Product,الصنف
@@ -2255,3 +2254,56 @@ Azarita Doctor Sales,مبيعات دكاترة الأزاريطة
 Mawasah Doctor Sales,مبيعات دكاترة المواساة
 Azarita Daily Sales,المبيعات اليومية - الأزاريطة
 Mawasah Daily Sales,المبيعات اليومية - المواساة
+BA Plus App,تطبيق BA Plus
+Bookings' value,قيمة الحجوزات
+Still due,لسه باقي
+sales,مبيعات
+students' fees,رسوم الطلاب
+Collected from doctors,اتحصل من الدكاترة
+New subscriptions,اشتراكات جديدة
+Not set up yet,لسه مش متظبط
+In the accounts,في الحسابات
+Nothing in the accounts for this period,مفيش قيود في الحسابات للفترة دي
+"Revenue {0}, expenses {1}","إيراد {0}، مصروف {1}"
+Net in the accounts,الصافي في الحسابات
+Cash in each box,الفلوس في كل خزينة
+The boxes are empty.,الخزن فاضية.
+Stock,المخزون
+No supplies are set up.,مفيش خامات متسجلة.
+Not used this week,ما اتستخدمش الأسبوع ده
+Runs out today,بيخلص النهارده
+Lasts about {0} days,يكفي حوالي {0} يوم
+A week ago: {0},من أسبوع: {0}
+No change this week,من غير تغيير الأسبوع ده
+more than last week,زيادة عن الأسبوع اللي فات
+less than last week,أقل من الأسبوع اللي فات
+{0} new subscriptions,{0} اشتراك جديد
+X Studio (XStudio),استوديو X (XStudio)
+Today's revenue and expenses by business,إيراد ومصروف النهارده لكل نشاط
+No revenue or expenses today yet.,مفيش إيراد ولا مصروف النهارده لسه.
+Same as last month,زي الشهر اللي فات
+New this month,جديد الشهر ده
+Last month,الشهر اللي فات
+pounds,جنيه
+Tomorrow's bookings,حجوزات بكرة
+Nothing booked,مفيش حجوزات
+Epson inks,أحبار الإبسون
+finished {0} this month,خلص {0} الشهر ده
+Runs out first: {0},أول لون بيخلص: {0}
+Libraries' requests,طلبات المكتبات
+No open request.,مفيش طلبات مفتوحة.
+Binding Supplies,خامات التجليد
+"Binding Wire, One Piece",سلك التغليف (القطعة)
+"Plastic Cover, One Piece",الكافر البلاستك (القطعة)
+"What the libraries pay for one piece: their stock is valued at it (setup/setup_inks.py).",اللي المكتبة بتدفعه في القطعة الواحدة: المخزون بيتحسب بيه.
+Not counted yet,لسه ما اتعدّش
+Waiting for approval,مستني الموافقة
+Not done yet,لسه ما اتنفذش
+Partly bought,اتشترى جزء
+Bought,اتشترى
+Partly received,وصل جزء
+At least,من
+At most,لحد
+Nothing to choose,مفيش اختيارات
+Clear filter,مسح
+Apply filter,تطبيق

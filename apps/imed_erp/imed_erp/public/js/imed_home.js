@@ -243,7 +243,7 @@
 	function library_home_only() {
 		const roles = frappe.user_roles || [];
 		const library_only = roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin");
-		const route = frappe.get_route ? frappe.get_route() : [];
+		const route = (frappe.get_route && frappe.get_route()) || [];
 		if (library_only && route.length === 1 && route[0] && route[0] !== "imed-library") {
 			frappe.route_flags.replace_route = true;
 			frappe.set_route("imed-library");
