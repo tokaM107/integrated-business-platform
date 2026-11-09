@@ -68,7 +68,7 @@
 					<p class="imed-dash-welcome__note"></p>
 				</div>
 				<div class="imed-dash-welcome__art" aria-hidden="true">${frappe.utils.icon("piggy-bank", "lg")}</div>
-			</div>`).insertBefore($editor);
+			</div>`).insertBefore($page.find(".imed-slot-top").first().length ? $page.find(".imed-slot-top").first() : $editor);
 	}
 
 	function mark_headers($page) {
@@ -618,7 +618,7 @@
 	function render_overview($page) {
 		const $slot = slot($page, "overview");
 		if (!overview || !$slot.length) return;
-		$slot.html(`<div class="imed-ov"><div class="imed-ov-row">${upcoming_html(overview.upcoming)}${reports_html()}</div></div>`);
+		$slot.html(`<div class="imed-ov">${reports_html()}</div>`);
 	}
 
 	function add_overview($page) {
@@ -720,9 +720,12 @@
 			figure = big(a.bookings);
 			caption = `${esc(__("bookings"))} · ${esc(hours_text(a.hours))}`;
 		} else if (b.key === "libraries") {
+			// Azarita's and Mawasah's apart (the owner, 9 Nov 2026).
 			route = ["Library Sales Document", { reg_date: ["between", [`${p.from} 00:00:00`, `${p.to} 23:59:59`]] }];
-			figure = big(a.net);
-			caption = `${esc(__("pounds"))} · ${esc(__("{0} invoices", [number(a.invoices)]))}`;
+			figure = `<span class="imed-pd-libs">${(a.rows || [])
+				.map((r) => `<span><small>${esc(r.name.replace(/^مكتبة\s+/, ""))}</small>${big(r.net)}</span>`)
+				.join("")}</span>`;
+			caption = esc(__("pounds"));
 		} else {
 			route = ["Doctor Ledger Entry", { entry_date: span }];
 			figure = a.state === "ok" ? big(a.charged) : `<b class="imed-pd-num">—</b>`;
@@ -734,6 +737,33 @@
 				${figure}
 				<span class="imed-pd-card__caption">${caption}</span>
 			</a>`;
+	}
+
+	// Tomorrow's bookings, the halls' and the studio's side by side (the owner, 9 Nov 2026).
+	function tomorrow_html(t) {
+		if (!t) return "";
+		const list = (rows, icon_key, title) => `<div class="imed-tm-col tone-${icon_key}">
+				<h3>${logo({ key: icon_key, icon: icon_key === "halls" ? "presentation" : "clapperboard" }, "imed-tm-logo")}<span>${esc(title)}</span><b>${number(rows.length)}</b></h3>
+				${
+					rows.length
+						? `<ul>${rows
+								.map(
+									(r, i) => `<li style="--i:${i}"><a href="/desk/booking/${encodeURIComponent(r.name)}">
+										<span class="imed-tm-time">${esc(r.from_time || "")}<small>${esc(r.to_time || "")}</small></span>
+										<span class="imed-tm-text"><b>${esc(r.resource)}</b><small>${esc(r.who || r.activity || "")}</small></span>
+									</a></li>`
+								)
+								.join("")}</ul>`
+						: `<p class="imed-sec__empty">${esc(__("Nothing booked"))}</p>`
+				}
+			</div>`;
+		return `<section class="imed-pd-band is-tomorrow" style="--n:1">
+				<header class="imed-pd-band__head">
+					<h2>${frappe.utils.icon("calendar-clock", "sm")}<span>${esc(__("Tomorrow's bookings"))}</span></h2>
+					<span class="imed-pd-band__dates">${esc(frappe.datetime.str_to_user(t.date))}</span>
+				</header>
+				<div class="imed-tm">${list(t.halls, "halls", __("Halls"))}${list(t.studio, "studio", __("Studio"))}</div>
+			</section>`;
 	}
 
 	// The week: each business's days as bars, Saturday to Friday, today marked, the days to come faint.
@@ -803,26 +833,9 @@
 		const $slot = slot($page, "periods");
 		if (!by_period || !$slot.length) return;
 		const c = by_period.currency;
-		const icons = { today: "sun", week: "calendar-range", month: "calendar-days" };
 		$slot.html(
 			by_period.periods
-				.map((p, n) => {
-					const from = frappe.datetime.str_to_user(p.from);
-					const to = frappe.datetime.str_to_user(p.to);
-					return `<section class="imed-pd-band is-${p.key}" style="--n:${n}">
-							<header class="imed-pd-band__head">
-								<h2>${p.key === "today" ? `<span class="imed-live" aria-hidden="true"></span>` : frappe.utils.icon(icons[p.key], "sm")}<span>${esc(p.label)}</span></h2>
-								<span class="imed-pd-band__dates">${esc(p.from === p.to ? from : `${from} – ${to}`)}</span>
-							</header>
-							${
-								p.key === "week"
-									? week_html(p, c)
-									: p.key === "month"
-									? month_html(p, c)
-									: `<div class="imed-pd-grid">${p.businesses.map((b, i) => period_card(b, p, c, i)).join("")}</div>`
-							}
-						</section>`;
-				})
+				.map((p, n) => (n === 1 ? tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
 				.join("")
 		);
 		$slot.off("click").on("click", ".imed-pd-card, .imed-wk-row", function (e) {
@@ -831,6 +844,26 @@
 			if (route) open_route(route);
 		});
 		count_up($slot);
+	}
+
+	// A period's band: today's cards, the week's bars or the month's comparison.
+	function band_html(p, n, c) {
+		const icons = { today: "sun", week: "calendar-range", month: "calendar-days" };
+		const from = frappe.datetime.str_to_user(p.from);
+		const to = frappe.datetime.str_to_user(p.to);
+		const body =
+			p.key === "week"
+				? week_html(p, c)
+				: p.key === "month"
+				? month_html(p, c)
+				: `<div class="imed-pd-grid">${p.businesses.map((b, i) => period_card(b, p, c, i)).join("")}</div>`;
+		return `<section class="imed-pd-band is-${p.key}" style="--n:${n}">
+				<header class="imed-pd-band__head">
+					<h2>${p.key === "today" ? `<span class="imed-live" aria-hidden="true"></span>` : frappe.utils.icon(icons[p.key], "sm")}<span>${esc(p.label)}</span></h2>
+					<span class="imed-pd-band__dates">${esc(p.from === p.to ? from : `${from} – ${to}`)}</span>
+				</header>
+				${body}
+			</section>`;
 	}
 
 	// ---- The cash in each box: its whole name and a bar, the largest first ----

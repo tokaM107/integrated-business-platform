@@ -54,6 +54,29 @@ def periods(today=None):
 		"today": today,
 		"currency": frappe.get_cached_value("Company", company(), "default_currency"),
 		"periods": [period("today", _("Today"), today, today, centers), week, month],
+		"tomorrow": tomorrow(add_days(today, 1)),
+	}
+
+
+def tomorrow(day):
+	"""Tomorrow's bookings that hold their time, the halls' and the studio's apart, in the order of the day (the
+	owner, 9 Nov 2026: in place of the next bookings)."""
+	rows = frappe.db.sql(
+		"""select b.name, b.resource, b.resource_type, b.from_time, b.to_time, b.status, b.activity,
+			coalesce(c.customer_name, b.xstudio_customer_name, b.responsible_name) as who
+		from `tabBooking` b left join `tabCustomer` c on c.name = b.customer
+		where b.booking_date = %s and b.status not in %s and b.resource_type in ('Hall', 'Studio Service')
+		order by b.from_time, b.resource""",
+		(day, NOT_HELD),
+		as_dict=True,
+	)
+	for row in rows:
+		row.from_time = str(row.from_time)[:5] if row.from_time else None
+		row.to_time = str(row.to_time)[:5] if row.to_time else None
+	return {
+		"date": getdate(day),
+		"halls": [r for r in rows if r.resource_type == "Hall"],
+		"studio": [r for r in rows if r.resource_type == "Studio Service"],
 	}
 
 

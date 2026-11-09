@@ -98,3 +98,21 @@ class IntegrationTestOwnerPeriodShapes(IntegrationTestCase):
 		# The 31st against a shorter month: its last day.
 		march = owner_periods.periods("2027-03-31")["periods"][2]
 		self.assertEqual(str(march["previous_to"]), "2027-02-28")
+
+	def test_tomorrows_bookings_list_the_halls_and_the_studio_apart(self):
+		from imed_erp.imederp.tests.test_sparkle_sync import FakeSparkle, IntegrationTestSparkleSync
+
+		case = IntegrationTestSparkleSync("test_a_hall_not_mapped_is_noted_and_skipped")
+		case.setUp()
+		try:
+			tomorrow = frappe.utils.add_days(frappe.utils.today(), 1)
+			case.x = FakeSparkle()
+			case.x.booking(day=tomorrow, start="09:00", end="11:00", status="confirmed", full_name="_Test Tomorrow Renter")
+			case.sync()
+			listed = owner_periods.periods()["tomorrow"]
+			self.assertEqual(str(listed["date"]), tomorrow)
+			mine = [r for r in listed["halls"] if r.from_time == "09:00" and r.resource.startswith("_Test Sparkle Hall")]
+			self.assertEqual(len(mine), 1)
+			self.assertTrue(all(r.resource_type == "Studio Service" for r in listed["studio"]))
+		finally:
+			case.tearDown()

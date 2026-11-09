@@ -5745,6 +5745,130 @@ html[dir="ltr"] .imed-mo-track i {
 	background: color-mix(in srgb, var(--tone) 35%, transparent);
 }
 
+/* Today's libraries card: Azarita's and Mawasah's figures side by side. */
+.imed-pd-libs {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+	width: 100%;
+}
+.imed-pd-libs > span {
+	display: grid;
+	justify-items: center;
+	gap: 2px;
+}
+.imed-pd-libs small {
+	font-size: 11px;
+	color: var(--text-muted);
+}
+.imed-pd-card .imed-pd-libs .imed-pd-num,
+.imed-pd-band.is-today .imed-pd-card .imed-pd-libs .imed-pd-num {
+	font-size: 22px;
+}
+
+/* Tomorrow's bookings: the halls' and the studio's side by side, each by the hour. */
+.imed-tm {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+.imed-tm-col {
+	--tone: var(--blue-600, #2563eb);
+	padding: 14px;
+	border-radius: 20px;
+	background: var(--card-bg);
+	border: 1px solid var(--imed-border);
+	border-top: 4px solid var(--tone);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
+	animation: imed-rise 0.45s ease both;
+}
+.imed-tm-col.tone-studio {
+	--tone: var(--purple-600, #7c3aed);
+}
+.imed-tm-col h3 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0 0 10px;
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--heading-color);
+}
+.imed-tm-col h3 b {
+	margin-inline-start: auto;
+	min-width: 28px;
+	padding: 2px 9px;
+	border-radius: 999px;
+	text-align: center;
+	color: #fff;
+	background: var(--tone);
+	font-size: 13px;
+}
+.imed-tm-logo {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	object-fit: cover;
+	box-shadow: 0 0 0 1px var(--imed-border);
+}
+.imed-tm-col ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 6px;
+}
+.imed-tm-col li {
+	animation: imed-rise 0.4s ease both;
+	animation-delay: calc(0.1s + var(--i, 0) * 0.05s);
+}
+.imed-tm-col a {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: center;
+	gap: 10px;
+	padding: 8px;
+	border-radius: 12px;
+	color: inherit;
+	text-decoration: none !important;
+	background: color-mix(in srgb, var(--tone) 6%, transparent);
+}
+.imed-tm-col a:hover {
+	background: color-mix(in srgb, var(--tone) 12%, transparent);
+}
+.imed-tm-time {
+	display: grid;
+	justify-items: center;
+	min-width: 48px;
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--tone);
+	direction: ltr;
+}
+.imed-tm-time small {
+	font-size: 10px;
+	font-weight: 500;
+	color: var(--text-muted);
+}
+.imed-tm-text {
+	display: grid;
+	min-width: 0;
+}
+.imed-tm-text b {
+	font-size: 13px;
+	color: var(--heading-color);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.imed-tm-text small {
+	font-size: 11px;
+	color: var(--text-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
 @keyframes imed-rise-bar {
 	from {
 		transform: scaleY(0);
@@ -5812,7 +5936,9 @@ html[dir="ltr"] .imed-mo-track i {
 	.imed-wk-bar i,
 	.imed-mo-tile,
 	.imed-mo-track i,
-	.imed-mo-pill .icon {
+	.imed-mo-pill .icon,
+	.imed-tm-col,
+	.imed-tm-col li {
 		animation: none !important;
 	}
 }
@@ -5903,5 +6029,15 @@ html[dir="ltr"] .imed-mo-track i {
 	}
 	.imed-mo {
 		grid-template-columns: 1fr;
+	}
+	.imed-tm {
+		grid-template-columns: 1fr;
+	}
+	.imed-pd-card .imed-pd-libs .imed-pd-num,
+	.imed-pd-band.is-today .imed-pd-card .imed-pd-libs .imed-pd-num {
+		font-size: 15px;
+	}
+	.imed-pd-libs small {
+		font-size: 9px;
 	}
 }
