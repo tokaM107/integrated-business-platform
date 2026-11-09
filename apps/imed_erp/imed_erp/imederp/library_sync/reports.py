@@ -1,9 +1,10 @@
 # The library system's own daily reports, rebuilt here from the mirrored invoices (Library Sales Document): Tanmya's
-# "تقرير المبيعات اليومية" (each item sold, how many and for how much) and "ملخص حركة الدكاترة" (what was sold on
-# each doctor's name). The owner, 5 Nov 2026: "we have Azarita's data, show it on the website". Only issued
-# documents not cancelled count; a sale adds, a return takes away; amounts are the lines' totals as the library
-# system has them (before an invoice-wide discount). Read through get_list, so a user sees only what their
-# permissions show of the invoices.
+# "تقرير المبيعات اليومية" (each item sold, how many and for how much, under its item group) and "ملخص حركة
+# الدكاترة" (what was sold on each doctor's name, and the doctor's share). The owner, 5 and 9 Nov 2026: "what the
+# library system shows, shown here". Only issued documents not cancelled count; a sale adds, a return takes away;
+# a line's value is its total as the library system has it (after its own discount; an invoice-wide discount is not
+# shared out on the lines). Read through get_list, so a user sees only what their permissions show of the invoices.
+# Lines read before 9 Nov 2026 carry no item group nor doctor's share until the connector reads them again.
 import frappe
 from frappe import _
 from frappe.utils import flt, getdate, nowdate
@@ -11,10 +12,13 @@ from frappe.utils import flt, getdate, nowdate
 from imed_erp.imederp.library_sync.contract import RETURN_KINDS, SALES_KINDS
 
 LINE = "`tabLibrary Sales Document Line`"
+AMOUNTS = ("qty", "line_total", "discount_value", "doctor_share")
 
 
-def lines(filters, key_fields):
-	"""The period's lines grouped on key_fields (of the line), each group's sold and returned quantity and value."""
+def lines(filters, key_fields, extra_fields=()):
+	"""The period's lines grouped on key_fields (of the line), each group's sold and returned quantity, value,
+	discount and doctor's share, and the number of sales invoices in it. extra_fields are carried, from the first
+	line of the group."""
 	filters = frappe._dict(filters or {})
 	start, end = getdate(filters.from_date or nowdate()), getdate(filters.to_date or nowdate())
 	if start > end:
@@ -27,41 +31,71 @@ def lines(filters, key_fields):
 	}
 	if filters.cost_center:
 		conditions["cost_center"] = filters.cost_center
+	wanted = list(dict.fromkeys(list(key_fields) + list(extra_fields) + list(AMOUNTS)))
 	rows = frappe.get_list(
 		"Library Sales Document",
 		filters=conditions,
-		fields=["name", "document_kind"] + [f"{LINE}.{f} as {f}" for f in key_fields + ["qty", "line_total"]],
+		fields=["name", "document_kind"] + [f"{LINE}.{f} as {f}" for f in wanted],
 		order_by="reg_date",
 	)
 	groups = {}
 	for row in rows:
-		if row.get(key_fields[0]) is None and row.get("qty") is None:
+		if row.get("qty") is None and row.get("line_total") is None:
 			continue  # a document without lines
 		key = tuple((row.get(f) or "").strip() for f in key_fields)
-		g = groups.setdefault(key, frappe._dict(dict(zip(key_fields, key)), invoices=set(), sold_qty=0.0, sold_value=0.0, returned_qty=0.0, returned_value=0.0))
-		if row.document_kind in SALES_KINDS:
-			g.sold_qty += flt(row.qty)
-			g.sold_value += flt(row.line_total)
+		g = groups.get(key)
+		if g is None:
+			g = groups[key] = frappe._dict(dict(zip(key_fields, key)), invoices=set())
+			for f in extra_fields:
+				g[f] = (row.get(f) or "").strip()
+			for side in ("sold", "returned"):
+				for f in ("qty", "value", "discount", "doctor_share"):
+					g[f"{side}_{f}"] = 0.0
+		side = "sold" if row.document_kind in SALES_KINDS else "returned"
+		g[f"{side}_qty"] += flt(row.qty)
+		g[f"{side}_value"] += flt(row.line_total)
+		g[f"{side}_discount"] += flt(row.discount_value)
+		g[f"{side}_doctor_share"] += flt(row.doctor_share)
+		if side == "sold":
 			g.invoices.add(row.name)
-		else:
-			g.returned_qty += flt(row.qty)
-			g.returned_value += flt(row.line_total)
 	out = []
 	for g in groups.values():
 		g.invoices = len(g.invoices)
-		g.net_qty = g.sold_qty - g.returned_qty
-		g.net_value = flt(g.sold_value - g.returned_value, 2)
-		g.sold_value, g.returned_value = flt(g.sold_value, 2), flt(g.returned_value, 2)
+		finish(g)
 		out.append(g)
 	out.sort(key=lambda g: -g.net_value)
 	return out
 
 
-def money_columns():
-	return [
-		{"label": _("Sold Qty"), "fieldname": "sold_qty", "fieldtype": "Int", "width": 100},
+def finish(g):
+	"""A group's derived figures: before discount, net, rounded to the penny."""
+	g.sold_before_discount = g.sold_value + g.sold_discount
+	g.net_qty = g.sold_qty - g.returned_qty
+	g.net_value = g.sold_value - g.returned_value
+	g.doctor_share = g.sold_doctor_share - g.returned_doctor_share
+	for f in ("sold_value", "sold_discount", "sold_before_discount", "returned_value", "net_value", "doctor_share"):
+		g[f] = flt(g[f], 2)
+	return g
+
+
+def add_up(rows, **fields):
+	"""One row holding the sums of rows (a group's total, or the day's)."""
+	total = frappe._dict(fields, invoices=0)
+	for f in ("sold_qty", "sold_value", "sold_discount", "sold_doctor_share", "returned_qty", "returned_value", "returned_discount", "returned_doctor_share"):
+		total[f] = sum(flt(r.get(f)) for r in rows)
+	return finish(total)
+
+
+def money_columns(discount=False):
+	columns = [{"label": _("Sold Qty"), "fieldname": "sold_qty", "fieldtype": "Int", "width": 90}]
+	if discount:
+		columns += [
+			{"label": _("Value Before Discount"), "fieldname": "sold_before_discount", "fieldtype": "Currency", "width": 120},
+			{"label": _("Discount"), "fieldname": "sold_discount", "fieldtype": "Currency", "width": 90},
+		]
+	return columns + [
 		{"label": _("Sales"), "fieldname": "sold_value", "fieldtype": "Currency", "width": 120},
-		{"label": _("Returned Qty"), "fieldname": "returned_qty", "fieldtype": "Int", "width": 100},
+		{"label": _("Returned Qty"), "fieldname": "returned_qty", "fieldtype": "Int", "width": 90},
 		{"label": _("Returns"), "fieldname": "returned_value", "fieldtype": "Currency", "width": 110},
 		{"label": _("Net Qty"), "fieldname": "net_qty", "fieldtype": "Int", "width": 90},
 		{"label": _("Net Sales"), "fieldname": "net_value", "fieldtype": "Currency", "width": 130},
@@ -69,8 +103,8 @@ def money_columns():
 
 
 def summary(rows):
-	sales = sum(r.sold_value for r in rows)
-	returns = sum(r.returned_value for r in rows)
+	sales = sum(flt(r.sold_value) for r in rows)
+	returns = sum(flt(r.returned_value) for r in rows)
 	return [
 		{"label": _("Sales"), "value": flt(sales, 2), "datatype": "Currency", "indicator": "Green"},
 		{"label": _("Returns"), "value": flt(returns, 2), "datatype": "Currency", "indicator": "Red"},

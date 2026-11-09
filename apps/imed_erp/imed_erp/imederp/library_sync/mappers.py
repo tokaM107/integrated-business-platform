@@ -120,7 +120,7 @@ def map_document(family, document, settings):
 		if key in document and document[key] is not None:
 			fields[field] = num(document[key]) if field.endswith(("_value", "_percent")) else str(document[key])
 	line_map = c.STOCK_LINE if family == "stock" else c.CASH_LINE["Receipt" if family == "cash_receipt" else "Payment"]
-	numeric = {"qty_out", "qty_in", "qty_return", "unit_factor", "price_small", "price_small_before_discount", "price_big", "price_big_before_discount", "discount_percent", "discount_value", "value_out", "value_in", "vat_value", "cost_price", "cost_avg", "debit", "credit"}
+	numeric = {"qty_out", "qty_in", "qty_return", "unit_factor", "price_small", "price_small_before_discount", "price_big", "price_big_before_discount", "discount_percent", "discount_value", "value_out", "value_in", "vat_value", "cost_price", "cost_avg", "debit", "credit", "doctor_share"}
 	for raw in document.get("lines") or []:
 		line = {}
 		for key, field in line_map.items():

@@ -2244,3 +2244,10 @@ Unknown kind of payment in Sparkle: {0}.,نوع دفعة مش معروف في Sp
 "The halls are booked on Sparkle, the halls' booking site; the booking comes here by itself within minutes. Book it there.",القاعات بتتحجز على Sparkle (موقع حجز القاعات)، والحجز بييجي هنا لوحده في خلال دقايق. احجز من هناك.
 Booked on Sparkle,بيتحجز على Sparkle
 Sparkle sync (halls),مزامنة Sparkle (القاعات)
+Without a group,بدون مجموعة
+Total of {0},إجمالي {0}
+Value Before Discount,القيمة قبل الخصم
+Discount,الخصم
+Doctor Share,نصيب الدكتور
+Item Group,مجموعة الصنف
+Item Group Code,كود مجموعة الصنف
