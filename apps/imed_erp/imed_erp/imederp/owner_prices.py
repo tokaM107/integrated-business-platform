@@ -129,17 +129,21 @@ def halls():
 		client = SparkleClient(frappe.get_single("Sparkle Settings"))
 		try:
 			rows = client.rows(
+				# The latest of each hall; on a day with two, the one with prices (Sparkle keeps an empty one too).
 				"""select distinct on (hall_slug) hall_slug, first_hour, two_hours, extra_hour, effective_from
-				from public.hall_rates where is_active order by hall_slug, effective_from desc"""
+				from public.hall_rates where is_active
+				order by hall_slug, effective_from desc, (first_hour is null and two_hours is null and extra_hour is null), (first_hour is null)"""
 			)
 		finally:
 			client.close()
 	except Exception as e:
 		return {"error": _("Sparkle's prices cannot be read yet: {0}").format(str(e).splitlines()[0][:160])}
 	names = {r.sparkle_hall: r.resource for r in frappe.get_single("Sparkle Settings").hall_map}
+	# A combined hall has no resource of its own (it books its halls): its name from its slug (hall-5-6 -> قاعة 5+6).
+	label = lambda slug: names.get(slug) or ("قاعة " + slug.replace("hall-", "").replace("-", "+") if slug.startswith("hall-") else slug)
 	return {
 		"rows": [
-			{"label": names.get(r["hall_slug"], r["hall_slug"]), "first_hour": r["first_hour"], "two_hours": r["two_hours"], "extra_hour": r["extra_hour"], "since": r["effective_from"]}
+			{"label": label(r["hall_slug"]), "first_hour": r["first_hour"], "two_hours": r["two_hours"], "extra_hour": r["extra_hour"], "since": r["effective_from"]}
 			for r in rows
 		]
 	}
