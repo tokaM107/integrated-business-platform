@@ -6595,23 +6595,10 @@ html[dir="ltr"] .imed-mo-track i {
 	line-height: 16px;
 	text-align: center;
 }
-/* The row count at the head's end keeps its own room; the columns give way before it. */
-.page-container .frappe-list .list-row-head .level-left {
-	flex: 1 1 auto;
-	min-width: 0;
-	overflow: hidden;
-}
-.page-container .frappe-list .list-row-head .level-right {
-	position: relative;
-	z-index: 1;
-	flex: none;
-	padding-inline: 12px 6px;
-	white-space: nowrap;
-	background: #133429 !important;
-	box-shadow: -10px 0 12px -6px #133429;
-}
-html[dir="rtl"] .page-container .frappe-list .list-row-head .level-right {
-	box-shadow: 10px 0 12px -6px #133429;
+/* The likes, comments and "4 d" at a row's end, and the head's count over them, are gone: plain tables. */
+.page-container .frappe-list .list-row-head .level-right,
+.page-container .frappe-list .list-row-container .list-row .level-right {
+	display: none !important;
 }
 .imed-col-active > span {
 	text-decoration: underline;
@@ -6698,4 +6685,109 @@ html[dir="rtl"] .page-container .frappe-list .list-row-head .level-right {
 	border: 1px solid var(--imed-border);
 	padding-inline: 10px;
 	font-size: 12px;
+}
+
+
+/* §44 Every list and report page alike (owner, 9 Nov 2026; imed_lists.js): one button in the head, a table that
+   scrolls sideways when it is wider than the page, a report without its notes, its summary and chart in cards. */
+.imed-plain-head .page-head .custom-actions,
+.imed-plain-head .page-head .custom-mobile-actions,
+.imed-plain-head .page-head .standard-actions > .icon-btn,
+.imed-plain-head .page-head .standard-actions > .menu-more-button,
+.imed-plain-head .page-head .standard-actions > .btn-secondary,
+.imed-plain-head .page-head .standard-actions .page-icon-group,
+.imed-plain-head .page-head .standard-actions > .btn-default:not(.primary-action),
+.imed-plain-head .page-head .menu-btn-group {
+	display: none !important;
+}
+.imed-report-page .page-head .standard-actions > .btn-primary:not(.primary-action):not(.imed-keep) {
+	display: none !important;
+}
+/* A table wider than the page scrolls left and right inside its card. */
+.page-container .frappe-list .result {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+.page-container .frappe-list .list-row-head,
+.page-container .frappe-list .list-row-container {
+	min-width: max-content;
+}
+.page-container .frappe-list .list-row-head .level-left,
+.page-container .frappe-list .list-row-container .list-row .level-left {
+	flex: 1 0 auto;
+	overflow: visible;
+}
+/* A report: no notes, no "made a minute ago", no help line; its summary and chart as cards. */
+.imed-report-page .layout-main-section > .form-message,
+.imed-report-page .report-footer,
+.imed-report-page .prepared-report-message {
+	display: none !important;
+}
+.imed-report-page .report-summary {
+	display: grid !important;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 12px;
+	margin: 0 0 16px !important;
+	padding: 0 !important;
+	border: 0 !important;
+	background: transparent !important;
+}
+.imed-report-page .report-summary .summary-item {
+	height: auto !important;
+	min-height: 96px;
+	display: flex !important;
+	flex-direction: column;
+	justify-content: center;
+	gap: 6px;
+	margin: 0 !important;
+	padding: 16px !important;
+	border-radius: 18px;
+	border: 1px solid var(--imed-border);
+	background: linear-gradient(160deg, var(--imed-teal-50), var(--card-bg) 70%);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
+	text-align: center;
+	animation: imed-rise 0.45s ease both;
+}
+.imed-report-page .report-summary .summary-label {
+	font-size: 13px;
+	color: var(--text-muted);
+}
+.imed-report-page .report-summary .summary-value {
+	font-size: 24px;
+	font-weight: 800;
+	color: var(--heading-color);
+}
+.imed-report-page .chart-wrapper {
+	margin: 0 0 16px;
+	padding: 12px 8px 0;
+	border-radius: 18px;
+	border: 1px solid var(--imed-border);
+	background: var(--card-bg);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
+	animation: imed-rise 0.45s ease both;
+}
+.imed-report-page .chart-wrapper .x.axis text,
+.imed-report-page .chart-wrapper .y.axis text {
+	font-size: 11px;
+}
+.imed-report-page .report-summary .summary-value {
+	white-space: normal;
+	overflow-wrap: anywhere;
+	text-overflow: clip;
+	overflow: visible;
+	direction: ltr;
+	unicode-bidi: isolate;
+}
+@media (max-width: 560px) {
+	.imed-report-page .report-summary {
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+	.imed-report-page .report-summary .summary-item {
+		min-height: 80px;
+		padding: 12px 8px !important;
+	}
+	.imed-report-page .report-summary .summary-value {
+		font-size: 17px;
+	}
 }

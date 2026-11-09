@@ -37,6 +37,7 @@
 	const current = () => $(".page-container:visible").first();
 
 	function arrange() {
+		readable_charts();
 		const page = kind();
 		const $page = current();
 		if (!page || !$page.length) return;
@@ -46,7 +47,15 @@
 		// A report with no filters keeps no empty panel.
 		const has_filters = $form.find(".standard-filter-section > [data-fieldname], .filter-section > *").length || $form.children(".form-group").length;
 		$main.toggleClass("imed-side-filters", !!has_filters);
-		if (page.type === "report") add_print($page);
+		if (page.type === "report") {
+			add_print($page);
+			// A chart drawn before the wrapper was in place is drawn again, once, through it.
+			const report = frappe.query_report;
+			if (report && report.chart && report.chart_options && report.chart.imed_drawn !== true) {
+				report.render_chart(report.chart_options);
+				report.chart.imed_drawn = true;
+			}
+		}
 		if (!has_filters) return;
 		if (!$form.find(".imed-filters-head").length) {
 			$form.prepend(`<div class="imed-filters-head">
@@ -69,6 +78,8 @@
 			column_filters($page, page.doctype);
 		}
 		$main.toggleClass("imed-is-list", page.type === "list");
+		// Every list and report page alike: only its main button (lists) or PDF and Print (reports) in the head.
+		$page.toggleClass("imed-plain-head", true).toggleClass("imed-report-page", page.type === "report");
 		if (!$main.children(".imed-filters-backdrop").length) {
 			$(`<div class="imed-filters-backdrop"></div>`).on("click", () => $main.removeClass("imed-filters-open")).appendTo($main);
 		}
@@ -264,6 +275,33 @@
 				run(this.dataset.how);
 			})
 			.prependTo($actions);
+	}
+
+	// A report's chart, readable (the owner, 9 Nov 2026: its dates read "01-1 ..."): a date label short (2/11), a long
+	// axis showing every few labels in full, the page's teal. Wraps Frappe's own drawing once it is loaded.
+	const short_label = (label) => {
+		const m = String(label).match(/^(\d{4})-(\d{2})-(\d{2})$/) || String(label).match(/^(\d{2})-(\d{2})-(\d{4})$/);
+		if (!m) return label;
+		const [d, mo] = m[1].length === 4 ? [m[3], m[2]] : [m[1], m[2]];
+		return `${Number(d)}/${Number(mo)}`;
+	};
+	function readable_charts() {
+		const QR = frappe.views && frappe.views.QueryReport;
+		if (!QR || QR.prototype.imed_chart) return;
+		const draw = QR.prototype.render_chart;
+		QR.prototype.render_chart = function (options) {
+			const o = Object.assign({}, options);
+			if (o.data && Array.isArray(o.data.labels)) {
+				o.data = Object.assign({}, o.data, { labels: o.data.labels.map(short_label) });
+				if (o.data.labels.length > 8) o.axisOptions = Object.assign({}, o.axisOptions, { xIsSeries: true });
+			}
+			o.height = Math.max(o.height || 0, 260);
+			if (!o.colors || !o.colors.length) o.colors = ["#1d9386", "#7c3aed", "#ea580c", "#2563eb", "#16a34a"];
+			const out = draw.call(this, o);
+			if (this.chart) this.chart.imed_drawn = true;
+			return out;
+		};
+		QR.prototype.imed_chart = true;
 	}
 
 	// Frappe draws a list's filters after the route changes, and again when it reloads: arrange on each change.
