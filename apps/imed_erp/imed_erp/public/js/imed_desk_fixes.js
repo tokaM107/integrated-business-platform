@@ -33,6 +33,15 @@
 				// a malformed route_options: the plain report, as Frappe would
 			}
 		}
+		// A page item with route options (the daily sales page, a library each) the same: Frappe's route for a page
+		// leaves them out of the address; the page reads them from its query.
+		if (it.link_type === "Page" && it.route_options) {
+			try {
+				return `/desk/${frappe.router.slug(it.link_to)}?${$.param(JSON.parse(it.route_options))}`;
+			} catch (e) {
+				// a malformed route_options: Frappe's own route
+			}
+		}
 		return get_path.apply(this, arguments);
 	};
 	const make = Item.prototype.make;

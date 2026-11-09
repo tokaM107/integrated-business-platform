@@ -70,10 +70,13 @@ def lines(filters, key_fields, extra_fields=()):
 def finish(g):
 	"""A group's derived figures: before discount, net, rounded to the penny."""
 	g.sold_before_discount = g.sold_value + g.sold_discount
+	g.returned_before_discount = g.returned_value + g.returned_discount
 	g.net_qty = g.sold_qty - g.returned_qty
 	g.net_value = g.sold_value - g.returned_value
+	g.net_discount = g.sold_discount - g.returned_discount
+	g.net_before_discount = g.sold_before_discount - g.returned_before_discount
 	g.doctor_share = g.sold_doctor_share - g.returned_doctor_share
-	for f in ("sold_value", "sold_discount", "sold_before_discount", "returned_value", "net_value", "doctor_share"):
+	for f in ("sold_value", "sold_discount", "sold_before_discount", "returned_value", "returned_discount", "returned_before_discount", "net_value", "net_discount", "net_before_discount", "doctor_share"):
 		g[f] = flt(g[f], 2)
 	return g
 
@@ -110,3 +113,24 @@ def summary(rows):
 		{"label": _("Returns"), "value": flt(returns, 2), "datatype": "Currency", "indicator": "Red"},
 		{"label": _("Net Sales"), "value": flt(sales - returns, 2), "datatype": "Currency", "indicator": "Blue"},
 	]
+
+
+@frappe.whitelist()
+def daily_sales(from_date=None, to_date=None, cost_center=None):
+	"""Tanmya's daily sales report as it prints it (the owner, 9 Nov 2026, with its photos): each item group, its
+	items (code, name; sold, returned and net, each as quantity, value before discount, discount and value) and the
+	group's total, then the period's total. For the page library-daily-sales."""
+	filters = {"from_date": from_date, "to_date": to_date, "cost_center": cost_center}
+	items = lines(filters, ["product_code", "product_name"], extra_fields=["category_name"])
+	groups = {}
+	for item in items:
+		groups.setdefault(item.category_name or _("Without a group"), []).append(item)
+	ordered = sorted(groups.items(), key=lambda g: (g[0] == _("Without a group"), -sum(r.net_value for r in g[1])))
+	return {
+		"from_date": str(getdate(from_date or nowdate())),
+		"to_date": str(getdate(to_date or nowdate())),
+		"cost_center": cost_center,
+		"currency": frappe.db.get_default("currency") or "EGP",
+		"groups": [{"name": name, "items": sorted(rows, key=lambda r: (len(r.product_code or ""), r.product_code or "")), "total": add_up(rows)} for name, rows in ordered],
+		"total": add_up(items),
+	}

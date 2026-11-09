@@ -320,6 +320,12 @@ class TestLibraryReceive(IntegrationTestCase):
 			],
 		)
 		self.assertEqual([c["value"] for c in cards], [300.0, 50.0, 250.0])
+		# The daily sales page (library-daily-sales): the same groups, its items, totals and the grand total.
+		from imed_erp.imederp.library_sync.reports import daily_sales
+
+		sheet = daily_sales(day, day, cost_center("مكتبة الأزاريطة"))
+		self.assertEqual([(g["name"], [i.product_code for i in g["items"]], g["total"].net_value) for g in sheet["groups"]], [("عملي", ["P-1"], 150.0), ("Without a group", ["P-2"], 100.0)])
+		self.assertEqual((sheet["total"].sold_before_discount, sheet["total"].returned_value, sheet["total"].net_value), (320.0, 50.0, 250.0))
 		doctors = {r.doctor_name: (r.invoices, r.sold_value, r.returned_value, r.net_value, r.doctor_share) for r in by_doctor(filters)[1]}
 		self.assertEqual(doctors, {"د. أحمد": (2, 200.0, 50.0, 150.0, 30.0), "Without a doctor": (2, 100.0, 0.0, 100.0, 0.0)})
 
