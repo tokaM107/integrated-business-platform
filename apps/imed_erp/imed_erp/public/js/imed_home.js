@@ -217,6 +217,10 @@
 		if (roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin")) {
 			return "/desk/imed-library";
 		}
+		// The accountant's account lands on his own screen, شاشة المحاسب (the owner, 9 Nov 2026).
+		if (roles.includes("Accountant") && !roles.includes("System Manager") && !roles.includes("Super Admin")) {
+			return "/desk/imed-accountant";
+		}
 		if ((frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard")) {
 			return frappe.utils.generate_route({ type: "workspace", name: "Owner Dashboard", public: 1 });
 		}

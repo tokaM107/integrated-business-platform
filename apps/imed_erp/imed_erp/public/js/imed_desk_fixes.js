@@ -154,12 +154,106 @@
 	const can_open = (item) => {
 		const user = (frappe.boot && frappe.boot.user) || {};
 		if (item.link_type === "DocType") return (user.can_read || []).includes(item.link_to);
-		if (item.link_type === "Report") return (user.can_get_report || []).includes(item.link_to);
+		// A report by its name: all_reports holds the reports the user may open (can_get_report holds doctypes).
+		if (item.link_type === "Report") return Boolean((user.all_reports || {})[item.link_to]);
 		return true;
+	};
+	// The accountant's account (role Accountant, without the owner's or the system's roles) sees the money only (the
+	// owner, 9 Nov 2026: "remove what does not matter to him"): his screen, the cash, the entries, the libraries' sales,
+	// the doctors' accounts, the financial reports and the accounts' settings. No bookings, studio, stock, counters,
+	// printing or the system's settings. A section none of whose items he may open is left out.
+	const is_accountant_account = () => {
+		const roles = frappe.user_roles || [];
+		return roles.includes("Accountant") && !roles.includes("System Manager") && !roles.includes("Super Admin");
+	};
+	const section = (label, icon) => ({ type: "Section Break", label: __(label), icon, link_type: "DocType", collapsible: 1, indent: 1, keep_closed: 0 });
+	const link = (label, link_type, link_to, route_options) => ({
+		type: "Link",
+		child: 1,
+		collapsible: 1,
+		label: __(label),
+		link_type,
+		link_to,
+		...(route_options ? { route_options: JSON.stringify(route_options) } : {}),
+	});
+	const AZARITA = { cost_center: "مكتبة الأزاريطة - MMG" };
+	const MAWASAH = { cost_center: "مكتبة المواساة - MMG" };
+	const accountant_items = () => [
+		{ type: "Link", label: __("شاشة المحاسب"), link_type: "Page", link_to: "imed-accountant", icon: "wallet" },
+		section("Accounts and Cash", "wallet"),
+		link("Treasury Close", "DocType", "Treasury Close"),
+		link("Cash Handover", "DocType", "Cash Handover"),
+		link("Weekly Cash Reconciliation", "DocType", "Weekly Cash Reconciliation"),
+		link("Cash Discrepancy", "DocType", "Cash Discrepancy"),
+		link("Expense List", "DocType", "Expense"),
+		link("Recurring Expenses", "DocType", "Recurring Expense"),
+		link("Inter Business Transfer", "DocType", "Inter Business Transfer"),
+		section("القيود والمدفوعات", "book-open"),
+		link("Payment Entry", "DocType", "Payment Entry"),
+		link("Journal Entry", "DocType", "Journal Entry"),
+		link("Sales Invoice", "DocType", "Sales Invoice"),
+		link("Purchase Invoice", "DocType", "Purchase Invoice"),
+		section("Libraries", "book"),
+		link("Azarita Invoices", "DocType", "Library Sales Document", AZARITA),
+		link("Mawasah Invoices", "DocType", "Library Sales Document", MAWASAH),
+		link("Azarita Daily Sales", "Page", "library-daily-sales", AZARITA),
+		link("Mawasah Daily Sales", "Page", "library-daily-sales", MAWASAH),
+		link("Azarita Doctor Sales", "Report", "Library Doctor Sales", AZARITA),
+		link("Mawasah Doctor Sales", "Report", "Library Doctor Sales", MAWASAH),
+		section("Doctors and Books", "users"),
+		link("Doctors Ledger", "DocType", "Doctor Ledger Entry"),
+		link("Doctor Statement", "Report", "Doctor Statement"),
+		link("Doctor Receivables", "Report", "Doctor Receivables"),
+		link("Doctor Debts", "Report", "Doctor Debts"),
+		link("Doctor Agreements", "DocType", "Doctor Agreement"),
+		section("Reports", "chart-bar-big"),
+		link("Revenue by Period", "Report", "Revenue by Period"),
+		link("Profit Before and After Shared Costs", "Report", "Profit Before and After Shared Costs"),
+		link("Profit per Business", "Report", "Profit and Loss Statement"),
+		link("Cash Box Balances", "Report", "Cash Box Balances"),
+		link("Cash Movements", "Report", "General Ledger"),
+		link("Outstanding Receivables", "Report", "Outstanding Receivables"),
+		link("Who Owes Us", "Report", "Accounts Receivable"),
+		link("علينا للناس", "Report", "Accounts Payable"),
+		link("Expense Report", "Report", "Expense Report"),
+		link("Inter Business Transfers", "Report", "Inter Business Transfers"),
+		link("Platform Fees", "Report", "Platform Fees"),
+		section("Settings", "settings"),
+		link("Expense Categories", "DocType", "Expense Category"),
+		link("Allocation Rules", "DocType", "Allocation Rule"),
+		link("Expense Settings", "DocType", "Expense Settings"),
+		link("Cash Close Settings", "DocType", "Cash Close Settings"),
+	];
+	// The items he may open, each section holding its own (as Frappe's find_nested_items makes them: create_sidebar
+	// takes them nested), and a section only with items left under it.
+	const openable = (items) => {
+		const out = [];
+		let current = null;
+		for (let item of items) {
+			if (item.type === "Section Break") {
+				current = { ...item, nested_items: [] };
+				out.push(current);
+			} else if (!can_open(item)) {
+				continue;
+			}
+			if (item.link_type === "Report") {
+				// Frappe draws a report item from its kind and doctype, as the server sends them with its own items.
+				const report = frappe.boot.user.all_reports[item.link_to];
+				item = { ...item, report: { report_type: report.report_type, ref_doctype: report.ref_doctype } };
+			}
+			if (current && item.child) {
+				current.nested_items.push({ ...item, nested_items: [], parent: current });
+			} else {
+				out.push({ ...item, nested_items: [] });
+			}
+		}
+		return out.filter((item) => item.type !== "Section Break" || item.nested_items.length);
 	};
 	const create_sidebar = Sidebar.prototype.create_sidebar;
 	Sidebar.prototype.create_sidebar = function (items) {
-		if (is_library_account() && !this.edit_mode && !(this.editor && this.editor.edit_mode)) items = library_items().filter(can_open);
+		const editing = this.edit_mode || (this.editor && this.editor.edit_mode);
+		if (is_library_account() && !editing) items = library_items().filter(can_open);
+		else if (is_accountant_account() && !editing) items = openable(accountant_items());
 		return create_sidebar.call(this, items);
 	};
 	Sidebar.prototype.imed_library_patched = true;
