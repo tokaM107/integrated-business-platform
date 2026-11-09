@@ -5537,9 +5537,30 @@ html[dir="ltr"] .imed-boxes__bar i {
 	color: var(--imed-teal-600);
 }
 /* The Epson colours: a dot, the colour, what is left, how many finished this month. */
+/* The Epson colours across the whole row: the four side by side (owner, 9 Nov 2026). */
+.imed-stock.imed-epson {
+	grid-column: 1 / -1;
+}
 .imed-epson__rows {
 	display: grid;
-	gap: 6px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+}
+.imed-epson__row {
+	grid-template-columns: 1fr !important;
+	grid-template-areas: "dot" "name" "qty" "note" !important;
+	justify-items: center;
+	text-align: center;
+	padding: 10px 4px;
+	border-radius: 14px;
+	background: color-mix(in srgb, var(--dot, #64748b) 8%, var(--card-bg));
+}
+.imed-epson__row i {
+	width: 18px !important;
+	height: 18px !important;
+}
+.imed-epson__row b {
+	font-size: 22px !important;
 }
 .imed-epson__row {
 	display: grid;
@@ -6194,41 +6215,74 @@ html[dir="ltr"] .imed-mo-track i {
 	}
 }
 
-/* §41 Lists and reports, simple (owner, 9 Nov 2026; imed_lists.js): the filters in a panel beside the table, a few of
-   them; on a phone, a "Filters" button opens the panel from the side. */
-@media (min-width: 992px) {
-	.layout-main-section.imed-side-filters {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 250px;
-		align-items: start;
-		column-gap: 18px;
-	}
-	.layout-main-section.imed-side-filters > * {
-		grid-column: 1;
-		min-width: 0;
-	}
-	.layout-main-section.imed-side-filters > .page-form {
-		grid-column: 2;
-		grid-row: 1 / span 20;
-		position: sticky;
-		top: calc(var(--navbar-height, 48px) + 70px);
-		display: flex !important;
-		flex-direction: column;
-		flex-wrap: nowrap;
-		gap: 10px;
-		margin: 0 !important;
-		padding: 16px !important;
-		border-radius: 18px;
-		border: 1px solid var(--imed-border);
-		background: var(--card-bg);
-		box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 12px 26px -22px rgba(16, 34, 42, 0.4);
-		animation: imed-rise 0.4s ease both;
-	}
-	.layout-main-section.imed-side-filters > .imed-filters-toggle,
-	.layout-main-section.imed-side-filters .imed-filters-close,
-	.layout-main-section.imed-side-filters > .imed-filters-backdrop {
-		display: none !important;
-	}
+/* §41 Lists and reports, simple (owner, 9 Nov 2026; imed_lists.js): a Filters button above the table opens the
+   filters as a menu, a few of them; the table takes the page's width; every page the same look. */
+.layout-main-section.imed-side-filters {
+	position: relative;
+}
+.imed-filters-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 4px 0 12px;
+	padding: 6px 14px;
+	border-radius: 999px;
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.06);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.imed-filters-toggle:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 8px 18px -12px rgba(16, 34, 42, 0.45);
+}
+.imed-filters-toggle .icon {
+	margin: 0;
+}
+.imed-filters-count:not(:empty) {
+	min-width: 20px;
+	padding: 0 6px;
+	border-radius: 999px;
+	color: #fff;
+	background: var(--imed-teal-600);
+	font-size: 11px;
+	line-height: 20px;
+	text-align: center;
+}
+.imed-filters-open > .imed-filters-toggle {
+	color: #fff;
+	background: var(--imed-teal-700);
+	border-color: var(--imed-teal-700);
+}
+/* The menu: under the button, over the table. */
+.layout-main-section.imed-side-filters > .page-form {
+	position: absolute !important;
+	top: 52px;
+	inset-inline-start: 0;
+	z-index: 1060;
+	width: min(92vw, 340px);
+	max-height: min(70vh, 560px);
+	overflow-y: auto;
+	display: flex !important;
+	flex-direction: column;
+	flex-wrap: nowrap;
+	gap: 10px;
+	margin: 0 !important;
+	padding: 16px !important;
+	border-radius: 18px;
+	border: 1px solid var(--imed-border);
+	background: var(--card-bg);
+	box-shadow: 0 24px 48px -20px rgba(16, 34, 42, 0.45);
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(-8px) scale(0.98);
+	transform-origin: top;
+	transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.22s;
+}
+.layout-main-section.imed-side-filters.imed-filters-open > .page-form {
+	opacity: 1;
+	visibility: visible;
+	transform: none;
+	transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .imed-side-filters > .page-form .standard-filter-section,
 .imed-side-filters > .page-form .filter-section {
@@ -6242,6 +6296,7 @@ html[dir="ltr"] .imed-mo-track i {
 .imed-side-filters > .page-form .standard-filter-section > *,
 .imed-side-filters > .page-form > .form-group,
 .imed-side-filters > .page-form .filter-section > * {
+	display: block;
 	width: 100% !important;
 	max-width: none !important;
 	flex: none !important;
@@ -6279,60 +6334,106 @@ html[dir="ltr"] .imed-mo-track i {
 	margin: 0;
 	color: var(--imed-teal-600);
 }
+.imed-filters-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1055;
+	background: rgba(16, 34, 42, 0.18);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.2s ease;
+}
+.imed-filters-open > .imed-filters-backdrop {
+	opacity: 1;
+	pointer-events: auto;
+}
 
-/* A phone or a tablet: the panel comes in from the side over the page. */
-@media (max-width: 991.98px) {
-	.layout-main-section.imed-side-filters > .page-form {
-		position: fixed !important;
-		top: 0 !important;
-		bottom: 0 !important;
-		inset-inline-end: 0;
-		z-index: 1060;
-		height: 100vh !important;
-		max-height: none !important;
-		width: min(86vw, 320px);
-		border-radius: 0;
-		margin: 0 !important;
-		padding: 18px !important;
-		display: flex !important;
-		flex-direction: column;
-		flex-wrap: nowrap;
-		gap: 12px;
-		overflow-y: auto;
-		background: var(--card-bg);
-		box-shadow: 0 0 40px rgba(16, 34, 42, 0.25);
-		transform: translateX(-110%);
-		transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	html[dir="ltr"] .layout-main-section.imed-side-filters > .page-form {
-		transform: translateX(110%);
-	}
-	.layout-main-section.imed-side-filters.imed-filters-open > .page-form {
-		transform: none;
-	}
-	.imed-side-filters > .page-form .standard-filter-section > *:not(.imed-filter-hidden) {
-		display: block !important;
-	}
-	.imed-filters-backdrop {
-		position: fixed;
-		inset: 0;
-		z-index: 1055;
-		background: rgba(16, 34, 42, 0.35);
-		opacity: 0;
-		pointer-events: none;
-		transition: opacity 0.25s ease;
-	}
-	.imed-filters-open > .imed-filters-backdrop {
-		opacity: 1;
-		pointer-events: auto;
-	}
-	.imed-filters-toggle {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		margin: 0 0 10px;
-		border-radius: 999px;
-	}
+/* Every page the same: no module trail over the title (ImedERP), room above the table. */
+.page-head .navbar-breadcrumbs li:last-child::before,
+.page-head .navbar-breadcrumbs li:last-child > a::before,
+.page-head .navbar-breadcrumbs li:not(:last-child),
+.page-head .navbar-breadcrumbs .breadcrumb-home,
+.page-head .navbar-breadcrumbs > a:first-child:not(:last-child) {
+	display: none !important;
+}
+.page-container[data-page-route] .layout-main-section-wrapper {
+	padding-top: 14px;
+}
+
+/* The tables: the sidebar's own green on the header, white words; rows that breathe; the row under the pointer
+   marked; the same on lists and reports. */
+.page-container .frappe-list .result,
+.page-container .report-wrapper .datatable {
+	border-radius: 16px;
+	overflow: hidden;
+	border: 1px solid var(--imed-border);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04), 0 14px 30px -26px rgba(16, 34, 42, 0.45);
+}
+/* The sidebar's own green (§ The sidebar: --sb-green to --sb-green-deep). */
+:root {
+	--imed-table-head: linear-gradient(90deg, #1d4a3b, #194234 60%, #133429);
+}
+.page-container .frappe-list .list-row-head {
+	background: var(--imed-table-head) !important;
+	border-bottom: 0 !important;
+}
+.page-container .frappe-list .list-row-head .list-row,
+.page-container .frappe-list .list-row-head .level-left,
+.page-container .frappe-list .list-row-head .level-right,
+.page-container .frappe-list .list-row-head .list-header-subject,
+.page-container .frappe-list .list-row-head .checkbox-actions {
+	background: transparent !important;
+	border: 0 !important;
+}
+.page-container .frappe-list .list-row-head,
+.page-container .frappe-list .list-row-head .list-row-col,
+.page-container .frappe-list .list-row-head span,
+.page-container .frappe-list .list-row-head .level-item,
+.page-container .frappe-list .list-row-head .list-count {
+	color: #fff !important;
+	font-size: 13px;
+	font-weight: 700;
+}
+.page-container .frappe-list .list-row-head .list-row-checkbox,
+.page-container .frappe-list .list-row-head svg {
+	filter: brightness(0) invert(1);
+	opacity: 0.85;
+}
+.page-container .frappe-list .list-row-container .list-row {
+	font-size: 14px;
+	min-height: 52px;
+}
+.page-container .frappe-list .list-row-container:nth-child(even) .list-row {
+	background: rgba(16, 34, 42, 0.018);
+}
+.page-container .frappe-list .list-row-container:hover .list-row {
+	background: color-mix(in srgb, var(--imed-teal-500) 7%, transparent);
+}
+.page-container .report-wrapper .dt-cell--header,
+.page-container .report-wrapper .dt-cell--header .dt-cell__content {
+	background: #1d4a3b !important;
+	color: #fff !important;
+	font-weight: 700;
+	font-size: 13px;
+}
+.page-container .report-wrapper .dt-cell--header .dt-dropdown__toggle {
+	filter: brightness(0) invert(1);
+}
+.page-container .report-wrapper .dt-cell__content {
+	font-size: 14px;
+	padding-block: 9px;
+}
+/* All the rows: no paging buttons; the next rows load by themselves (imed_lists.js load_all). */
+.imed-paging .btn-group,
+.imed-paging .btn-more {
+	visibility: hidden;
+	height: 1px;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+}
+.imed-paging {
+	min-height: 8px;
 }
 
 /* A report's PDF and Print in its head. */

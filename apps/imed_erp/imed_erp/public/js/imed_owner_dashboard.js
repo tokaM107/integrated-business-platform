@@ -956,8 +956,8 @@
 		const first = colours[0];
 		const rows = colours
 			.map(
-				(c) => `<span class="imed-epson__row ${c.qty <= 0 ? "is-empty" : ""}">
-						<i style="--dot:${EPSON_DOTS[c.item_code] || "#64748b"}"></i>
+				(c) => `<span class="imed-epson__row ${c.qty <= 0 ? "is-empty" : ""}" style="--dot:${EPSON_DOTS[c.item_code] || "#64748b"}">
+						<i></i>
 						<span>${esc(c.name.replace(/^حبر إبسون\s*/, ""))}</span>
 						<b>${qty(c.qty)}</b>
 						${c.finished_month ? `<small>${esc(__("finished {0} this month", [qty(c.finished_month)]))}</small>` : ""}

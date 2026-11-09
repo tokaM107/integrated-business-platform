@@ -4,8 +4,11 @@
 // Lists and reports, simple (the owner, 9 Nov 2026: "simple tables, the filters on the side, not on top eating the
 // page, a few simple filters; reports printed as PDF; all of it on a phone").
 //
-//   - A list's or a report's filters move to a panel beside the table (theme §41); a phone opens it from a
-//     "Filters" button. Frappe's own filter controls are moved, not copied: they keep working as before.
+//   - A list's or a report's filters sit behind a Filters button above the table, which opens them as a menu
+//     (theme §41; the owner, 9 Nov 2026: "a button on top, the list when I press it, the table the page's width").
+//     Frappe's own filter controls are moved, not copied: they keep working as before.
+//   - A list shows all its rows: the next ones load by themselves as the table's end comes into view (no 20 /
+//     100 / 500 buttons).
 //   - A list keeps a few simple filters (SIMPLE below, else its first four, never the record's number); the
 //     others stay a click away in Frappe's own Filter button.
 //   - A report has its PDF and Print buttons in its head.
@@ -54,10 +57,14 @@
 		}
 		if (page.type === "list") simplify($form, page.doctype);
 		if (!$main.children(".imed-filters-toggle").length) {
-			$(`<button type="button" class="btn btn-default btn-sm imed-filters-toggle">${frappe.utils.icon("filter", "sm")}<span>${esc(__("Filters"))}</span></button>`)
+			$(`<button type="button" class="btn btn-default btn-sm imed-filters-toggle">${frappe.utils.icon("filter", "sm")}<span>${esc(__("Filters"))}</span><b class="imed-filters-count"></b></button>`)
 				.on("click", () => $main.toggleClass("imed-filters-open"))
-				.insertAfter($form);
+				.insertBefore($form);
 		}
+		// How many filters are set, on the button.
+		const set = (page.type === "list" && window.cur_list && cur_list.filter_area ? cur_list.filter_area.get().length : 0) || 0;
+		$main.find(".imed-filters-count").text(set ? set : "");
+		if (page.type === "list") load_all($page);
 		if (!$main.children(".imed-filters-backdrop").length) {
 			$(`<div class="imed-filters-backdrop"></div>`).on("click", () => $main.removeClass("imed-filters-open")).appendTo($main);
 		}
@@ -72,6 +79,31 @@
 		const keep = wanted.length ? wanted : names.slice(0, MAX);
 		$items.each(function () {
 			$(this).toggleClass("imed-filter-hidden", !keep.includes(this.getAttribute("data-fieldname")));
+		});
+	}
+
+	// All the rows: the paging buttons go, and the next page loads by itself when the table's end is in view.
+	const ends = "IntersectionObserver" in window
+		? new IntersectionObserver((entries) =>
+				entries.forEach((e) => {
+					if (!e.isIntersecting) return;
+					const $more = $(e.target).find(".btn-more:visible");
+					if (!$more.length || $more.prop("disabled")) return;
+					$more.trigger("click");
+					// Still in view once the rows came: watch again, so the next page loads too.
+					ends.unobserve(e.target);
+					setTimeout(() => document.body.contains(e.target) && ends.observe(e.target), 1200);
+				})
+		  )
+		: null;
+	function load_all($page) {
+		// A hundred at a time, so a long list is all there after a scroll or two.
+		if (window.cur_list && cur_list.page_length && cur_list.page_length < 100) cur_list.page_length = 100;
+		$page.find(".list-paging-area").each(function () {
+			if (this.dataset.imedWatched) return;
+			this.dataset.imedWatched = "1";
+			this.classList.add("imed-paging");
+			ends && ends.observe(this);
 		});
 	}
 
