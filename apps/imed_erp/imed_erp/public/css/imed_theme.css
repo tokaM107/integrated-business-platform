@@ -5259,6 +5259,8 @@ a.imed-ov-lib:hover {
 	.imed-daily-sales__grand td {
 		-webkit-print-color-adjust: exact;
 		print-color-adjust: exact;
+	}
+}
 
 /* §40 The owner's page, simplified (owner, 5 Nov 2026; imed_owner_dashboard.js, owner_periods.py). Mostly seen on a
    phone: two cards to a row, one big figure each, in the money cards' own look (white card, a solid icon, a soft
