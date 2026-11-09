@@ -5122,6 +5122,145 @@ a.imed-ov-lib:hover {
 	color: var(--imed-teal-300);
 }
 
+/* ------------------------------------------------------------------ */
+/* 36. A library's daily sales, as its system prints them             */
+/*     (imederp/page/library_daily_sales)                             */
+/* ------------------------------------------------------------------ */
+/* The owner, 9 Nov 2026, with photos of Tanmya's "تقرير المبيعات اليومية": a table per item group, sold / returned
+   / net as four figures each, the group's total under it and the period's total at the end. Printing shows the
+   tables only. */
+.imed-daily-sales {
+	padding: 4px 0 40px;
+}
+.imed-daily-sales__title {
+	margin-bottom: 14px;
+	text-align: center;
+}
+.imed-daily-sales__title h3 {
+	margin: 0 0 4px;
+	color: var(--heading-color);
+	font-size: 1.35rem;
+	font-weight: 800;
+}
+.imed-daily-sales__title div {
+	color: var(--text-muted);
+	font-weight: 600;
+}
+.imed-daily-sales__empty {
+	padding: 40px 0;
+	color: var(--text-muted);
+	text-align: center;
+}
+.imed-daily-sales__group {
+	margin-bottom: 18px;
+	overflow: hidden;
+	border: 1px solid var(--imed-border);
+	border-radius: 14px;
+	background: var(--card-bg);
+}
+.imed-daily-sales__group-name {
+	padding: 10px 14px;
+	background: var(--imed-teal-700);
+	color: #ffffff;
+	font-weight: 800;
+}
+.imed-daily-sales__scroll {
+	overflow-x: auto;
+}
+.imed-daily-sales table {
+	width: 100%;
+	min-width: 1080px;
+	table-layout: fixed;
+	border-collapse: collapse;
+	font-size: var(--text-sm);
+}
+.imed-daily-sales th,
+.imed-daily-sales td {
+	padding: 6px 5px;
+	border: 1px solid var(--imed-border);
+	white-space: nowrap;
+}
+.imed-daily-sales thead th {
+	white-space: normal;
+	background: var(--subtle-fg);
+	color: var(--heading-color);
+	font-weight: 700;
+	text-align: center;
+}
+.imed-daily-sales thead th.side {
+	font-weight: 800;
+}
+.imed-daily-sales thead th.side-sold {
+	background: color-mix(in srgb, var(--green-500) 14%, transparent);
+}
+.imed-daily-sales thead th.side-returned {
+	background: color-mix(in srgb, var(--red-500) 12%, transparent);
+}
+.imed-daily-sales thead th.side-net {
+	background: color-mix(in srgb, var(--imed-teal-500) 16%, transparent);
+}
+.imed-daily-sales col.c-code {
+	width: 52px;
+}
+.imed-daily-sales col.c-name {
+	width: 160px;
+}
+.imed-daily-sales td.code {
+	color: var(--text-muted);
+	text-align: center;
+}
+.imed-daily-sales td.name {
+	white-space: normal;
+}
+.imed-daily-sales td.num {
+	font-variant-numeric: tabular-nums;
+	text-align: end;
+}
+.imed-daily-sales td.v {
+	font-weight: 700;
+}
+.imed-daily-sales tbody tr:nth-child(even) td {
+	background: color-mix(in srgb, var(--subtle-fg) 55%, transparent);
+}
+.imed-daily-sales tfoot td {
+	background: var(--subtle-accent);
+	color: var(--heading-color);
+	font-weight: 800;
+}
+.imed-daily-sales__grand {
+	border: 2px solid var(--imed-teal-700);
+}
+.imed-daily-sales__grand td {
+	background: color-mix(in srgb, var(--imed-teal-500) 14%, transparent);
+	color: var(--heading-color);
+	font-size: var(--text-base);
+	font-weight: 800;
+}
+@media print {
+	.body-sidebar-container,
+	.body-sidebar,
+	.navbar,
+	.page-head,
+	.page-form,
+	.imed-assistant,
+	.imed-assistant-launcher {
+		display: none !important;
+	}
+	.imed-daily-sales table {
+		min-width: 0;
+		font-size: 9pt;
+	}
+	.imed-daily-sales__group {
+		break-inside: avoid;
+	}
+	.imed-daily-sales__group-name,
+	.imed-daily-sales thead th,
+	.imed-daily-sales tfoot td,
+	.imed-daily-sales__grand td {
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+}
 
 /* §40 The owner's page, simplified (owner, 5 Nov 2026; imed_owner_dashboard.js, owner_periods.py). Mostly seen on a
    phone: two cards to a row, one big figure each, in the money cards' own look (white card, a solid icon, a soft

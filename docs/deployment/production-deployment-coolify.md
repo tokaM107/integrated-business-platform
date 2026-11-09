@@ -155,8 +155,9 @@ In Coolify (https://<the VPS>:8000, or the tunnel):
    Storage; they survive redeploys and are not deleted by "Stop".
 7. **Health checks**: the ones in the file; Coolify reports the deployment healthy when `frontend` is.
 8. **Deploy**: the first deploy brings an empty stack (no site). Then the restore (section 5). Every later
-   deploy: backup → "Redeploy" (rebuilds the image from the branch, restarts the containers; the volumes stay) →
-   `bench --site frontend migrate` → the checks of section 9. **Rollback**: Coolify keeps the previous image;
+   deploy: backup → "Redeploy" (rebuilds the image from the branch, restarts the containers; the volumes stay; the one-time `migrator` service then runs
+   `bench --site frontend migrate` by itself, its output in that container's log) → the checks of section 9. If the
+   migrator failed, run `bench --site frontend migrate` in the `backend` container by hand. **Rollback**: Coolify keeps the previous image;
    "Redeploy" the previous commit (set the branch's commit or revert the commit in git), then restore the backup
    taken before the deploy if the database changed (`deploy/restore_site.sh` with `FORCE=1`).
 9. **Scheduled tasks** (Coolify → the application → Scheduled Tasks, run inside the `backend` container):

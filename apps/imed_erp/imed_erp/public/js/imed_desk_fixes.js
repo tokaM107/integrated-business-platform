@@ -20,6 +20,30 @@
 (function () {
 	const Item = frappe.ui && frappe.ui.sidebar_item && frappe.ui.sidebar_item.TypeLink;
 	if (!Item || Item.prototype.imed_url_patched) return;
+	// Frappe's sidebar passes an item's route options to a list or a page only. A report item with route options
+	// ("Azarita Doctor Sales" / "Mawasah Doctor Sales": one report, each library's cost center; the owner, 9 Nov
+	// 2026) gets them in its address too, and the report reads its filters from there.
+	const get_path = Item.prototype.get_path;
+	Item.prototype.get_path = function () {
+		const it = this.item || {};
+		if (it.link_type === "Report" && it.route_options && !it.filters) {
+			try {
+				return frappe.utils.generate_route({ type: "Report", is_query_report: 1, name: it.link_to, route_options: JSON.parse(it.route_options) });
+			} catch (e) {
+				// a malformed route_options: the plain report, as Frappe would
+			}
+		}
+		// A page item with route options (the daily sales page, a library each) the same: Frappe's route for a page
+		// leaves them out of the address; the page reads them from its query.
+		if (it.link_type === "Page" && it.route_options) {
+			try {
+				return `/desk/${frappe.router.slug(it.link_to)}?${$.param(JSON.parse(it.route_options))}`;
+			} catch (e) {
+				// a malformed route_options: Frappe's own route
+			}
+		}
+		return get_path.apply(this, arguments);
+	};
 	const make = Item.prototype.make;
 	Item.prototype.make = function () {
 		const it = this.item || {};
