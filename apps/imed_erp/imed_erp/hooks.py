@@ -116,9 +116,11 @@ has_permission = {
 permission_query_conditions = {
 	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.query_conditions",
 	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.query_conditions",
-	# A branch manager lists their own branch's journal entries only (imederp/branch_lists.py).
+	# A branch manager lists their own branch's journal and stock entries and invoices only (imederp/branch_lists.py).
 	"Journal Entry": "imed_erp.imederp.branch_lists.journal_entry_conditions",
 	"Stock Entry": "imed_erp.imederp.branch_lists.stock_entry_conditions",
+	"Sales Invoice": "imed_erp.imederp.branch_lists.sales_invoice_conditions",
+	"Purchase Invoice": "imed_erp.imederp.branch_lists.purchase_invoice_conditions",
 	**{dt: "imed_erp.imederp.accountant_desk.query_conditions" for dt in _NOT_THE_ACCOUNTANTS},
 }
 

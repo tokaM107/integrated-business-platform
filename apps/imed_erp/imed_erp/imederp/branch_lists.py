@@ -51,3 +51,26 @@ def stock_entry_conditions(user=None):
 		"exists (select 1 from `tabStock Entry Detail` sed where sed.parent = `tabStock Entry`.name"
 		f" and (sed.s_warehouse in ({values}) or sed.t_warehouse in ({values})))"
 	)
+
+
+def _invoice_conditions(doctype, item_doctype, user):
+	"""An invoice whose head names no branch was listed to every branch's manager (strict User Permissions are off,
+	so an empty link passes: the API probe of 10 Nov 2026 showed the halls' manager Mawasah's invoices). A user
+	limited to cost centers lists the invoices of their branch: by its head, or, the head empty, by a line."""
+	centers = my_cost_centers(user or frappe.session.user)
+	if not centers:
+		return ""
+	values = ", ".join(frappe.db.escape(c) for c in centers)
+	return (
+		f"(`tab{doctype}`.cost_center in ({values}) or (ifnull(`tab{doctype}`.cost_center, '') = ''"
+		f" and exists (select 1 from `tab{item_doctype}` i where i.parent = `tab{doctype}`.name"
+		f" and i.parenttype = '{doctype}' and i.cost_center in ({values}))))"
+	)
+
+
+def sales_invoice_conditions(user=None):
+	return _invoice_conditions("Sales Invoice", "Sales Invoice Item", user)
+
+
+def purchase_invoice_conditions(user=None):
+	return _invoice_conditions("Purchase Invoice", "Purchase Invoice Item", user)

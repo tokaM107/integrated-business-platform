@@ -57,3 +57,13 @@ class TestBranchLists(IntegrationTestCase):
 		if frappe.db.exists("User", "accountant@imed.local"):
 			self.assertEqual(branch_lists.journal_entry_conditions("accountant@imed.local"), "")
 			self.assertEqual(branch_lists.stock_entry_conditions("accountant@imed.local"), "")
+
+	def test_an_invoice_without_a_branch_is_listed_by_its_lines_branch(self):
+		condition = branch_lists.sales_invoice_conditions(SARA)
+		self.assertIn("`tabSales Invoice`.cost_center in ('مكتبة الأزاريطة - MMG')", condition)
+		self.assertIn("tabSales Invoice Item", condition)
+		self.assertEqual(branch_lists.sales_invoice_conditions("Administrator"), "")
+		frappe.set_user(SARA)
+		for row in frappe.get_list("Sales Invoice", fields=["name", "cost_center"], limit_page_length=0):
+			lines = set(frappe.get_all("Sales Invoice Item", filters={"parent": row.name}, pluck="cost_center"))
+			self.assertTrue(row.cost_center == "مكتبة الأزاريطة - MMG" or "مكتبة الأزاريطة - MMG" in lines, row.name)
