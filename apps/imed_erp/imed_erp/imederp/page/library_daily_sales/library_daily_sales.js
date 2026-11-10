@@ -2,7 +2,7 @@
 // photos of that report): each item group as a table of its items, with what was sold, what was returned and the
 // net, each as quantity, value before discount, discount and value, closed by the group's total; the period's total
 // at the end. From the invoices mirrored here (imederp/library_sync/reports.py daily_sales). Opened from the sidebar
-// on one library (?cost_center=...); the period and the library can be changed at the top; "Print" prints the tables.
+// on one library (?cost_center=..., Azarita by default); the period at the top, the library by its tab; "Print" prints the tables.
 frappe.pages["library-daily-sales"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({ parent: wrapper, title: __("تقرير المبيعات اليومية"), single_column: true });
 	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
@@ -20,12 +20,25 @@ frappe.pages["library-daily-sales"].on_page_load = function (wrapper) {
 		options: "Cost Center",
 		default: "مكتبة الأزاريطة - MMG",
 		get_query: () => ({ filters: { is_group: 0, cost_center_name: ["like", "مكتبة%"] } }),
-		change: () => load(),
+		change: () => {
+			tabs();
+			load();
+		},
 	});
 	page.set_primary_action(__("Print"), () => window.print(), "printer");
 	page.set_secondary_action(__("Refresh"), () => load(), "refresh");
 
 	const $body = $(`<div class="imed-daily-sales"></div>`).appendTo(page.main);
+	// The library chosen by its tab at the top (the owner, 9 Nov 2026: one sidebar item, the libraries as tabs), not
+	// by the field, which stays hidden and holds the choice.
+	f_cc.$wrapper.addClass("hidden");
+	// The title says the library shown: "المبيعات اليومية · مكتبة المواساة".
+	const tabs = () => {
+		const cc = f_cc.get_value();
+		const text = cc ? `${__("Library Daily Sales")} · ${cc.replace(/\s+-\s+[^-]+$/, "")}` : __("Library Daily Sales");
+		window.imed_head_title ? window.imed_head_title(page, text) : page.set_title(text);
+		if (window.imed_library_tabs) window.imed_library_tabs($body, cc, (pick) => f_cc.set_value(pick));
+	};
 
 	// Sold, returned, net: four figures each, as in the library system's report.
 	const SIDES = [
@@ -111,6 +124,7 @@ frappe.pages["library-daily-sales"].on_page_load = function (wrapper) {
 		if (asked.to_date) f_to.set_value(asked.to_date);
 		setTimeout(() => {
 			loading = false;
+			tabs();
 			load();
 		}, 50);
 	};

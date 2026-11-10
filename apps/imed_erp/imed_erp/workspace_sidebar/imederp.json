@@ -119,56 +119,26 @@
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Azarita Invoices",
+   "label": "Library Invoices",
    "link_type": "DocType",
    "type": "Link",
-   "link_to": "Library Sales Document",
-   "route_options": "{\"cost_center\": \"مكتبة الأزاريطة - MMG\"}"
+   "link_to": "Library Sales Document"
   },
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Mawasah Invoices",
-   "link_type": "DocType",
-   "type": "Link",
-   "link_to": "Library Sales Document",
-   "route_options": "{\"cost_center\": \"مكتبة المواساة - MMG\"}"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "label": "Azarita Daily Sales",
+   "label": "Library Daily Sales",
    "link_type": "Page",
    "type": "Link",
-   "link_to": "library-daily-sales",
-   "route_options": "{\"cost_center\":\"مكتبة الأزاريطة - MMG\"}"
+   "link_to": "library-daily-sales"
   },
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Mawasah Daily Sales",
-   "link_type": "Page",
-   "type": "Link",
-   "link_to": "library-daily-sales",
-   "route_options": "{\"cost_center\":\"مكتبة المواساة - MMG\"}"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "label": "Azarita Doctor Sales",
+   "label": "Library Doctor Sales",
    "link_type": "Report",
    "type": "Link",
-   "link_to": "Library Doctor Sales",
-   "route_options": "{\"cost_center\":\"مكتبة الأزاريطة - MMG\"}"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "label": "Mawasah Doctor Sales",
-   "link_type": "Report",
-   "type": "Link",
-   "link_to": "Library Doctor Sales",
-   "route_options": "{\"cost_center\":\"مكتبة المواساة - MMG\"}"
+   "link_to": "Library Doctor Sales"
   },
   {
    "child": 1,

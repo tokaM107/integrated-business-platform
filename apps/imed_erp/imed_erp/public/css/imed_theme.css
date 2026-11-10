@@ -5516,6 +5516,7 @@ a.imed-ov-lib:hover {
 	.imed-accountant__grid {
 		grid-template-columns: 1fr;
 	}
+}
 
 /* §40 The owner's page, simplified (owner, 5 Nov 2026; imed_owner_dashboard.js, owner_periods.py). Mostly seen on a
    phone: two cards to a row, one big figure each, in the money cards' own look (white card, a solid icon, a soft
@@ -6652,7 +6653,9 @@ html[dir="ltr"] .imed-mo-track i {
 	position: absolute !important;
 	top: 52px;
 	inset-inline-start: 0;
-	z-index: 1060;
+	/* Over its backdrop (1055) on a report too: Frappe's "#page-query-report .page-form" sets 5 by the page's id,
+	   which beat this class rule and left the report's filters under the backdrop, unclickable (10 Nov 2026). */
+	z-index: 1060 !important;
 	width: min(92vw, 340px);
 	max-height: min(70vh, 560px);
 	overflow-y: auto;
@@ -7445,4 +7448,105 @@ html[dir="ltr"] .imed-mo-track i {
 	margin: 0 !important;
 	flex: none;
 	color: #1d4a3b;
+}
+
+/* Every filter a list is under, each with its remove (9 Nov 2026). */
+.imed-active {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
+	margin: 0 0 10px;
+	padding: 8px 12px;
+	border-radius: 12px;
+	background: #fff8eb;
+	border: 1px solid #f3d9a4;
+	font-size: 12px;
+}
+.imed-active__title {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 700;
+	color: #8a5a00;
+}
+.imed-active__title .icon {
+	margin: 0 !important;
+}
+.imed-active__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 100%;
+	padding: 3px 10px;
+	border: 1px solid #f0c977;
+	border-radius: 999px;
+	background: #fff;
+	color: var(--text-color);
+	font-size: 12px;
+	cursor: pointer;
+}
+.imed-active__chip span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	max-width: 320px;
+}
+.imed-active__chip:hover {
+	background: #fdecc8;
+}
+.imed-active__clear {
+	margin-inline-start: auto;
+}
+
+/* The libraries as tabs at the top of a library's page (9 Nov 2026). */
+.imed-lib-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 14px 15px 4px;
+}
+.imed-lib-tabs button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 22px;
+	border: 1px solid var(--imed-border, var(--border-color));
+	border-radius: 999px;
+	background: var(--card-bg);
+	color: var(--text-color);
+	font-size: 15px;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.imed-lib-tabs button .icon {
+	margin: 0 !important;
+}
+.imed-lib-tabs button:hover {
+	background: color-mix(in srgb, #1d4a3b 8%, var(--card-bg));
+}
+.imed-lib-tabs button.is-active {
+	background: linear-gradient(90deg, #1d4a3b, #194234 60%, #133429);
+	border-color: #133429;
+	color: #fff;
+	box-shadow: 0 8px 18px -12px #133429;
+}
+.imed-lib-tabs button.is-active .icon {
+	stroke: #fff;
+}
+@media (max-width: 640px) {
+	.imed-lib-tabs button {
+		flex: 1 1 0;
+		justify-content: center;
+		padding: 9px 10px;
+	}
+}
+
+/* The owner's page with no title bar on a computer (the owner, 9 Nov 2026: "remove this line, bring the page up");
+   a phone keeps it, it holds the sidebar's button. */
+@media (min-width: 992px) {
+	body[data-route="Workspaces/Owner Dashboard"] .page-container:has(.imed-slot-top) .page-head {
+		display: none;
+	}
 }

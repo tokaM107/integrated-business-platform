@@ -176,8 +176,6 @@
 		link_to,
 		...(route_options ? { route_options: JSON.stringify(route_options) } : {}),
 	});
-	const AZARITA = { cost_center: "مكتبة الأزاريطة - MMG" };
-	const MAWASAH = { cost_center: "مكتبة المواساة - MMG" };
 	const accountant_items = () => [
 		{ type: "Link", label: __("شاشة المحاسب"), link_type: "Page", link_to: "imed-accountant", icon: "wallet" },
 		section("Accounts and Cash", "wallet"),
@@ -194,12 +192,10 @@
 		link("Sales Invoice", "DocType", "Sales Invoice"),
 		link("Purchase Invoice", "DocType", "Purchase Invoice"),
 		section("Libraries", "book"),
-		link("Azarita Invoices", "DocType", "Library Sales Document", AZARITA),
-		link("Mawasah Invoices", "DocType", "Library Sales Document", MAWASAH),
-		link("Azarita Daily Sales", "Page", "library-daily-sales", AZARITA),
-		link("Mawasah Daily Sales", "Page", "library-daily-sales", MAWASAH),
-		link("Azarita Doctor Sales", "Report", "Library Doctor Sales", AZARITA),
-		link("Mawasah Doctor Sales", "Report", "Library Doctor Sales", MAWASAH),
+		// One item a page, the library chosen by its tabs (as the ImedERP sidebar, 9 Nov 2026).
+		link("Library Invoices", "DocType", "Library Sales Document"),
+		link("Library Daily Sales", "Page", "library-daily-sales"),
+		link("Library Doctor Sales", "Report", "Library Doctor Sales"),
 		section("Doctors and Books", "users"),
 		link("Doctors Ledger", "DocType", "Doctor Ledger Entry"),
 		link("Doctor Statement", "Report", "Doctor Statement"),

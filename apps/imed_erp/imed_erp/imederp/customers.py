@@ -69,8 +69,15 @@ CUSTOM_FIELDS = {
 
 
 # The customers' table shows their mobile and finds a customer by it (owner, 9 Nov 2026: the studio's customers'
-# numbers in the table).
-LIST_PROPERTIES = [("mobile_no", "in_list_view", 1), ("mobile_no", "in_standard_filter", 1)]
+# numbers in the table). Frappe shows only a few columns, so ERPNext's territory, billing currency and customer type
+# (one value for every customer here) leave the table to make room for the mobile.
+LIST_PROPERTIES = [
+	("mobile_no", "in_list_view", 1),
+	("mobile_no", "in_standard_filter", 1),
+	("territory", "in_list_view", 0),
+	("default_currency", "in_list_view", 0),
+	("customer_type", "in_list_view", 0),
+]
 
 
 def make_custom_fields():
