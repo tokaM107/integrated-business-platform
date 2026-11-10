@@ -69,7 +69,9 @@ def is_damaged_store(warehouse):
 
 @frappe.whitelist()
 def default_damaged_store(company=None):
-	"""The company's damaged store, when it has exactly one."""
+	"""The company's damaged store, when it has exactly one. For whoever may record damaged stock only (security
+	review of 10 Nov 2026: any signed-in user could ask)."""
+	frappe.has_permission("Damaged Stock Entry", "create", throw=True)
 	filters = {"custom_is_damaged_store": 1, "is_group": 0, "disabled": 0}
 	if company:
 		filters["company"] = company

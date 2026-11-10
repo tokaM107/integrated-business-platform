@@ -461,7 +461,8 @@
    "label": "Profit per Business",
    "link_type": "Report",
    "type": "Link",
-   "link_to": "Profit and Loss Statement"
+   "link_to": "Profit and Loss Statement",
+   "route_options": "{\"company\": \"Mohamed Mamdouh group\"}"
   },
   {
    "child": 1,
@@ -633,7 +634,7 @@
    "link_to": "Platform Fee Schedule"
   }
  ],
- "modified": "2026-11-09 15:00:00.000000",
+ "modified": "2026-11-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",

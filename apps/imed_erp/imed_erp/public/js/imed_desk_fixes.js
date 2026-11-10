@@ -209,7 +209,7 @@
 		section("Reports", "chart-bar-big"),
 		link("Revenue by Period", "Report", "Revenue by Period"),
 		link("Profit Before and After Shared Costs", "Report", "Profit Before and After Shared Costs"),
-		link("Profit per Business", "Report", "Profit and Loss Statement"),
+		link("Profit per Business", "Report", "Profit and Loss Statement", { company: "Mohamed Mamdouh group" }),
 		link("Cash Box Balances", "Report", "Cash Box Balances"),
 		link("Cash Movements", "Report", "General Ledger"),
 		link("Outstanding Receivables", "Report", "Outstanding Receivables"),
