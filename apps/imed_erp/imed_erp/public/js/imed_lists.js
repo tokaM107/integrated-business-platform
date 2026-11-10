@@ -38,6 +38,13 @@
 
 	function arrange() {
 		readable_charts();
+		clean_reports();
+		// The libraries' tabs belong to the page they were made on: every report shares one page in Frappe, so the
+		// doctors' sales tabs would stay on the next report opened (10 Nov 2026).
+		const here = frappe.get_route_str ? frappe.get_route_str() : "";
+		$(".imed-lib-tabs[data-route]").each(function () {
+			$(this).toggle(this.dataset.route === here);
+		});
 		const page = kind();
 		const $page = current();
 		if (!page || !$page.length) return;
@@ -415,7 +422,9 @@
 		const tabs = [...(with_all ? [["", __("Both libraries")]] : []), ...rows.map((r) => [r.name, r.cost_center_name.replace(/^مكتبة\s+/, "")])];
 		let $tabs = $where.prevAll(".imed-lib-tabs").first();
 		if (!$tabs.length) {
-			$tabs = $(`<div class="imed-lib-tabs" role="tablist"></div>`).insertBefore($where);
+			$tabs = $(`<div class="imed-lib-tabs" role="tablist"></div>`)
+				.attr("data-route", frappe.get_route_str ? frappe.get_route_str() : "")
+				.insertBefore($where);
 			$tabs.on("click", "button", function () {
 				$tabs.find("button").removeClass("is-active").attr("aria-selected", "false");
 				$(this).addClass("is-active").attr("aria-selected", "true");
@@ -478,6 +487,32 @@
 			return out;
 		};
 		QR.prototype.imed_chart = true;
+	}
+
+	// One report object serves every report in Frappe, and a report keeps what the one before it left: the totals
+	// cards (when it has none of its own), and, after a background ("prepared") report such as Stock Balance, the
+	// "background report" notice and its "Generate New Report" button on a report that only had no rows (the owner,
+	// 10 Nov 2026, on the platform fees). Each refresh starts clean; a real background report sets them again.
+	function clean_report_state(report) {
+		report.prepared_report = false;
+		report.prepared_report_document = null;
+		if (report.$summary) report.$summary.empty().hide();
+		const labels = Object.values(report.primary_action_map || {}).map((a) => a.label);
+		if (report.primary_button && labels.includes(report.primary_button.text().trim())) {
+			report.page.clear_primary_action();
+			report.primary_button = null;
+		}
+	}
+	function clean_reports() {
+		// Frappe gives the report object its own (debounced) refresh, so the object's is wrapped, once.
+		const report = frappe.query_report;
+		if (!report || typeof report.refresh !== "function" || report.refresh.imed_clean) return;
+		const refresh = report.refresh;
+		report.refresh = function () {
+			clean_report_state(this);
+			return refresh.apply(this, arguments);
+		};
+		report.refresh.imed_clean = true;
 	}
 
 	// Frappe draws a list's filters after the route changes, and again when it reloads: arrange on each change.
