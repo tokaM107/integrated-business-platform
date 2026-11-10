@@ -483,7 +483,7 @@
 				if (o.data.labels.length > 8) o.axisOptions = Object.assign({}, o.axisOptions, { xIsSeries: true });
 			}
 			o.height = Math.max(o.height || 0, 260);
-			if (!o.colors || !o.colors.length) o.colors = ["#1d9386", "#7c3aed", "#ea580c", "#2563eb", "#16a34a"];
+			if (!o.colors || !o.colors.length) o.colors = ["#0d9276", "#40a2e3", "#45adc6", "#e3bd1c", "#084a3e"];
 			const out = draw.call(this, o);
 			if (this.chart) this.chart.imed_drawn = true;
 			return out;
