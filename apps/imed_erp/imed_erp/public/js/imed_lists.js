@@ -41,7 +41,9 @@
 		clean_reports();
 		// The libraries' tabs belong to the page they were made on: every report shares one page in Frappe, so the
 		// doctors' sales tabs would stay on the next report opened (10 Nov 2026).
-		const here = frappe.get_route_str ? frappe.get_route_str() : "";
+		// Frappe has no route yet while the desk starts: get_route_str would throw (a page error on every list, seen in
+		// the page test of 10 Nov 2026).
+		const here = frappe.get_route_str && frappe.get_route && frappe.get_route() ? frappe.get_route_str() : "";
 		$(".imed-lib-tabs[data-route]").each(function () {
 			$(this).toggle(this.dataset.route === here);
 		});
@@ -423,7 +425,7 @@
 		let $tabs = $where.prevAll(".imed-lib-tabs").first();
 		if (!$tabs.length) {
 			$tabs = $(`<div class="imed-lib-tabs" role="tablist"></div>`)
-				.attr("data-route", frappe.get_route_str ? frappe.get_route_str() : "")
+				.attr("data-route", frappe.get_route_str && frappe.get_route && frappe.get_route() ? frappe.get_route_str() : "")
 				.insertBefore($where);
 			$tabs.on("click", "button", function () {
 				$tabs.find("button").removeClass("is-active").attr("aria-selected", "false");
