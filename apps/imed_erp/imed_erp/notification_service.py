@@ -7,14 +7,23 @@
 # Channels:
 #   system    in-app notification (bell icon), works now
 #   email     through the site's outgoing Email Account, works once one is configured
-#   whatsapp  not integrated yet: the adapter only logs what it would send
+#   whatsapp  through CallMeBot (free, unofficial): it only writes to a person who allowed it from their own
+#             WhatsApp and got a key back. Who that is lives in site_config.json, never in the code:
+#               "imed_whatsapp_recipients": {"owner@imed.local": {"phone": "+2010xxxxxxxx", "apikey": "123456"}}
+#             A user who is not listed there gets nothing on this channel. The message leaves after the
+#             transaction commits, from a background job, so a slow or failing CallMeBot never holds up or
+#             breaks what the user was doing.
 #   sms       not integrated yet: the adapter only logs what it would send
 #
 # To add an event, add it to EVENTS. To integrate a provider, fill in its adapter; nothing else changes.
 
 import frappe
+import requests
 from frappe import _
 from frappe.utils.jinja import render_template
+
+WHATSAPP_URL = "https://api.callmebot.com/whatsapp.php"
+WHATSAPP_TIMEOUT = 15  # seconds
 
 # Templates are placeholders until each module defines its real wording.
 EVENTS = {
@@ -66,6 +75,18 @@ EVENTS = {
 		"subject": "{{ subject }}",
 		"message": "{{ subject }}",
 		"channels": ["system"],
+	},
+	# For the owner, on WhatsApp only (imederp/owner_alerts.py).
+	"owner_stock_request": {
+		"subject": "New stock request for {{ warehouse }}",
+		"message": "New stock request for {{ warehouse }} ({{ request }}): {{ items }}",
+		"channels": ["whatsapp"],
+	},
+	# The day's revenue and bookings; worded and translated by the module.
+	"owner_daily_summary": {
+		"subject": "{{ subject }}",
+		"message": "{{ message }}",
+		"channels": ["whatsapp"],
 	},
 	"period_closed": {
 		"subject": "Accounting period {{ period }} closed",
@@ -131,6 +152,49 @@ def _email(users, subject, message, event, document=None):
 	return recipients
 
 
+def whatsapp_recipient(user):
+	"""The user's {"phone", "apikey"} from the site's configuration, or None when they have not been set up."""
+	recipient = (frappe.conf.get("imed_whatsapp_recipients") or {}).get(user) or {}
+	return recipient if recipient.get("phone") and recipient.get("apikey") else None
+
+
+def _whatsapp(users, subject, message, event, document=None):
+	queued = []
+	for user in users:
+		if not whatsapp_recipient(user):
+			continue
+		# The job is given the user, not the key: the key stays in the configuration and out of the queue.
+		frappe.enqueue(
+			"imed_erp.notification_service.send_whatsapp",
+			queue="short",
+			enqueue_after_commit=True,
+			user=user,
+			text=message,
+		)
+		queued.append(user)
+	return queued
+
+
+def send_whatsapp(user, text):
+	"""One message to one user through CallMeBot. True when it accepted it; a failure is logged, never raised."""
+	recipient = whatsapp_recipient(user)
+	if not recipient:
+		return False
+	try:
+		response = requests.get(
+			WHATSAPP_URL,
+			params={"phone": recipient["phone"], "text": text, "apikey": recipient["apikey"]},
+			timeout=WHATSAPP_TIMEOUT,
+		)
+		ok, detail = response.status_code == 200, f"HTTP {response.status_code}: {response.text[:300]}"
+	except requests.RequestException as e:
+		# Only the kind of failure: the exception's own text carries the address, and the key is in it.
+		ok, detail = False, type(e).__name__
+	if not ok:
+		frappe.log_error(title="WhatsApp message not sent", message=f"{user}: {detail}".replace(recipient["apikey"], "***"))
+	return ok
+
+
 def _not_integrated(channel):
 	def adapter(users, subject, message, event, document=None):
 		numbers = [frappe.db.get_value("User", u, "mobile_no") for u in users]
@@ -145,6 +209,6 @@ def _not_integrated(channel):
 ADAPTERS = {
 	"system": _system,
 	"email": _email,
-	"whatsapp": _not_integrated("whatsapp"),
+	"whatsapp": _whatsapp,
 	"sms": _not_integrated("sms"),
 }
