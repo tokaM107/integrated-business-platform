@@ -284,7 +284,7 @@ if frappe.db.get_single_value("System Settings", "app_name") != "IMED ERP":
     print("set    System Settings.app_name = IMED ERP")
 # The logo on the home screen and the login page comes from Navbar Settings (Frappe only falls back to
 # the first apps' app_logo_url hooks, never to a third app's).
-LOGO = "/assets/imed_erp/images/imed-mark.svg"
+LOGO = "/assets/imed_erp/images/mm-icon.png"
 if frappe.db.get_single_value("Navbar Settings", "app_logo") != LOGO:
     frappe.db.set_single_value("Navbar Settings", "app_logo", LOGO)
     print(f"set    Navbar Settings.app_logo = {LOGO}")
