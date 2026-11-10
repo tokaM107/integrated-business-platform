@@ -6653,7 +6653,9 @@ html[dir="ltr"] .imed-mo-track i {
 	position: absolute !important;
 	top: 52px;
 	inset-inline-start: 0;
-	z-index: 1060;
+	/* Over its backdrop (1055) on a report too: Frappe's "#page-query-report .page-form" sets 5 by the page's id,
+	   which beat this class rule and left the report's filters under the backdrop, unclickable (10 Nov 2026). */
+	z-index: 1060 !important;
 	width: min(92vw, 340px);
 	max-height: min(70vh, 560px);
 	overflow-y: auto;

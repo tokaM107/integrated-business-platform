@@ -26,8 +26,10 @@ frappe.query_reports["Library Doctor Sales"] = {
 			const cc = report.get_filter_value("cost_center");
 			if (cc && window.imed_head_title) window.imed_head_title(report.page, `${__("Library Doctor Sales")} · ${cc.replace(/\s+-\s+[^-]+$/, "")}`);
 			const $main = $(report.page.main);
-			if (window.imed_library_tabs && $main.children().length)
-				window.imed_library_tabs($main.children().first(), report.get_filter_value("cost_center"), (cc) => report.set_filter_value("cost_center", cc));
+			// Before the report's first own child (not the tabs made on an earlier visit: one set of tabs).
+			const $first = $main.children().not(".imed-lib-tabs").first();
+			if (window.imed_library_tabs && $first.length)
+				window.imed_library_tabs($first, report.get_filter_value("cost_center"), (cc) => report.set_filter_value("cost_center", cc));
 		};
 		setTimeout(show, 300);
 	},
