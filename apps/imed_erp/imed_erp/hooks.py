@@ -434,7 +434,7 @@ scheduler_events = {
 		# XStudio's bookings, customers and prepaid packages, read from its API (imederp/xstudio/sync.py); the
 		# settings say whether it is on and how many minutes between runs.
 		"*/10 * * * *": ["imed_erp.imederp.xstudio.sync.run_scheduled"],
-		# 10 pm, the site's time: the day's revenue and bookings to the owner on WhatsApp (imederp/owner_alerts.py).
+		# 10 pm, the site's time: the day's revenue and bookings to the owner's phone (imederp/owner_alerts.py).
 		"0 22 * * *": ["imed_erp.imederp.owner_alerts.send_daily_summary"],
 	},
 	"daily": [
