@@ -2366,5 +2366,4 @@ New stock request for {{ warehouse }} ({{ request }}): {{ items }},طلب خام
 IMED on {0},IMED يوم {0}
 Revenue: {0},الإيراد: {0}
 Bookings: {0},الحجوزات: {0}
-{0} bookings,{0} حجز
 No business,بدون نشاط
