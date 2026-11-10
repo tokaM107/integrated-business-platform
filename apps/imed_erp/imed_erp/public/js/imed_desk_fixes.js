@@ -103,32 +103,61 @@
 	};
 	Sidebar.prototype.imed_query_patched = true;
 
-	// Moving inside the site, Frappe lights the item before the address has changed (so the old address was read
-	// and the last of the items sharing the path won: the studio calendar lit on the hall calendar). Once the new
-	// address is in place, the item matching it exactly (path and filters) is lit, and only it among those sharing
-	// its path.
+	// Moving inside the site, Frappe lights the item before the address has changed, and a list opened from the
+	// sidebar drops its filters from the address: the last item sharing the path won (the studio's calendar and
+	// bookings lit on the halls'; the owner, 5 and 10 Nov 2026). Here the item clicked is the one lit while its page
+	// is open; else the item matching the address exactly (path and filters). Every other item is unlit, whatever
+	// its path (a page slow to open left the previous item lit), and this runs last, after Frappe's own lighting.
+	let clicked = null;
+	$(document).on("mousedown click keydown", ".body-sidebar a.item-anchor[href^='/']", function () {
+		clicked = this.getAttribute("href");
+	});
 	const relight = () => {
 		const here = where(window.location.href);
+		if (clicked && where(clicked).path !== here.path) clicked = null; // gone elsewhere since
 		let best = null;
-		let best_count = 0;
-		const $same = $(".body-sidebar a[href]").filter((_, a) => {
-			const href = a.getAttribute("href") || "";
-			if (!href.startsWith("/")) return false;
+		let best_score = -1;
+		$(".body-sidebar a.item-anchor[href^='/']").each((_, a) => {
+			const href = a.getAttribute("href");
 			const item = where(href);
-			if (item.path !== here.path) return false;
+			if (item.path !== here.path) return;
 			const keys = [...item.params.keys()];
-			if (keys.length > best_count && keys.every((k) => here.params.get(k) === item.params.get(k))) {
+			const exact = keys.every((k) => here.params.get(k) === item.params.get(k));
+			if (!exact && href !== clicked) return;
+			const score = (href === clicked ? 100 : 0) + keys.length;
+			if (score > best_score) {
 				best = $(a);
-				best_count = keys.length;
+				best_score = score;
 			}
-			return true;
 		});
 		if (!best) return;
-		$same.parent().removeClass("active-sidebar");
+		$(".body-sidebar .active-sidebar").not(best.parent()).removeClass("active-sidebar");
 		best.parent().addClass("active-sidebar");
 		if (frappe.app && frappe.app.sidebar) frappe.app.sidebar.active_item = best.parent();
 	};
-	if (frappe.router && frappe.router.on) frappe.router.on("change", () => setTimeout(relight, 120));
+	const set_active = Sidebar.prototype.set_active_workspace_item;
+	Sidebar.prototype.set_active_workspace_item = function () {
+		const out = set_active.apply(this, arguments);
+		relight();
+		return out;
+	};
+	let pending = null;
+	const soon = () => {
+		clearTimeout(pending);
+		pending = setTimeout(relight, 30);
+		setTimeout(relight, 700); // a page slow to open
+	};
+	if (frappe.router && frappe.router.on) frappe.router.on("change", soon);
+	$(document).on("page-change", soon);
+	for (const method of ["pushState", "replaceState"]) {
+		const original = window.history[method];
+		window.history[method] = function () {
+			const result = original.apply(this, arguments);
+			soon();
+			return result;
+		};
+	}
+	window.addEventListener("popstate", soon);
 })();
 
 // A library's account (role Library Staff) sees in its sidebar the library's things only, on every page (the owner,
@@ -176,38 +205,42 @@
 		link_to,
 		...(route_options ? { route_options: JSON.stringify(route_options) } : {}),
 	});
+	// As the design the owner approved (10 Nov 2026): by his work, the cash first.
 	const accountant_items = () => [
 		{ type: "Link", label: __("شاشة المحاسب"), link_type: "Page", link_to: "imed-accountant", icon: "wallet" },
-		section("Accounts and Cash", "wallet"),
-		link("Treasury Close", "DocType", "Treasury Close"),
-		link("Cash Handover", "DocType", "Cash Handover"),
-		link("Weekly Cash Reconciliation", "DocType", "Weekly Cash Reconciliation"),
-		link("Cash Discrepancy", "DocType", "Cash Discrepancy"),
-		link("Expense List", "DocType", "Expense"),
-		link("Recurring Expenses", "DocType", "Recurring Expense"),
-		link("Inter Business Transfer", "DocType", "Inter Business Transfer"),
+		section("الخزنة والكاش", "wallet"),
+		link("تقفيل الخزنة", "DocType", "Treasury Close"),
+		link("تسليم نقدية", "DocType", "Cash Handover"),
+		link("مراجعة الأسبوع", "DocType", "Weekly Cash Reconciliation"),
+		link("عجز وزيادة", "DocType", "Cash Discrepancy"),
+		section("المصروفات والمشتريات", "receipt"),
+		link("المصروفات", "DocType", "Expense"),
+		link("المصروفات المتكررة", "DocType", "Recurring Expense"),
+		// The branches' purchase requests, approved by the owner, his to buy (10 Nov 2026).
+		link("طلبات الشراء", "DocType", "Material Request", { material_request_type: "Purchase" }),
+		link("فواتير الشراء", "DocType", "Purchase Invoice"),
 		section("القيود والمدفوعات", "book-open"),
-		link("Payment Entry", "DocType", "Payment Entry"),
-		link("Journal Entry", "DocType", "Journal Entry"),
-		link("Sales Invoice", "DocType", "Sales Invoice"),
-		link("Purchase Invoice", "DocType", "Purchase Invoice"),
+		link("سندات القبض والصرف", "DocType", "Payment Entry"),
+		link("القيود اليومية", "DocType", "Journal Entry"),
+		link("فواتير المبيعات", "DocType", "Sales Invoice"),
+		link("تحويل بين الأنشطة", "DocType", "Inter Business Transfer"),
 		section("Libraries", "book"),
 		// One item a page, the library chosen by its tabs (as the ImedERP sidebar, 9 Nov 2026).
 		link("Library Invoices", "DocType", "Library Sales Document"),
 		link("Library Daily Sales", "Page", "library-daily-sales"),
 		link("Library Doctor Sales", "Report", "Library Doctor Sales"),
-		section("Doctors and Books", "users"),
-		link("Doctors Ledger", "DocType", "Doctor Ledger Entry"),
-		link("Doctor Statement", "Report", "Doctor Statement"),
+		section("الدكاترة", "users"),
+		link("حسابات الدكاترة", "DocType", "Doctor Ledger Entry"),
+		link("كشف حساب دكتور", "Report", "Doctor Statement"),
 		link("Doctor Receivables", "Report", "Doctor Receivables"),
 		link("Doctor Debts", "Report", "Doctor Debts"),
 		link("Doctor Agreements", "DocType", "Doctor Agreement"),
 		section("Reports", "chart-bar-big"),
+		link("رصيد كل خزنة", "Report", "Cash Box Balances"),
+		link("حركة الخزن", "Report", "General Ledger"),
+		link("Profit per Business", "Report", "Profit and Loss Statement", { company: "Mohamed Mamdouh group" }),
 		link("Revenue by Period", "Report", "Revenue by Period"),
 		link("Profit Before and After Shared Costs", "Report", "Profit Before and After Shared Costs"),
-		link("Profit per Business", "Report", "Profit and Loss Statement", { company: "Mohamed Mamdouh group" }),
-		link("Cash Box Balances", "Report", "Cash Box Balances"),
-		link("Cash Movements", "Report", "General Ledger"),
 		link("Outstanding Receivables", "Report", "Outstanding Receivables"),
 		link("Who Owes Us", "Report", "Accounts Receivable"),
 		link("علينا للناس", "Report", "Accounts Payable"),

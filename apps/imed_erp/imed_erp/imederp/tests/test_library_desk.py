@@ -88,7 +88,8 @@ class IntegrationTestLibraryDesk(IntegrationTestCase):
 		frappe.set_user(ACCOUNT)
 		asked = desk.ask_for(INK, 4, "خلص الأسود")
 		doc = frappe.get_doc("Material Request", asked["request"])
-		self.assertEqual((doc.material_request_type, doc.docstatus, doc.items[0].qty, doc.items[0].warehouse), ("Purchase", 1, 4, STORE))
+		# Waiting for the owner, who approves a purchase; the accountant buys it then (10 Nov 2026).
+		self.assertEqual((doc.material_request_type, doc.docstatus, doc.custom_approval_status, doc.items[0].qty, doc.items[0].warehouse), ("Purchase", 0, "Pending Approval", 4, STORE))
 		self.assertIn(asked["request"], [r["name"] for r in desk.get_desk()["requests"]])
 
 	def test_the_account_sees_no_money_and_no_other_library(self):

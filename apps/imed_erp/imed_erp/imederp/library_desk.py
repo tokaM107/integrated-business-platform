@@ -259,12 +259,10 @@ def ask_for(item_code, qty, note=None):
 			],
 		}
 	).insert()
-	if supplier:
-		from imed_erp.imederp.material_issue import request_approval
+	from imed_erp.imederp.material_issue import request_approval
 
-		request_approval(doc.name)  # Pending Approval: Raghad approves it
-	else:
-		doc.submit()  # a purchase request, for whoever buys
+	# Pending Approval: Raghad approves a transfer; the owner a purchase, which the accountant then buys (10 Nov 2026).
+	request_approval(doc.name)
 	frappe.clear_messages()  # ERPNext's own notes ("Item rates have been updated...") mean nothing to the library
 	return {"request": doc.name, "type": doc.material_request_type}
 

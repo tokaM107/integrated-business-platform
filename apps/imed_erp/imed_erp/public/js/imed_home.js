@@ -274,11 +274,27 @@
 			frappe.set_route("imed-library");
 		}
 	}
+	// The accountant's account: ERPNext's own dashboards (Accounting, Stock...: English charts and figures of every
+	// company, "strange money and a strange dashboard", the owner, 10 Nov 2026) are not his; one opened from the apps
+	// menu or an old address takes him back to his screen. His lists, forms and reports stay as they are.
+	function accountant_home_only() {
+		const roles = frappe.user_roles || [];
+		const accountant_only = roles.includes("Accountant") && !roles.includes("System Manager") && !roles.includes("Super Admin");
+		const route = frappe.get_route ? frappe.get_route() : [];
+		if (accountant_only && route[0] === "Workspaces") {
+			frappe.route_flags.replace_route = true;
+			frappe.set_route("imed-accountant");
+		}
+	}
+	const home_only = () => {
+		library_home_only();
+		accountant_home_only();
+	};
 	// Frappe fires neither event alone for every page: a page the user may not open fires no page-change.
-	$(document).on("page-change", library_home_only);
+	$(document).on("page-change", home_only);
 	$(() => {
-		if (frappe.router && frappe.router.on) frappe.router.on("change", library_home_only);
-		setTimeout(library_home_only, 500);
+		if (frappe.router && frappe.router.on) frappe.router.on("change", home_only);
+		setTimeout(home_only, 500);
 	});
 
 	$(document).on("desktop_screen", (e, args) => {

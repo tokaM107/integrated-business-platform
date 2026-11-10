@@ -17,8 +17,17 @@
 # version history keeps every change. Quantities are compared in the item's stock UOM (stock_qty /
 # transfer_qty), so whatever conversion factors the items have are used as they are.
 #
-# A Material Request that does not take stock out of a supplying warehouse (purchase requests, the
-# requests ERPNext's reorder job raises) is left to ERPNext as before.
+# Something finished that no store holds (the owner, 10 Nov 2026: "Raghad or Sara ask the accountant, and he buys
+# it on the owner's word"): a purchase request (Material Request, type Purchase) for the branch's store.
+#
+#   1. The branch saves it and clicks Request Approval: Pending Approval, and the owner is told.
+#   2. The owner (OWNER_ROLE) approves it, which submits it, or rejects it with a reason. Nobody else does.
+#   3. The accountant is told, and buys it: "Buy" on the approved request makes the purchase invoice (update stock,
+#      into the branch's store, on its cost center), which he completes with the supplier and the price and
+#      submits. ERPNext then counts the request received; a request can be bought in several invoices.
+#
+# The owner's own purchase requests, and those ERPNext's reorder job raises (as Administrator), need no approval.
+# Other Material Requests are left to ERPNext as before.
 
 import frappe
 from frappe import _
@@ -29,6 +38,9 @@ from imed_erp.imederp.doctype.printing_machine.printing_machine import serves_wa
 from imed_erp import notification_service
 
 APPROVER_ROLE = "Stock Request Approver"
+# A purchase request: the owner approves it, the accountant buys it.
+OWNER_ROLE = "Super Admin"
+BUYER_ROLES = ("Accountant", "Accounts Manager", "System Manager")
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
 APPROVAL_FIELDS = ("custom_approval_status", "custom_approved_by", "custom_approved_on", "custom_rejection_reason")
 
@@ -173,6 +185,22 @@ def is_branch_request(mr):
 	return any(is_supplying_warehouse(w) for w in sources)
 
 
+def is_purchase_request(mr):
+	"""A branch's purchase request, which the owner approves: not the owner's own, nor the reorder job's."""
+	if mr.material_request_type != "Purchase":
+		return False
+	requester = mr.owner or frappe.session.user
+	return requester != "Administrator" and OWNER_ROLE not in frappe.get_roles(requester)
+
+
+def needs_approval(mr):
+	return is_branch_request(mr) or is_purchase_request(mr)
+
+
+def approver_role(mr):
+	return OWNER_ROLE if is_purchase_request(mr) else APPROVER_ROLE
+
+
 def needs_machine(item_code):
 	"""Paper and the like: its item group, or a group above it, has Needs Printing Machine."""
 	group = frappe.db.get_value("Item", item_code, "item_group")
@@ -202,8 +230,11 @@ def validate_machine(machine, warehouse, row_label):
 
 def material_request_onload(doc, method=None):
 	"""The form shows the approval buttons from these."""
-	doc.set_onload("is_branch_request", is_branch_request(doc))
-	doc.set_onload("is_stock_approver", is_approver())
+	purchase = is_purchase_request(doc)
+	doc.set_onload("is_branch_request", needs_approval(doc))
+	doc.set_onload("is_purchase_request", purchase)
+	doc.set_onload("is_stock_approver", (OWNER_ROLE in frappe.get_roles()) if purchase else is_approver())
+	doc.set_onload("can_buy", purchase and bool(set(BUYER_ROLES) & set(frappe.get_roles())))
 
 
 def validate_material_request(doc, method=None):
@@ -214,6 +245,9 @@ def validate_material_request(doc, method=None):
 	if not doc.flags.imed_approval:
 		protect_approval_fields(doc, before)
 
+	if is_purchase_request(doc):
+		validate_purchase_request(doc, before)
+		return
 	if not is_branch_request(doc):
 		return
 
@@ -247,6 +281,23 @@ def validate_material_request(doc, method=None):
 		doc.custom_approval_status = None
 
 
+def validate_purchase_request(doc, before):
+	for row in doc.items:
+		label = _("Row #{0}").format(row.idx)
+		row.warehouse = row.warehouse or doc.set_warehouse
+		if not row.warehouse:
+			frappe.throw(_("{0}: choose the store the bought items go to.").format(label))
+		if frappe.db.get_value("Warehouse", row.warehouse, "is_group"):
+			frappe.throw(_("{0}: {1} is a group warehouse. Choose the store that will hold the items.").format(label, row.warehouse))
+		if flt(row.qty) <= 0:
+			frappe.throw(_("{0}: the quantity must be more than zero.").format(label))
+		item = frappe.db.get_value("Item", row.item_code, ["is_stock_item", "disabled"], as_dict=True)
+		if not item or not item.is_stock_item or item.disabled:
+			frappe.throw(_("{0}: {1} is not an active stock item.").format(label, row.item_code))
+	if before and doc.custom_approval_status == PENDING and request_rows(before) != request_rows(doc):
+		doc.custom_approval_status = None
+
+
 def request_rows(doc):
 	return [
 		(d.item_code, flt(d.qty), d.uom, d.from_warehouse, d.warehouse, d.get("custom_printing_machine"))
@@ -266,9 +317,14 @@ def protect_approval_fields(doc, before):
 
 
 def before_submit_material_request(doc, method=None):
-	if not is_branch_request(doc):
+	if not needs_approval(doc):
 		return
 	if not (doc.flags.imed_approval and doc.custom_approval_status == APPROVED):
+		if is_purchase_request(doc):
+			frappe.throw(
+				_("A purchase request is submitted by the owner's approval. Click Request Approval, then the owner approves it."),
+				title=_("Approval Needed"),
+			)
 		frappe.throw(
 			_("A branch request is submitted by approving it. Click Request Store Approval, then Raghad approves it."),
 			title=_("Approval Needed"),
@@ -279,7 +335,7 @@ def before_submit_material_request(doc, method=None):
 def request_approval(name):
 	doc = frappe.get_doc("Material Request", name)
 	doc.check_permission("write")
-	if not is_branch_request(doc):
+	if not needs_approval(doc):
 		frappe.throw(_("Material Request {0} is not a branch request from the main warehouse.").format(name))
 	if doc.docstatus != 0 or doc.custom_approval_status:
 		frappe.throw(_("Approval can only be requested for a draft that has not been sent yet."))
@@ -300,6 +356,13 @@ def approve(name):
 	doc.custom_approval_status = APPROVED
 	doc.custom_approved_by = frappe.session.user
 	doc.custom_approved_on = now_datetime()
+	if is_purchase_request(doc):
+		# The owner decides; the request's own rights are the branch's (the owner only reads requests).
+		doc.flags.ignore_permissions = True
+		doc.submit()
+		notify_requester(doc, _("Material Request {0} was approved by the owner; the accountant buys it."))
+		notify(buyers(), _("The owner approved purchase request {0} for {1}: buy it.").format(doc.name, destinations(doc)), doc.name)
+		return
 	doc.submit()
 	notify_requester(doc, _("Material Request {0} was approved and can be issued."))
 
@@ -330,11 +393,15 @@ def reject(name, reason=None):
 
 
 def get_pending(name):
-	frappe.only_for(APPROVER_ROLE)
 	# Locked, so two clicks cannot both approve it.
 	frappe.db.get_value("Material Request", name, "name", for_update=True)
 	doc = frappe.get_doc("Material Request", name)
+	frappe.only_for(approver_role(doc))
 	doc.check_permission("read")
+	if is_purchase_request(doc):
+		if doc.docstatus != 0 or doc.custom_approval_status != PENDING:
+			frappe.throw(_("Material Request {0} is not waiting for approval.").format(name))
+		return doc
 	# The approver decides only for the warehouses her User Permissions give her.
 	for row in doc.items:
 		if not frappe.has_permission("Warehouse", "read", doc=row.from_warehouse):
@@ -363,8 +430,26 @@ def is_approver(user=None):
 	return APPROVER_ROLE in frappe.get_roles(user)
 
 
+def holders(roles):
+	"""The enabled desk users holding one of roles."""
+	users = frappe.get_all("Has Role", filters={"role": ["in", list(roles)], "parenttype": "User"}, pluck="parent")
+	return frappe.get_all(
+		"User",
+		filters={"name": ["in", [u for u in users if u != "Administrator"] or [""]], "enabled": 1, "user_type": "System User"},
+		pluck="name",
+	)
+
+
+def buyers():
+	"""Who buys an approved purchase request: the accountant (the owner, 10 Nov 2026)."""
+	return holders(["Accountant"]) or holders(BUYER_ROLES)
+
+
 def get_approvers(doc):
-	"""Enabled holders of the approver role who may see the request's source warehouses."""
+	"""Enabled holders of the approver role who may see the request's source warehouses; the owner, for a
+	purchase request."""
+	if is_purchase_request(doc):
+		return holders([OWNER_ROLE])
 	users = frappe.get_all("Has Role", filters={"role": APPROVER_ROLE, "parenttype": "User"}, pluck="parent")
 	users = frappe.get_all(
 		"User",
@@ -497,3 +582,53 @@ def check_not_over_issued(doc, rows):
 				),
 				title=_("More Than Approved"),
 			)
+
+
+# ---------- Purchase Invoice: buying an approved purchase request ----------
+
+
+@frappe.whitelist()
+def make_purchase_invoice(name):
+	"""The accountant's "Buy" on an approved purchase request: a draft purchase invoice that receives what is still
+	to buy into the branch's store (update stock), on the branch's cost center, each line tied to its request line
+	so ERPNext counts the request received. He fills in the supplier and the prices, and submits it."""
+	frappe.only_for(BUYER_ROLES)
+	frappe.has_permission("Purchase Invoice", "create", throw=True)
+	mr = frappe.get_doc("Material Request", name)
+	if not (mr.material_request_type == "Purchase" and mr.docstatus == 1):
+		frappe.throw(_("Material Request {0} is not a submitted purchase request.").format(name))
+	if is_purchase_request(mr) and mr.custom_approval_status != APPROVED:
+		frappe.throw(_("Material Request {0} has not been approved by the owner.").format(name), title=_("Approval Needed"))
+	if mr.status in ("Stopped", "Cancelled"):
+		frappe.throw(_("Material Request {0} is {1}.").format(name, _(mr.status)))
+	pi = frappe.new_doc("Purchase Invoice")
+	pi.company = mr.company
+	pi.update_stock = 1
+	pi.set_warehouse = mr.set_warehouse
+	for row in mr.items:
+		left = flt(row.stock_qty) - flt(row.received_qty)
+		if left <= 0:
+			continue
+		factor = flt(row.conversion_factor) or 1
+		pi.append(
+			"items",
+			{
+				"item_code": row.item_code,
+				"item_name": row.item_name,
+				"description": row.description,
+				"qty": flt(left / factor, 6),
+				"uom": row.uom,
+				"conversion_factor": factor,
+				"warehouse": row.warehouse,
+				"cost_center": row.cost_center,
+				"material_request": mr.name,
+				"material_request_item": row.name,
+			},
+		)
+	if not pi.items:
+		frappe.throw(_("Everything on Material Request {0} has been bought.").format(name))
+	if not pi.get("cost_center"):
+		centers = {d.cost_center for d in pi.items if d.cost_center}
+		if len(centers) == 1:
+			pi.cost_center = centers.pop()
+	return pi.as_dict()

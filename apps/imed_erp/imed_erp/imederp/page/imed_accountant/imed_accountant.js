@@ -1,87 +1,96 @@
-// شاشة المحاسب: the accountant's own screen (the owner, 9 Nov 2026: "an accountant's account and the screen he should
-// see"). The company's money at a glance, what waits on him (each a count that opens the list of those documents),
-// the documents he makes most, and what each cash box holds. From imederp/accountant_desk.py; what he may open is
-// decided on the server, this page only shows.
+// شاشة المحاسب: the accountant's own screen, as the owner approved its design (10 Nov 2026: "what matters to the
+// accountant"). Today's cash, what waits on him (each with a line saying what it is, opening its list), each safe and
+// whether its day was closed, the month by business, the money outside (customers, suppliers, doctors), and the
+// documents he makes most. From imederp/accountant_desk.py; what he may open is decided on the server.
 frappe.pages["imed-accountant"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({ parent: wrapper, title: __("شاشة المحاسب"), single_column: true });
 	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
 	const money = (v) => format_currency(Number(v) || 0, frappe.defaults.get_default("currency") || "EGP", 0);
 	const icon = (name, size = "md") => frappe.utils.icon(name, size);
-	const go_icon = () => icon(frappe.utils.is_rtl() ? "chevron-left" : "chevron-right", "sm");
 	const greeting = () => (new Date().getHours() < 12 ? __("صباح الخير") : __("مساء الخير"));
 	const long_day = () => new Date().toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-	const short_box = (a) => (a || "").replace(/\s+-\s+[^-]+$/, "");
 	const $body = $(`<div class="imed-accountant"></div>`).appendTo(page.main);
 	page.set_secondary_action(__("Refresh"), () => load(), "refresh");
 
-	// Each figure's tone and icon; a figure the accountant opens the report of.
-	const FIGURES = {
-		cash: { tone: "teal", icon: "wallet", report: "Cash Box Balances" },
-		revenue: { tone: "green", icon: "trending-up", report: "Revenue by Period" },
-		expenses: { tone: "orange", icon: "trending-down", report: "Expense Report" },
-		owed_to_us: { tone: "blue", icon: "users", report: "Accounts Receivable" },
-		we_owe: { tone: "red", icon: "file-text", report: "Accounts Payable" },
-	};
 	const WAITING = {
 		expenses: { tone: "orange", icon: "receipt" },
+		purchases: { tone: "green", icon: "shopping-cart" },
 		handovers: { tone: "teal", icon: "hand" },
 		discrepancies: { tone: "red", icon: "triangle-alert" },
 		closes: { tone: "amber", icon: "lock" },
 		weeks: { tone: "violet", icon: "calendar" },
 		doctors: { tone: "blue", icon: "user" },
 	};
+	const OUTSIDE = { customers: "blue", suppliers: "red", doctors: "violet" };
 	// The documents he makes most, each a new one.
 	const ACTIONS = [
-		{ doctype: "Expense", label: __("مصروف جديد"), hint: __("مصروف من خزنة"), tone: "orange", icon: "receipt" },
-		{ doctype: "Payment Entry", label: __("سند قبض أو صرف"), hint: __("فلوس داخلة أو خارجة"), tone: "green", icon: "wallet" },
-		{ doctype: "Journal Entry", label: __("قيد يومية"), hint: __("تسوية أو تحويل بين حسابات"), tone: "blue", icon: "book-open" },
-		{ doctype: "Treasury Close", label: __("تقفيل خزنة"), hint: __("عدّ الخزنة آخر اليوم"), tone: "teal", icon: "lock" },
-		{ doctype: "Inter Business Transfer", label: __("تحويل بين الأنشطة"), hint: __("من نشاط لنشاط"), tone: "violet", icon: "repeat" },
-		{ doctype: "Weekly Cash Reconciliation", label: __("مراجعة الأسبوع"), hint: __("مطابقة خزن الأسبوع"), tone: "cyan", icon: "calendar" },
+		{ doctype: "Expense", label: __("مصروف جديد"), tone: "orange", icon: "receipt" },
+		{ doctype: "Payment Entry", label: __("سند قبض / صرف"), tone: "green", icon: "wallet" },
+		{ doctype: "Treasury Close", label: __("تقفيل خزنة"), tone: "teal", icon: "lock" },
+		{ doctype: "Journal Entry", label: __("قيد يومية"), tone: "blue", icon: "book-open" },
+		{ doctype: "Inter Business Transfer", label: __("تحويل بين الأنشطة"), tone: "violet", icon: "repeat" },
+		{ doctype: "Purchase Invoice", label: __("فاتورة شراء"), tone: "green", icon: "shopping-cart" },
 	];
 
+	const figure = (tone, label, value, detail, attrs = "") =>
+		`<div class="imed-accountant__fig tone-${tone}" ${attrs}><small>${esc(label)}</small><b>${value}</b>${detail ? `<span>${esc(detail)}</span>` : ""}</div>`;
+
 	function render(d) {
+		const t = d.today || {};
 		const waiting = d.waiting || [];
 		const total = waiting.reduce((s, w) => s + (w.count || 0), 0);
 		const state = total
 			? `<span class="imed-accountant__state tone-orange">${esc(__("{0} حاجة مستنياك", [total]))}</span>`
 			: `<span class="imed-accountant__state tone-green">${esc(__("مفيش حاجة مستنياك ✓"))}</span>`;
-		const figures = (d.figures || [])
-			.map((f) => {
-				const m = FIGURES[f.key] || { tone: "gray", icon: "wallet" };
-				return `<button type="button" class="imed-accountant__figure tone-${m.tone}" data-report="${esc(m.report || "")}">
-					<span class="imed-accountant__figure-icon">${icon(m.icon)}</span>
-					<small>${esc(f.label)}</small>
-					<b>${esc(money(f.value))}</b>
-				</button>`;
-			})
-			.join("");
+		const not_closed = t.not_closed || [];
+
+		const today = [
+			figure("teal", __("الكاش في الخزن دلوقتي"), esc(money(t.cash)), __("الخزن بس، من غير البنوك والمحافظ"), `data-report="Cash Box Balances"`),
+			figure("green", __("اتحصّل النهارده"), esc(money(t.came)), __("دخل الخزن النهارده")),
+			figure("red", __("اتصرف النهارده"), esc(money(t.went)), __("طلع من الخزن النهارده")),
+			figure(
+				not_closed.length ? "amber" : "green",
+				__("خزن لسه متقفلتش"),
+				not_closed.length ? esc(__("{0} من {1}", [not_closed.length, t.closable || 0])) : "✓",
+				not_closed.length ? not_closed.join("، ") : __("كل الخزن اتقفلت النهارده"),
+				`data-list="Treasury Close"`
+			),
+		].join("");
+
 		const tasks = waiting
 			.map((w, i) => {
 				const m = WAITING[w.key] || { tone: "gray", icon: "list" };
 				return `<button type="button" class="imed-accountant__task tone-${m.tone} ${w.count ? "" : "is-done"}" data-waiting="${i}">
 					<span class="imed-accountant__task-icon">${icon(m.icon)}</span>
-					<span class="imed-accountant__task-text">${esc(w.label)}</span>
+					<span class="imed-accountant__task-text"><b>${esc(w.label)}</b><small>${esc(w.detail || "")}</small></span>
 					<span class="imed-accountant__count">${w.count ? esc(w.count) : "✓"}</span>
 				</button>`;
 			})
 			.join("");
-		const actions = ACTIONS.filter((a) => frappe.model.can_create(a.doctype))
-			.map(
-				(a) => `<button type="button" class="imed-accountant__action tone-${a.tone}" data-new="${esc(a.doctype)}">
-					<span class="imed-accountant__action-icon">${icon(a.icon)}</span>
-					<span><b>${esc(a.label)}</b><small>${esc(a.hint)}</small></span>
-					<span class="imed-accountant__go">${go_icon()}</span>
-				</button>`
-			)
+
+		const safes = d.safes || [];
+		const safe_rows = safes
+			.map((s) => {
+				const closed = s.closed_today === null || s.closed_today === undefined ? `<span class="imed-accountant__muted">—</span>` : s.closed_today ? `<span class="imed-accountant__ok">✓ ${esc(__("اتقفلت"))}</span>` : `<span class="imed-accountant__no">${esc(__("لسه"))}</span>`;
+				return `<tr><td>${esc(s.label)}</td><td class="num ${s.balance < 0 ? "neg" : ""}">${esc(money(s.balance))}</td><td>${closed}</td></tr>`;
+			})
 			.join("");
-		const boxes = (d.boxes || [])
-			.map((b) => `<tr><td>${esc(short_box(b.account))}</td><td class="num ${b.balance < 0 ? "neg" : ""}">${esc(money(b.balance))}</td></tr>`)
+		const safes_total = safes.reduce((sum, s) => sum + (Number(s.balance) || 0), 0);
+
+		const month = d.month || { rows: [], total: {} };
+		const month_rows = (month.rows || [])
+			.map((r) => `<tr><td>${esc(r.business)}</td><td class="num">${r.revenue ? esc(money(r.revenue)) : "—"}</td><td class="num">${r.expenses ? esc(money(r.expenses)) : "—"}</td><td class="num ${r.net < 0 ? "neg" : ""}">${esc(money(r.net))}</td></tr>`)
+			.join("");
+		const mt = month.total || {};
+
+		const outside = (d.outside || []).map((o) => figure(OUTSIDE[o.key] || "gray", o.label, esc(money(o.value)), o.detail, `data-report="${esc(o.report)}"`)).join("");
+
+		const actions = ACTIONS.filter((a) => frappe.model.can_create(a.doctype))
+			.map((a) => `<button type="button" class="imed-accountant__act tone-${a.tone}" data-new="${esc(a.doctype)}"><span class="imed-accountant__act-icon">${icon(a.icon, "sm")}</span>${esc(a.label)}</button>`)
 			.join("");
 
 		$body.html(`
 			<div class="imed-accountant__hero">
-				<span class="imed-accountant__hero-icon">${icon("wallet", "lg")}</span>
 				<div class="imed-accountant__hero-text">
 					<small>${esc(greeting())}</small>
 					<h2>${esc(d.user || __("المحاسب"))}</h2>
@@ -89,25 +98,52 @@ frappe.pages["imed-accountant"].on_page_load = function (wrapper) {
 				</div>
 				${state}
 			</div>
-			<div class="imed-accountant__figures">${figures}</div>
+
+			<h3 class="imed-accountant__h">${esc(__("النهارده"))}</h3>
+			<div class="imed-accountant__today">${today}</div>
+
 			<div class="imed-accountant__grid">
 				<section class="imed-accountant__card">
-					<h4>${esc(__("مستنياك"))}</h4>
+					<h4>${esc(__("مستنياك"))} <small>${esc(__("دوس على أي واحدة تفتحلك القايمة"))}</small></h4>
 					<div class="imed-accountant__tasks">${tasks || `<p class="text-muted">${esc(__("مفيش حاجة."))}</p>`}</div>
+				</section>
+				<section class="imed-accountant__card">
+					<h4>${esc(__("الخزن"))} <small>${esc(__("رصيد كل خزنة، واتقفلت النهارده ولا لأ"))}</small></h4>
+					${
+						safe_rows
+							? `<table class="imed-accountant__table"><thead><tr><th>${esc(__("الخزنة"))}</th><th class="num">${esc(__("الرصيد"))}</th><th>${esc(__("تقفيل النهارده"))}</th></tr></thead>
+								<tbody>${safe_rows}</tbody><tfoot><tr><td>${esc(__("الإجمالي"))}</td><td class="num">${esc(money(safes_total))}</td><td></td></tr></tfoot></table>`
+							: `<p class="text-muted">${esc(__("مفيش خزن."))}</p>`
+					}
+				</section>
+			</div>
+
+			<section class="imed-accountant__card imed-accountant__block">
+				<h4>${esc(__("الشهر ده لكل نشاط"))} <small>${esc(__("من {0} لحد النهارده", [frappe.datetime.str_to_user(month.from)]))}</small></h4>
+				<table class="imed-accountant__table">
+					<thead><tr><th>${esc(__("النشاط"))}</th><th class="num">${esc(__("الإيرادات"))}</th><th class="num">${esc(__("المصروفات"))}</th><th class="num">${esc(__("الصافي"))}</th></tr></thead>
+					<tbody>${month_rows || `<tr><td colspan="4" class="text-muted">${esc(__("مفيش حركة الشهر ده."))}</td></tr>`}</tbody>
+					<tfoot><tr><td>${esc(__("الإجمالي"))}</td><td class="num">${esc(money(mt.revenue))}</td><td class="num">${esc(money(mt.expenses))}</td><td class="num ${mt.net < 0 ? "neg" : ""}">${esc(money(mt.net))}</td></tr></tfoot>
+				</table>
+			</section>
+
+			<div class="imed-accountant__grid">
+				<section class="imed-accountant__card">
+					<h4>${esc(__("الفلوس اللي برة"))} <small>${esc(__("كل واحدة لوحدها"))}</small></h4>
+					<div class="imed-accountant__outside">${outside}</div>
 				</section>
 				<section class="imed-accountant__card">
 					<h4>${esc(__("اعمل"))}</h4>
 					<div class="imed-accountant__actions">${actions}</div>
 				</section>
-			</div>
-			<section class="imed-accountant__card">
-				<h4>${esc(__("الخزن دلوقتي"))} <a class="imed-accountant__more" data-report="Cash Box Balances">${esc(__("التفاصيل"))}</a></h4>
-				${boxes ? `<table class="imed-accountant__boxes"><tbody>${boxes}</tbody></table>` : `<p class="text-muted">${esc(__("مفيش فلوس في الخزن."))}</p>`}
-			</section>`);
+			</div>`);
 
 		$body.find("[data-report]").on("click", function () {
 			const report = $(this).attr("data-report");
 			if (report) frappe.set_route("query-report", report);
+		});
+		$body.find("[data-list]").on("click", function () {
+			frappe.set_route("List", $(this).attr("data-list"));
 		});
 		$body.find("[data-waiting]").on("click", function () {
 			const w = waiting[Number($(this).attr("data-waiting"))];
