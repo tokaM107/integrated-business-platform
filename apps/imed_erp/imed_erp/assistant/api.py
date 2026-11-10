@@ -25,12 +25,36 @@ ALLOWED_ROLES = {"Super Admin", "System Manager"}
 MAX_MESSAGES = 30
 MAX_MESSAGE_CHARS = 4000
 MESSAGES_PER_MINUTE = 20
+# Per user, whatever address the request comes from (the per-address limit reads a header the client can set).
+# The day's limit is changed in the site's configuration: imed_assistant_daily_messages (0 = no daily limit).
+MESSAGES_PER_DAY = 500
 MAX_AUDIO_BYTES = 10 * 1024 * 1024
 AUDIO_TYPES = ("audio/webm", "audio/ogg", "audio/mp4", "audio/mpeg", "audio/wav")
 
 
 def can_use() -> bool:
 	return bool(ALLOWED_ROLES & set(frappe.get_roles()))
+
+
+def check_user_budget() -> None:
+	"""Each message may reach a paid model: one user sends at most MESSAGES_PER_MINUTE a minute and the day's limit."""
+	from frappe.utils import cint, now_datetime
+
+	now = now_datetime()
+	daily = frappe.conf.get("imed_assistant_daily_messages")
+	daily = MESSAGES_PER_DAY if daily is None else cint(daily)
+	windows = (
+		(f"minute:{now:%Y%m%d%H%M}", MESSAGES_PER_MINUTE, 120),
+		(f"day:{now:%Y%m%d}", daily, 2 * 24 * 3600),
+	)
+	for window, limit, keep in windows:
+		if not limit:
+			continue
+		key = f"imed_assistant_budget:{frappe.session.user}:{window}"
+		used = cint(frappe.cache.get_value(key)) + 1
+		if used > limit:
+			frappe.throw(_("Too many messages. Try again later."), frappe.TooManyRequestsError)
+		frappe.cache.set_value(key, used, expires_in_sec=keep)
 
 
 def check_access() -> None:
@@ -48,9 +72,16 @@ def get_status():
 
 def clean_messages(messages) -> list[dict]:
 	if isinstance(messages, str):
-		messages = json.loads(messages or "[]")
+		try:
+			messages = json.loads(messages or "[]")
+		except ValueError:
+			messages = None
+	if not isinstance(messages, list):
+		frappe.throw(_("The conversation is not a list of messages."))
 	cleaned = []
 	for m in messages[-MAX_MESSAGES:]:
+		if not isinstance(m, dict) or not isinstance(m.get("content") or "", str):
+			continue
 		role, content = m.get("role"), (m.get("content") or "").strip()
 		if role in ("user", "assistant") and content:
 			cleaned.append({"role": role, "content": content[:MAX_MESSAGE_CHARS]})
@@ -131,6 +162,7 @@ def send_message(messages=None, audio=None, audio_type=None, chat=None, text=Non
 	Returns {"reply": str, "transcript": str | None, "chat": str | None}.
 	"""
 	check_access()
+	check_user_budget()
 	provider = get_provider()
 	context = build_context(chat=chat)
 	if chat:

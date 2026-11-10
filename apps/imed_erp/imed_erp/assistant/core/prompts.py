@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import re
+
 from imed_erp.assistant.core.context import RequestContext
 
 RULES = """You are the ERP assistant of {company} ({currency}). Business units you can be asked about: {businesses}.
@@ -40,5 +42,6 @@ def system_text(context: RequestContext, businesses: list[str], notes: str) -> s
 def data_block(label: str, text: str) -> str:
 	"""Retrieved text, delimited as data. A closing tag inside the data is neutralised so a record cannot end the
 	block early and speak as the system."""
-	safe = str(text).replace("</data>", "</ data>").replace("<data", "< data")
+	# Whatever the case or spacing of the tag (</DATA>, </data >).
+	safe = re.sub(r"<\s*(/?)\s*data", r"<\1 data", str(text), flags=re.IGNORECASE)
 	return f'<data source="{label}">\n{safe}\n</data>'

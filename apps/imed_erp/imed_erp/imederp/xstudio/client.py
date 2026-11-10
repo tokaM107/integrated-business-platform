@@ -91,7 +91,8 @@ class XStudioClient:
 		url = self.base_url + "/api/auth/login"
 		try:
 			self.requests_made += 1
-			response = self.session.post(url, json=body, timeout=TIMEOUT)
+			# No redirect is followed with the password: a 307/308 would send it again to another host.
+			response = self.session.post(url, json=body, timeout=TIMEOUT, allow_redirects=False)
 		except requests.RequestException as e:
 			raise XStudioError(_("XStudio did not answer the login: {0}").format(type(e).__name__))
 		if response.status_code != 200:
@@ -137,10 +138,13 @@ class XStudioClient:
 
 
 def error_text(response):
+	"""XStudio's own words about an error, cut short and escaped: they are shown in messages and report cells,
+	which render HTML (a proxy's error page, or text someone put in XStudio)."""
 	try:
-		return cstr((response.json() or {}).get("error") or "")[:200]
-	except ValueError:
-		return cstr(response.text)[:200]
+		text = cstr((response.json() or {}).get("error") or "")[:200]
+	except (ValueError, AttributeError):
+		text = cstr(response.text)[:200]
+	return frappe.utils.escape_html(text)
 
 
 def stable_json(value):

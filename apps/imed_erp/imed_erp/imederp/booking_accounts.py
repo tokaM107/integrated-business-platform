@@ -24,7 +24,7 @@
 import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.utils import flt, getdate, today
+from frappe.utils import cstr, flt, getdate, today
 
 from imed_erp.imederp.booking_pricing import ONCE, PIECE_PER_HOUR, REVENUE_SHARE, revenue_share
 from imed_erp.imederp.booking_rules import COMPLETED, CONFIRMED_WITH_DEPOSIT, HALL, IMPORTED, NOT_BILLABLE, NOT_HELD, TENTATIVE
@@ -236,7 +236,7 @@ def guard_booking_link(doc, method=None):
 # ---------- Recording a payment ----------
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def record_payment(booking, amount, mode_of_payment=None, request_id=None, reference_no=None):
 	"""A deposit or payment of a booking, into its business's cash box or a group wallet. A wallet or bank payment
 	names its transaction (reference_no), as ERPNext requires. Returns the Payment Entry."""
@@ -245,8 +245,9 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 	doc = frappe.get_doc("Booking", booking)
 	doc.check_permission("write")
 	check_own_business(doc.cost_center)
-	if request_id and frappe.db.exists("Payment Entry", {"custom_booking_request": request_id}):
-		return frappe.db.get_value("Payment Entry", {"custom_booking_request": request_id}, "name")
+	request_id = clean_request_id(request_id)
+	if request_id and (recorded := payment_of_request(doc.name, request_id)):
+		return recorded
 	if doc.source == "Imported":
 		frappe.throw(_("{0} was imported: its payments are recorded in the booking system.").format(doc.name))
 	if doc.resource_type == HALL and doc.rental_model == NOT_BILLABLE:
@@ -262,8 +263,8 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 	# and it is sent again: it then sees the first, and is not more than what is left. The same request sent again
 	# returns the payment already recorded; the unique request id is the last guard against a second one.
 	frappe.db.get_value("Booking", doc.name, "name", for_update=True)
-	if request_id and frappe.db.exists("Payment Entry", {"custom_booking_request": request_id}):
-		return frappe.db.get_value("Payment Entry", {"custom_booking_request": request_id}, "name")
+	if request_id and (recorded := payment_of_request(doc.name, request_id)):
+		return recorded
 	invoice = posted("Sales Invoice", doc.name)
 	if not invoice and doc.resource_type == HALL:
 		frappe.throw(
@@ -286,6 +287,8 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 			title=_("Missing Value"),
 		)
 
+	# The entry is posted in the system's name: who took the money is written on it and on the booking.
+	recorded_by = frappe.session.user
 	with as_administrator():
 		if invoice:
 			from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
@@ -318,7 +321,9 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 				"custom_booking_request": request_id or None,
 				"reference_no": (reference_no or "").strip() or None,
 				"reference_date": today() if bank else None,
-				"remarks": _("Booking {0}: {1}").format(doc.name, _("payment") if invoice else _("deposit")),
+				"remarks": _("Booking {0}: {1}").format(doc.name, _("payment") if invoice else _("deposit"))
+				+ " - "
+				+ _("recorded by {0}").format(recorded_by),
 			}
 		)
 		payment.setup_party_account_field()
@@ -326,7 +331,34 @@ def record_payment(booking, amount, mode_of_payment=None, request_id=None, refer
 		payment.flags.from_booking = True
 		payment.insert()
 		payment.submit()
+		doc.add_comment(
+			"Info", _("{0} recorded a payment of {1}: {2}").format(recorded_by, amount, payment.name)
+		)
 	return payment.name
+
+
+MAX_REQUEST_ID_LENGTH = 64
+
+
+def clean_request_id(request_id):
+	"""The id a screen gives one payment dialog, so the same click sent twice records one payment."""
+	request_id = cstr(request_id).strip()
+	if len(request_id) > MAX_REQUEST_ID_LENGTH:
+		frappe.throw(_("The request id is too long."), title=_("Invalid Value"))
+	return request_id or None
+
+
+def payment_of_request(booking, request_id):
+	"""The payment this request already recorded on this booking. An id used on another booking is refused: it
+	would otherwise answer with that booking's payment and record nothing."""
+	found = frappe.db.get_value(
+		"Payment Entry", {"custom_booking_request": request_id}, ["name", "custom_booking"], as_dict=True
+	)
+	if not found:
+		return None
+	if found.custom_booking != booking:
+		frappe.throw(_("This request id was already used for another booking."), title=_("Invalid Value"))
+	return found.name
 
 
 # ---------- Completed: the invoice, or the revenue share ----------
@@ -539,7 +571,7 @@ def complete(doc):
 	refresh_booking(doc.name)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def make_booking_invoice(booking):
 	"""For a completed booking whose invoice was cancelled (to correct it): make it again."""
 	from imed_erp.imederp.doctype.booking.booking import check_own_business

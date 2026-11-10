@@ -17,6 +17,11 @@ BUCKETS = ((30, "0-30"), (60, "31-60"), (90, "61-90"), (None, "90+"))
 
 
 def execute(filters=None):
+	# The report reads the doctors' ledger directly: only for those who may open it, whatever roles the report is
+	# later given on the site (Role Permission for Page and Report).
+	from imed_erp.imederp.doctor_balances import check_permission
+
+	check_permission()
 	filters = frappe._dict(filters or {})
 	as_of = getdate(filters.as_of)
 	return get_columns(), get_data(filters, as_of)

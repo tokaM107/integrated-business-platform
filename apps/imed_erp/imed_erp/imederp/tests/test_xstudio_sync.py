@@ -400,6 +400,30 @@ class IntegrationTestXStudioSync(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("Customer", existing.name, "xstudio_customer_id"), teacher)
 		self.assertEqual(frappe.db.count("Customer", {"custom_phone_key": "+20" + self.phone(7)[1:]}), 1)
 
+	def test_a_customer_the_erp_already_had_keeps_its_name_when_xstudio_names_it_differently(self):
+		"""Security audit, 10 Nov 2026: anyone registers in XStudio with any phone and name. A customer of another
+		group (a doctor, a student) matched by phone is linked, never renamed; the difference is listed."""
+		other_group = frappe.get_all("Customer Group", filters={"is_group": 0, "name": ("!=", GROUP)}, pluck="name", limit=1)[0]
+		doctor = frappe.get_doc(
+			{"doctype": "Customer", "customer_name": "_Test Doctor Kept", "customer_type": "Individual", "customer_group": other_group, "mobile_no": self.phone(6)}
+		).insert()
+		impostor = self.x.customer("<b>Someone Else</b>", "+20" + self.phone(6)[1:])
+		self.x.booking(impostor)
+		log = self.run_sync()
+		kept = frappe.db.get_value("Customer", doctor.name, ["customer_name", "xstudio_customer_id"], as_dict=True)
+		self.assertEqual((kept.customer_name, kept.xstudio_customer_id), ("_Test Doctor Kept", impostor))
+		self.assertTrue(any("name here is kept" in r.reason for r in log.errors))
+		# A customer of the sync's own group still follows XStudio, as plain text.
+		own = self.x.customer("_Test Studio Name", self.phone(5))
+		self.x.booking(own, hall=1)
+		self.run_sync()
+		self.x.customers[own]["name"] = "<i>_Test Studio Renamed</i>"
+		for row in self.x.bookings.values():
+			if row["customer_id"] == own:
+				self.x.touch(row, customer_name="<i>_Test Studio Renamed</i>")
+		self.run_sync()
+		self.assertEqual(frappe.db.get_value("Customer", {"xstudio_customer_id": own}, "customer_name"), "_Test Studio Renamed")
+
 	def test_the_same_phone_on_two_xstudio_customers_fails_the_second_alone(self):
 		one = self.x.customer("_Test Phone Owner", self.phone(8))
 		two = self.x.customer("_Test Phone Taker", self.phone(8))

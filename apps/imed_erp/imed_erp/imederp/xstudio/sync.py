@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 
 import frappe
 from frappe import _
-from frappe.utils import cint, cstr, flt, now_datetime, time_diff_in_seconds
+from frappe.utils import cint, cstr, escape_html, flt, now_datetime, strip_html, time_diff_in_seconds
 
 from imed_erp.imederp.customers import customer_with_phone, phone_key_or_none
 from imed_erp.imederp.doctype.integration_import_log.integration_import_log import ImportRun
@@ -79,7 +79,7 @@ class Context:
 # ---------- entry points ----------
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def sync_now():
 	"""Sync Now on XStudio Settings: one run, by the owner or the accountant."""
 	frappe.only_for(MANAGERS)
@@ -87,7 +87,7 @@ def sync_now():
 	return {field: log.get(field) for field in ("name", "status", "rows_read", "inserted", "updated", "skipped", "changed", "failed", "message")}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def test_connection():
 	frappe.only_for(MANAGERS)
 	settings = frappe.get_single("XStudio Settings")
@@ -99,7 +99,8 @@ def test_connection():
 	except XStudioError as e:
 		frappe.throw(cstr(e), title=_("XStudio Not Reachable"))
 	mapped = {cint(row.hall_id) for row in settings.hall_map}
-	unmapped = [f"{h.get('id')} ({h.get('name')})" for h in halls if cint(h.get("id")) not in mapped]
+	# XStudio's text is shown in a message, which renders HTML: escaped.
+	unmapped = [escape_html(f"{h.get('id')} ({h.get('name')})") for h in halls if cint(h.get("id")) not in mapped]
 	message = _("XStudio answered and the login worked. {0} active halls.").format(len(halls))
 	if unmapped:
 		message += " " + _("Not mapped to a resource yet: {0}.").format(", ".join(unmapped))
@@ -130,7 +131,7 @@ def run(trigger="scheduler", lookback_days=None, lookahead_days=None, dry_run=Fa
 		release_lock()
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def dry_run(lookback_days=None, lookahead_days=None):
 	"""What a run would do, without keeping anything (the first look at a real XStudio before any import):
 	  bench --site frontend execute imed_erp.imederp.xstudio.sync.dry_run"""
@@ -376,9 +377,19 @@ def upsert_customer(context, customer):
 		context.run.created()
 	else:
 		changes = {"xstudio_last_synced_at": now_datetime()}
-		current = frappe.db.get_value("Customer", name, ["customer_name", "mobile_no", "custom_phone_key", "xstudio_needs_review"], as_dict=True)
+		current = frappe.db.get_value(
+			"Customer", name, ["customer_name", "mobile_no", "custom_phone_key", "xstudio_needs_review", "customer_group"], as_dict=True
+		)
 		if customer["name"] and customer["name"] != current.customer_name:
-			changes["customer_name"] = customer["name"]
+			# XStudio's name follows only on a customer of the sync's own group. Anyone registers in XStudio with any
+			# phone and name: a customer the ERP already had (a doctor, a student), linked by phone, keeps the name
+			# the ERP gave them, and the difference is listed for someone to decide.
+			if current.customer_group == context.settings.customer_group:
+				changes["customer_name"] = strip_html(customer["name"])
+			else:
+				context.run.review(
+					context.row_no, xid, _("XStudio names customer {0} differently; the name here is kept.").format(name)
+				)
 		if key and key != current.custom_phone_key and not customer_with_phone(key, exclude=name):
 			doc = frappe.get_doc("Customer", name)
 			doc.mobile_no = phone

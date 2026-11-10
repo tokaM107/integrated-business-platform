@@ -26,6 +26,11 @@ from imed_erp.imederp.doctype.doctor_agreement.doctor_agreement import BALANCE_S
 
 
 def execute(filters=None):
+	# The report reads the doctors' ledger directly: only for those who may open it, whatever roles the report is
+	# later given on the site (Role Permission for Page and Report).
+	from imed_erp.imederp.doctor_balances import check_permission
+
+	check_permission()
 	filters = frappe._dict(filters or {})
 	if not (filters.agreement and filters.period):
 		return get_columns(), []

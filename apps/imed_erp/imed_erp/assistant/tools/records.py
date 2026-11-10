@@ -14,6 +14,8 @@ from imed_erp.assistant.tools.base import FILTERS_SCHEMA, MAX_ROWS_TO_MODEL, com
 
 # Never sent to a model, whatever the user's level: secrets and the raw payloads mirrored from other systems.
 NEVER_READ = ("Password", "Attach", "Attach Image", "Signature", "Code", "JSON")
+# The mirrored payloads kept as long text (whole imported files, XStudio's and the library's records): by name.
+NEVER_READ_FIELDS = ("source_payload", "file_content", "payload_hash", "source_payload_hash")
 
 
 def cost_center_field(doctype: str) -> str | None:
@@ -48,7 +50,12 @@ def readable_fields(doctype: str) -> set[str]:
 	meta = frappe.get_meta(doctype)
 	levels = set(meta.get_permlevel_access("read"))
 	return {"name", "owner", "creation", "modified", "docstatus"} | {
-		df.fieldname for df in meta.fields if df.fieldtype not in NEVER_READ and (df.permlevel or 0) in levels and df.fieldname
+		df.fieldname
+		for df in meta.fields
+		if df.fieldtype not in NEVER_READ
+		and df.fieldname not in NEVER_READ_FIELDS
+		and (df.permlevel or 0) in levels
+		and df.fieldname
 	}
 
 

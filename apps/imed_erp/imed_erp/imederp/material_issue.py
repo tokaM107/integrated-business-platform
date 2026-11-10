@@ -275,7 +275,7 @@ def before_submit_material_request(doc, method=None):
 		)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def request_approval(name):
 	doc = frappe.get_doc("Material Request", name)
 	doc.check_permission("write")
@@ -293,7 +293,7 @@ def request_approval(name):
 	)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def approve(name):
 	doc = get_pending(name)
 	doc.flags.imed_approval = True
@@ -304,7 +304,7 @@ def approve(name):
 	notify_requester(doc, _("Material Request {0} was approved and can be issued."))
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def reject(name, reason=None):
 	# SEC-01: kept as plain text; db_set skips Frappe's cleaning, and the form shows it. QA-25: and it is required.
 	from imed_erp.imederp.sales_cancellation import MAX_REASON_LENGTH, clean_reason
@@ -326,7 +326,8 @@ def reject(name, reason=None):
 		}
 	)
 	doc.add_comment("Comment", _("Rejected: {0}").format(reason))
-	notify_requester(doc, _("Material Request {0} was rejected.") + f" {reason}")
+	# The reason is added after the name is filled in: as part of the pattern, a brace in it broke the rejection.
+	notify([doc.owner], _("Material Request {0} was rejected.").format(doc.name) + f" {reason}", doc.name)
 
 
 def get_pending(name):

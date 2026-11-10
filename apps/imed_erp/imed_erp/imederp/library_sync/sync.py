@@ -21,17 +21,26 @@ from imed_erp.imederp.library_sync.mappers import MappingError, map_document
 ROLES = ("System Manager", "Accounts Manager", "Library Connector")
 LOCK = "imed_library_sync"
 SAVEPOINT = "library_doc"
+# One request's work is bounded: the connector sends far smaller batches (its config's batch size).
+MAX_DOCUMENTS = 500
+MAX_LINES = 1000
 
 
-@frappe.whitelist()
+# POST only: a GET carries the session cookie from a link on another site and skips the CSRF check.
+@frappe.whitelist(methods=["POST"])
 def receive(batch=None):
 	"""POST /api/method/imed_erp.imederp.library_sync.sync.receive  {"batch": {...}} (token auth)."""
 	frappe.only_for(ROLES)
 	if isinstance(batch, str):
 		batch = json.loads(batch)
-	batch = frappe._dict(batch or {})
-	if not batch.get("documents"):
+	if not isinstance(batch, dict):
+		frappe.throw(_("The batch is not an object."))
+	batch = frappe._dict(batch)
+	documents = batch.get("documents")
+	if not documents or not isinstance(documents, list):
 		frappe.throw(_("The batch holds no documents."))
+	if len(documents) > MAX_DOCUMENTS:
+		frappe.throw(_("The batch holds more than {0} documents: send smaller batches.").format(MAX_DOCUMENTS))
 	log = import_batch(batch)
 	return {"log": log.name, "status": log.status, "counts": {k: log.get(k) for k in ("rows_read", "inserted", "updated", "skipped", "changed", "failed")}}
 
@@ -64,8 +73,15 @@ def _import(batch):
 	try:
 		for row_no, document in enumerate(documents, start=1):
 			run.read()
+			# One element that is not a document, or is too long, is listed and the others go on.
+			if not isinstance(document, dict):
+				run.failed(row_no, "?", _("Not a document."))
+				continue
 			family = document.get("_family") or "stock"
 			external_id = str(document.get(c.FAMILIES.get(family, c.FAMILIES["stock"])["id"]) or "?")
+			if any(isinstance(value, list) and len(value) > MAX_LINES for value in document.values()):
+				run.failed(row_no, external_id, _("More than {0} lines.").format(MAX_LINES))
+				continue
 			frappe.db.savepoint(SAVEPOINT)
 			try:
 				import_one(run, row_no, family, external_id, document, settings)
