@@ -5280,49 +5280,28 @@ a.imed-ov-lib:hover {
 	color: var(--text-muted);
 	text-align: center;
 }
-.imed-accountant__hero {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 14px 18px;
-	margin-bottom: 18px;
-	padding: 20px 24px;
-	border-radius: 22px;
-	background:
-		radial-gradient(260px 160px at 100% 0%, rgba(255, 255, 255, 0.16), transparent 70%),
-		linear-gradient(135deg, var(--imed-teal-700), var(--imed-teal-500));
-	color: #ffffff;
-	box-shadow: 0 22px 40px -28px var(--imed-teal-700);
-}
-.imed-accountant__hero-text {
-	flex: 1;
-	min-width: 200px;
-	color: rgba(255, 255, 255, 0.88);
-	font-size: var(--text-sm);
-}
-.imed-accountant__hero-text small {
-	display: block;
-	font-weight: 600;
-}
-.imed-accountant__hero-text h2 {
-	margin: 2px 0 4px;
-	color: #ffffff;
-	font-size: 1.6rem;
-	font-weight: 800;
-}
+/* What waits on him: the count beside the title (no banner, as the owner's page: the owner, 10 Nov 2026). */
 .imed-accountant__state {
-	padding: 8px 16px;
+	padding: 2px 12px;
 	border-radius: 999px;
-	background: #ffffff;
+	background: var(--tone-soft);
 	color: var(--tone-fg);
 	font-size: var(--text-sm);
 	font-weight: 800;
 	white-space: nowrap;
 }
 .imed-accountant__h {
-	margin: 0 0 10px;
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin: 6px 0 10px;
 	font-size: var(--text-lg);
 	font-weight: 800;
+}
+.imed-accountant__h small {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+	font-weight: 600;
 }
 
 /* A figure: a white card, a coloured top edge, its label, its amount, a line under it. */
@@ -5456,7 +5435,7 @@ a.imed-ov-lib:hover {
 .imed-accountant__task-text small {
 	display: block;
 	overflow: hidden;
-	color: var(--text-muted);
+	color: var(--text-color, #4b5a62);
 	font-size: var(--text-xs);
 	text-overflow: ellipsis;
 	white-space: nowrap;
@@ -5470,8 +5449,10 @@ a.imed-ov-lib:hover {
 	font-weight: 800;
 	text-align: center;
 }
-.imed-accountant__task.is-done {
-	opacity: 0.55;
+/* Nothing waiting: the line stays as readable as the others (it was faded: the owner, 10 Nov 2026), only its
+   count turns a grey tick. */
+.imed-accountant__task.is-done .imed-accountant__task-icon {
+	background: var(--imed-border);
 }
 .imed-accountant__task.is-done .imed-accountant__count {
 	background: var(--imed-border);

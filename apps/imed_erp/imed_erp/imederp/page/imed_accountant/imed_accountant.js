@@ -7,8 +7,6 @@ frappe.pages["imed-accountant"].on_page_load = function (wrapper) {
 	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
 	const money = (v) => format_currency(Number(v) || 0, frappe.defaults.get_default("currency") || "EGP", 0);
 	const icon = (name, size = "md") => frappe.utils.icon(name, size);
-	const greeting = () => (new Date().getHours() < 12 ? __("صباح الخير") : __("مساء الخير"));
-	const long_day = () => new Date().toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 	const $body = $(`<div class="imed-accountant"></div>`).appendTo(page.main);
 	page.set_secondary_action(__("Refresh"), () => load(), "refresh");
 
@@ -90,21 +88,12 @@ frappe.pages["imed-accountant"].on_page_load = function (wrapper) {
 			.join("");
 
 		$body.html(`
-			<div class="imed-accountant__hero">
-				<div class="imed-accountant__hero-text">
-					<small>${esc(greeting())}</small>
-					<h2>${esc(d.user || __("المحاسب"))}</h2>
-					<span>${esc(long_day())}</span>
-				</div>
-				${state}
-			</div>
-
-			<h3 class="imed-accountant__h">${esc(__("النهارده"))}</h3>
+			<h3 class="imed-accountant__h">${esc(__("النهارده"))} <small>${esc(new Date().toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }))}</small></h3>
 			<div class="imed-accountant__today">${today}</div>
 
 			<div class="imed-accountant__grid">
 				<section class="imed-accountant__card">
-					<h4>${esc(__("مستنياك"))} <small>${esc(__("دوس على أي واحدة تفتحلك القايمة"))}</small></h4>
+					<h4>${esc(__("مستنياك"))} ${state} <small>${esc(__("دوس على أي واحدة تفتحلك القايمة"))}</small></h4>
 					<div class="imed-accountant__tasks">${tasks || `<p class="text-muted">${esc(__("مفيش حاجة."))}</p>`}</div>
 				</section>
 				<section class="imed-accountant__card">
