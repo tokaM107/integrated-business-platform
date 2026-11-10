@@ -416,6 +416,8 @@ def reverse_adjustment(name, reason):
 	doc = frappe.get_doc("Doctor Ledger Entry", name)
 	if not doc.is_manual_adjustment() or doc.docstatus != 1:
 		frappe.throw(_("{0} is not a submitted manual adjustment.").format(name))
+	# The approver's role, and the right to cancel this entry itself (security review of 10 Nov 2026).
+	doc.check_permission("cancel")
 	doc.cancel_reason = reason
 	doc.flags.ignore_permissions = True
 	doc.cancel()

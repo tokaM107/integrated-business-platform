@@ -60,3 +60,49 @@ def overview():
 		"boxes": [{"account": account, "balance": value} for account, value in figures.cash_box_balances() if value],
 		"waiting": waiting(),
 	}
+
+
+# What is not the accountant's (the owner, 9 and 10 Nov 2026: "remove what does not matter to him", then "fix it":
+# hidden from his sidebar first, refused on the server now): the libraries' counters and printing machines, the
+# halls' and studio's prices and resources, and the integrations' settings. The stock counts stay his (a count dated
+# in the past is the accountant's), and so do the bookings and the studio's packages: their money (deposits, a
+# package cancelled and paid back) is the accounts'.
+NOT_HIS = (
+	"Daily Counter Reading",
+	"Printer Reading",
+	"Printing Machine",
+	"Booking Resource",
+	"Booking Package",
+	"Booking Extra",
+	"Hall Price Tier",
+	"XStudio Settings",
+	"Sparkle Settings",
+)
+
+
+def accountant_only(user=None):
+	user = user or frappe.session.user
+	if not user or user in ("Administrator", "Guest"):
+		return False
+	roles = set(frappe.get_roles(user))
+	return ACCOUNTANT in roles and not {"Super Admin", "System Manager"} & roles
+
+
+def has_permission(doc, ptype=None, user=None, debug=False):
+	"""Frappe asks this for each of NOT_HIS (hooks.py has_permission): only ever a refusal, never a right added."""
+	return not accountant_only(user)
+
+
+def query_conditions(user=None):
+	"""The lists of NOT_HIS are empty for him (hooks.py permission_query_conditions)."""
+	return "1=0" if accountant_only(user) else ""
+
+
+def boot_session(bootinfo):
+	"""Nor are they offered to him (the search, the links): taken out of what the desk is told he may read."""
+	if not accountant_only():
+		return
+	user = bootinfo.get("user") or {}
+	for key in ("can_read", "can_write", "can_create", "can_select", "can_search", "can_get_report", "can_export", "can_print", "can_email"):
+		if isinstance(user.get(key), list):
+			user[key] = [d for d in user[key] if d not in NOT_HIS]

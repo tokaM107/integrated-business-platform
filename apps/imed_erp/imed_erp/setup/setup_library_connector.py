@@ -39,5 +39,42 @@ def run():
 		if not any(r.role == ROLE for r in user.roles):
 			user.append("roles", {"role": ROLE})
 			user.save(ignore_permissions=True)
-	frappe.db.commit()
+	if not frappe.flags.in_test:
+		frappe.db.commit()
 	return {"role": ROLE, "user": USER, "keys": "generate on the user's form (API Access), never printed here"}
+
+
+def for_library(cost_center, email=None):
+	"""A library's own connector user, bound to its library: its batches may file documents under that cost center
+	only, and never change another library's (library_sync.sync.allowed_cost_centers; security review of 10 Nov
+	2026: one key for both PCs let either write the other's sales). Each PC then holds its own key.
+
+	    bench --site <site> execute imed_erp.setup.setup_library_connector.for_library \
+	        --kwargs '{"cost_center": "مكتبة المواساة - MMG", "email": "mawasah-connector@imed.local"}'
+
+	The shared user (USER) is bound the same way by naming it: --kwargs '{"cost_center": "مكتبة الأزاريطة - MMG",
+	"email": "library-connector@imed.local"}'. Idempotent; prints no secret (keys: the user's form, API Access)."""
+	if not frappe.db.exists("Cost Center", cost_center) or frappe.db.get_value("Cost Center", cost_center, "is_group"):
+		frappe.throw(f"{cost_center} is not a library's cost center.")
+	email = email or USER
+	run()  # the role, and the shared user
+	if not frappe.db.exists("User", email):
+		frappe.get_doc(
+			{
+				"doctype": "User",
+				"email": email,
+				"first_name": f"Library Connector ({cost_center.rsplit(' - ', 1)[0]})",
+				"user_type": "System User",
+				"send_welcome_email": 0,
+				"enabled": 1,
+				"roles": [{"role": ROLE}],
+			}
+		).insert(ignore_permissions=True)
+	if not frappe.db.exists("User Permission", {"user": email, "allow": "Cost Center", "for_value": cost_center}):
+		frappe.get_doc(
+			{"doctype": "User Permission", "user": email, "allow": "Cost Center", "for_value": cost_center, "apply_to_all_doctypes": 1}
+		).insert(ignore_permissions=True)
+	if not frappe.flags.in_test:
+		frappe.db.commit()
+	bound = frappe.get_all("User Permission", filters={"user": email, "allow": "Cost Center"}, pluck="for_value")
+	return {"user": email, "writes": bound, "keys": "generate on the user's form (API Access), never printed here"}

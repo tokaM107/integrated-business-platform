@@ -200,6 +200,18 @@ class TestLibraryReceive(IntegrationTestCase):
 	def test_the_endpoint_is_for_the_accounts_only(self):
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, sync.receive, self.batch(sale()))
+		# Nor the accountant: only the connector writes a library's sales (security review of 10 Nov 2026).
+		if frappe.db.exists("User", "accountant@imed.local"):
+			frappe.set_user("accountant@imed.local")
+			self.assertRaises(frappe.PermissionError, sync.receive, self.batch(sale()))
+
+	def test_a_batch_may_file_documents_under_a_librarys_cost_center_only(self):
+		"""The batch names its cost centers itself: one that is not a library's (the halls') refuses the batch whole."""
+		halls = frappe.get_all("Cost Center", filters={"is_group": 0, "cost_center_name": ["not like", "مكتبة%"]}, pluck="name", limit=1)
+		forged = self.batch(sale(external_id="90077"))
+		forged["branch_map"] = {"1": halls[0]}
+		self.assertRaisesRegex(frappe.PermissionError, "not this connector's library", sync.import_batch, forged)
+		self.assertFalse(frappe.db.exists("Library Sales Document", {"import_key": "tanmya:azarita:stock:90077"}))
 
 	def test_two_libraries_with_the_same_document_id_are_two_documents_and_a_nameless_batch_is_refused(self):
 		"""Db2BDoctorNew (the first library) and Db2BDoctor (PC1) both number their documents from 1."""
@@ -359,3 +371,31 @@ class TestLibraryReceive(IntegrationTestCase):
 
 		[row] = [r for r in get_data() if r["system"] == "tanmya"]
 		self.assertEqual((row["status"], row["inserted"]), ("Completed", 1))
+
+
+class TestALibrarysOwnConnector(IntegrationTestCase):
+	"""A connector user bound to one library (setup_library_connector.for_library) writes that library only."""
+
+	def setUp(self):
+		frappe.db.savepoint("library_test")
+		from imed_erp.setup import setup_library_connector
+
+		self.mawasah = cost_center("مكتبة المواساة")
+		self.azarita = cost_center("مكتبة الأزاريطة")
+		setup_library_connector.for_library(self.mawasah, "mawasah-connector-test@imed.local")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="library_test")
+
+	def test_a_bound_connector_may_not_file_or_change_another_librarys_documents(self):
+		frappe.set_user("Administrator")
+		sync.import_batch(frappe._dict(settings(), source="tanmya", documents=[sale(external_id="91001")]))  # Azarita's
+		frappe.set_user("mawasah-connector-test@imed.local")
+		self.assertEqual(sync.allowed_cost_centers(), {self.mawasah})
+		forged = frappe._dict(settings(), source="tanmya", documents=[sale(external_id="91001", number="FORGED")])
+		self.assertRaises(frappe.PermissionError, sync.import_batch, forged)  # branch 1 is Azarita's
+		forged["branch_map"] = {"1": self.mawasah}
+		log = sync.import_batch(forged)
+		self.assertEqual(log.failed, 1)
+		self.assertEqual(frappe.db.get_value("Library Sales Document", {"import_key": "tanmya:azarita:stock:91001"}, "number"), "A-1001")

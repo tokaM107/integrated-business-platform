@@ -126,6 +126,15 @@ class IntegrationTestLibraryDesk(IntegrationTestCase):
 		self.assertRaisesRegex(frappe.ValidationError, "no price", desk.count, {INK: 2})
 
 
+	def test_a_count_sent_to_the_server_directly_holds_the_librarys_supplies_only(self):
+		"""Not through its screen (the REST API): an item that is not a supply is refused (review of 10 Nov 2026)."""
+		other = frappe.get_all("Item", filters={"is_stock_item": 1, "disabled": 0, "item_group": ["not in", desk.SUPPLY_GROUPS]}, pluck="name", limit=1)
+		if not other:
+			self.skipTest("no stock item outside the supplies on this site")
+		frappe.set_user(ACCOUNT)
+		count = frappe.get_doc({"doctype": "Stock Count", "store": STORE, "items": [{"item_code": other[0], "counted_qty": 1}]})
+		self.assertRaisesRegex(frappe.ValidationError, "not one of the library's supplies", count.insert)
+
 	def test_the_counters_are_one_number_a_machine_morning_then_evening(self):
 		frappe.set_user(ACCOUNT)
 		now = desk.counters_today()

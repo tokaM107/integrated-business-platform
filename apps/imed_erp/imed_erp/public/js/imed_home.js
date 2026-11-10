@@ -225,7 +225,28 @@
 			return frappe.utils.generate_route({ type: "workspace", name: "Owner Dashboard", public: 1 });
 		}
 		const items = frappe.boot.workspace_sidebar_item?.imederp?.items || [];
-		const first = items.find((i) => i.type === "Link" && i.link_to && ["DocType", "Workspace"].includes(i.link_type));
+		const opens = (i) => i.type === "Link" && i.link_to && ["DocType", "Workspace"].includes(i.link_type);
+		// A branch's manager lands in the section of their own business (a library's manager landed on the halls'
+		// bookings, the sidebar's first item: test of 10 Nov 2026), else on the sidebar's first item.
+		const own = () => {
+			const centers = ((frappe.defaults.get_user_permissions() || {})["Cost Center"] || []).map((p) => p.doc || "");
+			const SECTIONS = [
+				["مكتبة", "Libraries"],
+				["قاعات", "IMED Hall Bookings"],
+				["استوديو", "Photo Studio Bookings"],
+				["تطبيق", "BA+ Courses"],
+			];
+			const match = SECTIONS.find(([word]) => centers.length && centers.every((c) => c.includes(word)));
+			if (!match) return null;
+			const at = items.findIndex((i) => i.type === "Section Break" && [match[1], __(match[1])].includes(i.label));
+			if (at < 0) return null;
+			for (const i of items.slice(at + 1)) {
+				if (i.type === "Section Break") break;
+				if (opens(i)) return i;
+			}
+			return null;
+		};
+		const first = own() || items.find(opens);
 		if (!first) return null;
 		return first.link_type === "Workspace"
 			? frappe.utils.generate_route({ type: "workspace", name: first.link_to, public: 1 })
