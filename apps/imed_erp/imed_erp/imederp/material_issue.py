@@ -27,6 +27,7 @@ from frappe.utils import cint, flt, now_datetime
 
 from imed_erp.imederp.doctype.printing_machine.printing_machine import serves_warehouse
 from imed_erp import notification_service
+from imed_erp.imederp import owner_alerts
 
 APPROVER_ROLE = "Stock Request Approver"
 PENDING, APPROVED, REJECTED = "Pending Approval", "Approved", "Rejected"
@@ -291,6 +292,8 @@ def request_approval(name):
 		_("Material Request {0} from {1} is waiting for your approval.").format(doc.name, destinations(doc)),
 		doc.name,
 	)
+	# The owner hears of it on WhatsApp as soon as the branch asks (imederp/owner_alerts.py).
+	owner_alerts.stock_requested(doc)
 
 
 @frappe.whitelist()
