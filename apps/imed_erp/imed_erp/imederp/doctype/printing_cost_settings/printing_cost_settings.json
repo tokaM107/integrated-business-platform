@@ -20,7 +20,11 @@
   "column_break_machine_ink",
   "epson_ink_set_price",
   "epson_sheets_per_set",
-  "epson_ink_per_sheet"
+  "epson_ink_per_sheet",
+  "binding_supplies_section",
+  "binding_wire_price",
+  "column_break_binding",
+  "binding_cover_price"
  ],
  "fields": [
   {
@@ -128,11 +132,33 @@
    "default": "0.05",
    "precision": "4",
    "read_only_depends_on": "eval:doc.epson_sheets_per_set > 0"
+  },
+  {
+   "fieldname": "binding_supplies_section",
+   "fieldtype": "Section Break",
+   "label": "Binding Supplies",
+   "description": "What the libraries pay for one piece: their stock is valued at it (setup/setup_inks.py)."
+  },
+  {
+   "fieldname": "binding_wire_price",
+   "fieldtype": "Currency",
+   "label": "Binding Wire, One Piece",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "column_break_binding",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "binding_cover_price",
+   "fieldtype": "Currency",
+   "label": "Plastic Cover, One Piece",
+   "non_negative": 1
   }
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-18 23:00:00.000000",
+ "modified": "2026-11-09 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Printing Cost Settings",

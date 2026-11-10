@@ -18,7 +18,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, now_datetime
 
-SOURCE_SYSTEMS = ("ba_plus", "library_pos", "booking", "xstudio", "tanmya")
+SOURCE_SYSTEMS = ("ba_plus", "library_pos", "booking", "xstudio", "tanmya", "sparkle")
 FAILED, CHANGED, REVIEW, NOTE = "Failed", "Changed in Source", "Needs Review", "Note"
 
 

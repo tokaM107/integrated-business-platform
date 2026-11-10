@@ -17,8 +17,10 @@ from imed_erp.imederp.doctype.integration_import_log.integration_import_log impo
 from imed_erp.imederp.library_sync import contract as c
 from imed_erp.imederp.library_sync.mappers import MappingError, map_document
 
-# The connector's own user holds Library Connector and nothing else (setup/setup_library_connector.py).
-ROLES = ("System Manager", "Accounts Manager", "Library Connector")
+# The connector's own user holds Library Connector and nothing else (setup/setup_library_connector.py). Only it (and
+# the system's manager) writes the mirrored documents: not the accountant, whose Accounts Manager could otherwise make
+# up a library's sales (security review of 10 Nov 2026).
+ROLES = ("System Manager", "Library Connector")
 LOCK = "imed_library_sync"
 SAVEPOINT = "library_doc"
 
@@ -53,9 +55,29 @@ def import_batch(batch):
 		frappe.db.sql("select release_lock(%s)", LOCK)
 
 
+def allowed_cost_centers():
+	"""The cost centers a batch may file documents under: a library's (a leaf cost center named مكتبة ...), and, when
+	the connector's user is bound to some (User Permissions on Cost Center: one user a library), those only. The batch
+	names its cost centers itself (its branch_map); without this a stolen key could file sales under any cost center,
+	or one library's PC under the other's (security review of 10 Nov 2026)."""
+	libraries = set(frappe.get_all("Cost Center", filters={"is_group": 0, "cost_center_name": ["like", "مكتبة%"]}, pluck="name"))
+	bound = set(frappe.get_all("User Permission", filters={"user": frappe.session.user, "allow": "Cost Center"}, pluck="for_value"))
+	return libraries & bound if bound else libraries
+
+
 def _import(batch):
 	settings = {k: batch.get(k) or {} for k in ("branch_map", "operation_map")}
+	allowed = allowed_cost_centers()
+	refused = {code: cc for code, cc in settings["branch_map"].items() if cc not in allowed}
+	if refused:
+		frappe.throw(
+			_("The batch maps branches to cost centers that are not this connector's library: {0}. Refused; nothing was imported.").format(
+				", ".join(f"{code} → {cc}" for code, cc in refused.items())
+			),
+			frappe.PermissionError,
+		)
 	settings["library"] = str(batch.get(c.LIBRARY_KEY)).strip()
+	settings["allowed_cost_centers"] = allowed
 	settings["issued_status_codes"] = batch.get("issued_status_codes") or []
 	settings["cancelled_status_codes"] = batch.get("cancelled_status_codes") or []
 	documents = batch.get("documents") or []
@@ -86,7 +108,11 @@ def _import(batch):
 def import_one(run, row_no, family, external_id, document, settings):
 	fields, notes = map_document(family, document, settings)
 	lines = fields.pop("lines")
-	existing = frappe.db.get_value("Library Sales Document", {"import_key": fields["import_key"]}, ["name", "payload_hash"], as_dict=True)
+	existing = frappe.db.get_value("Library Sales Document", {"import_key": fields["import_key"]}, ["name", "payload_hash", "cost_center"], as_dict=True)
+	# A document already filed under a library this connector may not write (another library's PC sending the other's
+	# name) is never changed from here (security review of 10 Nov 2026).
+	if existing and existing.cost_center and existing.cost_center not in settings.get("allowed_cost_centers", {existing.cost_center}):
+		raise MappingError(_("{0} belongs to {1}, which this connector does not write; left unchanged.").format(existing.name, existing.cost_center))
 	if existing and existing.payload_hash == fields["payload_hash"]:
 		run.skipped()
 		frappe.db.set_value("Library Sales Document", existing.name, "last_synced_at", now_datetime(), update_modified=False)

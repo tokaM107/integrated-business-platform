@@ -20,6 +20,11 @@ def tidy_home():
 	if not frappe.db.get_single_value("System Settings", "disable_system_update_notification"):
 		frappe.db.set_single_value("System Settings", "disable_system_update_notification", 1)
 		changed = True
+	# ERPNext's "Getting started" (Stock Setup 0/7...) came back on every page load (owner, 9 Nov 2026): the setup is
+	# done here, by the app's own scripts.
+	if frappe.db.get_single_value("System Settings", "enable_onboarding"):
+		frappe.db.set_single_value("System Settings", "enable_onboarding", 0)
+		changed = True
 	if changed:
 		# Every user's tiles and boot are cached: drop them all, not only the current user's.
 		frappe.cache.delete_key("desktop_icons")

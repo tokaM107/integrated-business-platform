@@ -212,11 +212,41 @@
 	// (Frappe sends each user only the links they may read). A user with nothing in that sidebar keeps the home
 	// screen, rather than land nowhere.
 	function landing_route() {
+		// A library's shared account lands on its own screen, مكتبتي (owner, 4 Nov 2026), and nothing else.
+		const roles = frappe.user_roles || [];
+		if (roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin")) {
+			return "/desk/imed-library";
+		}
+		// The accountant's account lands on his own screen, شاشة المحاسب (the owner, 9 Nov 2026).
+		if (roles.includes("Accountant") && !roles.includes("System Manager") && !roles.includes("Super Admin")) {
+			return "/desk/imed-accountant";
+		}
 		if ((frappe.boot.workspaces?.pages || []).some((p) => p.name === "Owner Dashboard")) {
 			return frappe.utils.generate_route({ type: "workspace", name: "Owner Dashboard", public: 1 });
 		}
 		const items = frappe.boot.workspace_sidebar_item?.imederp?.items || [];
-		const first = items.find((i) => i.type === "Link" && i.link_to && ["DocType", "Workspace"].includes(i.link_type));
+		const opens = (i) => i.type === "Link" && i.link_to && ["DocType", "Workspace"].includes(i.link_type);
+		// A branch's manager lands in the section of their own business (a library's manager landed on the halls'
+		// bookings, the sidebar's first item: test of 10 Nov 2026), else on the sidebar's first item.
+		const own = () => {
+			const centers = ((frappe.defaults.get_user_permissions() || {})["Cost Center"] || []).map((p) => p.doc || "");
+			const SECTIONS = [
+				["مكتبة", "Libraries"],
+				["قاعات", "IMED Hall Bookings"],
+				["استوديو", "Photo Studio Bookings"],
+				["تطبيق", "BA+ Courses"],
+			];
+			const match = SECTIONS.find(([word]) => centers.length && centers.every((c) => c.includes(word)));
+			if (!match) return null;
+			const at = items.findIndex((i) => i.type === "Section Break" && [match[1], __(match[1])].includes(i.label));
+			if (at < 0) return null;
+			for (const i of items.slice(at + 1)) {
+				if (i.type === "Section Break") break;
+				if (opens(i)) return i;
+			}
+			return null;
+		};
+		const first = own() || items.find(opens);
 		if (!first) return null;
 		return first.link_type === "Workspace"
 			? frappe.utils.generate_route({ type: "workspace", name: first.link_to, public: 1 })
@@ -231,6 +261,25 @@
 		frappe.set_route(route.replace(/^\/desk\//, ""));
 		return true;
 	}
+
+	// A library's account that reaches a dashboard or a page (the owner's dashboard, kept from the last account
+	// signed in on the same browser: one part, "owner-dashboard") goes back to مكتبتي. Its lists and forms (List,
+	// Form, two parts or more) stay as they are.
+	function library_home_only() {
+		const roles = frappe.user_roles || [];
+		const library_only = roles.includes("Library Staff") && !roles.includes("System Manager") && !roles.includes("Super Admin");
+		const route = (frappe.get_route && frappe.get_route()) || [];
+		if (library_only && route.length === 1 && route[0] && route[0] !== "imed-library") {
+			frappe.route_flags.replace_route = true;
+			frappe.set_route("imed-library");
+		}
+	}
+	// Frappe fires neither event alone for every page: a page the user may not open fires no page-change.
+	$(document).on("page-change", library_home_only);
+	$(() => {
+		if (frappe.router && frappe.router.on) frappe.router.on("change", library_home_only);
+		setTimeout(library_home_only, 500);
+	});
 
 	$(document).on("desktop_screen", (e, args) => {
 		if (leave_home_screen()) return;

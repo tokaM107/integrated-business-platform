@@ -27,7 +27,7 @@ import re
 import frappe
 from frappe import _
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
-from frappe.utils import cstr, escape_html
+from frappe.utils import cint, cstr, escape_html
 
 PHONE_KEY = "custom_phone_key"
 EGYPT = "20"
@@ -68,9 +68,26 @@ CUSTOM_FIELDS = {
 }
 
 
+# The customers' table shows their mobile and finds a customer by it (owner, 9 Nov 2026: the studio's customers'
+# numbers in the table). Frappe shows only a few columns, so ERPNext's territory, billing currency and customer type
+# (one value for every customer here) leave the table to make room for the mobile.
+LIST_PROPERTIES = [
+	("mobile_no", "in_list_view", 1),
+	("mobile_no", "in_standard_filter", 1),
+	("territory", "in_list_view", 0),
+	("default_currency", "in_list_view", 0),
+	("customer_type", "in_list_view", 0),
+]
+
+
 def make_custom_fields():
 	"""after_install / after_migrate hook."""
 	create_custom_fields(CUSTOM_FIELDS, update=True)
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+	for fieldname, prop, value in LIST_PROPERTIES:
+		if frappe.get_meta("Customer").get_field(fieldname) and cint(frappe.get_meta("Customer").get_field(fieldname).get(prop)) != value:
+			make_property_setter("Customer", fieldname, prop, value, "Check", validate_fields_for_doctype=False)
 
 
 def normalize_phone(value):

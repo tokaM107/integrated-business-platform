@@ -4,6 +4,7 @@
 #
 #   bench --site frontend run-tests --module imed_erp.imederp.tests.test_library_sync
 import copy
+import json
 
 import frappe
 from frappe.tests import IntegrationTestCase
@@ -79,6 +80,15 @@ class TestLibraryMappers(IntegrationTestCase):
 		self.assertEqual((fields["lines"][0]["product_code"], fields["lines"][0]["qty"], fields["lines"][0]["line_total"], fields["lines"][0]["doctor_name"]), ("P-1", 2.0, 100.0, "د. أحمد"))
 		self.assertEqual(fields["import_key"], "tanmya:azarita:stock:90001")
 		self.assertEqual(notes, [])
+
+	def test_the_invoice_keeps_the_librarys_day_at_the_time_the_cashier_saved_it(self):
+		"""TxtRegDateRefStock is the day at 00:00; TxtOrderTime the clock of the save. Without it, the day alone."""
+		document = sale(when="2026-11-03 00:00:00")
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
+		document["TxtOrderTime"] = "2026-11-03T12:14:20.473000"
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 12:14:20")
+		document["TxtOrderTime"] = "not a time"
+		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
 
 	def test_a_held_and_a_cancelled_document_are_not_final(self):
 		held, _ = mappers.map_document("stock", sale(status="1"), settings())
@@ -190,6 +200,18 @@ class TestLibraryReceive(IntegrationTestCase):
 	def test_the_endpoint_is_for_the_accounts_only(self):
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, sync.receive, self.batch(sale()))
+		# Nor the accountant: only the connector writes a library's sales (security review of 10 Nov 2026).
+		if frappe.db.exists("User", "accountant@imed.local"):
+			frappe.set_user("accountant@imed.local")
+			self.assertRaises(frappe.PermissionError, sync.receive, self.batch(sale()))
+
+	def test_a_batch_may_file_documents_under_a_librarys_cost_center_only(self):
+		"""The batch names its cost centers itself: one that is not a library's (the halls') refuses the batch whole."""
+		halls = frappe.get_all("Cost Center", filters={"is_group": 0, "cost_center_name": ["not like", "مكتبة%"]}, pluck="name", limit=1)
+		forged = self.batch(sale(external_id="90077"))
+		forged["branch_map"] = {"1": halls[0]}
+		self.assertRaisesRegex(frappe.PermissionError, "not this connector's library", sync.import_batch, forged)
+		self.assertFalse(frappe.db.exists("Library Sales Document", {"import_key": "tanmya:azarita:stock:90077"}))
 
 	def test_two_libraries_with_the_same_document_id_are_two_documents_and_a_nameless_batch_is_refused(self):
 		"""Db2BDoctorNew (the first library) and Db2BDoctor (PC1) both number their documents from 1."""
@@ -230,6 +252,41 @@ class TestLibraryReceive(IntegrationTestCase):
 		frappe.set_user("gilan@imed.local")
 		self.assertRaises(frappe.PermissionError, list_summary)
 
+	def test_the_list_band_counts_the_dates_the_list_shows(self):
+		"""The band follows the list's dates (the owner, 9 Nov 2026: "the revenue from this date to that"): a range
+		counts its days' sales, a day before it or after it does not; with no dates it is today's; an unknown
+		condition is refused."""
+		from imed_erp.imederp.doctype.library_sales_document.library_sales_document import list_summary
+
+		day = lambda n: frappe.utils.add_days("2026-03-10", n)
+		span = json.dumps(["between", [day(0), day(2)]])
+		before, before_today = list_summary(date_filter=span), list_summary()
+		sync.import_batch(
+			self.batch(
+				sale("94001", when=f"{day(0)} 09:00:00"),
+				sale("94002", when=f"{day(2)} 23:30:00"),
+				sale("94003", when=f"{day(-1)} 18:00:00"),
+				sale("94004", when=f"{day(3)} 08:00:00"),
+			)
+		)
+		after, after_today = list_summary(date_filter=span), list_summary()
+		self.assertEqual((after["sales_count"] - before["sales_count"], flt(after["sales_value"] - before["sales_value"], 2)), (2, 300.0))
+		self.assertEqual((after["is_today"], after_today["is_today"]), (False, True))
+		self.assertEqual(after_today["sales_count"], before_today["sales_count"])
+		self.assertRaises(frappe.ValidationError, list_summary, date_filter=json.dumps(["like", "%"]))
+
+	def test_the_list_band_of_one_library_counts_that_library_only(self):
+		"""The sidebar's "Mawasah Invoices" opens the list filtered to Mawasah: its band counts Mawasah alone."""
+		from imed_erp.imederp.doctype.library_sales_document.library_sales_document import list_summary
+
+		today = frappe.utils.nowdate()
+		mawasah = cost_center("مكتبة المواساة")
+		before_one, before_all = list_summary(mawasah), list_summary()
+		sync.import_batch(self.batch(sale("93001", branch="1", when=f"{today} 09:00:00"), sale("93002", branch="2", when=f"{today} 09:10:00")))
+		after_one, after_all = list_summary(mawasah), list_summary()
+		self.assertEqual((after_one["sales_count"] - before_one["sales_count"], after_all["sales_count"] - before_all["sales_count"]), (1, 2))
+		self.assertEqual(flt(after_one["sales_value"] - before_one["sales_value"], 2), 150.0)
+
 	def test_the_owner_sees_each_librarys_sales_today_apart(self):
 		"""The Owner Dashboard's first row (owner_overview.libraries): Azarita and Mawasah apart, by the cost center
 		the branch maps to; today's issued sales and returns only. Measured as a change, whatever the site holds."""
@@ -257,9 +314,88 @@ class TestLibraryReceive(IntegrationTestCase):
 		self.assertTrue(after["مكتبة الأزاريطة"]["linked"] and after["مكتبة المواساة"]["linked"])
 		self.assertEqual(list(after), ["مكتبة الأزاريطة", "مكتبة المواساة"])
 
+	def test_the_library_reports_sum_each_item_and_each_doctor_sales_less_returns(self):
+		"""Tanmya's daily reports rebuilt here (library_sync/reports.py): per item under its item group (each group
+		closed by its total, then the grand total) and per doctor with the doctor's share, issued sales less returns,
+		of the chosen library; a held sale and another library's do not count. On a day no real sale has."""
+		from imed_erp.imederp.report.library_doctor_sales.library_doctor_sales import execute as by_doctor
+		from imed_erp.imederp.report.library_sales_by_item.library_sales_by_item import execute as by_item
+
+		day = "2031-01-15"
+
+		def sold(line_id):
+			return [
+				{"TxtIdRefStockSub": line_id, "TxtProductCodeRefStockSub": "P-1", "TxtProductNameRefStockSub": "كتاب باثولوجي", "TxtProductQtyOutRefStockSub": "2", "TxtProductTotalValueDownRefStockSub": "100", "TxtDiscountValueToRefStockSub": "10", "TxtDoctorName": "د. أحمد", "DoctorValueAFDiscount": "20", "TxtProductCategoryCode": "30", "TxtProductCategoryName": "عملي"},
+				{"TxtIdRefStockSub": line_id + "1", "TxtProductCodeRefStockSub": "P-2", "TxtProductNameRefStockSub": "ملزمة", "TxtProductQtyOutRefStockSub": "1", "TxtProductTotalValueDownRefStockSub": "50"},
+			]
+
+		returned = [{"TxtIdRefStockSub": "620001", "TxtProductCodeRefStockSub": "P-1", "TxtProductNameRefStockSub": "كتاب باثولوجي", "TxtProductQtyInRefStockSub": "1", "TxtProductTotalValueUpRefStockSub": "50", "TxtDoctorName": "د. أحمد", "DoctorValueAFDiscount": "10", "TxtProductCategoryName": "عملي"}]
+		sync.import_batch(
+			self.batch(
+				sale("94001", lines=sold("640001"), when=f"{day} 09:00:00"),
+				sale("94002", lines=sold("640002"), when=f"{day} 10:00:00"),
+				sale("94003", operation="21", lines=returned, when=f"{day} 11:00:00"),
+				sale("94004", status="1", lines=sold("640004"), when=f"{day} 12:00:00"),
+				sale("94005", branch="2", lines=sold("640005"), when=f"{day} 12:30:00"),
+			)
+		)
+		filters = {"from_date": day, "to_date": day, "cost_center": cost_center("مكتبة الأزاريطة")}
+		columns, data, _message, _chart, cards, skip_total_row = by_item(filters)
+		self.assertTrue(skip_total_row)
+		shown = [(r.get("product_name"), r.get("sold_qty"), r.get("sold_discount"), r.get("sold_before_discount"), r.get("sold_value"), r.get("returned_value"), r.get("net_value")) for r in data]
+		self.assertEqual(
+			shown,
+			[
+				("عملي", None, None, None, None, None, None),
+				("كتاب باثولوجي", 4.0, 20.0, 220.0, 200.0, 50.0, 150.0),
+				("Total of عملي", 4.0, 20.0, 220.0, 200.0, 50.0, 150.0),
+				("Without a group", None, None, None, None, None, None),
+				("ملزمة", 2.0, 0.0, 100.0, 100.0, 0.0, 100.0),
+				("Total of Without a group", 2.0, 0.0, 100.0, 100.0, 0.0, 100.0),
+				("Total Sales", 6.0, 20.0, 320.0, 300.0, 50.0, 250.0),
+			],
+		)
+		self.assertEqual([c["value"] for c in cards], [300.0, 50.0, 250.0])
+		# The daily sales page (library-daily-sales): the same groups, its items, totals and the grand total.
+		from imed_erp.imederp.library_sync.reports import daily_sales
+
+		sheet = daily_sales(day, day, cost_center("مكتبة الأزاريطة"))
+		self.assertEqual([(g["name"], [i.product_code for i in g["items"]], g["total"].net_value) for g in sheet["groups"]], [("عملي", ["P-1"], 150.0), ("Without a group", ["P-2"], 100.0)])
+		self.assertEqual((sheet["total"].sold_before_discount, sheet["total"].returned_value, sheet["total"].net_value), (320.0, 50.0, 250.0))
+		doctors = {r.doctor_name: (r.invoices, r.sold_value, r.returned_value, r.net_value, r.doctor_share) for r in by_doctor(filters)[1]}
+		self.assertEqual(doctors, {"د. أحمد": (2, 200.0, 50.0, 150.0, 30.0), "Without a doctor": (2, 100.0, 0.0, 100.0, 0.0)})
+
 	def test_the_status_report_shows_the_source(self):
 		sync.import_batch(self.batch(sale()))
 		from imed_erp.imederp.report.integration_status.integration_status import get_data
 
 		[row] = [r for r in get_data() if r["system"] == "tanmya"]
 		self.assertEqual((row["status"], row["inserted"]), ("Completed", 1))
+
+
+class TestALibrarysOwnConnector(IntegrationTestCase):
+	"""A connector user bound to one library (setup_library_connector.for_library) writes that library only."""
+
+	def setUp(self):
+		frappe.db.savepoint("library_test")
+		from imed_erp.setup import setup_library_connector
+
+		self.mawasah = cost_center("مكتبة المواساة")
+		self.azarita = cost_center("مكتبة الأزاريطة")
+		setup_library_connector.for_library(self.mawasah, "mawasah-connector-test@imed.local")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="library_test")
+
+	def test_a_bound_connector_may_not_file_or_change_another_librarys_documents(self):
+		frappe.set_user("Administrator")
+		sync.import_batch(frappe._dict(settings(), source="tanmya", documents=[sale(external_id="91001")]))  # Azarita's
+		frappe.set_user("mawasah-connector-test@imed.local")
+		self.assertEqual(sync.allowed_cost_centers(), {self.mawasah})
+		forged = frappe._dict(settings(), source="tanmya", documents=[sale(external_id="91001", number="FORGED")])
+		self.assertRaises(frappe.PermissionError, sync.import_batch, forged)  # branch 1 is Azarita's
+		forged["branch_map"] = {"1": self.mawasah}
+		log = sync.import_batch(forged)
+		self.assertEqual(log.failed, 1)
+		self.assertEqual(frappe.db.get_value("Library Sales Document", {"import_key": "tanmya:azarita:stock:91001"}, "number"), "A-1001")

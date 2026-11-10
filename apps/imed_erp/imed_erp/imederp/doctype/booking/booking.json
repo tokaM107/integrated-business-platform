@@ -109,6 +109,7 @@
   "column_break_xstudio_times",
   "xstudio_customer_name",
   "xstudio_customer_phone",
+  "xstudio_no_phone",
   "xstudio_not_in_last_fetch"
  ],
  "fields": [
@@ -833,6 +834,15 @@
    "no_copy": 1
   },
   {
+   "fieldname": "xstudio_no_phone",
+   "fieldtype": "Check",
+   "label": "Walk-in Without a Phone",
+   "description": "XStudio has no customer account for this booking (a walk-in, no phone): it is kept under the walk-in customer, and shown in purple.",
+   "read_only": 1,
+   "no_copy": 1,
+   "in_standard_filter": 1
+  },
+  {
    "fieldname": "xstudio_not_in_last_fetch",
    "fieldtype": "Check",
    "label": "Not Returned by XStudio in Its Last Read",
@@ -843,7 +853,7 @@
  ],
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-27 12:00:00.000000",
+ "modified": "2026-11-05 14:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Booking",

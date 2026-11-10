@@ -32,6 +32,16 @@ services:
       GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in Coolify}
+      # The AI assistant's keys and choices, from Coolify's environment (empty when not set; never in git):
+      # Claude answers when ANTHROPIC_API_KEY is set, Gemini gives the voice when GEMINI_API_KEY is set.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      IMED_ASSISTANT_PROVIDER: ${IMED_ASSISTANT_PROVIDER:-}
+      IMED_ASSISTANT_CLAUDE_MODEL: ${IMED_ASSISTANT_CLAUDE_MODEL:-}
+      # The assistant's voice (reading aloud and dictation) is ElevenLabs' when this key is set.
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+      IMED_ELEVENLABS_VOICE_ID: ${IMED_ELEVENLABS_VOICE_ID:-}
+      IMED_ELEVENLABS_FALLBACK_VOICE_ID: ${IMED_ELEVENLABS_FALLBACK_VOICE_ID:-}
     healthcheck:
       interval: 30s
       retries: 5
@@ -74,6 +84,34 @@ services:
       REDIS_CACHE: redis-cache:6379
       REDIS_QUEUE: redis-queue:6379
       SOCKETIO_PORT: '9000'
+    image: imed-erp:${IMED_IMAGE_TAG:-coolify}
+    restart: "no"
+    volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  migrator:
+    # One-time job on every deploy (the owner, 9 Nov 2026: new reports did not appear because the migrate after the
+    # Redeploy had not been run by hand): brings the site's database up to the new code (new doctypes, fields,
+    # reports, sidebars, translations), then exits. Before the restore there is no site and it does nothing. If it
+    # fails, the site keeps running on the old schema and the error is in this container's log in Coolify; the
+    # migrate can then be run by hand as before. restart "no" keeps it out of the stack's health, like configurator.
+    build:
+      context: .
+      dockerfile: deploy/Containerfile
+    command:
+    - 'if [ -f sites/frontend/site_config.json ]; then bench --site frontend migrate; else echo "no site yet: nothing to migrate"; fi'
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+    entrypoint:
+    - bash
+    - -c
     image: imed-erp:${IMED_IMAGE_TAG:-coolify}
     restart: "no"
     volumes:

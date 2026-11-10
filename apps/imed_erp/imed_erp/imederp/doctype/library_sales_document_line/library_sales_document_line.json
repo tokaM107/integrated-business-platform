@@ -8,9 +8,12 @@
   "external_id",
   "product_code",
   "product_name",
+  "category_name",
+  "category_code",
   "barcode",
   "doctor_code",
   "doctor_name",
+  "doctor_share",
   "column_break_a",
   "qty",
   "qty_out",
@@ -67,6 +70,18 @@
    "read_only": 1
   },
   {
+   "fieldname": "category_name",
+   "fieldtype": "Data",
+   "label": "Item Group",
+   "read_only": 1
+  },
+  {
+   "fieldname": "category_code",
+   "fieldtype": "Data",
+   "label": "Item Group Code",
+   "read_only": 1
+  },
+  {
    "fieldname": "barcode",
    "fieldtype": "Data",
    "label": "Barcode",
@@ -82,6 +97,12 @@
    "fieldname": "doctor_name",
    "fieldtype": "Data",
    "label": "Doctor",
+   "read_only": 1
+  },
+  {
+   "fieldname": "doctor_share",
+   "fieldtype": "Currency",
+   "label": "Doctor Share",
    "read_only": 1
   },
   {
@@ -286,7 +307,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-10-26 12:00:00.000000",
+ "modified": "2026-11-09 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Library Sales Document Line",

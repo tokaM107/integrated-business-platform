@@ -83,6 +83,9 @@ class StockCount(Document):
 			)
 
 	def check_items(self):
+		from imed_erp.imederp.library_desk import check_staff_items
+
+		check_staff_items(self)  # a library's account counts its supplies only
 		seen = set()
 		for row in self.items:
 			# Left empty is not counted; 0 is typed when there is none. An item fetched with Get Items in Store
@@ -131,6 +134,9 @@ class StockCount(Document):
 				# so the store ends at what was counted and nothing is taken twice (QA-05).
 				"items": [
 					{
+						# An item the store never held has no rate yet: its own (the ink's price, 4 Nov 2026), else
+						# ERPNext refuses the count ("Valuation Rate required").
+						**({"valuation_rate": first_rate(row.item_code)} if not at_no_value and not flt(row.valuation_rate) and first_rate(row.item_code) else {}),
 						**at_no_value,
 						"item_code": row.item_code,
 						"warehouse": self.store,
@@ -156,6 +162,14 @@ class StockCount(Document):
 			reconciliation.flags.ignore_permissions = True
 			reconciliation.flags.from_stock_count = True
 			reconciliation.cancel()
+
+
+def first_rate(item_code):
+	"""The rate an item gets where it was never held: its own valuation rate, else its last one in any store."""
+	rate = flt(frappe.get_cached_value("Item", item_code, "valuation_rate"))
+	if not rate:
+		rate = flt(frappe.db.get_value("Stock Ledger Entry", {"item_code": item_code, "is_cancelled": 0, "valuation_rate": (">", 0)}, "valuation_rate", order_by="posting_date desc, posting_time desc, creation desc"))
+	return rate
 
 
 def can_date_counts(user=None):

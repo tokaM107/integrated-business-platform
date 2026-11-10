@@ -65,8 +65,9 @@ def parse_arguments(raw: Any) -> dict:
 
 
 class Orchestrator:
-	def __init__(self, complete: Completer, tools: ToolCatalog, memory: ConversationMemory):
+	def __init__(self, complete: Completer, tools: ToolCatalog, memory: ConversationMemory, on_text=None):
 		self.complete = complete
+		self.on_text = on_text  # the answer's pieces as they are written (api.send_message streams them)
 		self.tools = tools
 		self.memory = memory
 
@@ -108,4 +109,7 @@ class Orchestrator:
 		prompt = f"{header}\n\nMemory of this conversation:\n{memo}\n\nQuestion: {question}\n\nResults of the reads:\n{shown}"
 		if may_need_more:
 			prompt += prompts.NEED_MORE
+		if self.on_text and not may_need_more:
+			# Shown while it is written; not when the model may answer "NEED ..." instead of an answer.
+			return (self.complete(system + prompts.SYNTHESIZER_TAIL, prompt, on_text=self.on_text) or "").strip()
 		return (self.complete(system + prompts.SYNTHESIZER_TAIL, prompt) or "").strip()

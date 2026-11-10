@@ -89,6 +89,7 @@ class Booking(Document):
 		self.check_source()
 		self.check_times()
 		self.check_resource()
+		self.check_booked_on_sparkle()
 		self.check_hall_type()
 		self.check_hall_details()
 		self.check_hour_package()
@@ -188,6 +189,16 @@ class Booking(Document):
 			self.treasury = treasury_of(self.cost_center)
 		if resource.disabled and self.status in HOLDING and self.takes_new_time():
 			frappe.throw(_("{0} is disabled and takes no new bookings.").format(self.resource), title=_("Resource Disabled"))
+
+	def check_booked_on_sparkle(self):
+		"""The halls are booked on Sparkle only while its sync is on (owner, 5 Nov 2026): one place books them, so
+		a time is never taken twice; the ERP shows them and keeps their money."""
+		if self.source != MANUAL or self.resource_type != HALL or not self.is_new():
+			return
+		from imed_erp.imederp.sparkle.sync import is_enabled
+
+		if is_enabled():
+			frappe.throw(_("The halls are booked on Sparkle, the halls' booking site; the booking comes here by itself within minutes. Book it there."), title=_("Booked on Sparkle"))
 
 	def takes_new_time(self):
 		"""New, moved to another resource, day or time, or taken back from Cancelled or No Show: it holds time it did
@@ -516,7 +527,7 @@ def get_events(start, end, filters=None, **kwargs):
 		filters = [[field, *value] if isinstance(value, list) else [field, "=", value] for field, value in filters.items()]
 	rows = frappe.get_list(
 		"Booking",
-		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status", "starts_at", "ends_at", "hall_booking_type", "activity", "doctor"],
+		fields=["name", "resource", "resource_type", "customer", "booking_date", "from_time", "to_time", "status", "starts_at", "ends_at", "hall_booking_type", "activity", "doctor", "xstudio_no_phone"],
 		filters=[*filters, ["booking_date", ">=", add_days(getdate(start), -1)], ["booking_date", "<=", getdate(end)]],
 		order_by="booking_date asc, from_time asc",
 		limit_page_length=0,
@@ -540,6 +551,7 @@ def get_events(start, end, filters=None, **kwargs):
 				title=event_title(row),
 				hall_booking_type=row.hall_booking_type,
 				doctor=row.doctor,
+				no_phone=row.xstudio_no_phone,
 				all_day=0,
 				# A booking's times are the hall's or the studio's clock, whatever the user's time zone.
 				convert_to_user_tz=0,

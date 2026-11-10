@@ -1226,7 +1226,7 @@ Outstanding receivables,المستحقات اللي لسه متحصلتش
 Revenue by Period,الإيراد حسب الفترة
 Profit Before and After Shared Costs,الربح قبل وبعد مصروفات المقر
 Outstanding Receivables,المستحقات اللي لسه متحصلتش
-From Date must be before To Date.,من تاريخ لازم يكون قبل إلى تاريخ.
+From Date must be before To Date.,لازم تاريخ البداية يكون قبل تاريخ النهاية.
 Revenue,الإيراد
 Due Date,تاريخ الاستحقاق
 Payment Status,حالة الدفع
@@ -2186,7 +2186,178 @@ Last update {0},آخر تحديث {0}
 "Last update {0}: is the connector window open on the library PC?","آخر تحديث {0}: هل نافذة الربط مفتوحة على جهاز المكتبة؟"
 Not issued yet,لم يُصدر بعد
 Library System Invoices,فواتير نظام المكتبة
+This screen is the library's.,الشاشة دي بتاعة المكتبة.
+This account is not set to one library and one store. Ask the owner.,الحساب ده مش متظبط على مكتبة واحدة ومخزن واحد. كلّم صاحب الشغل.
+Not Set Up,مش متظبط
+{0} is not one of the library's supplies.,{0} مش من خامات المكتبة.
+How many finished?,خلص كام؟
+The store holds {0} of {1}. Enter what you hold first (رصيد المخزون).,المخزن مسجل فيه {0} من {1} بس. سجّل اللي عندك الأول (رصيد المخزون).
+Not Enough,مش كفاية
+"Finished in the library, entered by {0}.",خلص في المكتبة، سجّله {0}.
+A quantity cannot be negative.,الكمية ماينفعش تبقى بالسالب.
+"{0} has no price in the system yet. Ask the owner to enter it, then count again.",{0} لسه ملوش سعر في السيستم. اطلب من صاحب الشغل يدخّله، وبعدين سجّل تاني.
+Enter at least one quantity.,اكتب كمية واحدة على الأقل.
+How many do you need?,محتاجين كام؟
+The counters were recorded from another screen. Open them again.,العدادات اتسجلت من شاشة تانية. افتحها تاني.
+Today's counters are closed.,عدادات النهارده اتقفلت.
+Type the number {0} shows.,اكتب الرقم اللي ظاهر على عداد {0}.
+Reading Missing,ناقص قراية
 The libraries' sales today,مبيعات المكتبات النهارده
 Not linked yet,لسه ما اتربطتش
 Its sales show here once its system is linked,مبيعاتها هتظهر هنا أول ما نظامها يتربط
 Returns {0},مرتجعات {0}
+Library (PC),جهاز المكتبة
+All,الكل
+Yesterday,امبارح
+This Week,الأسبوع ده
+This Month,الشهر ده
+All kinds,كل الأنواع
+Returns,المرتجعات
+Invoice No.,رقم الفاتورة
+Azarita Invoices,فواتير الأزاريطة
+Mawasah Invoices,فواتير المواساة
+Bookings Calendar,تقويم الحجوزات
+bookings,حجز
+hours,ساعة
+tentative,مبدئي
+{0} bookings,{0} حجز
+Walk-in Without a Phone,زبون من غير رقم موبايل
+Without a Phone,من غير رقم موبايل
+"XStudio has no customer account for this booking (a walk-in, no phone): it is kept under the walk-in customer, and shown in purple.",XStudio ملوش حساب زبون للحجز ده (زبون جه على طول من غير رقم): متسجل تحت زبون الـ walk-in، وبيظهر بالبنفسجي.
+Library Sales by Item,مبيعات المكتبة بالصنف
+Library Doctor Sales,مبيعات الدكاترة
+Returned Qty,الكمية المرتجعة
+Net Qty,صافي الكمية
+Net Sales,صافي المبيعات
+Without a doctor,بدون دكتور
+Invoices,الفواتير
+Product Code,كود الصنف
+Product,الصنف
+The Sparkle sync is not enabled (Sparkle Settings).,ربط Sparkle مش شغال (Sparkle Settings).
+A Sparkle sync is already running. Wait for it to finish.,فيه مزامنة Sparkle شغالة دلوقتي. استنى لما تخلص.
+Sparkle Settings has no Bookings From.,Sparkle Settings ناقصها تاريخ البداية (Bookings From).
+"The run stopped at {0}: the database rolled it back. Nothing of this run was kept; the next run is safe.",المزامنة وقفت عند {0}: قاعدة البيانات رجّعت كل حاجة. مفيش حاجة من المرة دي اتحفظت، والمرة الجاية هتكمل عادي.
+Sparkle hall {0} is not mapped to a hall here (Sparkle Settings): not imported.,قاعة Sparkle {0} مش مربوطة بقاعة هنا (Sparkle Settings): ما اتنقلتش.
+Unknown kind of payment in Sparkle: {0}.,نوع دفعة مش معروف في Sparkle: {0}.
+"Sparkle Settings needs its revenue account, cost center and the box for {0}.",Sparkle Settings ناقصها حساب الإيراد أو مركز التكلفة أو الخزنة بتاعة {0}.
+"The halls are booked on Sparkle, the halls' booking site; the booking comes here by itself within minutes. Book it there.",القاعات بتتحجز على Sparkle (موقع حجز القاعات)، والحجز بييجي هنا لوحده في خلال دقايق. احجز من هناك.
+Booked on Sparkle,بيتحجز على Sparkle
+Sparkle sync (halls),مزامنة Sparkle (القاعات)
+Without a group,بدون مجموعة
+Total of {0},إجمالي {0}
+Value Before Discount,القيمة قبل الخصم
+Discount,الخصم
+Doctor Share,نصيب الدكتور
+Item Group,مجموعة الصنف
+Item Group Code,كود مجموعة الصنف
+Azarita Doctor Sales,مبيعات دكاترة الأزاريطة
+Mawasah Doctor Sales,مبيعات دكاترة المواساة
+Azarita Daily Sales,المبيعات اليومية - الأزاريطة
+Mawasah Daily Sales,المبيعات اليومية - المواساة
+BA Plus App,تطبيق BA Plus
+Bookings' value,قيمة الحجوزات
+Still due,لسه باقي
+sales,مبيعات
+students' fees,رسوم الطلاب
+Collected from doctors,اتحصل من الدكاترة
+New subscriptions,اشتراكات جديدة
+Not set up yet,لسه مش متظبط
+In the accounts,في الحسابات
+Nothing in the accounts for this period,مفيش قيود في الحسابات للفترة دي
+"Revenue {0}, expenses {1}","إيراد {0}، مصروف {1}"
+Net in the accounts,الصافي في الحسابات
+Cash in each box,الفلوس في كل خزينة
+The boxes are empty.,الخزن فاضية.
+Stock,المخزون
+No supplies are set up.,مفيش خامات متسجلة.
+Not used this week,ما اتستخدمش الأسبوع ده
+Runs out today,بيخلص النهارده
+Lasts about {0} days,يكفي حوالي {0} يوم
+A week ago: {0},من أسبوع: {0}
+No change this week,من غير تغيير الأسبوع ده
+more than last week,زيادة عن الأسبوع اللي فات
+less than last week,أقل من الأسبوع اللي فات
+{0} new subscriptions,{0} اشتراك جديد
+X Studio (XStudio),استوديو X (XStudio)
+Today's revenue and expenses by business,إيراد ومصروف النهارده لكل نشاط
+No revenue or expenses today yet.,مفيش إيراد ولا مصروف النهارده لسه.
+Same as last month,زي الشهر اللي فات
+New this month,جديد الشهر ده
+Last month,الشهر اللي فات
+pounds,جنيه
+Tomorrow's bookings,حجوزات بكرة
+Nothing booked,مفيش حجوزات
+Epson inks,أحبار الإبسون
+finished {0} this month,خلص {0} الشهر ده
+Runs out first: {0},أول لون بيخلص: {0}
+Libraries' requests,طلبات المكتبات
+No open request.,مفيش طلبات مفتوحة.
+Binding Supplies,خامات التجليد
+"Binding Wire, One Piece",سلك التغليف (القطعة)
+"Plastic Cover, One Piece",الكافر البلاستك (القطعة)
+"What the libraries pay for one piece: their stock is valued at it (setup/setup_inks.py).",اللي المكتبة بتدفعه في القطعة الواحدة: المخزون بيتحسب بيه.
+Not counted yet,لسه ما اتعدّش
+Waiting for approval,مستني الموافقة
+Not done yet,لسه ما اتنفذش
+Partly bought,اتشترى جزء
+Bought,اتشترى
+Partly received,وصل جزء
+At least,من
+At most,لحد
+Nothing to choose,مفيش اختيارات
+Clear filter,مسح
+Apply filter,تطبيق
+"A4 paper, one box (2,500 sheets)","ورق A4، كرتونة (2,500 ورقة)"
+box,كرتونة
+bottle,إزازة
+set,طقم
+piece,قطعة
+"Riso ink, one bottle",حبر ريزو، الإزازة
+Epson ink set (4 colours),حبر إبسون، الطقم (4 ألوان)
+"Binding wire, one piece",سلك التغليف، القطعة
+"Plastic cover, one piece",الكافر البلاستك، القطعة
+Sheets one Riso bottle prints,إزازة الريزو بتطبع كام ورقة
+Sheets one Epson set prints,طقم الإبسون بيطبع كام ورقة
+paper,ورق
+ink,حبر
+waste,هالك
+overheads,مصاريف
+since {0},من {0}
+"A price changed here is in force from today, for every account; what was sold before keeps its price.",أي سعر يتغير هنا بيبدأ من النهارده وعند كل الحسابات، واللي اتباع قبل كده بيفضل بسعره.
+What we buy at,بنشتري بكام
+What a printed sheet costs,الورقة المطبوعة بتكلف كام
+What we sell at,بنبيع بكام
+Service,الخدمة
+Cost,التكلفة
+Price,السعر
+Margin,المكسب
+From {0} to {1} students,من {0} لـ {1} طالب
+A new fee per student is in force from today; the courses charged before keep theirs.,سعر الطالب الجديد بيبدأ من النهارده، والكورسات اللي اتحسبت قبل كده بتفضل بسعرها.
+Fee per student,سعر الطالب
+"The halls' prices are changed on Sparkle, where they are booked.",أسعار القاعات بتتغير من Sparkle، مكان الحجز.
+"The studio's prices are changed on XStudio, where it is booked.",أسعار الاستوديو بتتغير من XStudio، مكان الحجز.
+First hour,أول ساعة
+Two hours,ساعتين
+Each extra hour,كل ساعة زيادة
+Per hour,الساعة
+"Saved, from today.",اتحفظ، من النهارده.
+Sparkle's prices cannot be read yet: {0},أسعار Sparkle مش متاحة لسه: {0}
+XStudio's prices cannot be read now: {0},أسعار XStudio مش متاحة دلوقتي: {0}
+A price cannot be negative.,السعر ماينفعش يبقى بالسالب.
+Unknown price.,سعر مش معروف.
+The fee per student was already changed today ({0}). It can change again from tomorrow.,سعر الطالب اتغير النهارده خلاص ({0}). ممكن يتغير تاني من بكرة.
+Changed Today,اتغير النهارده
+These prices are changed where the business is booked.,الأسعار دي بتتغير من مكان الحجز.
+Prices,الأسعار
+All dates,كل التواريخ
+On {0},يوم {0}
+From {0} to {1},من {0} إلى {1}
+From {0},من {0}
+Up to {0},لحد {0}
+Showing only,معروض بس
+Remove filter,شيل الفلتر
+Clear all filters,مسح كل الفلاتر
+Not,مش
+Both libraries,المكتبتين
+Library Invoices,الفواتير
+Library Daily Sales,المبيعات اليومية

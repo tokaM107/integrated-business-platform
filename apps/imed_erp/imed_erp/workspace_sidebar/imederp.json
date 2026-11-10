@@ -119,10 +119,26 @@
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Library System Invoices",
+   "label": "Library Invoices",
    "link_type": "DocType",
    "type": "Link",
    "link_to": "Library Sales Document"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Library Daily Sales",
+   "link_type": "Page",
+   "type": "Link",
+   "link_to": "library-daily-sales"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "label": "Library Doctor Sales",
+   "link_type": "Report",
+   "type": "Link",
+   "link_to": "Library Doctor Sales"
   },
   {
    "child": 1,
@@ -415,7 +431,8 @@
    "label": "Profit per Business",
    "link_type": "Report",
    "type": "Link",
-   "link_to": "Profit and Loss Statement"
+   "link_to": "Profit and Loss Statement",
+   "route_options": "{\"company\": \"Mohamed Mamdouh group\"}"
   },
   {
    "child": 1,
@@ -587,7 +604,7 @@
    "link_to": "Platform Fee Schedule"
   }
  ],
- "modified": "2026-11-04 12:00:00.000000",
+ "modified": "2026-11-10 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",

@@ -1,0 +1,39 @@
+{
+ "actions": [],
+ "creation": "2026-11-05 18:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "module": "ImedERP",
+ "name": "Sparkle Hall Map",
+ "owner": "Administrator",
+ "modified": "2026-11-05 18:00:00.000000",
+ "modified_by": "Administrator",
+ "field_order": [
+  "sparkle_hall",
+  "resource"
+ ],
+ "fields": [
+  {
+   "fieldname": "sparkle_hall",
+   "fieldtype": "Data",
+   "label": "Sparkle Hall",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "The hall's slug in Sparkle (hall-1-2, hall-5...): a physical hall; a combined one (hall-5-6) books its halls."
+  },
+  {
+   "fieldname": "resource",
+   "fieldtype": "Link",
+   "label": "Resource",
+   "options": "Booking Resource",
+   "reqd": 1,
+   "in_list_view": 1
+  }
+ ],
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

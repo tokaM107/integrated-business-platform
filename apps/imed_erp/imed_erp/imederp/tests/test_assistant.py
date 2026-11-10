@@ -107,9 +107,16 @@ class IntegrationTestAssistantEndpoints(AssistantCase):
 			self.assertEqual(r["reply"], api.unavailable_text(ModelUnavailable(reason), build_context()))
 
 	def test_a_site_configured_before_the_reorganisation_keeps_working(self):
-		for legacy, expected in (("imed_erp.assistant.gemini.GeminiProvider", "gemini"), ("imed_erp.assistant.claude.ClaudeProvider", "claude"), (None, "offline"), ("gemini", "gemini")):
-			with patch.dict(frappe.local.conf, {"imed_assistant_provider": legacy}):
+		import os
+
+		# No key in the environment (an Anthropic key there would make Claude answer whatever the site config says).
+		clean = {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "", "GOOGLE_API_KEY": "", "IMED_ASSISTANT_PROVIDER": ""}
+		for legacy, expected in (("imed_erp.assistant.gemini.GeminiProvider", "gemini"), ("imed_erp.assistant.claude.ClaudeProvider", "claude"), ("gemini", "gemini")):
+			with patch.dict(frappe.local.conf, {"imed_assistant_provider": legacy}), patch.dict(os.environ, clean):
 				self.assertEqual(get_provider().name, expected)
+		# Nothing configured and no key anywhere: the offline placeholder.
+		with patch.dict(frappe.local.conf, {"imed_assistant_provider": None, "imed_assistant_api_key": None, "imed_assistant_gemini_key": None, "imed_assistant_anthropic_key": None}), patch.dict(os.environ, clean):
+			self.assertEqual(get_provider().name, "offline")
 
 
 # ---------------------------------------------------------------- registry and extensibility
@@ -555,3 +562,329 @@ class IntegrationTestAssistantMemory(AssistantCase):
 		with patch("imed_erp.assistant.api.get_provider", return_value=Down()):
 			api.send_message(chat=name, text="سؤال")
 		self.assertEqual([m.role for m in ChatStore.messages(name)], ["user", "assistant"])
+
+
+# ---------------------------------------------------------------- voice: dictation and reading aloud
+
+
+class VoiceModel(FakeModel):
+	supports_voice = True
+
+	def __init__(self, heard="عندنا كام حجز النهارده؟", audio=(b"RIFF....WAVEfmt ", "audio/wav")):
+		super().__init__()
+		self.heard, self.audio, self.spoken = heard, audio, []
+
+	def transcribe(self, audio, mime_type, context):
+		self.calls.append({"transcribe": mime_type, "bytes": len(audio)})
+		return self.heard
+
+	def speak(self, text, context):
+		self.spoken.append(text)
+		return self.audio
+
+
+class IntegrationTestAssistantVoice(AssistantCase):
+	RECORDING = __import__("base64").b64encode(b"\x1aE\xdf\xa3 fake webm").decode()
+
+	def test_a_recording_is_written_out_for_the_user_to_send_not_sent(self):
+		frappe.set_user(OWNER)
+		model = VoiceModel()
+		before = frappe.db.count("Assistant Message")
+		with patch.object(api, "get_provider", return_value=model):
+			result = api.transcribe(audio=self.RECORDING, audio_type="audio/webm;codecs=opus")
+		self.assertEqual(result, {"text": "عندنا كام حجز النهارده؟"})
+		self.assertEqual(model.calls[0]["transcribe"], "audio/webm")
+		# Only written out: nothing asked of the planner, nothing stored in a chat.
+		self.assertEqual(len([c for c in model.calls if "system" in c]), 0)
+		self.assertEqual(frappe.db.count("Assistant Message"), before)
+
+	def test_dictation_says_why_when_it_cannot(self):
+		frappe.set_user(OWNER)
+		with patch.object(api, "get_provider", return_value=FakeModel()), patch.object(api, "voice_provider", side_effect=lambda p: p):  # no ears
+			self.assertEqual(api.transcribe(audio=self.RECORDING, audio_type="audio/webm")["text"], "")
+		self.assertRaises(frappe.ValidationError, api.transcribe, audio=self.RECORDING, audio_type="video/mp4")
+
+	def test_an_answer_is_read_by_the_model_s_voice_cleaned_of_marks(self):
+		frappe.set_user(OWNER)
+		model = VoiceModel()
+		with patch.object(api, "get_provider", return_value=model), patch.object(api, "speech_provider", side_effect=lambda p: p):
+			result = api.speak(text="**عندنا** ٣ حجوزات 👋 في # الاستوديو")
+		self.assertEqual(result["mime"], "audio/wav")
+		self.assertEqual(__import__("base64").b64decode(result["audio"]), model.audio[0])
+		self.assertEqual(model.spoken, ["عندنا ٣ حجوزات في الاستوديو"])
+		# No voice on the server: the browser reads it (and nothing reaches a real model from a test).
+		with patch.object(api, "get_provider", return_value=FakeModel()), patch.object(api, "speech_provider", side_effect=lambda p: p):
+			self.assertEqual(api.speak(text="تمام")["audio"], None)
+
+	def test_voice_is_the_owner_s_like_the_rest_of_the_assistant(self):
+		frappe.set_user(RAGHAD)
+		self.assertRaises(frappe.PermissionError, api.transcribe, audio=self.RECORDING, audio_type="audio/webm")
+		self.assertRaises(frappe.PermissionError, api.speak, text="x")
+
+	def test_the_speech_model_s_raw_pcm_becomes_a_wav_a_browser_plays(self):
+		import io
+		import wave
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers import gemini
+
+		pcm = b"\x01\x00" * 2400
+		part = SimpleNamespace(inline_data=SimpleNamespace(data=pcm, mime_type="audio/L16;codec=pcm;rate=24000"))
+		response = SimpleNamespace(candidates=[SimpleNamespace(content=SimpleNamespace(parts=[part]))])
+		provider = gemini.GeminiProvider()
+		provider.key = "test"
+		fake_client = SimpleNamespace(models=SimpleNamespace(generate_content=lambda **kw: response))
+		with patch.object(provider, "client", return_value=fake_client):
+			data, mime = provider.speak("عندنا ٣ حجوزات", build_context())
+		self.assertEqual(mime, "audio/wav")
+		with wave.open(io.BytesIO(data)) as w:
+			self.assertEqual((w.getnchannels(), w.getsampwidth(), w.getframerate(), w.getnframes()), (1, 2, 24000, 2400))
+
+
+# ---------------------------------------------------------------- which model: Claude answers, Gemini speaks
+
+
+class IntegrationTestAssistantProviders(AssistantCase):
+	NONE = {"imed_assistant_provider": None, "imed_assistant_api_key": None, "imed_assistant_anthropic_key": None,
+		"imed_assistant_gemini_key": None, "imed_assistant_claude_model": None, "imed_elevenlabs_api_key": None}
+	CLEAN_ENV = {"ANTHROPIC_API_KEY": "", "GEMINI_API_KEY": "", "GOOGLE_API_KEY": "", "IMED_ASSISTANT_PROVIDER": "", "IMED_ASSISTANT_CLAUDE_MODEL": "",
+		"ELEVENLABS_API_KEY": "", "XI_API_KEY": ""}
+
+	def configured(self, conf=None, env=None):
+		import os
+
+		return (patch.dict(frappe.local.conf, {**self.NONE, **(conf or {})}), patch.dict(os.environ, {**self.CLEAN_ENV, **(env or {})}))
+
+	def chosen(self, conf=None, env=None):
+		from imed_erp.assistant.providers import setting
+
+		a, b = self.configured(conf, env)
+		with a, b:
+			return setting()
+
+	def test_an_anthropic_key_in_the_environment_makes_claude_answer(self):
+		self.assertEqual(self.chosen(env={"ANTHROPIC_API_KEY": "sk-ant-test"}, conf={"imed_assistant_provider": "gemini"}), "claude")
+		# The environment's explicit choice still wins; and without an Anthropic key, the site config as before.
+		self.assertEqual(self.chosen(env={"ANTHROPIC_API_KEY": "sk-ant-test", "IMED_ASSISTANT_PROVIDER": "gemini"}), "gemini")
+		self.assertEqual(self.chosen(conf={"imed_assistant_provider": "imed_erp.assistant.gemini.GeminiProvider"}), "gemini")
+		self.assertEqual(self.chosen(env={"GEMINI_API_KEY": "AIza-test"}), "gemini")
+		self.assertEqual(self.chosen(), "offline")
+
+	def test_each_provider_takes_only_its_own_kind_of_key(self):
+		from imed_erp.assistant.providers.claude import anthropic_key
+		from imed_erp.assistant.providers.gemini import gemini_key
+
+		a, b = self.configured(conf={"imed_assistant_api_key": "sk-ant-shared"})
+		with a, b:
+			self.assertEqual((anthropic_key(), gemini_key()), ("sk-ant-shared", ""))
+		a, b = self.configured(conf={"imed_assistant_api_key": "AIza-shared"}, env={"ANTHROPIC_API_KEY": "sk-ant-env"})
+		with a, b:
+			self.assertEqual((anthropic_key(), gemini_key()), ("sk-ant-env", "AIza-shared"))
+
+	def test_claude_answers_with_sonnet_4_6_and_elevenlabs_is_the_voice_never_gemini(self):
+		from imed_erp.assistant.providers import get_provider, voice_provider
+
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test", "GEMINI_API_KEY": "AIza-test", "ELEVENLABS_API_KEY": "el-test"})
+		with a, b:
+			provider = get_provider()
+			self.assertEqual((provider.name, provider.model, provider.supports_voice), ("claude", "claude-sonnet-4-6", False))
+			self.assertEqual(voice_provider(provider).name, "elevenlabs")
+			frappe.set_user(OWNER)
+			self.assertEqual(api.get_status(), {"allowed": True, "provider": "claude", "connected": True, "voice": True})
+		# No ElevenLabs key: Gemini is not used for Claude's voice (owner, 4 Nov 2026); the browser reads.
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test", "GEMINI_API_KEY": "AIza-test"})
+		with a, b:
+			self.assertEqual(voice_provider(get_provider()).name, "claude")
+
+	def test_claude_s_request_and_its_refusal(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.core.exceptions import ModelUnavailable
+		from imed_erp.assistant.providers.claude import ClaudeProvider
+
+		sent = []
+
+		def create(**kwargs):
+			sent.append(kwargs)
+			stop = "refusal" if "refuse" in kwargs["messages"][0]["content"] else "end_turn"
+			return SimpleNamespace(stop_reason=stop, content=[SimpleNamespace(type="text", text="عندنا ٣ حجوزات")])
+
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test"})
+		with a, b:
+			provider = ClaudeProvider()
+		with patch.object(provider, "client", return_value=SimpleNamespace(messages=SimpleNamespace(create=create))):
+			self.assertEqual(provider.complete("system", "question"), "عندنا ٣ حجوزات")
+			provider.complete("system", "plan", json_schema={"type": "object", "properties": {"steps": {"type": "array", "items": {"type": "object"}}}})
+			self.assertRaises(ModelUnavailable, provider.complete, "system", "please refuse")
+		self.assertEqual((sent[0]["model"], sent[0]["output_config"]), ("claude-sonnet-4-6", {"effort": "low"}))
+		self.assertNotIn("temperature", sent[0])  # the API refuses sampling parameters since 21 Oct 2026
+		# The plan by the fastest model, thinking off (4 Nov 2026: latency).
+		self.assertEqual((sent[1]["model"], sent[1]["thinking"]), ("claude-haiku-5-5", {"type": "disabled"}))
+		# Every object closed, nested ones too (the API answered 400 without it).
+		schema = sent[1]["output_config"]["format"]["schema"]
+		self.assertEqual((schema["additionalProperties"], schema["properties"]["steps"]["items"]["additionalProperties"]), (False, False))
+
+	def test_an_answer_is_streamed_to_its_user_while_it_is_written(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.claude import ClaudeProvider
+
+		class Stream:
+			text_stream = iter(["عندنا ", "تلات ", "حجوزات"])
+
+			def __enter__(self):
+				return self
+
+			def __exit__(self, *a):
+				return False
+
+			def get_final_message(self):
+				return SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text="عندنا تلات حجوزات")])
+
+		a, b = self.configured(env={"ANTHROPIC_API_KEY": "sk-ant-test"})
+		with a, b:
+			provider = ClaudeProvider()
+		pieces = []
+		with patch.object(provider, "client", return_value=SimpleNamespace(messages=SimpleNamespace(stream=lambda **kw: Stream()))):
+			self.assertEqual(provider.complete("system", "q", on_text=pieces.append), "عندنا تلات حجوزات")
+		self.assertEqual(pieces, ["عندنا ", "تلات ", "حجوزات"])
+
+		# Through the endpoint: to the asking user only, on the realtime channel, under the browser's stream id.
+		frappe.set_user(OWNER)
+
+		class Streaming(FakeModel):
+			def complete(self, system, prompt, json_schema=None, on_text=None):
+				out = super().complete(system, prompt, json_schema)
+				if on_text and not json_schema:
+					for word in out.split(" "):
+						on_text(word + " ")
+				return out
+
+		published = []
+		model = Streaming(plan(direct=""), ["تلات حجوزات النهارده"])
+		model.queue[0] = json.dumps({"steps": [], "may_need_more": False, "answer_without_reading": ""})
+		with patch.object(api, "get_provider", return_value=model), patch("frappe.publish_realtime", side_effect=lambda *a, **k: published.append((a, k))):
+			result = api.send_message(messages=json.dumps([{"role": "user", "content": "كام حجز؟"}]), stream_id="s-1")
+		self.assertEqual(result["reply"], "تلات حجوزات النهارده")
+		self.assertTrue(published)
+		self.assertTrue(all(a[0] == "imed_assistant_stream" and a[1]["id"] == "s-1" and k["user"] == OWNER for a, k in published))
+		self.assertEqual("".join(a[1]["text"] for a, k in published).strip(), "تلات حجوزات النهارده")
+
+
+class IntegrationTestAssistantAccountNames(AssistantCase):
+	"""4 Nov 2026: the planner asked for "خزنة الأزاريطة"; the chart says "خزينة مكتبة الأزاريطة - MMG"."""
+
+	def test_a_cash_box_is_found_by_the_words_people_say(self):
+		from imed_erp.assistant.tools.ledger import AccountBalanceTool, resolve_account
+
+		frappe.set_user(OWNER)
+		context = build_context()
+		box = "خزينة مكتبة الأزاريطة - MMG"
+		self.assertEqual(resolve_account("خزنة الأزاريطة", context), box)
+		self.assertEqual(resolve_account(box, context), box)
+		self.assertRaisesRegex(frappe.ValidationError, "several accounts", resolve_account, "خزينة", context)
+		self.assertRaisesRegex(frappe.ValidationError, "Cash boxes and banks", resolve_account, "Cash Box - Azarita", context)
+		self.assertIn(box, AccountBalanceTool().spec(context)["description"])
+		self.assertEqual(AccountBalanceTool().run({"account": "خزنة الازاريطه", "date": ""}, context)["account"], box)
+
+
+class IntegrationTestAssistantElevenLabs(AssistantCase):
+	"""4 Nov 2026: the owner chose the ElevenLabs voice I3u6waC588j43py1kDN2 for reading answers aloud."""
+
+	def env(self, **values):
+		import os
+
+		clean = {"ELEVENLABS_API_KEY": "", "XI_API_KEY": "", "IMED_ELEVENLABS_VOICE_ID": "", "IMED_ELEVENLABS_MODEL": ""}
+		return patch.dict(os.environ, {**clean, **values}), patch.dict(frappe.local.conf, {"imed_elevenlabs_api_key": None, "imed_elevenlabs_voice_id": None, "imed_elevenlabs_model": None})
+
+	def test_the_owner_s_voice_reads_answers_when_its_key_is_set(self):
+		from imed_erp.assistant.providers import speech_provider
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			speaker = speech_provider(FakeModel())
+			self.assertEqual((speaker.name, speaker.voice, speaker.model), ("elevenlabs", "I3u6waC588j43py1kDN2", "eleven_multilingual_v2"))
+		# Without its key: the answering provider's own voice, if any.
+		a, b = self.env()
+		with a, b:
+			self.assertEqual(speech_provider(FakeModel()).name, "fake")
+
+	def test_the_request_elevenlabs_gets_and_what_comes_back(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice
+
+		sent = []
+
+		def post(url, **kwargs):
+			sent.append((url, kwargs))
+			return SimpleNamespace(status_code=200, content=b"ID3 mp3 bytes", text="")
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			voice = ElevenLabsVoice()
+		with patch("requests.post", side_effect=post):
+			self.assertEqual(voice.speak("عندنا تلات حجوزات", build_context()), (b"ID3 mp3 bytes", "audio/mpeg"))
+		url, kwargs = sent[0]
+		self.assertEqual(url, "https://api.elevenlabs.io/v1/text-to-speech/I3u6waC588j43py1kDN2")
+		self.assertEqual((kwargs["headers"]["xi-api-key"], kwargs["json"]), ("el-test", {"text": "عندنا تلات حجوزات", "model_id": "eleven_multilingual_v2"}))
+		# A voice not in the account or no characters left: logged, and the browser reads instead (no error shown).
+		with patch("requests.post", return_value=SimpleNamespace(status_code=404, content=b"", text='{"detail":{"status":"voice_not_found"}}')):
+			self.assertIsNone(voice.speak("x", build_context()))
+		self.assertTrue(frappe.db.exists("Error Log", {"method": "ElevenLabs speech refused"}))
+
+	def test_the_endpoint_plays_the_owner_s_voice(self):
+		frappe.set_user(OWNER)
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		from types import SimpleNamespace
+
+		with a, b, patch("requests.post", return_value=SimpleNamespace(status_code=200, content=b"ID3 mp3", text="")):
+			result = api.speak(text="عندنا تلات حجوزات")
+		self.assertEqual((result["mime"], __import__("base64").b64decode(result["audio"])), ("audio/mpeg", b"ID3 mp3"))
+
+
+
+	def test_the_chosen_voice_refused_for_the_plan_falls_back_to_the_account_s_voice(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice
+
+		urls = []
+
+		def post(url, **kwargs):
+			urls.append(url)
+			if "I3u6waC588j43py1kDN2" in url:  # as the free plan answered on 4 Nov 2026
+				return SimpleNamespace(status_code=402, content=b"", text='{"detail":{"code":"paid_plan_required"}}')
+			return SimpleNamespace(status_code=200, content=b"ID3 sarah", text="")
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			voice = ElevenLabsVoice()
+		with patch("requests.post", side_effect=post):
+			self.assertEqual(voice.speak("تمام", build_context()), (b"ID3 sarah", "audio/mpeg"))
+		self.assertEqual([u.rsplit("/", 1)[1] for u in urls], ["I3u6waC588j43py1kDN2", "EXAVITQu4vr4xnSDxMaL"])
+
+	def test_a_recording_is_written_out_by_scribe(self):
+		from types import SimpleNamespace
+
+		from imed_erp.assistant.providers.elevenlabs import ElevenLabsVoice
+
+		sent = []
+
+		def post(url, **kwargs):
+			sent.append((url, kwargs))
+			return SimpleNamespace(status_code=200, json=lambda: {"text": " عندنا كام حجز النهارده؟ ", "language_code": "ara"})
+
+		a, b = self.env(ELEVENLABS_API_KEY="el-test")
+		with a, b:
+			voice = ElevenLabsVoice()
+		with patch("requests.post", side_effect=post):
+			self.assertEqual(voice.transcribe(b"webm bytes", "audio/webm", build_context()), "عندنا كام حجز النهارده؟")
+		url, kwargs = sent[0]
+		self.assertEqual((url, kwargs["data"]["model_id"], kwargs["files"]["file"][0]), ("https://api.elevenlabs.io/v1/speech-to-text", "scribe_v2", "question.webm"))
+		# Through the endpoint, as the owner.
+		frappe.set_user(OWNER)
+		recording = __import__("base64").b64encode(b"\x1aE\xdf\xa3 webm").decode()
+		with a, b, patch("requests.post", side_effect=post):
+			self.assertEqual(api.transcribe(audio=recording, audio_type="audio/webm;codecs=opus"), {"text": "عندنا كام حجز النهارده؟"})
+
