@@ -13,6 +13,13 @@
 #             A user who is not listed there gets nothing on this channel. The message leaves after the
 #             transaction commits, from a background job, so a slow or failing CallMeBot never holds up or
 #             breaks what the user was doing.
+#   telegram  through a Telegram bot (official and free). The bot is made once with @BotFather, which gives its
+#             token; a person gets messages after pressing Start in the bot. Both live in site_config.json:
+#               "imed_telegram_bot_token": "123456:ABC...",
+#               "imed_telegram_chats": {"owner@imed.local": "987654321"}
+#             The chat id of whoever pressed Start:  bench --site <site> execute imed_erp.notification_service.telegram_chats
+#             A user who is not listed gets nothing on this channel. Sent after the commit, from a background
+#             job, like WhatsApp.
 #   sms       not integrated yet: the adapter only logs what it would send
 #
 # To add an event, add it to EVENTS. To integrate a provider, fill in its adapter; nothing else changes.
@@ -24,6 +31,8 @@ from frappe.utils.jinja import render_template
 
 WHATSAPP_URL = "https://api.callmebot.com/whatsapp.php"
 WHATSAPP_TIMEOUT = 15  # seconds
+TELEGRAM_URL = "https://api.telegram.org/bot{token}/{method}"
+TELEGRAM_TIMEOUT = 15  # seconds
 
 # Templates are placeholders until each module defines its real wording.
 EVENTS = {
@@ -76,17 +85,17 @@ EVENTS = {
 		"message": "{{ subject }}",
 		"channels": ["system"],
 	},
-	# For the owner, on WhatsApp only (imederp/owner_alerts.py).
+	# For the owner, on their phone only: Telegram and WhatsApp, whichever is set up (imederp/owner_alerts.py).
 	"owner_stock_request": {
 		"subject": "New stock request for {{ warehouse }}",
 		"message": "New stock request for {{ warehouse }} ({{ request }}): {{ items }}",
-		"channels": ["whatsapp"],
+		"channels": ["telegram", "whatsapp"],
 	},
 	# The day's revenue and bookings; worded and translated by the module.
 	"owner_daily_summary": {
 		"subject": "{{ subject }}",
 		"message": "{{ message }}",
-		"channels": ["whatsapp"],
+		"channels": ["telegram", "whatsapp"],
 	},
 	"period_closed": {
 		"subject": "Accounting period {{ period }} closed",
@@ -195,6 +204,74 @@ def send_whatsapp(user, text):
 	return ok
 
 
+def telegram_chat(user):
+	"""The user's Telegram chat id, or None when the bot or the user has not been set up."""
+	chat = (frappe.conf.get("imed_telegram_chats") or {}).get(user)
+	return str(chat) if chat and frappe.conf.get("imed_telegram_bot_token") else None
+
+
+def _telegram(users, subject, message, event, document=None):
+	queued = []
+	for user in users:
+		if not telegram_chat(user):
+			continue
+		frappe.enqueue(
+			"imed_erp.notification_service.send_telegram",
+			queue="short",
+			enqueue_after_commit=True,
+			user=user,
+			text=message,
+		)
+		queued.append(user)
+	return queued
+
+
+def telegram_call(method, payload):
+	"""(ok, result or reason) of one call to the bot's API. The token is in the address, so nothing of the
+	request is ever put in the reason."""
+	token = frappe.conf.get("imed_telegram_bot_token")
+	if not token:
+		return False, "imed_telegram_bot_token is not set"
+	try:
+		response = requests.post(
+			TELEGRAM_URL.format(token=token, method=method), json=payload, timeout=TELEGRAM_TIMEOUT
+		)
+		body = response.json()
+	except requests.RequestException as e:
+		return False, type(e).__name__
+	except ValueError:
+		return False, f"HTTP {response.status_code}"
+	if not body.get("ok"):
+		return False, f"HTTP {response.status_code}: {body.get('description')}".replace(token, "***")
+	return True, body.get("result")
+
+
+def send_telegram(user, text):
+	"""One message to one user from the bot. True when Telegram accepted it; a failure is logged, never raised."""
+	chat = telegram_chat(user)
+	if not chat:
+		return False
+	ok, detail = telegram_call("sendMessage", {"chat_id": chat, "text": text})
+	if not ok:
+		frappe.log_error(title="Telegram message not sent", message=f"{user}: {detail}")
+	return ok
+
+
+def telegram_chats():
+	"""Who wrote to the bot lately (pressed Start), to copy a chat id into imed_telegram_chats:
+	[{"chat_id", "name", "username"}]. Telegram keeps these for about a day."""
+	ok, updates = telegram_call("getUpdates", {})
+	if not ok:
+		frappe.throw(str(updates))
+	chats = {}
+	for update in updates or []:
+		chat = (update.get("message") or update.get("my_chat_member") or {}).get("chat") or {}
+		if chat.get("id"):
+			name = chat.get("title") or " ".join(filter(None, [chat.get("first_name"), chat.get("last_name")]))
+			chats[chat["id"]] = {"chat_id": chat["id"], "name": name, "username": chat.get("username")}
+	return list(chats.values())
+
+
 def _not_integrated(channel):
 	def adapter(users, subject, message, event, document=None):
 		numbers = [frappe.db.get_value("User", u, "mobile_no") for u in users]
@@ -210,5 +287,6 @@ ADAPTERS = {
 	"system": _system,
 	"email": _email,
 	"whatsapp": _whatsapp,
+	"telegram": _telegram,
 	"sms": _not_integrated("sms"),
 }
