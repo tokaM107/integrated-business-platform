@@ -58,15 +58,15 @@ body:has(#page-login) {
 	margin-bottom: 20px;
 }
 #page-login .page-card-head .app-logo {
-	/* Frappe fixes the login logo at 32px high. */
-	width: 52px !important;
-	height: 52px !important;
+	/* Frappe fixes the login logo at 32px high and gives it the square icon; here the owner's monogram alone,
+	   large, with no tile or shadow around it. */
+	content: url("/assets/imed_erp/images/mm-logo.png");
+	width: 150px !important;
+	height: auto !important;
 	max-height: none;
 	object-fit: contain;
-	border-radius: 14px;
 	margin-inline: auto;
-	margin-bottom: 14px;
-	box-shadow: 0 8px 18px -8px rgba(13, 146, 118, 0.55);
+	margin-bottom: 10px;
 }
 #page-login .page-card-head h4 {
 	font-size: 22px;
