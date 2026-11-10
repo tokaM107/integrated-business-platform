@@ -1,8 +1,8 @@
 # Copyright (c) 2026, toka mohamed and Contributors
 # See license.txt
 
-# The owner's WhatsApp messages (imederp/owner_alerts.py) and the WhatsApp channel of the notification service.
-# Nothing here reaches CallMeBot: the HTTP call and the queue are replaced. Every test is rolled back.
+# The owner's messages (imederp/owner_alerts.py) and the Telegram and WhatsApp channels of the notification
+# service. Nothing here reaches Telegram or CallMeBot: the HTTP call and the queue are replaced. Every test is rolled back.
 #
 # Run:
 #   bench --site frontend run-tests --module imed_erp.imederp.tests.test_owner_alerts
@@ -21,6 +21,8 @@ from imed_erp.imederp.tests.test_material_issue import AZARITA_STORE, CARTON, CO
 
 OWNER_USER = "test-owner-alerts@imed.local"
 KEY = "654321"
+TOKEN = "111222:SECRET-TOKEN"
+CHAT = "987654321"
 
 
 class IntegrationTestOwnerAlerts(IntegrationTestCase):
@@ -31,7 +33,8 @@ class IntegrationTestOwnerAlerts(IntegrationTestCase):
 
 	def tearDown(self):
 		frappe.set_user("Administrator")
-		frappe.conf.pop("imed_whatsapp_recipients", None)
+		for key in ("imed_whatsapp_recipients", "imed_telegram_bot_token", "imed_telegram_chats"):
+			frappe.conf.pop(key, None)
 		frappe.db.rollback(save_point="owner_alerts_test")
 
 	# ---------- the channel ----------
@@ -40,7 +43,7 @@ class IntegrationTestOwnerAlerts(IntegrationTestCase):
 			sent = notification_service.notify(
 				"owner_daily_summary", [OWNER_USER, SARA], {"subject": "s", "message": "سطر ١\nسطر ٢"}
 			)
-		self.assertEqual(sent, {"whatsapp": [OWNER_USER]})
+		self.assertEqual(sent, {"telegram": [], "whatsapp": [OWNER_USER]})
 		enqueue.assert_called_once()
 		kwargs = enqueue.call_args.kwargs
 		self.assertEqual((kwargs["user"], kwargs["text"]), (OWNER_USER, "سطر ١\nسطر ٢"))
@@ -51,7 +54,7 @@ class IntegrationTestOwnerAlerts(IntegrationTestCase):
 		frappe.conf.pop("imed_whatsapp_recipients", None)
 		with patch.object(frappe, "enqueue") as enqueue:
 			sent = notification_service.notify("owner_daily_summary", [OWNER_USER], {"subject": "s", "message": "m"})
-		self.assertEqual(sent, {"whatsapp": []})
+		self.assertEqual(sent, {"telegram": [], "whatsapp": []})
 		enqueue.assert_not_called()
 
 	def test_send_calls_callmebot_with_the_users_phone_and_key(self):
@@ -71,6 +74,70 @@ class IntegrationTestOwnerAlerts(IntegrationTestCase):
 				self.assertFalse(notification_service.send_whatsapp(OWNER_USER, "مرحبا"))
 			log_error.assert_called_once()
 			self.assertNotIn(KEY, str(log_error.call_args))
+
+	# ---------- Telegram ----------
+	def use_telegram(self):
+		frappe.conf.pop("imed_whatsapp_recipients", None)
+		frappe.conf.imed_telegram_bot_token = TOKEN
+		frappe.conf.imed_telegram_chats = {OWNER_USER: CHAT}
+
+	def test_telegram_queues_only_listed_users_and_needs_the_token(self):
+		self.use_telegram()
+		with patch.object(frappe, "enqueue") as enqueue:
+			sent = notification_service.notify(
+				"owner_daily_summary", [OWNER_USER, SARA], {"subject": "s", "message": "سطر ١\nسطر ٢"}
+			)
+		self.assertEqual(sent, {"telegram": [OWNER_USER], "whatsapp": []})
+		enqueue.assert_called_once()
+		self.assertEqual(enqueue.call_args.args, ("imed_erp.notification_service.send_telegram",))
+		self.assertEqual(enqueue.call_args.kwargs["text"], "سطر ١\nسطر ٢")
+		self.assertNotIn(TOKEN, str(enqueue.call_args))
+
+		frappe.conf.pop("imed_telegram_bot_token")
+		with patch.object(frappe, "enqueue") as enqueue:
+			sent = notification_service.notify("owner_daily_summary", [OWNER_USER], {"subject": "s", "message": "m"})
+		self.assertEqual(sent, {"telegram": [], "whatsapp": []})
+		enqueue.assert_not_called()
+
+	def test_telegram_send_posts_the_text_to_the_users_chat(self):
+		self.use_telegram()
+		answer = MagicMock(status_code=200, json=lambda: {"ok": True, "result": {"message_id": 1}})
+		with patch.object(requests, "post", return_value=answer) as post:
+			self.assertTrue(notification_service.send_telegram(OWNER_USER, "مرحبا"))
+		self.assertEqual(post.call_args.args, (f"https://api.telegram.org/bot{TOKEN}/sendMessage",))
+		self.assertEqual(post.call_args.kwargs["json"], {"chat_id": CHAT, "text": "مرحبا"})
+		self.assertFalse(notification_service.send_telegram(SARA, "مرحبا"))  # not listed
+
+	def test_telegram_failure_is_logged_without_the_token_and_not_raised(self):
+		self.use_telegram()
+		failures = (
+			{"return_value": MagicMock(status_code=403, json=lambda: {"ok": False, "description": f"blocked {TOKEN}"})},
+			{"return_value": MagicMock(status_code=502, json=MagicMock(side_effect=ValueError("not json")))},
+			{"side_effect": requests.ConnectionError(f"https://api.telegram.org/bot{TOKEN}/sendMessage")},
+		)
+		for failure in failures:
+			with patch.object(requests, "post", **failure), patch.object(frappe, "log_error") as log_error:
+				self.assertFalse(notification_service.send_telegram(OWNER_USER, "مرحبا"))
+			log_error.assert_called_once()
+			self.assertNotIn(TOKEN, str(log_error.call_args))
+
+	def test_telegram_chats_lists_who_pressed_start(self):
+		self.use_telegram()
+		updates = [
+			{"message": {"chat": {"id": 987654321, "first_name": "Mohamed", "last_name": "M", "username": "mm"}}},
+			{"message": {"chat": {"id": 987654321, "first_name": "Mohamed", "last_name": "M", "username": "mm"}}},
+			{"my_chat_member": {"chat": {"id": -100, "title": "IMED"}}},
+		]
+		answer = MagicMock(status_code=200, json=lambda: {"ok": True, "result": updates})
+		with patch.object(requests, "post", return_value=answer):
+			chats = notification_service.telegram_chats()
+		self.assertEqual(
+			chats,
+			[
+				{"chat_id": 987654321, "name": "Mohamed M", "username": "mm"},
+				{"chat_id": -100, "name": "IMED", "username": None},
+			],
+		)
 
 	# ---------- stock requests ----------
 	def test_requesting_approval_tells_the_owner_what_was_asked_for(self):
