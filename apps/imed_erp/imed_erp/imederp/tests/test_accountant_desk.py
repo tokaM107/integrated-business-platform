@@ -29,3 +29,16 @@ class TestAccountantDesk(IntegrationTestCase):
 		frappe.set_user("Guest")
 		self.assertFalse(accountant_desk.is_accountant_only())
 		self.assertRaises(frappe.PermissionError, accountant_desk.overview)
+
+	def test_what_is_not_the_accountants_is_refused_to_him_only(self):
+		from imed_erp import hooks
+
+		self.assertEqual(set(hooks._NOT_THE_ACCOUNTANTS), set(accountant_desk.NOT_HIS))
+		if not frappe.db.exists("User", ACCOUNTANT):
+			self.skipTest("no accountant on this site")
+		self.assertFalse(frappe.has_permission("Printing Machine", "read", doc=frappe.new_doc("Printing Machine"), user=ACCOUNTANT))
+		self.assertEqual(accountant_desk.query_conditions(ACCOUNTANT), "1=0")
+		self.assertEqual(accountant_desk.query_conditions("Administrator"), "")
+		frappe.set_user(ACCOUNTANT)
+		self.assertEqual(frappe.get_list("Daily Counter Reading", limit_page_length=0), [])
+		self.assertTrue(frappe.has_permission("Expense", "read"))  # his own work untouched

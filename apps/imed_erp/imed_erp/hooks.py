@@ -94,10 +94,24 @@ page_js = {"point-of-sale": "public/js/point_of_sale.js"}
 # The assistant's core never changes for a new business.
 assistant_businesses = ["imed_erp.assistant.businesses.imed.integrations"]
 
+# What is not the accountant's (imederp/accountant_desk.py NOT_HIS, keep the two the same): refused to him, empty
+# lists, not offered.
+_NOT_THE_ACCOUNTANTS = (
+	"Daily Counter Reading",
+	"Printer Reading",
+	"Printing Machine",
+	"Booking Resource",
+	"Booking Package",
+	"Booking Extra",
+	"Hall Price Tier",
+	"XStudio Settings",
+	"Sparkle Settings",
+)
 # Saved assistant chats are their user's alone, in the desk and the REST API too, not only in the chat window.
 has_permission = {
 	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.has_permission",
 	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.has_permission",
+	**{dt: "imed_erp.imederp.accountant_desk.has_permission" for dt in _NOT_THE_ACCOUNTANTS},
 }
 permission_query_conditions = {
 	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.query_conditions",
@@ -105,6 +119,7 @@ permission_query_conditions = {
 	# A branch manager lists their own branch's journal entries only (imederp/branch_lists.py).
 	"Journal Entry": "imed_erp.imederp.branch_lists.journal_entry_conditions",
 	"Stock Entry": "imed_erp.imederp.branch_lists.stock_entry_conditions",
+	**{dt: "imed_erp.imederp.accountant_desk.query_conditions" for dt in _NOT_THE_ACCOUNTANTS},
 }
 
 doc_events = {
@@ -338,7 +353,11 @@ doc_events = {
 	# Branch requests from the main warehouse: Raghad's approval, then the issue (imederp/material_issue.py).
 	"Material Request": {
 		"onload": "imed_erp.imederp.material_issue.material_request_onload",
-		"validate": "imed_erp.imederp.material_issue.validate_material_request",
+		"validate": [
+			"imed_erp.imederp.material_issue.validate_material_request",
+			# A library's account asks for its supplies only (imederp/library_desk.py).
+			"imed_erp.imederp.library_desk.check_staff_items",
+		],
 		"before_submit": "imed_erp.imederp.material_issue.before_submit_material_request",
 		"on_trash": "imed_erp.imederp.no_delete.block_delete_of_posted",
 	},
@@ -392,7 +411,6 @@ period_closing_doctypes = [
 	"App Subscription",
 	"Printer Reading",
 	"Daily Counter Reading",
-	"Stock Count",
 	"Damaged Stock Entry",
 	"Damaged Stock Sale",
 	"App Payment",
@@ -423,7 +441,11 @@ after_migrate = [
 ]
 
 # The booking screens' statuses and colours, from imederp/booking_rules.py.
-boot_session = "imed_erp.imederp.booking_rules.boot_session"
+boot_session = [
+	"imed_erp.imederp.booking_rules.boot_session",
+	# The accountant's desk is not offered what is not his (imederp/accountant_desk.py).
+	"imed_erp.imederp.accountant_desk.boot_session",
+]
 
 # Scheduled Tasks
 # ---------------

@@ -83,6 +83,9 @@ class StockCount(Document):
 			)
 
 	def check_items(self):
+		from imed_erp.imederp.library_desk import check_staff_items
+
+		check_staff_items(self)  # a library's account counts its supplies only
 		seen = set()
 		for row in self.items:
 			# Left empty is not counted; 0 is typed when there is none. An item fetched with Get Items in Store

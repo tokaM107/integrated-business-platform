@@ -371,3 +371,31 @@ class TestLibraryReceive(IntegrationTestCase):
 
 		[row] = [r for r in get_data() if r["system"] == "tanmya"]
 		self.assertEqual((row["status"], row["inserted"]), ("Completed", 1))
+
+
+class TestALibrarysOwnConnector(IntegrationTestCase):
+	"""A connector user bound to one library (setup_library_connector.for_library) writes that library only."""
+
+	def setUp(self):
+		frappe.db.savepoint("library_test")
+		from imed_erp.setup import setup_library_connector
+
+		self.mawasah = cost_center("مكتبة المواساة")
+		self.azarita = cost_center("مكتبة الأزاريطة")
+		setup_library_connector.for_library(self.mawasah, "mawasah-connector-test@imed.local")
+
+	def tearDown(self):
+		frappe.set_user("Administrator")
+		frappe.db.rollback(save_point="library_test")
+
+	def test_a_bound_connector_may_not_file_or_change_another_librarys_documents(self):
+		frappe.set_user("Administrator")
+		sync.import_batch(frappe._dict(settings(), source="tanmya", documents=[sale(external_id="91001")]))  # Azarita's
+		frappe.set_user("mawasah-connector-test@imed.local")
+		self.assertEqual(sync.allowed_cost_centers(), {self.mawasah})
+		forged = frappe._dict(settings(), source="tanmya", documents=[sale(external_id="91001", number="FORGED")])
+		self.assertRaises(frappe.PermissionError, sync.import_batch, forged)  # branch 1 is Azarita's
+		forged["branch_map"] = {"1": self.mawasah}
+		log = sync.import_batch(forged)
+		self.assertEqual(log.failed, 1)
+		self.assertEqual(frappe.db.get_value("Library Sales Document", {"import_key": "tanmya:azarita:stock:91001"}, "number"), "A-1001")

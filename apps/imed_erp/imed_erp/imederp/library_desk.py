@@ -333,3 +333,20 @@ def save_counters(phase, readings, notes=None):
 		doc.submit()
 	frappe.clear_messages()  # "no paper price" and the like are for the accountant, not the library
 	return {"day": doc.name, "phase": "evening" if phase == "morning" else "done", "sheets": cint(doc.total_consumed)}
+
+
+def is_staff_only(user=None):
+	"""A library's shared account (the role, without the owner's or the system's)."""
+	roles = set(frappe.get_roles(user or frappe.session.user))
+	return ROLE in roles and not {"System Manager", "Super Admin"} & roles
+
+
+def check_staff_items(doc, method=None):
+	"""A count or a request the library's account makes holds its supplies only, made from its screen or sent to the
+	server directly (security review of 10 Nov 2026: the REST API let it count any item of its store). Stock Count's
+	validate and Material Request's (hooks.py) call this."""
+	if not is_staff_only():
+		return
+	library = my_library().library
+	for row in doc.get("items") or []:
+		check_item(row.item_code, library)

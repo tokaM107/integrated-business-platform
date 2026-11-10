@@ -77,6 +77,7 @@ def _import(batch):
 			frappe.PermissionError,
 		)
 	settings["library"] = str(batch.get(c.LIBRARY_KEY)).strip()
+	settings["allowed_cost_centers"] = allowed
 	settings["issued_status_codes"] = batch.get("issued_status_codes") or []
 	settings["cancelled_status_codes"] = batch.get("cancelled_status_codes") or []
 	documents = batch.get("documents") or []
@@ -107,7 +108,11 @@ def _import(batch):
 def import_one(run, row_no, family, external_id, document, settings):
 	fields, notes = map_document(family, document, settings)
 	lines = fields.pop("lines")
-	existing = frappe.db.get_value("Library Sales Document", {"import_key": fields["import_key"]}, ["name", "payload_hash"], as_dict=True)
+	existing = frappe.db.get_value("Library Sales Document", {"import_key": fields["import_key"]}, ["name", "payload_hash", "cost_center"], as_dict=True)
+	# A document already filed under a library this connector may not write (another library's PC sending the other's
+	# name) is never changed from here (security review of 10 Nov 2026).
+	if existing and existing.cost_center and existing.cost_center not in settings.get("allowed_cost_centers", {existing.cost_center}):
+		raise MappingError(_("{0} belongs to {1}, which this connector does not write; left unchanged.").format(existing.name, existing.cost_center))
 	if existing and existing.payload_hash == fields["payload_hash"]:
 		run.skipped()
 		frappe.db.set_value("Library Sales Document", existing.name, "last_synced_at", now_datetime(), update_modified=False)
