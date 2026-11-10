@@ -22,6 +22,8 @@ frappe.ui.form.on("Material Request", {
 		if (!onload.is_branch_request || frm.is_new()) return;
 
 		const status = doc.custom_approval_status;
+		// A purchase request: the owner approves it, the accountant buys it (imederp/material_issue.py, 10 Nov 2026).
+		const purchase = !!onload.is_purchase_request;
 		if (doc.docstatus === 0 && status === "Rejected") {
 			frm.set_intro(
 				__("This request was rejected and is closed: {0}", [
@@ -33,7 +35,7 @@ frappe.ui.form.on("Material Request", {
 			return;
 		}
 		if (doc.docstatus === 0 && status === "Pending Approval") {
-			frm.set_intro(__("Waiting for Raghad's approval. Nothing has left the warehouse yet."), "blue");
+			frm.set_intro(purchase ? __("Waiting for the owner's approval. Nothing has been bought yet.") : __("Waiting for Raghad's approval. Nothing has left the warehouse yet."), "blue");
 			if (onload.is_stock_approver) {
 				frm.page.set_primary_action(__("Approve"), () => call(frm, "approve"));
 				frm.add_custom_button(__("Reject"), () => {
@@ -50,8 +52,28 @@ frappe.ui.form.on("Material Request", {
 			return;
 		}
 		if (doc.docstatus === 0 && !status && !frm.is_dirty()) {
-			frm.set_intro(__("Save the items, then send the request to Raghad for approval."), "blue");
-			frm.page.set_primary_action(__("Request Store Approval"), () => call(frm, "request_approval"));
+			frm.set_intro(purchase ? __("Save the items, then send the request to the owner for approval.") : __("Save the items, then send the request to Raghad for approval."), "blue");
+			frm.page.set_primary_action(purchase ? __("Request Owner Approval") : __("Request Store Approval"), () => call(frm, "request_approval"));
+			return;
+		}
+		if (doc.docstatus === 1 && status === "Approved" && purchase) {
+			const bought = (doc.per_received || 0) >= 100;
+			frm.set_intro(
+				bought
+					? __("Approved by {0} and bought.", [frappe.user.full_name(doc.custom_approved_by)])
+					: __("Approved by {0} on {1}. The accountant buys it with Buy.", [frappe.user.full_name(doc.custom_approved_by), frappe.datetime.str_to_user(doc.custom_approved_on)]),
+				"green"
+			);
+			if (!bought && onload.can_buy && !["Stopped", "Cancelled"].includes(doc.status)) {
+				frm.page.set_primary_action(__("Buy"), () =>
+					frappe
+						.call({ method: "imed_erp.imederp.material_issue.make_purchase_invoice", args: { name: doc.name }, freeze: true })
+						.then((r) => {
+							const pi = frappe.model.sync(r.message)[0];
+							frappe.set_route("Form", pi.doctype, pi.name);
+						})
+				);
+			}
 			return;
 		}
 		if (doc.docstatus === 1 && status === "Approved") {

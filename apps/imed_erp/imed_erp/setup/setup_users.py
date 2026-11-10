@@ -355,6 +355,10 @@ def apply_permission_matrix():
 	manage = {p: 1 for p in ("read", "write", "create", "delete", "report", "print", "email", "export", "share")}
 	ensure_docperm("Employee", "Super Admin", manage, create=True)
 	ensure_docperm("Employee", "Accountant", {"read": 1, "report": 1}, create=True)
+	# The branches' purchase requests: the owner approves them, the accountant buys them (material_issue.py).
+	ensure_docperm("Material Request", "Accountant", {"read": 1, "report": 1, "print": 1}, create=True)
+	validate_permissions_for_doctype("Material Request")
+	frappe.clear_cache(doctype="Material Request")
 	validate_permissions_for_doctype("Employee")
 	frappe.clear_cache(doctype="Employee")
 
