@@ -40,6 +40,6 @@ def execute(filters=None):
 		},
 		"type": "bar",
 		"fieldtype": "Currency",
-		"colors": ["#0f766e"],
+		"colors": ["#0d9276"],
 	}
 	return columns, rows, None, chart
