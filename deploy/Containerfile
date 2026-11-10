@@ -14,6 +14,10 @@ WORKDIR /home/frappe/frappe-bench
 
 # The app from this repository (never cloned from the internet at build time: the repository is what was reviewed).
 COPY --chown=frappe:frappe apps/imed_erp apps/imed_erp
+# The nightly backup the Coolify Scheduled Task runs (docs/deployment/production-deployment-coolify.md, section 7),
+# at the path that section names. It lives in deploy/, outside the app, so it is copied on its own: without this the
+# task's file did not exist in the image (security audit, 10 Nov 2026).
+COPY --chown=frappe:frappe deploy/backup_restic_container.sh apps/imed_erp/deploy/backup_restic_container.sh
 
 # Install it into the bench's environment, list it for every site, and build its assets into the image's asset
 # folder (the entrypoint links sites/assets to /home/frappe/frappe-bench/assets at start, as for frappe and erpnext).

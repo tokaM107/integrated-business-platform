@@ -24,13 +24,22 @@ REVERT_MINUTES="${REVERT_MINUTES:-10}"
 MARK="imed-harden"
 STATE=/var/run/imed-harden-revert.pid
 
+# One rule per port: --ctorigdstport takes one port (or a range), never a comma list, so PORTS=8000,8080,6001,6002
+# as one rule was refused by iptables and the apply stopped half-way (security audit, 10 Nov 2026).
+case "$PORTS" in *[!0-9,]* | "") echo "PORTS must be port numbers separated by commas: $PORTS"; exit 2 ;; esac
+PORT_LIST="${PORTS//,/ }"
 rules_add() {
-	iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP 2>/dev/null \
-		|| iptables -I DOCKER-USER 1 -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP
+	local port
+	for port in $PORT_LIST; do
+		iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$port" -m comment --comment "$MARK" -j DROP 2>/dev/null \
+			|| iptables -I DOCKER-USER 1 -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$port" -m comment --comment "$MARK" -j DROP
+	done
 }
 rules_del() {
-	while iptables -C DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP 2>/dev/null; do
-		iptables -D DOCKER-USER -i "$IFACE" -p tcp -m conntrack --ctstate NEW --ctorigdstport "$PORTS" -m comment --comment "$MARK" -j DROP
+	# Every rule this script made, whatever ports it was run with: found by its comment.
+	iptables -S DOCKER-USER 2>/dev/null | grep -- "--comment $MARK" | sed 's/^-A /-D /' | while read -r rule; do
+		# shellcheck disable=SC2086
+		iptables $rule
 	done
 }
 persist() {
@@ -41,8 +50,10 @@ persist() {
 # Managed by deploy/vps_harden.sh: block new connections from the internet to the management ports that Docker
 # publishes around UFW (Coolify 8000, its realtime 6001/6002, Traefik's unused 8080).
 for i in \$(seq 1 30); do iptables -L DOCKER-USER -n >/dev/null 2>&1 && break; sleep 2; done
-iptables -C DOCKER-USER -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport $PORTS -m comment --comment "$MARK" -j DROP 2>/dev/null \
-	|| iptables -I DOCKER-USER 1 -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport $PORTS -m comment --comment "$MARK" -j DROP
+for port in $PORT_LIST; do
+	iptables -C DOCKER-USER -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport \$port -m comment --comment "$MARK" -j DROP 2>/dev/null \
+		|| iptables -I DOCKER-USER 1 -i $IFACE -p tcp -m conntrack --ctstate NEW --ctorigdstport \$port -m comment --comment "$MARK" -j DROP
+done
 SCRIPT
 	chmod 755 /usr/local/sbin/imed-docker-user.sh
 	cat > /etc/systemd/system/imed-docker-user.service <<UNIT

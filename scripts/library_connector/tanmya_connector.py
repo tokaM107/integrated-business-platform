@@ -94,6 +94,10 @@ def config_problems(cfg, posting_only=False):
     problems = []
     if not re.match(r"^[a-z][a-z0-9_-]{1,29}$", str(cfg.get("library") or "")):
         problems.append("library: a short lowercase name of this PC (pc1, azarita) is required")
+    # The API secret travels in a header: https only (http only to this PC itself, for the mock tests).
+    erp_url = str((cfg.get("erp") or {}).get("url") or "")
+    if not erp_url.startswith(("https://", "<")) and not erp_url.startswith(("http://127.0.0.1", "http://localhost:", "http://localhost/")):
+        problems.append("erp.url: must start with https://")
     if posting_only:
         for k, v in (cfg.get("erp") or {}).items():
             if isinstance(v, str) and v.strip().startswith("<"):

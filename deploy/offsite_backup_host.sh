@@ -74,6 +74,6 @@ try3 restic backup --tag imed-erp "$set" || fail "restic backup (upload)"
 restic check >>"$LOG" 2>&1 || fail "restic check"
 restic forget --tag imed-erp --keep-daily 30 --keep-weekly 12 --keep-monthly 12 --prune >>"$LOG" 2>&1 || say "warning: retention/prune failed (backup itself is stored)"
 snap=$(restic snapshots --latest 1 --json 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)[-1]["short_id"])' 2>/dev/null)
-find "$STAGE" -mindepth 1 -maxdepth 1 -type d -name '2026*' -mtime +7 -exec rm -rf {} + 2>/dev/null
+find "$STAGE" -mindepth 1 -maxdepth 1 -type d -name '20*' -mtime +7 -exec rm -rf {} + 2>/dev/null
 say "OFFSITE OK $prefix snapshot $snap"
 echo "OK $(stamp) $prefix snapshot $snap" > "$STATUS"

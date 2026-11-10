@@ -1,6 +1,8 @@
 # The production image (deploy/Containerfile) takes only the app from this repository.
 *
 !apps/imed_erp
+# and the nightly backup script the Coolify Scheduled Task runs inside the backend container.
+!deploy/backup_restic_container.sh
 apps/imed_erp/**/__pycache__
 apps/imed_erp/**/*.pyc
 apps/imed_erp/**/node_modules
