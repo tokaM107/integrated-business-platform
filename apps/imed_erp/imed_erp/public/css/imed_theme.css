@@ -12,17 +12,102 @@
 /* ------------------------------------------------------------------ */
 /* Brand scale: the same in both themes. */
 :root {
-	/* Nile teal, with a warm amber accent used sparingly. */
-	--imed-teal-50: #effaf8;
-	--imed-teal-100: #d7f1ec;
-	--imed-teal-200: #ade2d9;
-	--imed-teal-300: #78cbbf;
-	--imed-teal-400: #40aea1;
-	--imed-teal-500: #1d9386;
-	--imed-teal-600: #0f766e;
-	--imed-teal-700: #0f625b;
-	--imed-teal-800: #104e49;
-	--imed-teal-900: #0f3f3b;
+	/* One palette for the whole site (10 Nov 2026): green #0D9276 the main colour, blue #40A2E3 the second,
+	   light blue #BBE2EC its soft shade, and a soft yellow #FFEE91 as the small warm accent on the green.
+	   Every other brand shade below is drawn from these four. The page backgrounds are not part of it.
+	   The green scale keeps its old name (--imed-teal-*): 600 is the palette's green itself. */
+	--imed-teal-50: #ecfaf5;
+	--imed-teal-100: #d0f2e6;
+	--imed-teal-200: #a3e4cf;
+	--imed-teal-300: #6dd0b4;
+	--imed-teal-400: #36b797;
+	--imed-teal-500: #14a587;
+	--imed-teal-600: #0d9276;
+	--imed-teal-700: #0b7a63;
+	--imed-teal-800: #0a6050;
+	--imed-teal-900: #084a3e;
+	/* The blue: 500 is the palette's blue, 200 its light blue. These are Frappe's own names, so its blue
+	   pills, tones and charts follow. */
+	--blue-50: #eef7fb;
+	--blue-100: #dceff6;
+	--blue-200: #bbe2ec;
+	--blue-300: #8fcaee;
+	--blue-400: #62b4e8;
+	--blue-500: #40a2e3;
+	--blue-600: #2587cb;
+	--blue-700: #1c6ca6;
+	--blue-800: #1a5683;
+	--blue-900: #173f5e;
+	/* The soft yellow: the logo's dot and the small lights and icons on the green bands; its scale colours
+	   what used to be orange (expenses, what is still due). 200 is the palette's yellow. */
+	--imed-sun: #ffee91;
+	--imed-sun-50: #fffbe3;
+	--imed-sun-100: #fff6c4;
+	--imed-sun-200: #ffee91;
+	--imed-sun-300: #f7de5e;
+	--imed-sun-400: #edcd35;
+	--imed-sun-500: #e3bd1c;
+	--imed-sun-600: #9a7400;
+	--imed-sun-700: #846200;
+	--imed-sun-800: #654b00;
+	--imed-sun-900: #4a3700;
+	--imed-sky-50: var(--blue-50);
+	--imed-sky-100: var(--blue-100);
+	--imed-sky-200: var(--blue-200);
+	--imed-sky-300: var(--blue-300);
+	--imed-sky-400: var(--blue-400);
+	--imed-sky-500: var(--blue-500);
+	--imed-sky-600: var(--blue-600);
+	--imed-sky-700: var(--blue-700);
+	--imed-sky-800: var(--blue-800);
+	--imed-sky-900: var(--blue-900);
+	/* Few colours, each with one job (the user's word of 10 Nov 2026: "too many colours, unrelated"):
+	     green  = the brand, money, and every business alike (their logos tell them apart);
+	     blue   = the one second colour: information, a tentative booking, a link to more;
+	     yellow = something waits for a person;   red = a loss, an error, something overdue.
+	   Frappe's own colour names are pointed at these, so every screen (ours and Frappe's) follows: green,
+	   violet and purple are the brand green, cyan the blue, orange the yellow. Amber stays Frappe's. */
+	--green-50: var(--imed-teal-50);
+	--green-100: var(--imed-teal-100);
+	--green-200: var(--imed-teal-200);
+	--green-300: var(--imed-teal-300);
+	--green-400: var(--imed-teal-400);
+	--green-500: var(--imed-teal-500);
+	--green-600: var(--imed-teal-600);
+	--green-700: var(--imed-teal-700);
+	--green-800: var(--imed-teal-800);
+	--green-900: var(--imed-teal-900);
+	--violet-50: var(--imed-teal-50);
+	--violet-100: var(--imed-teal-100);
+	--violet-200: var(--imed-teal-200);
+	--violet-300: var(--imed-teal-300);
+	--violet-400: var(--imed-teal-400);
+	--violet-500: var(--imed-teal-500);
+	--violet-600: var(--imed-teal-600);
+	--violet-700: var(--imed-teal-700);
+	--violet-800: var(--imed-teal-800);
+	--violet-900: var(--imed-teal-900);
+	--purple-50: var(--imed-teal-50);
+	--purple-100: var(--imed-teal-100);
+	--purple-200: var(--imed-teal-200);
+	--purple-300: var(--imed-teal-300);
+	--purple-400: var(--imed-teal-400);
+	--purple-500: var(--imed-teal-500);
+	--purple-600: var(--imed-teal-600);
+	--purple-700: var(--imed-teal-700);
+	--purple-800: var(--imed-teal-800);
+	--purple-900: var(--imed-teal-900);
+	--orange-50: var(--imed-sun-50);
+	--orange-100: var(--imed-sun-100);
+	--orange-200: var(--imed-sun-200);
+	--orange-300: var(--imed-sun-300);
+	--orange-400: var(--imed-sun-400);
+	--orange-500: var(--imed-sun-500);
+	--orange-600: var(--imed-sun-600);
+	--orange-700: var(--imed-sun-700);
+	--orange-800: var(--imed-sun-800);
+	--orange-900: var(--imed-sun-900);
+	/* Amber is not a brand colour any more: only "needs attention" (a warning), like red for an error. */
 	--imed-amber-100: #fdf1d6;
 	--imed-amber-400: #f4b942;
 	--imed-amber-700: #9a6212;
@@ -38,7 +123,7 @@
 	--imed-sidebar: #f7f9fa;
 	--imed-border: #e3e9ec;
 	--imed-border-strong: #d2dbe0;
-	--imed-ring: 0 0 0 3px rgba(15, 118, 110, 0.18);
+	--imed-ring: 0 0 0 3px rgba(13, 146, 118, 0.18);
 	--imed-shadow-sheet: 0 1px 2px rgba(16, 34, 42, 0.04), 0 0 0 1px var(--imed-border);
 	--imed-shadow-raised: 0 8px 24px -12px rgba(16, 34, 42, 0.22), 0 0 0 1px var(--imed-border);
 
@@ -84,8 +169,8 @@
 	--checkbox-focus-shadow: var(--imed-ring);
 	--focus-default: var(--imed-ring);
 	--focus-blue: var(--imed-ring);
-	--highlight-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
-	--ink-blue-link: var(--imed-teal-600);
+	--highlight-shadow: 0 0 0 3px rgba(13, 146, 118, 0.22);
+	--ink-blue-link: var(--imed-teal-700);
 
 	/* Layout */
 	/* --bg-color stays the sheet colour: Frappe paints rows, grids and panels with it. The canvas is
@@ -135,8 +220,8 @@
 	/* Status colours */
 	--alert-bg-success: #eaf7f0;
 	--alert-text-success: #17754c;
-	--alert-bg-info: var(--imed-teal-50);
-	--alert-text-info: var(--imed-teal-700);
+	--alert-bg-info: var(--blue-50);
+	--alert-text-info: var(--blue-700);
 	--alert-bg-warning: #fdf6e3;
 	--alert-text-warning: #8a5a0b;
 	--alert-bg-danger: #fdf0ef;
@@ -156,7 +241,7 @@
 	--imed-sidebar: #10191c;
 	--imed-border: #22323a;
 	--imed-border-strong: #2d404a;
-	--imed-ring: 0 0 0 3px rgba(64, 174, 161, 0.3);
+	--imed-ring: 0 0 0 3px rgba(54, 183, 151, 0.3);
 	--imed-shadow-sheet: 0 0 0 1px var(--imed-border);
 	--imed-shadow-raised: 0 12px 28px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--imed-border);
 
@@ -195,7 +280,7 @@
 	--subtle-accent: #172328;
 	--subtle-fg: #1d2a30;
 	--fg-hover-color: #1d2a30;
-	--sidebar-select-color: rgba(64, 174, 161, 0.14);
+	--sidebar-select-color: rgba(54, 183, 151, 0.14);
 	--btn-default-bg: #1a272c;
 	--btn-default-hover-bg: #22323a;
 	--btn-ghost-hover-bg: #1d2a30;
@@ -209,9 +294,9 @@
 	--text-muted: #97a6ae;
 	--text-light: #7a8b94;
 
-	--bg-blue: rgba(64, 174, 161, 0.14);
+	--bg-blue: rgba(54, 183, 151, 0.14);
 	--text-on-blue: var(--imed-teal-300);
-	--alert-bg-info: rgba(64, 174, 161, 0.14);
+	--alert-bg-info: rgba(54, 183, 151, 0.14);
 	--alert-text-info: var(--imed-teal-300);
 }
 
@@ -340,7 +425,7 @@ button:focus-visible,
 }
 [data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar,
 [data-theme="dark"] .body-sidebar .standard-sidebar-item.selected {
-	background: rgba(64, 174, 161, 0.14);
+	background: rgba(54, 183, 151, 0.14);
 }
 [data-theme="dark"] .body-sidebar .standard-sidebar-item.active-sidebar .sidebar-item-label,
 [data-theme="dark"] .body-sidebar .standard-sidebar-item.selected .sidebar-item-label {
@@ -374,7 +459,7 @@ button:focus-visible,
 	background-color: var(--btn-primary);
 	border-color: var(--btn-primary);
 	color: #ffffff;
-	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	box-shadow: 0 1px 2px rgba(11, 122, 99, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 .btn.btn-primary:hover,
 .btn.btn-primary:focus {
@@ -556,7 +641,7 @@ html[dir="rtl"] .form-message.blue {
 	box-shadow: inset -3px 0 0 var(--imed-teal-500);
 }
 [data-theme="dark"] .form-message.blue {
-	background: rgba(64, 174, 161, 0.12);
+	background: rgba(54, 183, 151, 0.12);
 	color: var(--imed-teal-200);
 }
 
@@ -625,7 +710,7 @@ html[dir="rtl"] .form-message.blue {
 }
 [data-theme="dark"] .list-row-container:hover .list-row,
 [data-theme="dark"] .list-row:hover {
-	background: rgba(64, 174, 161, 0.07);
+	background: rgba(54, 183, 151, 0.07);
 }
 .list-row .list-subject a,
 .list-row .bold a {
@@ -844,20 +929,20 @@ html[dir="rtl"] .widget.number-widget-box::before {
 	border-radius: 22px;
 	color: #ffffff;
 	background:
-		radial-gradient(520px 260px at 0% 0%, rgba(244, 185, 66, 0.18), transparent 65%),
+		radial-gradient(520px 260px at 0% 0%, rgba(255, 238, 145, 0.18), transparent 65%),
 		linear-gradient(135deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
-	box-shadow: 0 18px 40px -24px rgba(15, 98, 91, 0.7);
+	box-shadow: 0 18px 40px -24px rgba(11, 122, 99, 0.7);
 }
 html[dir="rtl"] .imed-home-hero {
 	background:
-		radial-gradient(520px 260px at 100% 0%, rgba(244, 185, 66, 0.18), transparent 65%),
+		radial-gradient(520px 260px at 100% 0%, rgba(255, 238, 145, 0.18), transparent 65%),
 		linear-gradient(225deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
 }
 [data-theme="dark"] .imed-home-hero {
 	background:
-		radial-gradient(520px 260px at 0% 0%, rgba(244, 185, 66, 0.12), transparent 65%),
-		linear-gradient(135deg, #0f5a53 0%, #0e4541 55%, #0b2f2c 100%);
-	box-shadow: 0 0 0 1px rgba(64, 174, 161, 0.18);
+		radial-gradient(520px 260px at 0% 0%, rgba(255, 238, 145, 0.12), transparent 65%),
+		linear-gradient(135deg, #0b6452 0%, #094c3f 55%, #07332a 100%);
+	box-shadow: 0 0 0 1px rgba(54, 183, 151, 0.18);
 }
 /* The logo's motif (open book + dot), repeated large and faint on the far side. */
 .imed-home-hero__art {
@@ -892,7 +977,7 @@ html[dir="rtl"] .imed-home-hero__art {
 .imed-home-hero__eyebrow .icon {
 	--icon-stroke: currentColor;
 	stroke: currentColor;
-	color: var(--imed-amber-400);
+	color: var(--imed-sun);
 }
 .imed-home-hero__title {
 	margin: 14px 0 6px;
@@ -962,7 +1047,7 @@ html[dir="rtl"] .imed-home-hero__art {
 }
 .imed-home-action:focus-visible {
 	outline: none;
-	box-shadow: 0 0 0 3px rgba(244, 185, 66, 0.55);
+	box-shadow: 0 0 0 3px rgba(255, 238, 145, 0.55);
 }
 
 /* App grid under the band: a heading, then each module as a small card. */
@@ -988,10 +1073,10 @@ html[dir="rtl"] .imed-home-hero__art {
 .desktop-wrapper:not([data-mode="Edit"]) .desktop-container > .icons-container > .icons > .desktop-icon:hover {
 	transform: translateY(-3px);
 	border-color: var(--imed-teal-200);
-	box-shadow: 0 14px 28px -18px rgba(15, 98, 91, 0.45);
+	box-shadow: 0 14px 28px -18px rgba(11, 122, 99, 0.45);
 }
 [data-theme="dark"] .desktop-wrapper:not([data-mode="Edit"]) .desktop-container > .icons-container > .icons > .desktop-icon:hover {
-	border-color: rgba(64, 174, 161, 0.45);
+	border-color: rgba(54, 183, 151, 0.45);
 }
 .desktop-container .desktop-icon:focus-visible {
 	box-shadow: var(--imed-ring);
@@ -1042,7 +1127,7 @@ html[dir="rtl"] .imed-home-hero__art {
 }
 [data-theme="dark"] .desktop-container .desktop-icon .icon-container:has(.desktop-alphabet),
 [data-theme="dark"] .body-sidebar .sidebar-header .header-logo .icon-container:has(.desktop-alphabet) {
-	background-color: rgba(64, 174, 161, 0.14) !important;
+	background-color: rgba(54, 183, 151, 0.14) !important;
 }
 [data-theme="dark"] .desktop-container .desktop-icon .desktop-alphabet,
 [data-theme="dark"] .body-sidebar .sidebar-header .header-logo .desktop-alphabet {
@@ -1138,7 +1223,7 @@ img[src*="/icons/desktop_icons/"]:not([src*="/imed_erp/"]) {
 }
 [data-theme="dark"] .awesomplete > ul > li[aria-selected="true"],
 [data-theme="dark"] .awesomplete > ul > li:hover {
-	background: rgba(64, 174, 161, 0.14);
+	background: rgba(54, 183, 151, 0.14);
 	color: var(--imed-teal-200);
 }
 
@@ -1290,7 +1375,7 @@ img[src*="/icons/desktop_icons/"]:not([src*="/imed_erp/"]) {
 }
 [data-theme="dark"] .desktop-avatar .avatar,
 [data-theme="dark"] .sidebar-user-button .avatar {
-	box-shadow: 0 0 0 2px var(--imed-sheet), 0 0 0 3.5px rgba(64, 174, 161, 0.45);
+	box-shadow: 0 0 0 2px var(--imed-sheet), 0 0 0 3.5px rgba(54, 183, 151, 0.45);
 }
 [data-theme="dark"] .desktop-avatar:hover .avatar,
 [data-theme="dark"] .sidebar-user-button:hover .avatar {
@@ -1348,7 +1433,7 @@ html[dir="rtl"] .sidebar-user-button .avatar-name-email {
 	font-weight: 600;
 	font-size: var(--text-sm);
 	cursor: pointer;
-	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	box-shadow: 0 1px 2px rgba(11, 122, 99, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 	transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 .imed-search-btn .icon {
@@ -1702,20 +1787,20 @@ body[data-route="Workspaces/Owner Dashboard"] .codex-editor .ce-block {
 	border-radius: 22px;
 	color: #ffffff;
 	background:
-		radial-gradient(480px 240px at 0% 0%, rgba(244, 185, 66, 0.2), transparent 65%),
+		radial-gradient(480px 240px at 0% 0%, rgba(255, 238, 145, 0.2), transparent 65%),
 		linear-gradient(135deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
-	box-shadow: 0 18px 40px -26px rgba(15, 98, 91, 0.75);
+	box-shadow: 0 18px 40px -26px rgba(11, 122, 99, 0.75);
 }
 html[dir="rtl"] .imed-dash-welcome {
 	background:
-		radial-gradient(480px 240px at 100% 0%, rgba(244, 185, 66, 0.2), transparent 65%),
+		radial-gradient(480px 240px at 100% 0%, rgba(255, 238, 145, 0.2), transparent 65%),
 		linear-gradient(225deg, var(--imed-teal-600) 0%, var(--imed-teal-700) 55%, var(--imed-teal-900) 100%);
 }
 [data-theme="dark"] .imed-dash-welcome {
 	background:
-		radial-gradient(480px 240px at 100% 0%, rgba(244, 185, 66, 0.12), transparent 65%),
-		linear-gradient(225deg, #0f5a53 0%, #0e4541 55%, #0b2f2c 100%);
-	box-shadow: 0 0 0 1px rgba(64, 174, 161, 0.18);
+		radial-gradient(480px 240px at 100% 0%, rgba(255, 238, 145, 0.12), transparent 65%),
+		linear-gradient(225deg, #0b6452 0%, #094c3f 55%, #07332a 100%);
+	box-shadow: 0 0 0 1px rgba(54, 183, 151, 0.18);
 }
 .imed-dash-welcome__date {
 	display: inline-flex;
@@ -1727,7 +1812,7 @@ html[dir="rtl"] .imed-dash-welcome {
 	font-size: var(--text-sm);
 }
 .imed-dash-welcome__date .icon {
-	stroke: var(--imed-amber-400);
+	stroke: var(--imed-sun);
 }
 .imed-dash-welcome h1 {
 	margin: 12px 0 6px;
@@ -1784,7 +1869,7 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	color: var(--imed-teal-700);
 }
 [data-theme="dark"] .imed-dash-head-icon {
-	background: rgba(64, 174, 161, 0.14);
+	background: rgba(54, 183, 151, 0.14);
 	color: var(--imed-teal-300);
 }
 .imed-dash-head-icon .icon {
@@ -1935,8 +2020,8 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 	--imed-card-shadow-hover: 0 1px 2px rgba(16, 34, 42, 0.05), 0 16px 30px -20px rgba(16, 34, 42, 0.45);
 }
 [data-theme="dark"] {
-	--imed-card-shadow: 0 0 0 1px rgba(64, 174, 161, 0.06);
-	--imed-card-shadow-hover: 0 0 0 1px rgba(64, 174, 161, 0.16);
+	--imed-card-shadow: 0 0 0 1px rgba(54, 183, 151, 0.06);
+	--imed-card-shadow-hover: 0 0 0 1px rgba(54, 183, 151, 0.16);
 }
 
 /* Page titles */
@@ -2122,12 +2207,12 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 }
 [data-theme="dark"] .frappe-list .no-result {
 	background:
-		radial-gradient(circle at 50% 38%, rgba(64, 174, 161, 0.1) 0, transparent 260px),
+		radial-gradient(circle at 50% 38%, rgba(54, 183, 151, 0.1) 0, transparent 260px),
 		var(--fg-color);
 }
 [data-theme="dark"] .frappe-list .no-result .msg-box > .mb-4 {
-	background: rgba(64, 174, 161, 0.18);
-	box-shadow: 0 0 0 10px rgba(64, 174, 161, 0.07);
+	background: rgba(54, 183, 151, 0.18);
+	box-shadow: 0 0 0 10px rgba(54, 183, 151, 0.07);
 }
 [data-theme="dark"] .frappe-list .no-result .msg-box > .mb-4 .icon {
 	stroke: var(--imed-teal-300) !important;
@@ -2372,7 +2457,7 @@ body[data-route="Workspaces/Owner Dashboard"] .widget.dashboard-widget-box .widg
 	font-size: 12px;
 }
 [data-theme="dark"] .imed-yday-head nav a:hover {
-	background: rgba(64, 174, 161, 0.12);
+	background: rgba(54, 183, 151, 0.12);
 }
 [data-theme="dark"] .imed-yday-head nav a {
 	color: var(--imed-teal-300);
@@ -2409,14 +2494,14 @@ a.imed-yday-stat:hover b,
 }
 a.imed-yday-stat:focus-visible,
 .imed-dash-card-link:focus-visible {
-	outline: 2px solid var(--primary, #1f6f5c);
+	outline: 2px solid var(--primary, #0d9276);
 	outline-offset: 2px;
 }
 .imed-dash-card-link {
 	cursor: pointer;
 }
 .imed-dash-card-link:hover {
-	box-shadow: 0 0 0 2px var(--primary, #1f6f5c) inset;
+	box-shadow: 0 0 0 2px var(--primary, #0d9276) inset;
 }
 
 /* §26 Audit of 1 Nov 2026: what is not recorded is said, never shown as zero. */
@@ -2435,6 +2520,9 @@ a.imed-yday-stat:focus-visible,
      - Lists and reports get a tinted header row, forms a coloured mark on each section's title.
    Colours come from Frappe's palette (--green-500...), so the dark theme only changes the shades (end of section). */
 
+/* Since 10 Nov 2026 every tone is drawn from the site's one palette (section 1): green and teal the brand green,
+   violet and purple too; blue and cyan the palette's blue; amber and orange its yellow. Red stays red.
+   The names are kept so the scripts need no change. */
 /* Tones: a colour for a kind of thing. --tone-solid a bar or a chip, --tone-soft a tinted background,
    --tone-fg text and icons on a light background, --tone-line a border. */
 .tone-teal,
@@ -2455,35 +2543,35 @@ a.imed-yday-stat:focus-visible,
 }
 .tone-cyan,
 .imed-act-cyan {
-	--tone-solid: var(--cyan-500);
-	--tone-soft: var(--cyan-50);
-	--tone-fg: var(--cyan-700);
-	--tone-line: var(--cyan-200);
-	--tone-on-dark: var(--cyan-200);
+	--tone-solid: var(--blue-500);
+	--tone-soft: var(--blue-50);
+	--tone-fg: var(--blue-700);
+	--tone-line: var(--blue-200);
+	--tone-on-dark: var(--blue-200);
 }
 .tone-green,
 .imed-act-green {
-	--tone-solid: var(--green-500);
-	--tone-soft: var(--green-50);
-	--tone-fg: var(--green-700);
-	--tone-line: var(--green-200);
-	--tone-on-dark: var(--green-200);
+	--tone-solid: var(--imed-teal-500);
+	--tone-soft: var(--imed-teal-50);
+	--tone-fg: var(--imed-teal-700);
+	--tone-line: var(--imed-teal-200);
+	--tone-on-dark: var(--imed-teal-200);
 }
 .tone-amber,
 .imed-act-amber {
-	--tone-solid: var(--amber-500);
-	--tone-soft: var(--amber-50);
-	--tone-fg: var(--amber-700);
-	--tone-line: var(--amber-200);
-	--tone-on-dark: var(--amber-200);
+	--tone-solid: var(--imed-sun-500);
+	--tone-soft: var(--imed-sun-50);
+	--tone-fg: var(--imed-sun-700);
+	--tone-line: var(--imed-sun-200);
+	--tone-on-dark: var(--imed-sun-200);
 }
 .tone-orange,
 .imed-act-orange {
-	--tone-solid: var(--orange-500);
-	--tone-soft: var(--orange-50);
-	--tone-fg: var(--orange-700);
-	--tone-line: var(--orange-200);
-	--tone-on-dark: var(--orange-200);
+	--tone-solid: var(--imed-sun-500);
+	--tone-soft: var(--imed-sun-50);
+	--tone-fg: var(--imed-sun-700);
+	--tone-line: var(--imed-sun-200);
+	--tone-on-dark: var(--imed-sun-200);
 }
 .tone-red,
 .imed-act-red {
@@ -2495,19 +2583,19 @@ a.imed-yday-stat:focus-visible,
 }
 .tone-violet,
 .imed-act-violet {
-	--tone-solid: var(--violet-500);
-	--tone-soft: var(--violet-50);
-	--tone-fg: var(--violet-700);
-	--tone-line: var(--violet-200);
-	--tone-on-dark: var(--violet-200);
+	--tone-solid: var(--imed-teal-500);
+	--tone-soft: var(--imed-teal-50);
+	--tone-fg: var(--imed-teal-700);
+	--tone-line: var(--imed-teal-200);
+	--tone-on-dark: var(--imed-teal-200);
 }
 .tone-purple,
 .imed-act-purple {
-	--tone-solid: var(--purple-500);
-	--tone-soft: var(--purple-50);
-	--tone-fg: var(--purple-700);
-	--tone-line: var(--purple-200);
-	--tone-on-dark: var(--purple-200);
+	--tone-solid: var(--imed-teal-500);
+	--tone-soft: var(--imed-teal-50);
+	--tone-fg: var(--imed-teal-700);
+	--tone-line: var(--imed-teal-200);
+	--tone-on-dark: var(--imed-teal-200);
 }
 .tone-gray,
 .imed-act-gray {
@@ -2524,17 +2612,17 @@ a.imed-yday-stat:focus-visible,
    activities with white line icons, the open page a cream pill; at the bottom the switch between sidebars and
    "Log out" (imed_sidebar.js). The parts are reordered with CSS only (Frappe's sidebar is one flex column). */
 .body-sidebar {
-	--sb-green: #1d4a3b;
-	--sb-green-deep: #133429;
+	--sb-green: var(--imed-teal-700);
+	--sb-green-deep: var(--imed-teal-900);
 	--sb-text: rgba(255, 255, 255, 0.94);
 	--sb-muted: rgba(255, 255, 255, 0.66);
 	--sb-line: rgba(255, 255, 255, 0.16);
 	--sb-hover: rgba(255, 255, 255, 0.08);
 	--sb-pill: #f6f3ea;
-	--sb-pill-text: #163b2e;
+	--sb-pill-text: var(--imed-teal-900);
 	background:
 		radial-gradient(130% 60% at 100% 0%, rgba(255, 255, 255, 0.1), transparent 55%),
-		linear-gradient(180deg, var(--sb-green) 0%, #194234 50%, var(--sb-green-deep) 100%);
+		linear-gradient(180deg, var(--sb-green) 0%, var(--imed-teal-800) 50%, var(--sb-green-deep) 100%);
 	border-inline-end: 0;
 	color: var(--sb-text);
 }
@@ -2587,7 +2675,7 @@ a.imed-yday-stat:focus-visible,
 	font-size: 21px;
 }
 .body-sidebar .sidebar-user-button .avatar.avatar-medium .avatar-frame.standard-image {
-	background: linear-gradient(135deg, #2f6b55, #1a4536) !important;
+	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700)) !important;
 }
 /* Online: a small green dot at the picture's edge. */
 .body-sidebar .sidebar-user-button .avatar::after {
@@ -2598,7 +2686,7 @@ a.imed-yday-stat:focus-visible,
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	background: #8fe0b0;
+	background: var(--imed-teal-300);
 	box-shadow: 0 0 0 3px var(--sb-green);
 }
 .body-sidebar .sidebar-user-button .avatar-name-email {
@@ -2821,8 +2909,8 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-title {
 	--kind-fg: var(--blue-700);
 }
 .imed-dash-card[data-imed-kind="count"] {
-	--kind-bg: var(--violet-50);
-	--kind-fg: var(--violet-700);
+	--kind-bg: var(--imed-sky-50);
+	--kind-fg: var(--imed-sky-700);
 }
 /* Approvals: green when nothing waits, amber when something does (§22), with a coloured edge. */
 body[data-route="Workspaces/Owner Dashboard"] .imed-dash-approval {
@@ -2945,8 +3033,8 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	color: var(--blue-800);
 }
 .indicator-pill.purple {
-	background: var(--purple-100);
-	color: var(--purple-800);
+	background: var(--imed-sky-100);
+	color: var(--imed-sky-800);
 }
 .indicator-pill.gray,
 .indicator-pill.grey {
@@ -2973,7 +3061,7 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 .btn-primary:focus {
 	background: linear-gradient(135deg, var(--imed-teal-500), var(--imed-teal-700));
 	border-color: var(--imed-teal-700);
-	box-shadow: 0 6px 14px -8px rgba(15, 98, 91, 0.75);
+	box-shadow: 0 6px 14px -8px rgba(11, 122, 99, 0.75);
 }
 .btn-primary:hover {
 	background: linear-gradient(135deg, var(--imed-teal-600), var(--imed-teal-800));
@@ -2995,8 +3083,8 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	--tone-line: color-mix(in srgb, var(--tone-solid) 34%, transparent);
 }
 [data-theme="dark"] .body-sidebar {
-	--sb-green: #163a2e;
-	--sb-green-deep: #0d241c;
+	--sb-green: var(--imed-teal-900);
+	--sb-green-deep: #05332b;
 	box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.06);
 }
 [data-theme="dark"] .imed-dash-card[data-imed-kind="net"],
@@ -3005,8 +3093,8 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	--kind-fg: var(--blue-300);
 }
 [data-theme="dark"] .imed-dash-card[data-imed-kind="count"] {
-	--kind-bg: color-mix(in srgb, var(--violet-500) 16%, transparent);
-	--kind-fg: var(--violet-300);
+	--kind-bg: color-mix(in srgb, var(--imed-sky-500) 16%, transparent);
+	--kind-fg: var(--imed-sky-300);
 }
 [data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
 	background: color-mix(in srgb, var(--kind-fg) 30%, transparent);
@@ -3028,7 +3116,7 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	background: rgba(255, 255, 255, 0.03);
 }
 [data-theme="dark"] .imed-yday-table tbody tr:hover td {
-	background: rgba(64, 174, 161, 0.08);
+	background: rgba(54, 183, 151, 0.08);
 }
 [data-theme="dark"] .imed-yday-stat.is-negative b {
 	color: var(--red-300);
@@ -3036,7 +3124,7 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 [data-theme="dark"] .list-row-head,
 [data-theme="dark"] .report-wrapper .dt-header .dt-row,
 [data-theme="dark"] .report-wrapper .dt-header .dt-cell {
-	background: rgba(64, 174, 161, 0.12) !important;
+	background: rgba(54, 183, 151, 0.12) !important;
 }
 [data-theme="dark"] .list-row-head .list-row-col,
 [data-theme="dark"] .list-row-head .level-left,
@@ -3045,7 +3133,7 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	color: var(--imed-teal-200) !important;
 }
 [data-theme="dark"] .frappe-list .list-row-container:hover .list-row {
-	background: rgba(64, 174, 161, 0.07);
+	background: rgba(54, 183, 151, 0.07);
 }
 [data-theme="dark"] .indicator-pill.green {
 	background: color-mix(in srgb, var(--green-500) 18%, transparent);
@@ -3066,8 +3154,8 @@ body[data-route="Workspaces/Owner Dashboard"] .ce-header.imed-dash-head .imed-da
 	color: var(--blue-300);
 }
 [data-theme="dark"] .indicator-pill.purple {
-	background: color-mix(in srgb, var(--purple-500) 18%, transparent);
-	color: var(--purple-300);
+	background: color-mix(in srgb, var(--imed-sky-500) 18%, transparent);
+	color: var(--imed-sky-300);
 }
 [data-theme="dark"] .indicator-pill.gray,
 [data-theme="dark"] .indicator-pill.grey {
@@ -3110,7 +3198,7 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
 	display: none;
 }
 [data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__date {
-	background: rgba(64, 174, 161, 0.14);
+	background: rgba(54, 183, 151, 0.14);
 	color: var(--imed-teal-200);
 }
 
@@ -3192,6 +3280,16 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__art {
 	height: 24px;
 	stroke: currentColor;
 	stroke-width: 2px;
+}
+/* On the yellow an icon is dark: white does not read on it. */
+.imed-ov-kpi.tone-amber .imed-ov-kpi__icon {
+	background: var(--imed-sun-300);
+	color: var(--imed-sun-800);
+}
+.imed-yday-card.tone-amber h3 .icon,
+.imed-yday-card.tone-orange h3 .icon {
+	background: var(--imed-sun-300);
+	stroke: var(--imed-sun-800);
 }
 .imed-ov-kpi__label {
 	color: var(--tone-fg);
@@ -5515,12 +5613,12 @@ a.imed-ov-lib:hover {
 	white-space: nowrap;
 }
 .imed-accountant__ok {
-	background: color-mix(in srgb, #15803d 12%, transparent);
-	color: #15803d;
+	background: color-mix(in srgb, var(--imed-teal-600) 12%, transparent);
+	color: var(--imed-teal-700);
 }
 .imed-accountant__no {
-	background: color-mix(in srgb, #c2410c 12%, transparent);
-	color: #c2410c;
+	background: color-mix(in srgb, var(--red-600) 12%, transparent);
+	color: var(--red-600);
 }
 .imed-accountant__muted {
 	color: var(--text-muted);
@@ -6056,8 +6154,8 @@ html[dir="ltr"] .imed-boxes__bar i {
 	padding: 2px 10px;
 	border-radius: 999px;
 	text-align: center;
-	color: #fff;
-	background: var(--orange-500, #f97316);
+	color: var(--imed-sun-900);
+	background: var(--orange-300, #f97316);
 	animation: imed-pulse-badge 2s ease-in-out infinite;
 }
 .imed-req {
@@ -6827,7 +6925,7 @@ html[dir="ltr"] .imed-mo-track i {
 }
 /* The sidebar's own green (§ The sidebar: --sb-green to --sb-green-deep). */
 :root {
-	--imed-table-head: linear-gradient(90deg, #1d4a3b, #194234 60%, #133429);
+	--imed-table-head: linear-gradient(90deg, var(--imed-teal-700), var(--imed-teal-800) 60%, var(--imed-teal-900));
 }
 .page-container .frappe-list .list-row-head {
 	background: var(--imed-table-head) !important;
@@ -6867,7 +6965,7 @@ html[dir="ltr"] .imed-mo-track i {
 }
 .page-container .report-wrapper .dt-cell--header,
 .page-container .report-wrapper .dt-cell--header .dt-cell__content {
-	background: #1d4a3b !important;
+	background: var(--imed-teal-700) !important;
 	color: #fff !important;
 	font-weight: 700;
 	font-size: 13px;
@@ -7045,8 +7143,8 @@ html[dir="ltr"] .imed-mo-track i {
 	min-width: 16px;
 	padding: 0 4px;
 	border-radius: 999px;
-	background: #34d399;
-	color: #053b2a;
+	background: var(--imed-teal-300);
+	color: var(--imed-teal-900);
 	font-size: 10px;
 	line-height: 16px;
 	text-align: center;
@@ -7111,7 +7209,7 @@ html[dir="ltr"] .imed-mo-track i {
 	width: 18px;
 	height: 18px;
 	margin: 0;
-	accent-color: #1d9a62;
+	accent-color: var(--imed-teal-600);
 }
 .imed-col-menu__foot {
 	display: flex;
@@ -7405,7 +7503,7 @@ html[dir="ltr"] .imed-mo-track i {
 	cursor: pointer;
 }
 .imed-pd-band [data-route]:focus-visible {
-	outline: 2px solid var(--tone, var(--imed-primary, #1d4a3b));
+	outline: 2px solid var(--tone, var(--imed-primary, var(--imed-teal-700)));
 	outline-offset: 2px;
 }
 .imed-wk-bar[data-route] {
@@ -7442,8 +7540,8 @@ html[dir="ltr"] .imed-mo-track i {
 	border: 1px solid var(--imed-border, var(--border-color));
 }
 .imed-range.is-set {
-	border-color: color-mix(in srgb, #1d4a3b 35%, transparent);
-	background: color-mix(in srgb, #1d4a3b 5%, var(--card-bg));
+	border-color: color-mix(in srgb, var(--imed-teal-700) 35%, transparent);
+	background: color-mix(in srgb, var(--imed-teal-700) 5%, var(--card-bg));
 }
 .imed-range__label {
 	display: inline-flex;
@@ -7468,7 +7566,7 @@ html[dir="ltr"] .imed-mo-track i {
 	margin-inline-start: auto;
 	font-size: 13px;
 	font-weight: 700;
-	color: #1d4a3b;
+	color: var(--imed-teal-700);
 }
 @media (max-width: 640px) {
 	.imed-range label {
@@ -7493,7 +7591,7 @@ html[dir="ltr"] .imed-mo-track i {
 	color: var(--text-muted);
 }
 .imed-lib-period b {
-	color: #1d4a3b;
+	color: var(--imed-teal-700);
 	font-size: 15px;
 	font-weight: 800;
 }
@@ -7506,7 +7604,7 @@ html[dir="ltr"] .imed-mo-track i {
 .imed-lib-period > .icon {
 	margin: 0 !important;
 	flex: none;
-	color: #1d4a3b;
+	color: var(--imed-teal-700);
 }
 
 /* Every filter a list is under, each with its remove (9 Nov 2026). */
@@ -7583,13 +7681,13 @@ html[dir="ltr"] .imed-mo-track i {
 	margin: 0 !important;
 }
 .imed-lib-tabs button:hover {
-	background: color-mix(in srgb, #1d4a3b 8%, var(--card-bg));
+	background: color-mix(in srgb, var(--imed-teal-700) 8%, var(--card-bg));
 }
 .imed-lib-tabs button.is-active {
-	background: linear-gradient(90deg, #1d4a3b, #194234 60%, #133429);
-	border-color: #133429;
+	background: linear-gradient(90deg, var(--imed-teal-700), var(--imed-teal-800) 60%, var(--imed-teal-900));
+	border-color: var(--imed-teal-900);
 	color: #fff;
-	box-shadow: 0 8px 18px -12px #133429;
+	box-shadow: 0 8px 18px -12px var(--imed-teal-900);
 }
 .imed-lib-tabs button.is-active .icon {
 	stroke: #fff;
@@ -7608,4 +7706,221 @@ html[dir="ltr"] .imed-mo-track i {
 	body[data-route="Workspaces/Owner Dashboard"] .page-container:has(.imed-slot-top) .page-head {
 		display: none;
 	}
+}
+
+/* ------------------------------------------------------------------ */
+/* One colour for every business (10 Nov 2026). The studio, the halls, the libraries and the app each had a hue
+   of its own (violet, blue, orange, green): four unrelated colours on one page. Their logos already tell them
+   apart, so all four take the brand green. Comes last on purpose: same weight as the rules it replaces. */
+.imed-pd-card[class*="tone-"],
+.imed-wk-row[class*="tone-"],
+.imed-mo-tile[class*="tone-"],
+.imed-tm-col,
+.imed-tm-col[class*="tone-"] {
+	--tone: var(--imed-teal-600);
+	--tone-bg: var(--imed-teal-50);
+}
+/* Expenses are not a warning: a quiet gray, so yellow keeps its one meaning (something waits). */
+.imed-ov-kpi.tone-orange {
+	--tone-solid: var(--gray-500);
+	--tone-soft: var(--gray-100);
+	--tone-fg: var(--gray-700);
+	--tone-line: var(--gray-300);
+	--tone-on-dark: #dfe7ea;
+}
+
+/* The numbers in blue (the user's word of 10 Nov 2026: the green on every figure tires the eye). The bars, the
+   edges and the badges keep the brand green; a loss stays red; stock states keep their own colours. */
+.imed-pd-card .imed-pd-num,
+.imed-pd-band.is-today .imed-pd-card .imed-pd-num,
+.imed-pd-card .imed-pd-libs .imed-pd-num,
+.imed-pd-band.is-today .imed-pd-card .imed-pd-libs .imed-pd-num,
+.imed-sec__head > .imed-pd-num,
+.imed-wk-name .imed-pd-num,
+.imed-mo-tile > .imed-pd-num {
+	color: var(--blue-600);
+}
+.imed-dash-card:not(.is-negative) .widget-content .number {
+	color: var(--blue-600) !important;
+}
+[data-theme="dark"] .imed-pd-card .imed-pd-num,
+[data-theme="dark"] .imed-pd-card .imed-pd-libs .imed-pd-num,
+[data-theme="dark"] .imed-sec__head > .imed-pd-num,
+[data-theme="dark"] .imed-wk-name .imed-pd-num,
+[data-theme="dark"] .imed-mo-tile > .imed-pd-num {
+	color: var(--blue-300);
+}
+[data-theme="dark"] .imed-dash-card:not(.is-negative) .widget-content .number {
+	color: var(--blue-300) !important;
+}
+
+/* The welcome: the day's sun (or moon) larger and filled in the palette's yellow; facing it, at the other end of
+   the row, the bell. It opens the sidebar's own notifications (imed_owner_dashboard.js); a dot when one waits. */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome {
+	align-items: flex-start;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome__date {
+	gap: 8px;
+	padding: 5px 14px 5px 12px;
+}
+.imed-dash-welcome__date .icon {
+	width: 24px;
+	height: 24px;
+	fill: var(--imed-sun-300);
+	stroke: var(--imed-sun-500);
+	stroke-width: 1.6px;
+}
+.imed-dash-welcome__bell {
+	position: relative;
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: 1px solid var(--imed-border);
+	border-radius: 50%;
+	background: var(--card-bg);
+	color: var(--imed-teal-700);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.05);
+	cursor: pointer;
+	transition: background 0.15s ease, transform 0.15s ease;
+}
+.imed-dash-welcome__bell:hover {
+	background: var(--imed-teal-50);
+}
+.imed-dash-welcome__bell:active {
+	transform: scale(0.96);
+}
+.imed-dash-welcome__bell:focus-visible {
+	outline: none;
+	box-shadow: var(--imed-ring);
+}
+.imed-dash-welcome__bell .icon {
+	width: 22px;
+	height: 22px;
+	stroke: currentColor;
+	fill: none;
+}
+.imed-dash-welcome__bell.has-unseen::after {
+	content: "";
+	position: absolute;
+	top: 9px;
+	inset-inline-end: 10px;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--red-500);
+	box-shadow: 0 0 0 2px var(--card-bg);
+}
+[data-theme="dark"] .imed-dash-welcome__bell {
+	color: var(--imed-teal-200);
+}
+
+/* The money cards, calm (the user's word of 10 Nov 2026: "this section is very ugly"). Before: three tinted
+   gradients (blue, green, yellow), dark solid icon chips, a yellow "no records yet" pill breaking the title.
+   Now every card is the same white sheet with one soft green icon square; only a loss turns red. The figure is
+   what is read (blue, above), the rest stays quiet. Comes last: it replaces the tinted look of §"Owner Dashboard". */
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-height: 132px;
+	background: var(--card-bg);
+	border-color: var(--imed-border);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	background: var(--imed-teal-50);
+	color: var(--imed-teal-700);
+	box-shadow: none;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card.is-negative .imed-dash-card-icon {
+	background: var(--bg-red);
+	color: var(--text-on-red);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-title {
+	font-size: var(--text-md) !important;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-content .number {
+	margin-block-start: 14px;
+	font-size: 26px;
+}
+/* "No records yet": a quiet line of its own under the title, not a coloured pill inside it. */
+.imed-dash-card .imed-dash-norecords {
+	display: block;
+	margin: 2px 0 0;
+	padding: 0;
+	border-radius: 0;
+	background: none;
+	color: var(--text-light);
+	font-size: var(--text-xs);
+	font-weight: 500;
+}
+.imed-dash-card .widget-title .imed-dash-norecords {
+	white-space: nowrap !important;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-title {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+}
+[data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	background: rgba(54, 183, 151, 0.14);
+	color: var(--imed-teal-200);
+}
+
+/* The money cards, smaller (the user, 10 Nov 2026: "large for nothing"): four in a row on a laptop and five on
+   a wide screen instead of three, less padding, a smaller figure; the icon filled (a light green inside its
+   dark green line) in a smaller square. Frappe gives each card a third of the row (col-md-4); only the blocks
+   that hold a money card are narrowed, the editor's other blocks are untouched. */
+@media (min-width: 992px) {
+	body[data-route="Workspaces/Owner Dashboard"] .codex-editor__redactor > .ce-block:has(.imed-dash-card) {
+		flex: 0 0 25%;
+		max-width: 25%;
+	}
+}
+@media (min-width: 1500px) {
+	body[data-route="Workspaces/Owner Dashboard"] .codex-editor__redactor > .ce-block:has(.imed-dash-card) {
+		flex: 0 0 20%;
+		max-width: 20%;
+	}
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card {
+	min-height: 0;
+	padding: 12px 14px !important;
+	border-radius: 14px;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-label {
+	gap: 10px;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon .icon {
+	width: 19px;
+	height: 19px;
+	fill: var(--imed-teal-200);
+	stroke: var(--imed-teal-700);
+	stroke-width: 1.7px;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card.is-negative .imed-dash-card-icon .icon {
+	fill: color-mix(in srgb, var(--red-500) 28%, transparent);
+	stroke: var(--text-on-red);
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-title {
+	font-size: var(--text-base) !important;
+	line-height: 1.25;
+}
+body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-content .number {
+	margin-block-start: 8px;
+	font-size: 20px;
+}
+[data-theme="dark"] body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .imed-dash-card-icon .icon {
+	fill: rgba(54, 183, 151, 0.3);
+	stroke: var(--imed-teal-200);
 }
