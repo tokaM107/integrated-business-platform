@@ -68,7 +68,26 @@
 					<p class="imed-dash-welcome__note"></p>
 				</div>
 				<div class="imed-dash-welcome__art" aria-hidden="true">${frappe.utils.icon("piggy-bank", "lg")}</div>
+				<button type="button" class="imed-dash-welcome__bell" title="${esc(__("Notifications"))}" aria-label="${esc(__("Notifications"))}">${frappe.utils.icon("bell", "md")}</button>
 			</div>`).insertBefore($page.find(".imed-slot-top").first().length ? $page.find(".imed-slot-top").first() : $editor);
+		setup_bell($page.find(".imed-dash-welcome__bell"));
+	}
+
+	// The bell facing the date: it opens the sidebar's own notifications (no second list), and shows a dot while
+	// the sidebar's counter shows one.
+	function setup_bell($bell) {
+		const sidebar_item = () => $(".body-sidebar .sidebar-notification").first();
+		$bell.on("click", (e) => {
+			e.stopPropagation();
+			const $item = sidebar_item();
+			if ($item.length) $item.trigger("click");
+			else frappe.set_route("List", "Notification Log");
+		});
+		const count = $(".body-sidebar .sidebar-notification-count").get(0);
+		if (!count) return;
+		const refresh = () => $bell.toggleClass("has-unseen", !count.classList.contains("hidden") && !!count.textContent.trim());
+		refresh();
+		new MutationObserver(refresh).observe(count, { attributes: true, childList: true, characterData: true, subtree: true });
 	}
 
 	function mark_headers($page) {
@@ -127,11 +146,11 @@
 					});
 				}
 			}
-			// On a site with no ledger entry at all, each money card says "no records yet" next to its zero
+			// On a site with no ledger entry at all, each money card says "no records yet" under its name
 			// (decision of 1 Nov 2026); the badge is put back whenever Frappe redraws the card.
 			const is_ledger_card = LEDGER_CARDS.some((label) => __(label) === title);
 			if (ledger_empty && is_ledger_card && !$card.find(".imed-dash-norecords").length) {
-				$card.find(".widget-label, .widget-title").first().append(`<span class="imed-dash-norecords">${esc(__("no records yet"))}</span>`);
+				$card.find(".widget-title").first().append(`<span class="imed-dash-norecords">${esc(__("no records yet"))}</span>`);
 			}
 			// A negative amount (cash short, a month at a loss) shows in red; it changes when the card reloads.
 			const value = $card.find(".number").first().text();
