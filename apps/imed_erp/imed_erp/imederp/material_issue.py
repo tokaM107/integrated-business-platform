@@ -292,7 +292,7 @@ def request_approval(name):
 		_("Material Request {0} from {1} is waiting for your approval.").format(doc.name, destinations(doc)),
 		doc.name,
 	)
-	# The owner hears of it on WhatsApp as soon as the branch asks (imederp/owner_alerts.py).
+	# The owner hears of it on their phone as soon as the branch asks (imederp/owner_alerts.py).
 	owner_alerts.stock_requested(doc)
 
 
