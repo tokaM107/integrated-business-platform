@@ -54,11 +54,13 @@ app_include_js = [
 web_include_css = [asset("css/imed_fonts.css"), asset("css/imed_web.css")]
 # web_include_js = "/assets/imed_erp/js/imed_erp.js"
 
-# Branding: logo on the home screen and the login page, and the browser tab icon.
-app_logo_url = "/assets/imed_erp/images/imed-mark.svg"
+# Branding: logo on the home screen and the login page, and the browser tab icon. Since 10 Nov 2026 the owner's
+# monogram (MM, Mohamed Mamdouh): mm-icon.png is the monogram on a white rounded square (it reads on a dark
+# browser tab and on the green sidebar), mm-logo.png the monogram alone (the sign-in page, see imed_web.css).
+app_logo_url = "/assets/imed_erp/images/mm-icon.png"
 website_context = {
-	"favicon": "/assets/imed_erp/images/imed-mark.svg",
-	"splash_image": "/assets/imed_erp/images/imed-mark.svg",
+	"favicon": "/assets/imed_erp/images/mm-icon.png",
+	"splash_image": "/assets/imed_erp/images/mm-icon.png",
 }
 
 # include custom scss in every website theme (without file extension ".scss")
