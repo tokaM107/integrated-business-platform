@@ -210,8 +210,8 @@
 					<p class="imed-assistant-welcome__text">
 						${esc(
 							t(
-								"Ask me about the business in plain words, typed or spoken.",
-								"اسألني عن الشغل بكلامك العادي، كتابة أو بالصوت."
+								"Ask me anything about your business!",
+								"مستعد اجاوب علي اسئلتك"
 							)
 						)}
 					</p>
