@@ -102,6 +102,9 @@ has_permission = {
 permission_query_conditions = {
 	"Assistant Chat": "imed_erp.imederp.doctype.assistant_chat.assistant_chat.query_conditions",
 	"Assistant Message": "imed_erp.imederp.doctype.assistant_message.assistant_message.query_conditions",
+	# A branch manager lists their own branch's journal entries only (imederp/branch_lists.py).
+	"Journal Entry": "imed_erp.imederp.branch_lists.journal_entry_conditions",
+	"Stock Entry": "imed_erp.imederp.branch_lists.stock_entry_conditions",
 }
 
 doc_events = {
