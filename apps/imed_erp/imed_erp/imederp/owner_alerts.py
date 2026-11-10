@@ -1,4 +1,4 @@
-# What the owner is told on WhatsApp (notification_service, channel "whatsapp"):
+# What the owner is told on their phone (notification_service, channels "telegram" and "whatsapp"):
 #
 #   stock_requested      a branch asked the main warehouse for materials (material_issue.request_approval): which
 #                        warehouse they are for, and what was asked for
@@ -6,8 +6,8 @@
 #                        bookings held that day, the total and business by business
 #
 # The owner is every enabled user holding the owner's role. Only those listed in the site's
-# imed_whatsapp_recipients get a message (see notification_service.py); with nobody listed, nothing is sent
-# and nothing fails. Each owner reads the message in their own language (User > Language), whoever or whatever
+# imed_telegram_chats or imed_whatsapp_recipients get a message, on the channel they are listed for (see
+# notification_service.py); with nobody listed, nothing is sent and nothing fails. Each owner reads the message in their own language (User > Language), whoever or whatever
 # caused it: the scheduler runs in the site's language, and a branch user may work in another.
 #
 # The figures are the dashboard's own: revenue from the general ledger by cost center
