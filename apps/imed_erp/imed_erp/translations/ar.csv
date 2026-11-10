@@ -2174,3 +2174,10 @@ View calendar,افتح التقويم
 Bookings' money,فلوس الحجوزات
 (This month),(الشهر ده)
 Pending,لسه متدفعش
+New stock request for {{ warehouse }},طلب خامات جديد لـ {{ warehouse }}
+New stock request for {{ warehouse }} ({{ request }}): {{ items }},طلب خامات جديد لـ {{ warehouse }} ({{ request }}): {{ items }}
+IMED on {0},IMED يوم {0}
+Revenue: {0},الإيراد: {0}
+Bookings: {0},الحجوزات: {0}
+{0} bookings,{0} حجز
+No business,بدون نشاط
