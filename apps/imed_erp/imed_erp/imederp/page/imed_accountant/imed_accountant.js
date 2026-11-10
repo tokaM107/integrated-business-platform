@@ -88,7 +88,11 @@ frappe.pages["imed-accountant"].on_page_load = function (wrapper) {
 			.join("");
 
 		$body.html(`
-			<h3 class="imed-accountant__h">${esc(__("النهارده"))} <small>${esc(new Date().toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" }))}</small></h3>
+			<div class="imed-accountant__hello">
+				<h2>${esc(new Date().getHours() < 12 ? __("صباح الخير") : __("مساء الخير"))}، ${esc(d.user || __("المحاسب"))}</h2>
+				<span>${esc(new Date().toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span>
+			</div>
+			<h3 class="imed-accountant__h">${esc(__("النهارده"))}</h3>
 			<div class="imed-accountant__today">${today}</div>
 
 			<div class="imed-accountant__grid">

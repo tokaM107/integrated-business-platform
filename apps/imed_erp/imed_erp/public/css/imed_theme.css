@@ -5280,6 +5280,19 @@ a.imed-ov-lib:hover {
 	color: var(--text-muted);
 	text-align: center;
 }
+/* The greeting as plain words, no banner (the owner, 10 Nov 2026). */
+.imed-accountant__hello {
+	margin: 4px 0 18px;
+}
+.imed-accountant__hello h2 {
+	margin: 0;
+	font-size: 1.5rem;
+	font-weight: 800;
+}
+.imed-accountant__hello span {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
 /* What waits on him: the count beside the title (no banner, as the owner's page: the owner, 10 Nov 2026). */
 .imed-accountant__state {
 	padding: 2px 12px;
