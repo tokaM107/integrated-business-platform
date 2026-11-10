@@ -20,9 +20,13 @@ class TestAccountantDesk(IntegrationTestCase):
 		frappe.set_user(ACCOUNTANT)
 		self.assertTrue(accountant_desk.is_accountant_only())
 		out = accountant_desk.overview()
-		self.assertEqual([f["key"] for f in out["figures"]], ["cash", "revenue", "expenses", "owed_to_us", "we_owe"])
+		self.assertEqual(set(out["today"]), {"cash", "came", "went", "not_closed", "closable"})
+		self.assertEqual([o["key"] for o in out["outside"]], ["customers", "suppliers", "doctors"])
+		self.assertEqual(round(out["today"]["cash"], 2), round(sum(s["balance"] for s in out["safes"]), 2))
+		self.assertFalse(any("محفظة" in s["label"] for s in out["safes"]))  # safes only, no wallet
+		self.assertEqual(round(out["month"]["total"]["net"], 2), round(sum(r["net"] for r in out["month"]["rows"]), 2))
 		waiting = {w["key"]: w for w in out["waiting"]}
-		self.assertEqual(set(waiting), {"expenses", "handovers", "discrepancies", "closes", "weeks", "doctors"})
+		self.assertEqual(set(waiting), {"expenses", "handovers", "discrepancies", "closes", "weeks", "doctors", "purchases"})
 		self.assertTrue(all(isinstance(w["count"], int) for w in waiting.values()))
 
 	def test_a_user_who_may_not_read_the_figures_is_refused(self):

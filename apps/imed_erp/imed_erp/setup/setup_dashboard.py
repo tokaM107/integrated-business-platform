@@ -15,7 +15,7 @@ ABBR = "MMG"
 
 # IMED ERP palette (see public/css/imed_theme.css): colour carries meaning, not decoration.
 # Teal = income, amber = needs attention, slate = neutral counts.
-TEAL, TEAL_LIGHT, AMBER, SLATE = "#0f766e", "#1d9386", "#b7791f", "#48565f"
+TEAL, TEAL_LIGHT, AMBER, SLATE = "#0d9276", "#14a587", "#b7791f", "#48565f"
 
 # ---------------- Number Cards ----------------
 # full=1 shows the exact amount (EGP 92,437.50) instead of "92.44 K"; it also avoids Frappe showing

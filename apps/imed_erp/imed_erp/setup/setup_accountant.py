@@ -11,6 +11,9 @@ EMAIL = "accountant@imed.local"
 NAME = "المحاسب"
 ROLES = ["Accountant", "Accounts User", "Accounts Manager", "Expense Approver"]
 CUSTOM = {"Accountant", "Expense Approver"}
+# What the role reads beyond its standard ERPNext roles: the branches' purchase requests, which the owner approves and
+# the accountant buys (imederp/material_issue.py, 10 Nov 2026). setup_users.py gives the same.
+EXTRA_RIGHTS = {"Material Request": {"read": 1, "report": 1, "print": 1}}
 
 
 def run():
@@ -42,4 +45,23 @@ def run():
 			print(f"update User {EMAIL}: roles {', '.join(missing) or '-'}; enabled")
 		else:
 			print(f"exists User {EMAIL}")
+	give_rights()
 	frappe.db.commit()
+
+
+def give_rights():
+	from frappe.core.doctype.doctype.doctype import validate_permissions_for_doctype
+	from frappe.permissions import add_permission, setup_custom_perms
+
+	for doctype, rights in EXTRA_RIGHTS.items():
+		setup_custom_perms(doctype)
+		name = frappe.db.get_value("Custom DocPerm", {"parent": doctype, "role": "Accountant", "permlevel": 0, "if_owner": 0})
+		if not name:
+			name = add_permission(doctype, "Accountant", 0)
+		rule = frappe.get_doc("Custom DocPerm", name)
+		if any((rule.get(k) or 0) != v for k, v in rights.items()):
+			rule.update(rights)
+			rule.save(ignore_permissions=True)
+			print(f"update Permission {doctype} -> Accountant: {rights}")
+		validate_permissions_for_doctype(doctype)
+		frappe.clear_cache(doctype=doctype)

@@ -5,10 +5,10 @@
 
 #page-login,
 #page-login ~ .web-footer {
-	--imed-teal-50: #effaf8;
-	--imed-teal-500: #1d9386;
-	--imed-teal-600: #0f766e;
-	--imed-teal-700: #0f625b;
+	--imed-teal-50: #ecfaf5;
+	--imed-teal-500: #14a587;
+	--imed-teal-600: #0d9276;
+	--imed-teal-700: #0b7a63;
 	--imed-border: #e3e9ec;
 	--imed-border-strong: #d2dbe0;
 	--font-stack: "InterVariable", "Inter", "IMED Arabic", -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -66,7 +66,7 @@ body:has(#page-login) {
 	border-radius: 14px;
 	margin-inline: auto;
 	margin-bottom: 14px;
-	box-shadow: 0 8px 18px -8px rgba(15, 118, 110, 0.55);
+	box-shadow: 0 8px 18px -8px rgba(13, 146, 118, 0.55);
 }
 #page-login .page-card-head h4 {
 	font-size: 22px;
@@ -102,7 +102,7 @@ body:has(#page-login) {
 }
 #page-login .form-control:focus {
 	border-color: var(--imed-teal-500);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+	box-shadow: 0 0 0 3px rgba(13, 146, 118, 0.18);
 }
 /* The field's icon in the middle of the field's height, whatever it is (on a phone Frappe makes it taller). */
 #page-login .field-icon {
@@ -118,7 +118,7 @@ body:has(#page-login) {
 	border-radius: 10px;
 	color: #ffffff;
 	font-weight: 600;
-	box-shadow: 0 1px 2px rgba(15, 98, 91, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	box-shadow: 0 1px 2px rgba(11, 122, 99, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 #page-login .btn-login:hover,
 #page-login .btn-login:focus {
@@ -127,7 +127,7 @@ body:has(#page-login) {
 	color: #ffffff;
 }
 #page-login .btn-login:focus-visible {
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.25);
+	box-shadow: 0 0 0 3px rgba(13, 146, 118, 0.25);
 }
 #page-login .btn-login-option {
 	height: 40px;

@@ -2361,3 +2361,10 @@ Not,مش
 Both libraries,المكتبتين
 Library Invoices,الفواتير
 Library Daily Sales,المبيعات اليومية
+New stock request for {{ warehouse }},طلب خامات جديد لـ {{ warehouse }}
+New stock request for {{ warehouse }} ({{ request }}): {{ items }},طلب خامات جديد لـ {{ warehouse }} ({{ request }}): {{ items }}
+IMED on {0},IMED يوم {0}
+Revenue: {0},الإيراد: {0}
+Bookings: {0},الحجوزات: {0}
+No business,بدون نشاط
+no records yet,لسه مفيش قيود
