@@ -27,8 +27,9 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import add_days, flt, now_datetime
+from frappe.utils import add_days, flt, getdate, now_datetime
 
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.sales_cancellation import clean_reason
@@ -41,6 +42,9 @@ MAX_REASON_LENGTH = 500
 
 class TreasuryClose(Document):
 	def validate(self):
+		# Its discrepancy is the one its own submission opens (on_submit), and its review marks are the system's.
+		keep(self, ("cash_discrepancy", "needs_review", "review_note", "reopened_by", "reopened_on"))
+		self.check_amended_from()
 		self.check_treasury()
 		self.check_once_a_day()
 		self.check_in_order()
@@ -118,6 +122,18 @@ class TreasuryClose(Document):
 					self.treasury, frappe.format_value(self.close_date, {"fieldtype": "Date"}), other
 				),
 				title=_("Already Closed"),
+			)
+
+	def check_amended_from(self):
+		"""A close amends the reopened close of the same box and day, nothing else: an amendment is let in out of
+		order (check_in_order), so any other link would back-date a close."""
+		if not self.amended_from:
+			return
+		old = frappe.db.get_value("Treasury Close", self.amended_from, ["treasury", "close_date", "docstatus"], as_dict=True)
+		if not old or old.docstatus != 2 or old.treasury != self.treasury or getdate(old.close_date) != getdate(self.close_date):
+			frappe.throw(
+				_("{0} is not the reopened close of {1} for this day.").format(self.amended_from, self.treasury),
+				title=_("Wrong Amendment"),
 			)
 
 	def check_in_order(self):

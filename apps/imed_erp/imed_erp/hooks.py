@@ -105,7 +105,11 @@ permission_query_conditions = {
 doc_events = {
 	# No completed transaction dated after today (QA-24; imederp/dates.py lists the doctypes).
 	"*": {
-		"validate": "imed_erp.imederp.dates.refuse_future_date",
+		"validate": [
+			"imed_erp.imederp.dates.refuse_future_date",
+			# A stored document is changed only by someone who may change it as stored (imederp/server_fields.py).
+			"imed_erp.imederp.server_fields.check_write_on_stored",
+		],
 		# A cash box never goes below zero, whatever pays out of it (imederp/cash_balance.py). After the document's
 		# own on_submit and on_cancel, which post its ledger lines.
 		"on_submit": [
@@ -413,6 +417,11 @@ after_migrate = [
 	# The home screen's tiles: what the group uses (imederp/home_screen.py).
 	"imed_erp.imederp.home_screen.tidy_home",
 ]
+
+# Sessions end after inactivity and after a total age, on the server, on every request
+# (imederp/session_policy.py).
+auth_hooks = ["imed_erp.imederp.session_policy.enforce"]
+on_logout = "imed_erp.imederp.session_policy.forget"
 
 # The booking screens' statuses and colours, from imederp/booking_rules.py.
 boot_session = "imed_erp.imederp.booking_rules.boot_session"

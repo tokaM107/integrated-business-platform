@@ -32,15 +32,24 @@ from frappe.utils import flt, now_datetime, today
 from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import OWNER_ROLE, recovery_allowed
 from imed_erp.imederp.sales_cancellation import clean_reason
+from imed_erp.imederp.server_fields import keep
 
 CASH_DIFFERENCES = "فروقات الخزينة"
 OPEN = ("Pending Investigation", "Responsibility Determined", "Recovery Recommended", "Pending Review")
 SETTLED = ("Recovery Approved", "Written Off", "Explained")
+# What the close and the actions below decide (each sets flags.by_action): a plain save never changes them, so a
+# recovery is approved only by the owner's action, and what the close found stays what it found.
+DECISION_FIELDS = (
+	"status", "kind", "amount", "treasury_close", "treasury", "business", "close_date", "reviewed_by", "reviewed_on",
+	"recommended_by", "recommended_on", "approved_by", "approved_on", "recovery_total", "payroll_status", "adjustment_entry",
+)
 
 
 class CashDiscrepancy(Document):
 	def validate(self):
 		before = self.get_doc_before_save()
+		if before:
+			keep(self, DECISION_FIELDS, flag="by_action")
 		if before and before.status in SETTLED + ("Withdrawn", "Recovery Recommended"):
 			# Settled: what was decided stays as it was decided.
 			for field in ("employees", "reason", "investigation_notes", "legal_check", "shift", "surplus_cause", "surplus_customer", "surplus_account"):
@@ -108,6 +117,8 @@ def check_can_withdraw(name):
 
 def withdraw(name, close):
 	doc = frappe.get_doc("Cash Discrepancy", name)
+	if doc.treasury_close != close:
+		frappe.throw(_("{0} is not the discrepancy of {1}.").format(name, close))
 	doc.flags.by_action = True
 	doc.status = "Withdrawn"
 	doc.payroll_status = None

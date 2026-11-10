@@ -41,7 +41,8 @@ class PrinterReading(Document):
         """QA-20: a reading made outside the day's screen moves the machine's counter on without its sheets being in
         any day's waste, so branch staff use the screen; the accounts may correct by hand. QA-21: so may they record a
         counter reset, which no one else can."""
-        on_screen = self.daily_counter_reading or self.flags.from_daily_counter_reading
+        # The day's screen says so itself (a flag it sets): the link alone could be typed into a request.
+        on_screen = self.flags.from_daily_counter_reading
         accounts = set(ACCOUNTS_ROLES) & set(frappe.get_roles())
         if self.counter_reset:
             if not accounts:

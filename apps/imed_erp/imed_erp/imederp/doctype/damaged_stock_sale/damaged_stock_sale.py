@@ -17,6 +17,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.damaged_stock import (
 	LOSS_ACCOUNT,
 	SCRAP_ITEM,
@@ -36,6 +37,8 @@ from imed_erp.imederp.treasuries import BUSINESS_TREASURY, plain
 
 class DamagedStockSale(Document):
 	def validate(self):
+		# What the sale posted is written by its submission (db_set); cancelling it cancels the documents named here.
+		keep(self, ("stock_entry", "sales_invoice", "payment_entry"))
 		if not is_damaged_store(self.damaged_store):
 			frappe.throw(_("{0} is not a damaged store (Warehouse > Damaged Store).").format(self.damaged_store))
 		self.company = frappe.db.get_value("Warehouse", self.damaged_store, "company")

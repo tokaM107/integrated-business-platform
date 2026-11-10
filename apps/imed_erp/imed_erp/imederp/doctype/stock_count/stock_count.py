@@ -12,6 +12,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, getdate, nowtime, today
 
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.stock_count import branch_of
 from imed_erp.imederp.system_user import as_administrator
@@ -23,6 +24,8 @@ DATING_ROLE = "Accounts Manager"
 
 class StockCount(Document):
 	def validate(self):
+		# The reconciliation is the one this count's submission makes (db_set); cancelling the count cancels it.
+		keep(self, ("stock_reconciliation",))
 		self.set_count_time()
 		if frappe.db.get_value("Warehouse", self.store, "is_group"):
 			frappe.throw(_("{0} is a group of stores. Choose the store that was counted.").format(self.store))

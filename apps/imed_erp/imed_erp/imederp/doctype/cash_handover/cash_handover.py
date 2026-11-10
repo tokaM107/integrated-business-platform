@@ -33,6 +33,7 @@ from imed_erp.imederp.roles import ACCOUNTANT, ACCOUNTS_ROLES
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.doctype.cash_close_settings.cash_close_settings import OWNER_ROLE
 from imed_erp.imederp.sales_cancellation import clean_reason
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.treasuries import check_treasury
 
 CASH = "Cash"
@@ -40,6 +41,8 @@ PENDING, RECEIVED, CANCELLED = "Pending Receipt", "Received", "Cancelled"
 RECEIVER_ROLE = {"Owner": OWNER_ROLE, "Accountant": ACCOUNTANT}
 CUSTODY_FIELD = {"Owner": "owner_custody_account", "Accountant": "accountant_custody_account"}
 RECEIPT_TYPES = (".pdf", ".jpg", ".jpeg", ".png", ".webp", ".heic")
+# Written by confirm_receipt and by cancelling, with db_set: never taken from a request (imederp/server_fields.py).
+SERVER_FIELDS = ("journal_entry", "custody_account", "received_by", "received_on", "cancelled_by", "cancelled_on")
 
 
 def amount_in_words(amount):
@@ -55,8 +58,13 @@ class CashHandover(Document):
 		self.amount = flt(self.amount, 2)
 		self.amount_in_words = amount_in_words(self.amount)
 		self.check_box()
+		keep(self, SERVER_FIELDS)
 		if self.docstatus == 0:
 			self.status = "Draft"
+		before = self.get_doc_before_save()
+		if not before or before.docstatus == 0:
+			# Saved or submitted now: the person doing it is the one handing the cash over, never a name sent with
+			# the document (the receiver is checked against it, and confirms against it).
 			self.handed_over_by = frappe.session.user
 		self.check_receiver()
 
@@ -157,8 +165,11 @@ class CashHandover(Document):
 	def on_cancel(self):
 		from imed_erp.imederp.doctype.treasury_close.treasury_close import mark_for_review
 
-		if self.journal_entry and frappe.db.get_value("Journal Entry", self.journal_entry, "docstatus") == 1:
-			entry = frappe.get_doc("Journal Entry", self.journal_entry)
+		# Only a confirmed hand-over posted an entry, and only that entry is reversed with it: both read from what
+		# is stored, not from the document as it was sent.
+		status, entry_name = frappe.db.get_value("Cash Handover", self.name, ["status", "journal_entry"])
+		if status == RECEIVED and entry_name and frappe.db.get_value("Journal Entry", entry_name, "docstatus") == 1:
+			entry = frappe.get_doc("Journal Entry", entry_name)
 			entry.flags.ignore_permissions = True
 			entry.flags.from_cash_handover = True
 			entry.cancel()

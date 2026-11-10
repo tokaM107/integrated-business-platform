@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime, today
 
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.treasuries import check_treasury
 
 # A treasury is a cash box or a wallet: a leaf Account of one of these types.
@@ -21,6 +22,9 @@ RECEIVER_ROLE = "Accounts Manager"
 
 class InterBusinessTransfer(Document):
     def validate(self):
+        # What the transfer posted and who received it are written by its own steps (db_set), never by a request:
+        # cancelling it reverses the entries named here (imederp/server_fields.py).
+        keep(self, ("send_journal_entry", "receipt_journal_entry", "received_by", "received_on"))
         self.validate_amount()
         self.validate_businesses()
         self.validate_treasuries()
@@ -77,7 +81,10 @@ class InterBusinessTransfer(Document):
                 _("Only a user with the {0} role can confirm receipt.").format(_(RECEIVER_ROLE)), frappe.PermissionError
             )
         # QA-10: read again under a lock, so two clicks (or two people) cannot both post the receipt.
-        self.status = frappe.db.get_value(self.doctype, self.name, "status", for_update=True)
+        frappe.db.get_value(self.doctype, self.name, "name", for_update=True)
+        # The receipt is posted from the transfer as it is stored: a document method runs on the copy the browser
+        # sends, and its amount or treasury could differ from what was sent.
+        self.reload()
         if self.docstatus != 1 or self.status != "Sent":
             frappe.throw(_("{0} is {1}. Only a Sent transfer can be received.").format(self.name, _(self.status)))
 

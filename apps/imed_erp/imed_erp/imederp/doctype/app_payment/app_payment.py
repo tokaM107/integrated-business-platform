@@ -24,6 +24,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt
 
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.branches import check_has_branch
 from imed_erp.imederp.sales_cancellation import clean_reason
 from imed_erp.imederp.treasuries import BUSINESS_TREASURY, abbr_of, check_treasury, plain
@@ -53,6 +54,9 @@ def clean_reference(value):
 
 class AppPayment(Document):
 	def validate(self):
+		# The entry is the one this payment posts (on_submit), never one named by a request: a payment sent with an
+		# entry already on it was submitted without posting anything.
+		keep(self, ("journal_entry",))
 		self.check_source()
 		self.set_from_subscription()
 		if flt(self.amount) <= 0:

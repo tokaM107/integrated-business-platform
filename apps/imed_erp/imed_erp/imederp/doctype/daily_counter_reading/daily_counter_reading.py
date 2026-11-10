@@ -222,6 +222,7 @@ class DailyCounterReading(Document):
 					"daily_counter_reading": self.name,
 				}
 			)
+			reading.flags.from_daily_counter_reading = True
 			reading.insert()
 			reading.submit()
 			row.db_set("printer_reading", reading.name)

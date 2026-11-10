@@ -15,8 +15,7 @@ from imed_erp.imederp.booking_rules import STUDIO_SERVICE
 class XStudioSettings(Document):
 	def validate(self):
 		url = cstr(self.base_url).strip().rstrip("/")
-		local = ("http://localhost", "http://127.", "http://host.docker.internal")
-		if url and not url.startswith("https://") and not url.startswith(local):
+		if url and not url.startswith("https://") and not is_local_test_url(url):
 			frappe.throw(_("The XStudio URL must start with https:// (http is allowed only for a local test server)."))
 		self.base_url = url or None
 		if self.enabled:
@@ -40,3 +39,21 @@ class XStudioSettings(Document):
 		for field in ("lookback_days", "lookahead_days", "poll_minutes"):
 			if cint(self.get(field)) < 0:
 				frappe.throw(_("{0} cannot be negative.").format(_(self.meta.get_label(field))))
+
+
+def is_local_test_url(url):
+	"""http is accepted only for this machine: the host itself is compared, never a prefix of the address
+	(http://localhost.example.com is not local, and would carry the password in the clear)."""
+	import ipaddress
+	from urllib.parse import urlparse
+
+	parsed = urlparse(url)
+	host = parsed.hostname or ""
+	if parsed.scheme != "http":
+		return False
+	if host in ("localhost", "host.docker.internal"):
+		return True
+	try:
+		return ipaddress.ip_address(host).is_loopback
+	except ValueError:
+		return False

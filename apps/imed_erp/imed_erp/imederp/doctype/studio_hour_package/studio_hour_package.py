@@ -23,6 +23,7 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.utils import flt, now_datetime
 
+from imed_erp.imederp.server_fields import keep
 from imed_erp.imederp.roles import ACCOUNTS_ROLES
 from imed_erp.imederp.booking_rules import NOT_HELD, STUDIO_SERVICE
 from imed_erp.imederp.sales_cancellation import clean_reason
@@ -46,6 +47,12 @@ class StudioHourPackage(Document):
 		if flt(self.price) < 0:
 			frappe.throw(_("The package price cannot be negative."))
 		self.check_source()
+		if not self.flags.from_import:
+			# Its invoice is the one Make Invoice makes, and its hours are used by bookings: neither is typed.
+			keep(self, ("sales_invoice",))
+			before = self.get_doc_before_save()
+			if not before or before.docstatus == 0:
+				self.set("usage", [])
 		if self.docstatus == 0:
 			self.status, self.hours_used, self.hours_remaining = "Draft", 0, flt(self.hours_purchased, PRECISION)
 
