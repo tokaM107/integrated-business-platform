@@ -7924,3 +7924,20 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-content .n
 	fill: rgba(54, 183, 151, 0.3);
 	stroke: var(--imed-teal-200);
 }
+
+/* The library's header: while the counters are still to be read, the state is a button that opens them. */
+button.imed-library__hero-state.is-action {
+	border: 0;
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+button.imed-library__hero-state.is-action:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 8px 18px -10px rgba(8, 74, 62, 0.6);
+}
+button.imed-library__hero-state.is-action:focus-visible {
+	outline: 2px solid #ffffff;
+	outline-offset: 2px;
+}
