@@ -25,6 +25,8 @@
   "variance",
   "paper_issued",
   "damaged_sheets",
+  "spoiled_sheets",
+  "spoiled_entry",
   "total_gap",
   "money_section",
   "cost_per_sheet",
@@ -153,6 +155,21 @@
    "description": "Sheets of A4 paper recorded as damaged in the library that day (Damaged Stock Entry)."
   },
   {
+   "fieldname": "spoiled_sheets",
+   "fieldtype": "Int",
+   "label": "Spoiled Sheets",
+   "non_negative": 1,
+   "description": "Sheets that came out of the machines spoiled that day (a jam, a bad print), as the library says when it closes the day. They are thrown away at once, so closing the day takes them out of the library's paper store."
+  },
+  {
+   "fieldname": "spoiled_entry",
+   "fieldtype": "Link",
+   "label": "Spoiled Paper Issue",
+   "options": "Stock Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
    "fieldname": "total_gap",
    "fieldtype": "Int",
    "label": "Gap Since Last Closing",
@@ -226,7 +243,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-10-22 11:00:00.000000",
+ "modified": "2026-11-11 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Daily Counter Reading",
