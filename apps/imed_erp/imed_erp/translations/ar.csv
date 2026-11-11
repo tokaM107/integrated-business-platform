@@ -2400,3 +2400,30 @@ Paper spoiled at the machines on {0} ({1}).,ورق باظ على المكن يو
 "{0} has fewer sheets than the {1} spoiled on {2}. The paper issue {3} is saved as a draft for the accountant.","{0} فيه ورق أقل من الـ {1} اللي باظوا يوم {2}. إذن الصرف {3} اتحفظ مسودة للمحاسب."
 Value Not Sold,قيمة اللي ما اتباعش
 Nothing to show,مفيش حاجة تتعرض
+Automatic Revenue Settings,إعدادات تسجيل الإيراد التلقائي
+Studio (XStudio),الاستوديو (XStudio)
+Post the Studio's Payments,سجّل مدفوعات الاستوديو تلقائي
+Libraries (their sales system),المكتبات (سيستم المبيعات بتاعها)
+Post the Libraries' Sales,سجّل مبيعات المكتبات تلقائي
+Last Run At,آخر تشغيل
+What It Did,اللي اتعمل
+Preview,معاينة
+Run Now,شغّل دلوقتي
+What a Run Would Post,اللي هيتسجّل لو اشتغل
+Entries,عدد القيود
+Studio bookings,حجوزات الاستوديو
+Studio packages,باقات الاستوديو
+"Nothing to post: tick what to post and its day first, or everything is already posted.",مفيش حاجة تتسجّل: علّم على اللي عايز يتسجّل وتاريخ البداية الأول، أو كله متسجّل بالفعل.
+Post to the ledger now what the preview shows?,أسجّل في الدفتر دلوقتي اللي المعاينة عرضته؟
+Save first.,احفظ الأول.
+"{0} studio amounts were lowered in XStudio after posting: for the accountant.",{0} مبلغ في الاستوديو اتقلّل في XStudio بعد التسجيل: دول للمحاسب.
+"{0} entries posted, {1} in all.",اتسجّل {0} قيد، بإجمالي {1}.
+"Lowered in XStudio after posting, for the accountant: {0}",اتقلّلت في XStudio بعد التسجيل، للمحاسب: {0}
+Not posted: {0},ما اتسجّلش: {0}
+Studio booking {0} ({1}): paid in XStudio.,حجز استوديو {0} ({1}): مدفوع في XStudio.
+Studio package {0} ({1}): paid in XStudio.,باقة استوديو {0} ({1}): مدفوعة في XStudio.
+"{0}: sales less returns of {1}, from the library's sales system.",{0}: مبيعات يوم {1} ناقص المرتجعات، من سيستم مبيعات المكتبة.
+{0}: the sales of {1} were taken back in the library's sales system.,{0}: مبيعات يوم {1} اتلغت في سيستم مبيعات المكتبة.
+Dated today: its own day ({0}) is closed.,اتسجّل بتاريخ النهارده لأن يومه ({0}) مقفول.
+{0}: say from which day.,{0}: اكتب من أنهي يوم.
+Automatic Posting Of,تسجيل تلقائي لـ
