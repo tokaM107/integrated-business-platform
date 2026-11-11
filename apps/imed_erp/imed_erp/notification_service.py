@@ -91,6 +91,13 @@ EVENTS = {
 		"message": "New stock request for {{ warehouse }} ({{ request }}): {{ items }}",
 		"channels": ["telegram", "whatsapp"],
 	},
+	# What a library did on its own screen (counters, a count of its store): in the system (the bell) and on the
+	# owner's phone; worded and translated by the module (imederp/owner_alerts.py, library_did).
+	"owner_library_activity": {
+		"subject": "{{ subject }}",
+		"message": "{{ subject }}",
+		"channels": ["system", "telegram", "whatsapp"],
+	},
 	# The day's revenue and bookings; worded and translated by the module.
 	"owner_daily_summary": {
 		"subject": "{{ subject }}",
