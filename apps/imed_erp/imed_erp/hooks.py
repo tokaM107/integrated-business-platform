@@ -449,6 +449,8 @@ boot_session = [
 	"imed_erp.imederp.booking_rules.boot_session",
 	# The accountant's desk is not offered what is not his (imederp/accountant_desk.py).
 	"imed_erp.imederp.accountant_desk.boot_session",
+	# Which addresses name a screen, so a screen that is not the user's sends them to their own (imederp/home_screen.py).
+	"imed_erp.imederp.home_screen.boot_session",
 ]
 
 # Scheduled Tasks
