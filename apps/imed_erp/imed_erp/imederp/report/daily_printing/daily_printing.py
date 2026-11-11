@@ -17,28 +17,45 @@ from frappe.utils import cint, flt
 
 def execute(filters=None):
 	filters = frappe._dict(filters or {})
-	return get_columns(), get_data(filters)
+	return get_columns(filters), get_data(filters)
 
 
-def get_columns():
-	return [
-		{"label": _("Date"), "fieldname": "reading_date", "fieldtype": "Date", "width": 100},
-		{"label": _("Branch"), "fieldname": "branch", "fieldtype": "Link", "options": "Cost Center", "width": 160},
-		{"label": _("Machine"), "fieldname": "machine", "fieldtype": "Link", "options": "Printing Machine", "width": 160},
-		{"label": _("Type"), "fieldname": "machine_type", "fieldtype": "Data", "width": 70},
-		{"label": _("Printed Sheets"), "fieldname": "consumed", "fieldtype": "Int", "width": 110},
-		{"label": _("Gap Since Last Closing"), "fieldname": "gap", "fieldtype": "Int", "width": 110},
-		{"label": _("Utilization (%)"), "fieldname": "utilization", "fieldtype": "Percent", "width": 100},
-		{"label": _("Broke Down"), "fieldname": "fault", "fieldtype": "Data", "width": 140},
-		{"label": _("Sold Sheets"), "fieldname": "sold", "fieldtype": "Float", "precision": 1, "width": 100},
-		{"label": _("Printed but Not Sold"), "fieldname": "variance", "fieldtype": "Float", "precision": 1, "width": 110},
-		{"label": _("Paper Issued for Sales"), "fieldname": "paper_issued", "fieldtype": "Int", "width": 110},
-		{"label": _("Damaged Sheets Recorded"), "fieldname": "damaged_sheets", "fieldtype": "Int", "width": 110},
-		{"label": _("Cost per Sheet"), "fieldname": "cost_per_sheet", "fieldtype": "Currency", "precision": 4, "width": 100},
-		{"label": _("Variance Value"), "fieldname": "variance_value", "fieldtype": "Currency", "width": 120},
-		{"label": _("Average Price per Sheet"), "fieldname": "average_price", "fieldtype": "Currency", "precision": 4, "width": 110},
-		{"label": _("Margin per Sheet"), "fieldname": "margin_per_sheet", "fieldtype": "Currency", "precision": 4, "width": 110},
+def short(name):
+	"""A library without the company's abbreviation: "مكتبة المواساة - MMG" -> "مكتبة المواساة"."""
+	return (name or "").rsplit(" - ", 1)[0]
+
+
+def get_columns(filters=None):
+	"""The day as the owner reads it (the user, 11 Nov 2026: "the table is not clear, the words are cut; add the
+	morning's and the evening's readings"): the two readings, what was printed, sold and spoiled, and the value of
+	what was printed and not sold. The accountant's columns (PRN-08) come with the "Cost details" filter."""
+	columns = [
+		{"label": _("Date"), "fieldname": "reading_date", "fieldtype": "Date", "width": 125},
+		{"label": _("Library"), "fieldname": "library", "fieldtype": "Data", "width": 150},
+		{"label": _("Machine"), "fieldname": "machine", "fieldtype": "Data", "width": 170},
+		{"label": _("Morning"), "fieldname": "opening_reading", "fieldtype": "Int", "width": 110},
+		{"label": _("Evening"), "fieldname": "closing_reading", "fieldtype": "Int", "width": 110},
+		{"label": _("Printed"), "fieldname": "consumed", "fieldtype": "Int", "width": 100},
+		{"label": _("Sold"), "fieldname": "sold", "fieldtype": "Float", "precision": 1, "width": 100},
+		{"label": _("Spoiled"), "fieldname": "spoiled_sheets", "fieldtype": "Int", "width": 90},
+		{"label": _("Value Not Sold"), "fieldname": "variance_value", "fieldtype": "Currency", "width": 190},
+		{"label": _("Broke Down"), "fieldname": "fault", "fieldtype": "Data", "width": 160},
 	]
+	if cint((filters or {}).get("details")):
+		# For the accountant. "Unexplained" (printed, not sold, not said to be spoiled) and "Up Overnight" (a
+		# counter that moved between last night's reading and this morning's) said nothing to the owner (the user,
+		# 11 Nov 2026), so they are not in the short table.
+		columns += [
+			{"label": _("Unexplained"), "fieldname": "unexplained", "fieldtype": "Float", "precision": 1, "width": 140},
+			{"label": _("Up Overnight"), "fieldname": "gap", "fieldtype": "Int", "width": 120},
+			{"label": _("Utilization (%)"), "fieldname": "utilization", "fieldtype": "Percent", "width": 120},
+			{"label": _("Paper Issued for Sales"), "fieldname": "paper_issued", "fieldtype": "Int", "width": 150},
+			{"label": _("Damaged Sheets Recorded"), "fieldname": "damaged_sheets", "fieldtype": "Int", "width": 150},
+			{"label": _("Cost per Sheet"), "fieldname": "cost_per_sheet", "fieldtype": "Currency", "precision": 4, "width": 130},
+			{"label": _("Average Price per Sheet"), "fieldname": "average_price", "fieldtype": "Currency", "precision": 4, "width": 150},
+			{"label": _("Margin per Sheet"), "fieldname": "margin_per_sheet", "fieldtype": "Currency", "precision": 4, "width": 130},
+		]
+	return columns
 
 
 def get_data(filters):
@@ -50,13 +67,13 @@ def get_data(filters):
 		"Daily Counter Reading",
 		filters=conditions,
 		fields=["name", "branch", "reading_date", "total_consumed", "sold_sheets", "variance", "cost_per_sheet",
-			"variance_value", "sales_value", "average_price", "margin_per_sheet", "total_gap", "paper_issued", "damaged_sheets"],
+			"variance_value", "sales_value", "average_price", "margin_per_sheet", "total_gap", "paper_issued", "damaged_sheets", "spoiled_sheets"],
 		order_by="reading_date, branch",
 	):
 		machines = frappe.get_all(
 			"Daily Counter Reading Item",
 			filters={"parent": day.name, "parenttype": "Daily Counter Reading"},
-			fields=["machine", "machine_type", "consumed", "gap", "cost_per_sheet", "fault", "fault_note"],
+			fields=["machine", "machine_type", "consumed", "gap", "cost_per_sheet", "fault", "fault_note", "opening_reading", "closing_reading"],
 			order_by="idx",
 		)
 		printed = sum(max(cint(m.consumed), 0) for m in machines)
@@ -77,8 +94,11 @@ def get_data(filters):
 				{
 					"reading_date": day.reading_date,
 					"branch": day.branch,
+					"library": short(day.branch),
 					"machine": m.machine,
 					"machine_type": m.machine_type,
+					"opening_reading": m.opening_reading,
+					"closing_reading": m.closing_reading,
 					"consumed": m.consumed,
 					"gap": m.gap,
 					"utilization": flt(share * 100, 1),
@@ -93,8 +113,12 @@ def get_data(filters):
 			{
 				"reading_date": day.reading_date,
 				"branch": day.branch,
-				"machine": None,
+				"library": short(day.branch),
+				"machine": None,  # the screen writes "The Day's Total" here (daily_printing.js)
 				"machine_type": _("Total"),
+				"spoiled_sheets": day.spoiled_sheets,
+				# What nobody accounts for: printed, not sold, and not said to be spoiled.
+				"unexplained": flt(flt(day.variance) - cint(day.spoiled_sheets), 1),
 				"consumed": day.total_consumed,
 				"gap": day.total_gap,
 				"paper_issued": day.paper_issued,
