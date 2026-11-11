@@ -842,7 +842,7 @@ Variance Value,قيمة الفرق
 Variance x cost per printed sheet.,الفرق × تكلفة الورقة المطبوعة.
 "{0} has no paper price yet (no A4 paper received in its store), so the cost of a sheet leaves the paper out.",{0} مالهاش سعر ورق لسه (ما استلمتش ورق A4 في مخزنها)، فتكلفة الورقة محسوبة من غير الورق.
 No Paper Price,مفيش سعر ورق
-Daily Printing,طباعة اليوم
+Daily Printing,الطباعة والعدادات
 Utilization (%),نسبة التشغيل (%)
 Total,الإجمالي
 Broke Down,عطلت
@@ -2368,3 +2368,35 @@ Revenue: {0},الإيراد: {0}
 Bookings: {0},الحجوزات: {0}
 No business,بدون نشاط
 no records yet,لسه مفيش قيود
+{0}: the morning counters were recorded.,{0}: عدادات الصبح اتسجلت.
+"{0}: the day is closed, {1} sheets printed.","{0}: اليوم اتقفل، اتطبع {1} ورقة."
+Broke down: {0},عطل: {0}
+{0}: counted its store: {1},{0}: اتعمل جرد للمخزن: {1}
+Request from {0},طلب من {0}
+To be bought,هيتشترى
+From the main store,تحويل من المخزن الرئيسي
+The store's keeper approves this one.,ده بيوافق عليه أمين المخزن.
+Approved: the accountant buys it.,تمت الموافقة: المحاسب هيشتريه.
+Rejected.,اترفض.
+Reject the request,رفض الطلب
+Why?,ليه؟
+Received,اتستلم
+Printing and Counters,الطباعة والعدادات
+Spoiled Sheets,ورق باظ
+Spoiled sheets ({0}) cannot be more than the sheets printed ({1}).,الورق اللي باظ ({0}) مينفعش يبقى أكتر من الورق المطبوع ({1}).
+{0} sheets spoiled.,باظ {0} ورقة.
+Morning,قراية الصبح
+Evening,قراية آخر اليوم
+Printed,اتطبع
+Sold,اتباع
+Spoiled,باظ
+Unexplained,فرق مش متفسّر
+Its Value,قيمة الفرق
+Up Overnight,زاد بالليل
+The Day's Total,إجمالي اليوم
+Cost details,تفاصيل التكلفة
+Spoiled Paper Issue,إذن صرف الورق التالف
+Paper spoiled at the machines on {0} ({1}).,ورق باظ على المكن يوم {0} ({1}).
+"{0} has fewer sheets than the {1} spoiled on {2}. The paper issue {3} is saved as a draft for the accountant.","{0} فيه ورق أقل من الـ {1} اللي باظوا يوم {2}. إذن الصرف {3} اتحفظ مسودة للمحاسب."
+Value Not Sold,قيمة اللي ما اتباعش
+Nothing to show,مفيش حاجة تتعرض
