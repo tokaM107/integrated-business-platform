@@ -103,7 +103,13 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 					<h2>${esc(desk.library_name || desk.library)}</h2>
 					<span class="imed-library__hero-meta">${icon("calendar")}${esc(long_day())}<i></i>${icon("warehouse")}${esc(store_name(desk.store))}</span>
 				</div>
-				<span class="imed-library__hero-state tone-${state.tone}">${esc(state.text)}</span>
+				${
+					// While the day's counters are still to be read this is the way to them (it looked like a button
+					// and did nothing: the user, 11 Nov 2026); once the day is closed it only says so.
+					counted && counted.docstatus === 1
+						? `<span class="imed-library__hero-state tone-${state.tone}">${esc(state.text)}</span>`
+						: `<button type="button" class="imed-library__hero-state is-action tone-${state.tone}" data-action="counters">${esc(state.text)}</button>`
+				}
 			</section>
 			<div class="imed-library__tiles">
 				${tile("counters", "teal", "gauge", __("عدادات النهارده"), counted ? (counted.docstatus === 1 ? __("اتسجلت النهارده ✓") : __("سجّل آخر اليوم")) : __("سجّل الصبح"))}
