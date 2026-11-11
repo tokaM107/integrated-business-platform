@@ -314,9 +314,36 @@
 			if (++tries > 12) clearInterval(hide);
 		}, 150);
 	}
+	// The owner's account (Super Admin; not Administrator, who maintains the system): ERPNext's own dashboards
+	// (Buying, Stock...: English charts, a sidebar of another module, "not permitted" on their reports) and its
+	// Material Request form are not for the owner (the user, 11 Nov 2026: "a strange page the owner will not
+	// understand; the sidebar changed and there is no way back"). A dashboard of ERPNext takes the owner back to
+	// the Owner Dashboard; a request (opened from a notification) opens there in the owner's own box.
+	function owner_home_only() {
+		const roles = frappe.user_roles || [];
+		if (!roles.includes("Super Admin") || frappe.session.user === "Administrator") return;
+		const route = frappe.get_route ? frappe.get_route() : [];
+		const home = frappe.router.slug("Owner Dashboard");
+		if (route[0] === "Workspaces" && route[route.length - 1] !== "Owner Dashboard") {
+			frappe.route_flags.replace_route = true;
+			frappe.set_route(home);
+		} else if (route[0] === "Form" && route[1] === "Material Request" && route[2] && !String(route[2]).startsWith("new-")) {
+			window.imed_request_to_open = route[2];
+			frappe.route_flags.replace_route = true;
+			frappe.set_route(home).then(() => setTimeout(() => $(document).trigger("imed-open-request", [route[2]]), 600));
+		} else if (route[0] === "Workspaces" && route[route.length - 1] === "Owner Dashboard") {
+			// Back on the dashboard from a screen of another module: its own sidebar comes back with it (Frappe
+			// keeps the last module's, so the owner stood on the dashboard with the Stock sidebar beside it).
+			const sidebar = frappe.app && frappe.app.sidebar;
+			if (sidebar && sidebar.setup && frappe.boot.workspace_sidebar_item?.imederp && (sidebar.sidebar_title || "").toLowerCase() !== "imederp") {
+				sidebar.setup("ImedERP");
+			}
+		}
+	}
 	const home_only = () => {
 		library_home_only();
 		accountant_home_only();
+		owner_home_only();
 		not_mine_goes_home();
 	};
 	// Frappe fires neither event alone for every page: a page the user may not open fires no page-change.
