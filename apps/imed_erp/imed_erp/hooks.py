@@ -434,6 +434,7 @@ _custom_fields = [
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
 	"imed_erp.imederp.xstudio.fields.make_custom_fields",
+	"imed_erp.imederp.revenue_posting.make_custom_fields",
 ]
 after_install = [*_custom_fields]
 after_migrate = [
@@ -465,6 +466,9 @@ scheduler_events = {
 			# The halls' bookings and payments, read from Sparkle (imederp/sparkle/sync.py, owner, 5 Nov 2026).
 			"imed_erp.imederp.sparkle.sync.run_scheduled",
 		],
+		# What the studio (XStudio) and the libraries (their sales system) took in, written to the ledger by itself
+		# when Automatic Revenue Settings says so (imederp/revenue_posting.py); after the syncs above.
+		"5-59/15 * * * *": ["imed_erp.imederp.revenue_posting.run"],
 		# 10 pm, the site's time: the day's revenue and bookings to the owner's phone (imederp/owner_alerts.py).
 		"0 22 * * *": ["imed_erp.imederp.owner_alerts.send_daily_summary"],
 	},
