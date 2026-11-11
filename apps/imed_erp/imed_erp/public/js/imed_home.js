@@ -286,9 +286,38 @@
 			frappe.set_route("imed-accountant");
 		}
 	}
+	// Anyone who opens the address of a screen that is not theirs (a link to the Owner Dashboard sent to the
+	// accountant, or kept by the browser from the account signed in before) goes to their own first screen, instead
+	// of Frappe's "Not permitted" box on an empty page (the user, 11 Nov 2026). Only one-part addresses (a dashboard
+	// or a page); lists, forms and reports keep Frappe's own refusal. Nothing is opened here: the server still
+	// refuses the screen, this only chooses where the person stands afterwards.
+	function not_mine_goes_home() {
+		const route = frappe.get_route ? frappe.get_route() : [];
+		if (route.length !== 1 || !route[0]) return;
+		const part = route[0];
+		if ((frappe.boot.allowed_pages || []).includes(part)) return;
+		const mine = (frappe.boot.workspaces?.pages || []).map((p) => frappe.router.slug(p.name));
+		if (mine.includes(part)) return;
+		// Only an address that names a dashboard or a page of the system (imederp/home_screen.py boot_session):
+		// any other one-part address is left to Frappe.
+		if (!(frappe.boot.imed_screens || []).includes(part)) return;
+		const landing = landing_route();
+		const target = landing && landing.replace(/^\/desk\//, "");
+		if (!target || target === part) return;
+		frappe.route_flags.replace_route = true;
+		frappe.set_route(target);
+		// Frappe's refusal for the screen left behind arrives a moment later: it is not about the screen shown now.
+		let tries = 0;
+		const hide = setInterval(() => {
+			const $box = $(".msgprint-dialog.show, .modal.show").filter((i, el) => $(el).find(".msgprint").length);
+			if ($box.length && frappe.msg_dialog) frappe.msg_dialog.hide();
+			if (++tries > 12) clearInterval(hide);
+		}, 150);
+	}
 	const home_only = () => {
 		library_home_only();
 		accountant_home_only();
+		not_mine_goes_home();
 	};
 	// Frappe fires neither event alone for every page: a page the user may not open fires no page-change.
 	$(document).on("page-change", home_only);
