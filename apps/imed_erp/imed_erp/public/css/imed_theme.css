@@ -7941,3 +7941,209 @@ button.imed-library__hero-state.is-action:focus-visible {
 	outline: 2px solid #ffffff;
 	outline-offset: 2px;
 }
+
+/* The library's actions are three since 11 Nov 2026 (counters, the stock, a request): one row on a wide screen. */
+@media (min-width: 900px) {
+	.imed-library__tiles {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+/* A library's request in the owner's box (imed_owner_dashboard.js, open_request). */
+.imed-rq {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.imed-rq__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 18px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+.imed-rq__meta span {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.imed-rq__items {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	border: 1px solid var(--imed-border);
+	border-radius: 12px;
+	overflow: hidden;
+}
+.imed-rq__items li {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 14px;
+	font-size: var(--text-md);
+}
+.imed-rq__items li + li {
+	border-top: 1px solid var(--imed-border);
+}
+.imed-rq__items b {
+	color: var(--blue-600);
+	white-space: nowrap;
+}
+.imed-rq__state {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.imed-rq__state small,
+.imed-rq__note {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+/* ------------------------------------------------------------------ */
+/* Phones (the user, 11 Nov 2026: "mind the mobile; the names are cut and the figures do not show").          */
+/* ------------------------------------------------------------------ */
+/* Printing and Counters: cards on a phone, the table from a tablet up (daily_printing.js draws the cards). */
+.imed-pc-list {
+	display: none;
+}
+@media (max-width: 767.98px) {
+	.imed-print-report .imed-pc-list {
+		display: grid;
+		gap: 12px;
+		padding: 4px 2px 12px;
+	}
+	.imed-print-report .datatable,
+	.imed-print-report .report-footer {
+		display: none !important;
+	}
+}
+.imed-pc {
+	padding: 14px;
+	border: 1px solid var(--imed-border);
+	border-radius: 16px;
+	background: var(--card-bg);
+	box-shadow: 0 1px 2px rgba(16, 34, 42, 0.04);
+}
+.imed-pc header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+.imed-pc header b {
+	font-size: var(--text-lg);
+}
+.imed-pc header small,
+.imed-pc small {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+.imed-pc__sum {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin-bottom: 10px;
+}
+.imed-pc__sum div {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px 10px;
+	border-radius: 12px;
+	background: var(--gray-50);
+}
+.imed-pc__sum b {
+	color: var(--blue-600);
+	font-size: var(--text-xl);
+	direction: ltr;
+	unicode-bidi: isolate;
+	text-align: start;
+}
+.imed-pc__sum .is-loss b {
+	color: var(--red-600);
+}
+.imed-pc ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.imed-pc li {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) repeat(3, auto);
+	align-items: center;
+	gap: 12px;
+	padding: 8px 0;
+	border-top: 1px solid var(--imed-border);
+	font-size: var(--text-base);
+}
+.imed-pc__machine {
+	min-width: 0;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+.imed-pc__machine em {
+	display: block;
+	color: var(--red-600);
+	font-size: var(--text-xs);
+	font-style: normal;
+	font-weight: 500;
+}
+.imed-pc__read {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	font-variant-numeric: tabular-nums;
+}
+.imed-pc__read.is-printed {
+	color: var(--imed-teal-700);
+	font-weight: 700;
+}
+.imed-pc-empty {
+	margin: 0;
+	padding: 24px 0;
+	color: var(--text-muted);
+	text-align: center;
+}
+
+@media (max-width: 560px) {
+	/* The owner's day: the four businesses two by two, so a name and a figure have room ("المواساة" was cut
+	   and a real amount did not fit a quarter of the screen). */
+	.imed-pd-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px;
+	}
+	.imed-pd-card {
+		padding: 14px 10px;
+	}
+	.imed-pd-card .imed-pd-num,
+	.imed-pd-band.is-today .imed-pd-card .imed-pd-num {
+		font-size: 26px;
+		overflow-wrap: anywhere;
+	}
+	/* The money cards: two in a row, the figure never cut. */
+	body[data-route="Workspaces/Owner Dashboard"] .codex-editor__redactor > .ce-block:has(.imed-dash-card) {
+		flex: 0 0 50%;
+		max-width: 50%;
+	}
+	body[data-route="Workspaces/Owner Dashboard"] .imed-dash-card .widget-content .number {
+		font-size: 17px;
+		overflow-wrap: anywhere;
+	}
+	/* The welcome: the bell keeps its place beside a shorter greeting. */
+	body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome h1 {
+		font-size: var(--text-2xl);
+	}
+}
+/* The accountant's list of what waits: a row is as wide as the phone, its words wrap (they ran off the edge). */
+.imed-accountant__tasks {
+	grid-template-columns: minmax(0, 1fr);
+}
+.imed-accountant__task-text,
+.imed-accountant__task-text * {
+	min-width: 0;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
