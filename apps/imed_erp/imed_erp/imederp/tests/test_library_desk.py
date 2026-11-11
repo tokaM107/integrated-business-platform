@@ -92,6 +92,20 @@ class IntegrationTestLibraryDesk(IntegrationTestCase):
 		self.assertEqual((doc.material_request_type, doc.docstatus, doc.custom_approval_status, doc.items[0].qty, doc.items[0].warehouse), ("Purchase", 0, "Pending Approval", 4, STORE))
 		self.assertIn(asked["request"], [r["name"] for r in desk.get_desk()["requests"]])
 
+	def test_asking_for_more_says_what_is_left_and_the_store_follows(self):
+		"""Nobody records what finishes day by day; the request carries what is left, and the store is put right."""
+		frappe.set_user(ACCOUNT)
+		desk.count({INK: 5})
+		asked = desk.ask_for(INK, 4, None, 1)
+		self.assertTrue(asked["count"])
+		self.assertEqual(self.held(), 1)
+		# The same quantity again changes nothing: no second count.
+		self.assertIsNone(desk.ask_for(INK, 2, None, 1)["count"])
+		# Left blank (an old screen, a direct call): the request alone, as before.
+		self.assertIsNone(desk.ask_for(INK, 2)["count"])
+		self.assertEqual(self.held(), 1)
+		self.assertRaises(frappe.ValidationError, desk.ask_for, INK, 2, None, -1)
+
 	def test_the_account_sees_no_money_and_no_other_library(self):
 		frappe.set_user(ACCOUNT)
 		for doctype in ("Sales Invoice", "GL Entry", "Payment Entry", "Expense", "Treasury Close", "Journal Entry", "Stock Entry", "Account"):
