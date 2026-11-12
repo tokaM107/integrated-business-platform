@@ -1096,8 +1096,11 @@
 		const base = 280;
 		const top_y = 50;
 		const top = Math.max(1, ...months.map((m) => Math.max(m.income, m.fixed)));
-		const step = Math.pow(10, Math.floor(Math.log10(top)));
-		const ceil = Math.ceil(top / step) * step;
+		// Four round steps up to just above the largest month (30k, 60k, 90k, 120k), as in the approved design.
+		const raw = top / 4;
+		const power = Math.pow(10, Math.floor(Math.log10(raw)));
+		const nice = [1, 2, 2.5, 3, 5, 10].map((f) => f * power).find((s) => s >= raw) || 10 * power;
+		const ceil = nice * 4;
 		const y = (v) => base - (Math.max(0, v) / ceil) * (base - top_y);
 		const slot_w = (W - left - right) / months.length;
 		const x = (i) => left + slot_w * i + slot_w / 2;
@@ -1111,7 +1114,9 @@
 			.map((m, i) => {
 				const h = base - y(m.income);
 				const tone = COVER_TONE[m.state] || COVER_TONE.none;
-				const label_inside = m.fixed && Math.abs(y(m.income) - y(m.fixed)) < 22 && h > 30;
+				// The percentage sits above its bar, inside it only where the line would cross it there.
+				const gap = y(m.income) - y(m.fixed);
+				const label_inside = m.fixed && gap > 0 && gap < 24 && h > 30;
 				const pct = m.ratio === null || m.ratio === undefined ? "" : `${m.ratio}%`;
 				const title = `${m.label}: ${__("الدخل")} ${whole(m.income, c)} · ${__("المصاريف الثابتة")} ${whole(m.fixed, c)}`;
 				return `<g class="imed-cover__bar" style="--i:${i}"><title>${esc(title)}</title>
@@ -1134,7 +1139,7 @@
 		if (!cover || !$slot.length) return;
 		const c = cover.currency;
 		const items = (cover.detail.items || [])
-			.map((it) => `<span>${esc(it.label)} <b>${whole(it.value, c)}</b></span>`)
+			.map((it) => `<span>${esc(it.label)} <b>${format_number(it.value, null, 0)}</b></span>`)
 			.join("");
 		$slot.html(`<section class="imed-cover">
 				<header class="imed-cover__head">
