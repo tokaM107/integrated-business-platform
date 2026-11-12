@@ -58,16 +58,18 @@
 		// Before the workspace's editor, not among its blocks, so its edit mode is untouched.
 		const $editor = $page.find(".codex-editor").first();
 		if (!$editor.length) return;
-		const [hello, icon] = greeting();
+		const [hello] = greeting();
 		const name = (frappe.session.user_fullname || "").trim();
-		const today = new Date().toLocaleDateString(frappe.boot.lang || "en", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-		$(`<div class="imed-dash-welcome">
+		const today = new Date().toLocaleDateString(frappe.boot.lang || "en", { weekday: "long", day: "numeric", month: "long" });
+		// The design the owner chose (12 Nov 2026): his initial in a green square, the greeting and the day, and on
+		// the other side a pill saying whether anything waits for his approval (mark_approvals fills it).
+		$(`<div class="imed-dash-welcome is-v2">
+				<span class="imed-dash-welcome__avatar" aria-hidden="true">${esc((name || hello).charAt(0))}</span>
 				<div class="imed-dash-welcome__text">
-					<div class="imed-dash-welcome__date">${frappe.utils.icon(icon, "sm")}<span>${esc(today)}</span></div>
 					<h1>${esc(name ? __("{0}, {1}", [hello, name]) : hello)}</h1>
-					<p class="imed-dash-welcome__note"></p>
+					<div class="imed-dash-welcome__date"><span>${esc(today)}</span></div>
 				</div>
-				<div class="imed-dash-welcome__art" aria-hidden="true">${frappe.utils.icon("piggy-bank", "lg")}</div>
+				<p class="imed-dash-welcome__note"></p>
 			</div>`).insertBefore($page.find(".imed-slot-top").first().length ? $page.find(".imed-slot-top").first() : $editor);
 	}
 
@@ -155,8 +157,8 @@
 			? ""
 			: waiting
 			? __("{0} waiting for your approval.", [waiting])
-			: __("Nothing waits for your approval. Here is where the money stands.");
-		$page.find(".imed-dash-welcome__note").text(note);
+			: "✓ " + __("مفيش حاجة مستنية موافقتك");
+		$page.find(".imed-dash-welcome__note").text(note).toggleClass("is-waiting", waiting > 0);
 	}
 
 	// ---------------- Yesterday (requirements 5.1; imederp/owner_yesterday.py) ----------------
@@ -773,6 +775,36 @@
 			</div>`;
 	}
 
+	// Today as the owner chose it (12 Nov 2026): four cards in the site's greens, each with its logo and name, the
+	// day's money large and what was done under it; the libraries Azarita and Mawasah side by side. Each card, and
+	// each library, opens the records behind its figure.
+	function today_tile(b, p, i) {
+		const a = b.activity || {};
+		const pounds = `<small>${esc(__("ج"))}</small>`;
+		let body = "";
+		if (b.key === "studio" || b.key === "halls") {
+			const money = b.key === "studio" ? a.paid : a.value;
+			body = `<div class="imed-td-big">${big(money)} ${pounds}</div>
+				<div class="imed-td-sub">${esc(__("{0} حجوزات", [number(a.bookings)]))} · ${esc(hours_text(a.hours))}</div>`;
+		} else if (b.key === "libraries") {
+			body = `<div class="imed-td-two">${(a.rows || [])
+				.map(
+					(r) => `<div ${r.cost_center ? link_attr(route_for("libraries", p, r.cost_center)) : ""}><small>${esc(r.name.replace(/^مكتبة\s+/, ""))}</small>${big(r.net)}</div>`
+				)
+				.join("")}</div>
+				<div class="imed-td-sub">${esc(__("جنيه النهارده"))}</div>`;
+		} else {
+			body =
+				a.state === "ok"
+					? `<div class="imed-td-big">${big(a.charged)} ${pounds}</div><div class="imed-td-sub">${esc(__("{0} اشتراكات جديدة", [number(a.subscriptions)]))}</div>`
+					: `<div class="imed-td-big"><b class="imed-pd-num">—</b></div><div class="imed-td-sub">${esc(__("لسه مش متظبط"))}</div>`;
+		}
+		return `<div class="imed-td-tile is-${b.key}" style="--i:${i}" ${link_attr(route_for(b.key, p))}>
+				<div class="imed-td-top">${logo(b, "imed-td-logo")}<span>${esc(b.label)}</span></div>
+				${body}
+			</div>`;
+	}
+
 	// Tomorrow's bookings, the halls' and the studio's side by side (the owner, 9 Nov 2026).
 	function tomorrow_html(t) {
 		if (!t) return "";
@@ -890,6 +922,12 @@
 	// A period's band: today's cards, the week's bars or the month's comparison.
 	function band_html(p, n, c) {
 		const icons = { today: "sun", week: "calendar-range", month: "calendar-days" };
+		// Today: the four green cards straight under the greeting, which says the day (the owner's design, 12 Nov 2026).
+		if (p.key === "today") {
+			return `<section class="imed-pd-band is-today is-v2" style="--n:${n}">
+					<div class="imed-td-grid">${p.businesses.map((b, i) => today_tile(b, p, i)).join("")}</div>
+				</section>`;
+		}
 		const from = frappe.datetime.str_to_user(p.from);
 		const to = frappe.datetime.str_to_user(p.to);
 		const body =

@@ -7729,3 +7729,276 @@ html[dir="ltr"] .imed-mo-track i {
 		font-size: 18px;
 	}
 }
+
+/* §47 The owner's greeting and today, as he chose them (12 Nov 2026; imed_owner_dashboard.js add_welcome,
+   today_tile): his initial in a green square, the greeting and the day, a pill for what waits for his approval;
+   then four cards in the site's greens (studio, halls, libraries, app), the day's money large and white, what was
+   done under it. Two to a row on a phone. */
+.imed-dash-welcome.is-v2 {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 14px 16px;
+	margin: 8px 0 18px;
+	padding: 0;
+	border-radius: 0;
+	background: none !important;
+	box-shadow: none !important;
+	color: var(--heading-color);
+	overflow: visible;
+}
+.imed-dash-welcome.is-v2 .imed-dash-welcome__avatar {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 58px;
+	height: 58px;
+	border-radius: 18px;
+	background: linear-gradient(135deg, #0b4f4a, #0f766e);
+	color: #ffffff;
+	font-size: 24px;
+	font-weight: 900;
+}
+.imed-dash-welcome.is-v2 h1 {
+	margin: 0;
+	color: var(--heading-color);
+	font-size: 26px;
+	font-weight: 900;
+}
+.imed-dash-welcome.is-v2 .imed-dash-welcome__date {
+	display: block;
+	padding: 0;
+	background: none;
+	color: var(--text-muted);
+	font-size: var(--text-base);
+}
+.imed-dash-welcome.is-v2 .imed-dash-welcome__note {
+	margin: 0;
+	margin-inline-start: auto;
+	padding: 8px 16px;
+	border: 1px solid var(--imed-border);
+	border-radius: 999px;
+	background: var(--card-bg);
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 700;
+}
+.imed-dash-welcome.is-v2 .imed-dash-welcome__note:empty {
+	display: none;
+}
+.imed-dash-welcome.is-v2 .imed-dash-welcome__note.is-waiting {
+	border-color: #f59e0b;
+	background: #fff7e6;
+	color: #92400e;
+}
+
+.imed-pd-band.is-today.is-v2 {
+	margin: 0 0 8px;
+	padding: 0;
+	border: 0;
+	background: none;
+}
+.imed-td-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 16px;
+}
+.imed-td-tile {
+	position: relative;
+	overflow: hidden;
+	min-height: 200px;
+	padding: 20px;
+	border-radius: 24px;
+	background:
+		radial-gradient(220px 140px at 0% 0%, rgba(255, 255, 255, 0.22), transparent 70%),
+		linear-gradient(150deg, var(--c1), var(--c2));
+	color: #ffffff;
+	cursor: pointer;
+	box-shadow: 0 22px 34px -26px var(--c2);
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+	animation: imed-rise 0.5s ease both;
+	animation-delay: calc(var(--i, 0) * 0.08s);
+}
+.imed-td-tile::after {
+	content: "";
+	position: absolute;
+	inset-inline-end: -40px;
+	bottom: -60px;
+	width: 170px;
+	height: 170px;
+	border: 24px solid rgba(255, 255, 255, 0.08);
+	border-radius: 50%;
+	pointer-events: none;
+}
+.imed-td-tile:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 28px 40px -26px var(--c2);
+}
+.imed-td-tile.is-studio {
+	--c1: #2bb3a3;
+	--c2: #0b5d57;
+}
+.imed-td-tile.is-halls {
+	--c1: #3fa37a;
+	--c2: #14532d;
+}
+.imed-td-tile.is-libraries {
+	--c1: #22a3a8;
+	--c2: #0e4f5c;
+}
+.imed-td-tile.is-app {
+	--c1: #5b9f8e;
+	--c2: #1f4d43;
+}
+.imed-td-top {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+	font-weight: 800;
+}
+.imed-td-logo {
+	flex: none;
+	width: 42px;
+	height: 42px;
+	border-radius: 13px;
+	object-fit: cover;
+	box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.35);
+}
+.imed-td-logo.is-icon {
+	display: grid;
+	place-items: center;
+	background: rgba(255, 255, 255, 0.18);
+}
+.imed-td-logo.is-icon .icon {
+	stroke: #ffffff;
+}
+.imed-td-big {
+	position: relative;
+	z-index: 1;
+	margin-top: 22px;
+	line-height: 1;
+}
+.imed-td-big .imed-pd-num {
+	color: #ffffff;
+	font-size: 44px;
+	font-weight: 900;
+	font-variant-numeric: tabular-nums;
+}
+.imed-td-big small {
+	font-size: 16px;
+	font-weight: 700;
+	opacity: 0.85;
+}
+.imed-td-sub {
+	position: relative;
+	z-index: 1;
+	margin-top: 8px;
+	font-size: 14px;
+	opacity: 0.9;
+}
+.imed-td-two {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	gap: 12px;
+	margin-top: 16px;
+}
+.imed-td-two > div {
+	flex: 1;
+	min-width: 0;
+	padding: 8px 12px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.16);
+}
+.imed-td-two small {
+	display: block;
+	font-size: 12px;
+	opacity: 0.85;
+}
+.imed-td-two .imed-pd-num {
+	color: #ffffff;
+	font-size: 24px;
+	font-weight: 900;
+	font-variant-numeric: tabular-nums;
+}
+@media (max-width: 991px) {
+	.imed-td-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+@media (max-width: 640px) {
+	.imed-dash-welcome.is-v2 {
+		gap: 10px;
+	}
+	.imed-dash-welcome.is-v2 .imed-dash-welcome__avatar {
+		width: 44px;
+		height: 44px;
+		border-radius: 14px;
+		font-size: 19px;
+	}
+	.imed-dash-welcome.is-v2 h1 {
+		font-size: 20px;
+	}
+	.imed-dash-welcome.is-v2 .imed-dash-welcome__date {
+		font-size: 13px;
+	}
+	.imed-dash-welcome.is-v2 .imed-dash-welcome__note {
+		width: 100%;
+		margin-inline-start: 0;
+		text-align: center;
+		font-size: 13px;
+	}
+	.imed-td-grid {
+		gap: 10px;
+	}
+	.imed-td-tile {
+		min-height: 150px;
+		padding: 13px;
+		border-radius: 20px;
+	}
+	.imed-td-top {
+		gap: 7px;
+		font-size: 13px;
+	}
+	.imed-td-logo {
+		width: 30px;
+		height: 30px;
+		border-radius: 9px;
+	}
+	.imed-td-big {
+		margin-top: 16px;
+	}
+	.imed-td-big .imed-pd-num {
+		font-size: 28px;
+	}
+	.imed-td-big small {
+		font-size: 12px;
+	}
+	.imed-td-sub {
+		margin-top: 6px;
+		font-size: 12px;
+	}
+	.imed-td-two {
+		gap: 6px;
+		margin-top: 12px;
+	}
+	.imed-td-two > div {
+		padding: 5px 7px;
+	}
+	.imed-td-two small {
+		font-size: 10px;
+	}
+	.imed-td-two .imed-pd-num {
+		font-size: 16px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.imed-td-tile {
+		animation: none;
+		transition: none;
+	}
+}
