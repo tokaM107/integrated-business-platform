@@ -871,7 +871,7 @@
 		const c = by_period.currency;
 		$slot.html(
 			by_period.periods
-				.map((p, n) => (n === 1 ? tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
+				.map((p, n) => (n === 1 ? `<div data-slot="cover"></div>` + tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
 				.join("")
 		);
 		// The innermost link wins: a day's bar before its week, a library before the libraries' card.
@@ -884,6 +884,7 @@
 		};
 		$slot.off("click keydown").on("click keydown", "[data-route]", go);
 		count_up($slot);
+		render_cover($page);
 	}
 
 	// A period's band: today's cards, the week's bars or the month's comparison.
@@ -1077,6 +1078,94 @@
 		);
 	}
 
+	// ---- Does the month's income cover the fixed expenses? (the owner, 12 Nov 2026), under today ----
+	// Each month a bar of its income, coloured: green passed the fixed expenses, yellow covers them just, red does not;
+	// a dashed line the fixed expenses of each month; under it, the fixed expenses item by item (owner_cover.py).
+	let cover = null;
+	let cover_at = 0;
+	let cover_busy = false;
+	const COVER_TONE = { green: "#16a34a", yellow: "#d97706", red: "#dc2626", none: "#94a3b8" };
+
+	function cover_chart(months, c) {
+		// A narrower drawing on a phone, so its words and numbers keep a readable size once scaled to the screen.
+		const phone = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+		const W = phone ? 560 : 1040;
+		const H = 330;
+		const left = phone ? 52 : 70;
+		const right = 20;
+		const base = 280;
+		const top_y = 50;
+		const top = Math.max(1, ...months.map((m) => Math.max(m.income, m.fixed)));
+		const step = Math.pow(10, Math.floor(Math.log10(top)));
+		const ceil = Math.ceil(top / step) * step;
+		const y = (v) => base - (Math.max(0, v) / ceil) * (base - top_y);
+		const slot_w = (W - left - right) / months.length;
+		const x = (i) => left + slot_w * i + slot_w / 2;
+		const bar_w = Math.min(64, slot_w * 0.5);
+		const short = (v) => (v >= 1000 ? `${Number((v / 1000).toFixed(v % 1000 ? 1 : 0))}k` : `${Math.round(v)}`);
+		const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * ceil);
+		const grid = ticks
+			.map((t) => `<line x1="${left}" y1="${y(t)}" x2="${W - right}" y2="${y(t)}" stroke="var(--imed-border, #e8edf0)"/><text x="${left - 10}" y="${y(t) + 4}" text-anchor="end" class="imed-cover__axis">${short(t)}</text>`)
+			.join("");
+		const bars = months
+			.map((m, i) => {
+				const h = base - y(m.income);
+				const tone = COVER_TONE[m.state] || COVER_TONE.none;
+				const label_inside = m.fixed && Math.abs(y(m.income) - y(m.fixed)) < 22 && h > 30;
+				const pct = m.ratio === null || m.ratio === undefined ? "" : `${m.ratio}%`;
+				const title = `${m.label}: ${__("الدخل")} ${whole(m.income, c)} · ${__("المصاريف الثابتة")} ${whole(m.fixed, c)}`;
+				return `<g class="imed-cover__bar" style="--i:${i}"><title>${esc(title)}</title>
+						<rect x="${x(i) - bar_w / 2}" y="${y(m.income)}" width="${bar_w}" height="${Math.max(h, 0)}" rx="8" fill="${tone}" ${m.current ? `stroke="#0f3d2e" stroke-width="2"` : ""}/>
+						${pct ? `<text x="${x(i)}" y="${label_inside ? y(m.income) + 20 : y(m.income) - 8}" text-anchor="middle" class="imed-cover__pct" fill="${label_inside ? "#fff" : tone}">${pct}</text>` : ""}
+						<text x="${x(i)}" y="${base + 26}" text-anchor="middle" class="imed-cover__month ${m.current ? "is-now" : ""}">${esc(phone ? m.label.slice(0, 3) : m.label)}${m.current && !phone ? ` (${esc(__("لحد النهارده"))})` : ""}</text>
+					</g>`;
+			})
+			.join("");
+		const line = months.map((m, i) => `${x(i)},${y(m.fixed)}`).join(" ");
+		const dots = months.map((m, i) => `<circle cx="${x(i)}" cy="${y(m.fixed)}" r="4" fill="#334155"/>`).join("");
+		return `<svg class="imed-cover__chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(__("الدخل قصاد المصاريف الثابتة، شهر بشهر"))}">
+				${grid}${bars}
+				<polyline fill="none" stroke="#334155" stroke-width="3" stroke-dasharray="7 6" points="${line}"/>${dots}
+			</svg>`;
+	}
+
+	function render_cover($page) {
+		const $slot = $page.find('[data-slot="cover"]').first();
+		if (!cover || !$slot.length) return;
+		const c = cover.currency;
+		const items = (cover.detail.items || [])
+			.map((it) => `<span>${esc(it.label)} <b>${whole(it.value, c)}</b></span>`)
+			.join("");
+		$slot.html(`<section class="imed-cover">
+				<header class="imed-cover__head">
+					<h2>${esc(__("الدخل قصاد المصاريف الثابتة، شهر بشهر"))}</h2>
+				</header>
+				<p class="imed-cover__sub">${esc(__("كل عمود هو دخل الشهر، ولونه على حسب عدّى المصاريف الثابتة، ولا غطّاها على القد، ولا مغطّاهاش. الخط المتقطع هو المصاريف الثابتة بتاعة نفس الشهر."))}</p>
+				<div class="imed-cover__legend">
+					<span><i style="background:${COVER_TONE.green}"></i>${esc(__("عدّى المصاريف الثابتة"))}</span>
+					<span><i style="background:${COVER_TONE.yellow}"></i>${esc(__("مغطّيها على القد"))}</span>
+					<span><i style="background:${COVER_TONE.red}"></i>${esc(__("مغطّاهاش"))}</span>
+					<span><i class="is-line"></i>${esc(__("المصاريف الثابتة"))}</span>
+				</div>
+				${cover_chart(cover.months, c)}
+				${
+					items
+						? `<div class="imed-cover__items"><small>${esc(__("المصاريف الثابتة لشهر {0}", [cover.detail.month]))}</small>${items}</div>`
+						: `<p class="imed-cover__sub">${esc(__("مفيش مصاريف ثابتة متسجلة لسه."))}</p>`
+				}
+				${cover.now.estimated ? `<p class="imed-cover__note">${esc(__("مصاريف الشهر ده الثابتة متقدّرة من متوسط آخر ٣ شهور، لحد ما فواتيره تتسجل."))}</p>` : ""}
+			</section>`);
+	}
+
+	function add_cover($page) {
+		if ($page.find('[data-slot="cover"] .imed-cover').length && Date.now() - cover_at < REFRESH_MS) return;
+		fetch_once(
+			{ at: () => cover_at, data: () => cover, busy: () => cover_busy, set_busy: (v) => (cover_busy = v), set: (d) => ((cover = d), (cover_at = Date.now())) },
+			"imed_erp.imederp.owner_cover.get_cover",
+			() => render_cover(page_now())
+		);
+	}
+
 	function decorate() {
 		if (!on_dashboard()) return;
 		const $page = $(".page-container:visible .layout-main-section, .page-container:visible").first();
@@ -1085,6 +1174,7 @@
 		// The slots, with their shimmer, before any answer comes.
 		if (is_owner()) slot($page, "periods");
 		add_periods($page);
+		add_cover($page);
 		add_boxes($page);
 		add_overview($page);
 		add_yesterday($page);
