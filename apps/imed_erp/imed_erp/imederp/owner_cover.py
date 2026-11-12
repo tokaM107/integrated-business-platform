@@ -143,6 +143,34 @@ def by_account(start, end, accounts):
 	)
 
 
+def income_by_month(start, end):
+	"""{first day of the month: the money the group took in}: the ledger's income, and what the studio (XStudio) and
+	the libraries (their sales system) took in that is not posted to the ledger yet (the owner, 12 Nov 2026: "money
+	not counted": with Automatic Revenue Settings off, only the halls' Sparkle payments were in the ledger). The
+	same targets Automatic Revenue Settings posts (revenue_posting.py), less what each has posted already, so a
+	sum is never counted twice, whether the posting is on or off."""
+	from imed_erp.imederp import revenue_posting as rp
+
+	income = {month: -value for month, value in by_month(start, end, root_type="Income").items()}
+	posted = dict(
+		frappe.db.sql(
+			f"""select j.`{rp.KEY}`, sum(a.credit_in_account_currency - a.debit_in_account_currency)
+			from `tabJournal Entry` j join `tabJournal Entry Account` a on a.parent = j.name
+			join `tabAccount` acc on acc.name = a.account and acc.root_type = 'Income'
+			where j.docstatus = 1 and ifnull(j.`{rp.KEY}`, '') != ''
+			group by j.`{rp.KEY}`"""
+		)
+	)
+	for target in rp.studio_targets(start) + rp.library_targets(start):
+		left = flt(target["amount"]) - flt(posted.get(target["key"]))
+		day = getdate(target["date"])
+		if not left or day > getdate(end):
+			continue
+		month = str(get_first_day(day))
+		income[month] = flt(income.get(month)) + left
+	return income
+
+
 def planned():
 	"""The fixed expenses paid every month, as the owner and the accountant keep them in Recurring Expense (the
 	owner, 12 Nov 2026: salaries 70,000, the centre's and the studio's rent 46,000, Azarita's 15,000, electricity
@@ -158,7 +186,7 @@ def cover(today=None):
 	this_month = get_first_day(today)
 	first = get_first_day(add_months(this_month, -MONTHS_BACK))
 	accounts = fixed_accounts()
-	income = by_month(first, today, root_type="Income")
+	income = income_by_month(first, today)
 	fixed = by_month(first, today, accounts=[a.name for a in accounts])
 	bills = planned()
 	monthly = flt(sum(b["value"] for b in bills), 2)
@@ -171,7 +199,7 @@ def cover(today=None):
 			frappe._dict(
 				month=key,
 				label=AR_MONTHS[month.month - 1],
-				income=flt(-income.get(key, 0), 2),
+				income=flt(income.get(key, 0), 2),
 				posted=posted,
 				# What a month's fixed expenses are: what the ledger holds, or the monthly bills when more (bills not
 				# all entered every month, so the ledger alone made a month look covered).
