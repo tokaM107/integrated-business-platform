@@ -922,20 +922,15 @@
 	// A period's band: today's cards, the week's bars or the month's comparison.
 	function band_html(p, n, c) {
 		const icons = { today: "sun", week: "calendar-range", month: "calendar-days" };
-		// Today: the four green cards straight under the greeting, which says the day (the owner's design, 12 Nov 2026).
-		if (p.key === "today") {
-			return `<section class="imed-pd-band is-today is-v2" style="--n:${n}">
-					<div class="imed-td-grid">${p.businesses.map((b, i) => today_tile(b, p, i)).join("")}</div>
-				</section>`;
-		}
 		const from = frappe.datetime.str_to_user(p.from);
 		const to = frappe.datetime.str_to_user(p.to);
+		// Today: the four green cards, inside today's own box with its live dot and date (the owner, 12 Nov 2026).
 		const body =
 			p.key === "week"
 				? week_html(p, c)
 				: p.key === "month"
 				? month_html(p, c)
-				: `<div class="imed-pd-grid">${p.businesses.map((b, i) => period_card(b, p, c, i)).join("")}</div>`;
+				: `<div class="imed-td-grid">${p.businesses.map((b, i) => today_tile(b, p, i)).join("")}</div>`;
 		return `<section class="imed-pd-band is-${p.key}" style="--n:${n}">
 				<header class="imed-pd-band__head">
 					<h2>${p.key === "today" ? `<span class="imed-live" aria-hidden="true"></span>` : frappe.utils.icon(icons[p.key], "sm")}<span>${esc(p.label)}</span></h2>

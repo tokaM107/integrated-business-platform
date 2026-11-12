@@ -7793,12 +7793,6 @@ html[dir="ltr"] .imed-mo-track i {
 	color: #92400e;
 }
 
-.imed-pd-band.is-today.is-v2 {
-	margin: 0 0 8px;
-	padding: 0;
-	border: 0;
-	background: none;
-}
 .imed-td-grid {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
