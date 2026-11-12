@@ -26,12 +26,39 @@ GREEN_FROM, YELLOW_FROM = 1.10, 1.00
 AR_MONTHS = ("يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر")
 
 
+# The same accounts by ERPNext's English names (a site whose chart was not renamed), and words that name a fixed
+# expense in an account of its own (an account made later: "إيجار المقر", "كهرباء القاعات"...).
+FIXED_ENGLISH = ("Office Rent", "Utility Expenses", "Salary")
+FIXED_WORDS = ("إيجار", "ايجار", "رواتب", "مرتبات", "أجور", "كهرب", "مياه", "مياة", "غاز", "إنترنت", "انترنت", "مرافق", "اشتراك", "سيرفر", "Rent", "Salar", "Wage", "Electric", "Water", "Internet", "Utilit", "Subscription", "Server")
+# The expense categories of the fixed expenses (setup_expenses.py): theirs and their sub-categories' accounts.
+FIXED_CATEGORIES = ("الإيجار", "المرافق", "الرواتب والأجور", "الاشتراكات والسيرفرات") + UTILITY_BILLS
+
+
 def fixed_accounts():
-	return frappe.get_all(
+	"""The fixed expenses' accounts, found three ways so none is missed (the owner, 12 Nov 2026: a month showed green
+	that did not cover them): by name (Arabic or English), by a word in an account's own name, and by the expense
+	categories of rent, utilities, salaries and subscriptions, with the categories under them."""
+	accounts = frappe.get_all(
 		"Account",
-		filters={"company": COMPANY, "is_group": 0, "root_type": "Expense", "account_name": ["in", FIXED_ACCOUNTS]},
+		filters={"company": COMPANY, "is_group": 0, "root_type": "Expense"},
 		fields=["name", "account_name"],
 	)
+	names = set()
+	for a in accounts:
+		label = a.account_name or ""
+		if label in FIXED_ACCOUNTS or label in FIXED_ENGLISH or any(w.lower() in label.lower() for w in FIXED_WORDS):
+			names.add(a.name)
+	for category in FIXED_CATEGORIES:
+		bounds = frappe.db.get_value("Expense Category", category, ["lft", "rgt"])
+		if not bounds or not bounds[0]:
+			continue
+		names.update(
+			a
+			for a in frappe.get_all("Expense Category", filters={"lft": [">=", bounds[0]], "rgt": ["<=", bounds[1]]}, pluck="expense_account")
+			if a
+		)
+	by_name = {a.name: a for a in accounts}
+	return [by_name[n] for n in sorted(names) if n in by_name]
 
 
 def by_month(start, end, accounts=None, root_type=None):
@@ -63,8 +90,9 @@ def by_month(start, end, accounts=None, root_type=None):
 
 
 def state(income, fixed):
+	# No fixed expenses recorded for the month: nothing to compare with, so no colour (it showed green before).
 	if fixed <= 0:
-		return "green" if income > 0 else "none"
+		return "none"
 	ratio = income / fixed
 	if ratio > GREEN_FROM:
 		return "green"

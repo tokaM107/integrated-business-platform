@@ -1283,6 +1283,7 @@
 					<span><i style="background:${COVER_TONE.green}"></i>${esc(__("عدّى المصاريف الثابتة"))}</span>
 					<span><i style="background:${COVER_TONE.yellow}"></i>${esc(__("مغطّيها على القد"))}</span>
 					<span><i style="background:${COVER_TONE.red}"></i>${esc(__("مغطّاهاش"))}</span>
+					${cover.months.some((m) => m.state === "none" && m.income) ? `<span><i style="background:${COVER_TONE.none}"></i>${esc(__("مفيش مصاريف ثابتة متسجلة"))}</span>` : ""}
 					<span><i class="is-line"></i>${esc(__("المصاريف الثابتة"))}</span>
 				</div>
 				${cover_chart(cover.months, c)}
