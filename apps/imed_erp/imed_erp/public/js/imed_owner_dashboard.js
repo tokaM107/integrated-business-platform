@@ -802,7 +802,11 @@
 		const pounds = `<small>${esc(__("ج"))}</small>`;
 		let body = "";
 		if (b.key === "studio" || b.key === "halls") {
-			const money = b.key === "studio" ? a.paid : a.value;
+			// The money that came in today: the ledger's revenue of the business (the halls' Sparkle payments are posted
+			// on the day they were paid; the studio's XStudio payments once Automatic Revenue Settings posts them).
+			// Only while the ledger has none, the booking system's own figure for today's bookings (the owner, 12 Nov
+			// 2026: "the studio's and the halls' money does not show although the bookings do").
+			const money = Number(b.revenue) || (b.key === "studio" ? a.paid : a.value);
 			body = `<div class="imed-td-big">${big(money)} ${pounds}</div>
 				<div class="imed-td-sub">${esc(__("{0} حجوزات", [number(a.bookings)]))} · ${esc(hours_text(a.hours))}</div>`;
 		} else if (b.key === "libraries") {
