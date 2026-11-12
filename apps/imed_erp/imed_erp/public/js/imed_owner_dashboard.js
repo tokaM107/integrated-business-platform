@@ -58,16 +58,18 @@
 		// Before the workspace's editor, not among its blocks, so its edit mode is untouched.
 		const $editor = $page.find(".codex-editor").first();
 		if (!$editor.length) return;
-		const [hello, icon] = greeting();
+		const [hello] = greeting();
 		const name = (frappe.session.user_fullname || "").trim();
-		const today = new Date().toLocaleDateString(frappe.boot.lang || "en", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-		$(`<div class="imed-dash-welcome">
+		const today = new Date().toLocaleDateString(frappe.boot.lang || "en", { weekday: "long", day: "numeric", month: "long" });
+		// The design the owner chose (12 Nov 2026): his initial in a green square, the greeting and the day, and on
+		// the other side a pill saying whether anything waits for his approval (mark_approvals fills it).
+		$(`<div class="imed-dash-welcome is-v2">
+				<span class="imed-dash-welcome__avatar" aria-hidden="true">${esc((name || hello).charAt(0))}</span>
 				<div class="imed-dash-welcome__text">
-					<div class="imed-dash-welcome__date">${frappe.utils.icon(icon, "sm")}<span>${esc(today)}</span></div>
 					<h1>${esc(name ? __("{0}, {1}", [hello, name]) : hello)}</h1>
-					<p class="imed-dash-welcome__note"></p>
+					<div class="imed-dash-welcome__date"><span>${esc(today)}</span></div>
 				</div>
-				<div class="imed-dash-welcome__art" aria-hidden="true">${frappe.utils.icon("piggy-bank", "lg")}</div>
+				<p class="imed-dash-welcome__note"></p>
 				<button type="button" class="imed-dash-welcome__bell" title="${esc(__("Notifications"))}" aria-label="${esc(__("Notifications"))}">${frappe.utils.icon("bell", "md")}</button>
 			</div>`).insertBefore($page.find(".imed-slot-top").first().length ? $page.find(".imed-slot-top").first() : $editor);
 		setup_bell($page.find(".imed-dash-welcome__bell"));
@@ -174,8 +176,8 @@
 			? ""
 			: waiting
 			? __("{0} waiting for your approval.", [waiting])
-			: __("Nothing waits for your approval. Here is where the money stands.");
-		$page.find(".imed-dash-welcome__note").text(note);
+			: "✓ " + __("مفيش حاجة مستنية موافقتك");
+		$page.find(".imed-dash-welcome__note").text(note).toggleClass("is-waiting", waiting > 0);
 	}
 
 	// ---------------- Yesterday (requirements 5.1; imederp/owner_yesterday.py) ----------------
@@ -792,6 +794,36 @@
 			</div>`;
 	}
 
+	// Today as the owner chose it (12 Nov 2026): four cards in the site's greens, each with its logo and name, the
+	// day's money large and what was done under it; the libraries Azarita and Mawasah side by side. Each card, and
+	// each library, opens the records behind its figure.
+	function today_tile(b, p, i) {
+		const a = b.activity || {};
+		const pounds = `<small>${esc(__("ج"))}</small>`;
+		let body = "";
+		if (b.key === "studio" || b.key === "halls") {
+			const money = b.key === "studio" ? a.paid : a.value;
+			body = `<div class="imed-td-big">${big(money)} ${pounds}</div>
+				<div class="imed-td-sub">${esc(__("{0} حجوزات", [number(a.bookings)]))} · ${esc(hours_text(a.hours))}</div>`;
+		} else if (b.key === "libraries") {
+			body = `<div class="imed-td-two">${(a.rows || [])
+				.map(
+					(r) => `<div ${r.cost_center ? link_attr(route_for("libraries", p, r.cost_center)) : ""}><small>${esc(r.name.replace(/^مكتبة\s+/, ""))}</small>${big(r.net)}</div>`
+				)
+				.join("")}</div>
+				<div class="imed-td-sub">${esc(__("جنيه النهارده"))}</div>`;
+		} else {
+			body =
+				a.state === "ok"
+					? `<div class="imed-td-big">${big(a.charged)} ${pounds}</div><div class="imed-td-sub">${esc(__("{0} اشتراكات جديدة", [number(a.subscriptions)]))}</div>`
+					: `<div class="imed-td-big"><b class="imed-pd-num">—</b></div><div class="imed-td-sub">${esc(__("لسه مش متظبط"))}</div>`;
+		}
+		return `<div class="imed-td-tile is-${b.key}" style="--i:${i}" ${link_attr(route_for(b.key, p))}>
+				<div class="imed-td-top">${logo(b, "imed-td-logo")}<span>${esc(b.label)}</span></div>
+				${body}
+			</div>`;
+	}
+
 	// Tomorrow's bookings, the halls' and the studio's side by side (the owner, 9 Nov 2026).
 	function tomorrow_html(t) {
 		if (!t) return "";
@@ -890,7 +922,7 @@
 		const c = by_period.currency;
 		$slot.html(
 			by_period.periods
-				.map((p, n) => (n === 1 ? tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
+				.map((p, n) => (n === 1 ? `<div data-slot="cover"></div>` + tomorrow_html(by_period.tomorrow) : "") + band_html(p, n, c))
 				.join("")
 		);
 		// The innermost link wins: a day's bar before its week, a library before the libraries' card.
@@ -903,6 +935,7 @@
 		};
 		$slot.off("click keydown").on("click keydown", "[data-route]", go);
 		count_up($slot);
+		render_cover($page);
 	}
 
 	// A period's band: today's cards, the week's bars or the month's comparison.
@@ -910,12 +943,13 @@
 		const icons = { today: "sun", week: "calendar-range", month: "calendar-days" };
 		const from = frappe.datetime.str_to_user(p.from);
 		const to = frappe.datetime.str_to_user(p.to);
+		// Today: the four green cards, inside today's own box with its live dot and date (the owner, 12 Nov 2026).
 		const body =
 			p.key === "week"
 				? week_html(p, c)
 				: p.key === "month"
 				? month_html(p, c)
-				: `<div class="imed-pd-grid">${p.businesses.map((b, i) => period_card(b, p, c, i)).join("")}</div>`;
+				: `<div class="imed-td-grid">${p.businesses.map((b, i) => today_tile(b, p, i)).join("")}</div>`;
 		return `<section class="imed-pd-band is-${p.key}" style="--n:${n}">
 				<header class="imed-pd-band__head">
 					<h2>${p.key === "today" ? `<span class="imed-live" aria-hidden="true"></span>` : frappe.utils.icon(icons[p.key], "sm")}<span>${esc(p.label)}</span></h2>
@@ -1173,6 +1207,99 @@
 		);
 	}
 
+	// ---- Does the month's income cover the fixed expenses? (the owner, 12 Nov 2026), under today ----
+	// Each month a bar of its income, coloured: green passed the fixed expenses, yellow covers them just, red does not;
+	// a dashed line the fixed expenses of each month; under it, the fixed expenses item by item (owner_cover.py).
+	let cover = null;
+	let cover_at = 0;
+	let cover_busy = false;
+	const COVER_TONE = { green: "#16a34a", yellow: "#d97706", red: "#dc2626", none: "#94a3b8" };
+
+	function cover_chart(months, c) {
+		// A narrower drawing on a phone, so its words and numbers keep a readable size once scaled to the screen.
+		const phone = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+		const W = phone ? 560 : 1040;
+		const H = 330;
+		const left = phone ? 52 : 70;
+		const right = 20;
+		const base = 280;
+		const top_y = 50;
+		const top = Math.max(1, ...months.map((m) => Math.max(m.income, m.fixed)));
+		// Four round steps up to just above the largest month (30k, 60k, 90k, 120k), as in the approved design.
+		const raw = top / 4;
+		const power = Math.pow(10, Math.floor(Math.log10(raw)));
+		const nice = [1, 2, 2.5, 3, 5, 10].map((f) => f * power).find((s) => s >= raw) || 10 * power;
+		const ceil = nice * 4;
+		const y = (v) => base - (Math.max(0, v) / ceil) * (base - top_y);
+		const slot_w = (W - left - right) / months.length;
+		const x = (i) => left + slot_w * i + slot_w / 2;
+		const bar_w = Math.min(64, slot_w * 0.5);
+		const short = (v) => (v >= 1000 ? `${Number((v / 1000).toFixed(v % 1000 ? 1 : 0))}k` : `${Math.round(v)}`);
+		const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * ceil);
+		const grid = ticks
+			.map((t) => `<line x1="${left}" y1="${y(t)}" x2="${W - right}" y2="${y(t)}" stroke="var(--imed-border, #e8edf0)"/><text x="${left - 10}" y="${y(t) + 4}" text-anchor="end" class="imed-cover__axis">${short(t)}</text>`)
+			.join("");
+		const bars = months
+			.map((m, i) => {
+				const h = base - y(m.income);
+				const tone = COVER_TONE[m.state] || COVER_TONE.none;
+				// The percentage sits above its bar, inside it only where the line would cross it there.
+				const gap = y(m.income) - y(m.fixed);
+				const label_inside = m.fixed && gap > 0 && gap < 24 && h > 30;
+				const pct = m.ratio === null || m.ratio === undefined ? "" : `${m.ratio}%`;
+				const title = `${m.label}: ${__("الدخل")} ${whole(m.income, c)} · ${__("المصاريف الثابتة")} ${whole(m.fixed, c)}`;
+				return `<g class="imed-cover__bar" style="--i:${i}"><title>${esc(title)}</title>
+						<rect x="${x(i) - bar_w / 2}" y="${y(m.income)}" width="${bar_w}" height="${Math.max(h, 0)}" rx="8" fill="${tone}" ${m.current ? `stroke="#0f3d2e" stroke-width="2"` : ""}/>
+						${pct ? `<text x="${x(i)}" y="${label_inside ? y(m.income) + 20 : y(m.income) - 8}" text-anchor="middle" class="imed-cover__pct" fill="${label_inside ? "#fff" : tone}">${pct}</text>` : ""}
+						<text x="${x(i)}" y="${base + 26}" text-anchor="middle" class="imed-cover__month ${m.current ? "is-now" : ""}">${esc(phone ? m.label.slice(0, 3) : m.label)}${m.current && !phone ? ` (${esc(__("لحد النهارده"))})` : ""}</text>
+					</g>`;
+			})
+			.join("");
+		const line = months.map((m, i) => `${x(i)},${y(m.fixed)}`).join(" ");
+		const dots = months.map((m, i) => `<circle cx="${x(i)}" cy="${y(m.fixed)}" r="4" fill="#334155"/>`).join("");
+		return `<svg class="imed-cover__chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(__("الدخل قصاد المصاريف الثابتة، شهر بشهر"))}">
+				${grid}${bars}
+				<polyline fill="none" stroke="#334155" stroke-width="3" stroke-dasharray="7 6" points="${line}"/>${dots}
+			</svg>`;
+	}
+
+	function render_cover($page) {
+		const $slot = $page.find('[data-slot="cover"]').first();
+		if (!cover || !$slot.length) return;
+		const c = cover.currency;
+		const items = (cover.detail.items || [])
+			.map((it) => `<span>${esc(it.label)} <b>${format_number(it.value, null, 0)}</b></span>`)
+			.join("");
+		$slot.html(`<section class="imed-cover">
+				<header class="imed-cover__head">
+					<h2>${esc(__("الدخل قصاد المصاريف الثابتة، شهر بشهر"))}</h2>
+				</header>
+				<p class="imed-cover__sub">${esc(__("كل عمود هو دخل الشهر، ولونه على حسب عدّى المصاريف الثابتة، ولا غطّاها على القد، ولا مغطّاهاش. الخط المتقطع هو المصاريف الثابتة بتاعة نفس الشهر."))}</p>
+				<div class="imed-cover__legend">
+					<span><i style="background:${COVER_TONE.green}"></i>${esc(__("عدّى المصاريف الثابتة"))}</span>
+					<span><i style="background:${COVER_TONE.yellow}"></i>${esc(__("مغطّيها على القد"))}</span>
+					<span><i style="background:${COVER_TONE.red}"></i>${esc(__("مغطّاهاش"))}</span>
+					<span><i class="is-line"></i>${esc(__("المصاريف الثابتة"))}</span>
+				</div>
+				${cover_chart(cover.months, c)}
+				${
+					items
+						? `<div class="imed-cover__items"><small>${esc(__("المصاريف الثابتة لشهر {0}", [cover.detail.month]))}</small>${items}</div>`
+						: `<p class="imed-cover__sub">${esc(__("مفيش مصاريف ثابتة متسجلة لسه."))}</p>`
+				}
+				${cover.now.estimated ? `<p class="imed-cover__note">${esc(__("مصاريف الشهر ده الثابتة متقدّرة من متوسط آخر ٣ شهور، لحد ما فواتيره تتسجل."))}</p>` : ""}
+			</section>`);
+	}
+
+	function add_cover($page) {
+		if ($page.find('[data-slot="cover"] .imed-cover').length && Date.now() - cover_at < REFRESH_MS) return;
+		fetch_once(
+			{ at: () => cover_at, data: () => cover, busy: () => cover_busy, set_busy: (v) => (cover_busy = v), set: (d) => ((cover = d), (cover_at = Date.now())) },
+			"imed_erp.imederp.owner_cover.get_cover",
+			() => render_cover(page_now())
+		);
+	}
+
 	function decorate() {
 		if (!on_dashboard()) return;
 		const $page = $(".page-container:visible .layout-main-section, .page-container:visible").first();
@@ -1181,6 +1308,7 @@
 		// The slots, with their shimmer, before any answer comes.
 		if (is_owner()) slot($page, "periods");
 		add_periods($page);
+		add_cover($page);
 		add_boxes($page);
 		add_overview($page);
 		add_yesterday($page);
