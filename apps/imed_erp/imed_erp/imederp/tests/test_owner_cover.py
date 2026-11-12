@@ -41,3 +41,28 @@ class TestOwnerCover(IntegrationTestCase):
 		if frappe.db.exists("User", "accountant@imed.local"):
 			frappe.set_user("accountant@imed.local")
 			self.assertRaises(frappe.PermissionError, owner_cover.get_cover)
+
+	def test_the_income_holds_what_the_studio_and_the_libraries_took_in_once(self):
+		"""The ledger's income, and what is not posted to it yet from the studio and the libraries: never twice."""
+		from frappe.utils import add_months, flt, get_first_day, getdate, nowdate
+
+		from imed_erp.imederp import revenue_posting as rp
+
+		today = getdate(nowdate())
+		first = get_first_day(add_months(get_first_day(today), -owner_cover.MONTHS_BACK))
+		ledger = sum(-v for v in owner_cover.by_month(first, today, root_type="Income").values())
+		full = sum(owner_cover.income_by_month(first, today).values())
+		posted = dict(
+			frappe.db.sql(
+				f"""select j.`{rp.KEY}`, sum(a.credit_in_account_currency - a.debit_in_account_currency)
+				from `tabJournal Entry` j join `tabJournal Entry Account` a on a.parent = j.name
+				join `tabAccount` acc on acc.name = a.account and acc.root_type = 'Income'
+				where j.docstatus = 1 and ifnull(j.`{rp.KEY}`, '') != '' group by j.`{rp.KEY}`"""
+			)
+		)
+		unposted = sum(
+			flt(t["amount"]) - flt(posted.get(t["key"]))
+			for t in rp.studio_targets(first) + rp.library_targets(first)
+			if getdate(t["date"]) <= today
+		)
+		self.assertAlmostEqual(full, ledger + unposted, places=2)
