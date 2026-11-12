@@ -572,11 +572,17 @@ html[dir="rtl"] .imed-assistant-send .icon {
 
 /* Small screens: the panel takes the whole screen. */
 @media (max-width: 575.98px) {
+	/* On a phone the assistant is a small button in the corner, without its "ask me" bubble: it sat over the
+	   screen's own figures (the user, 11 Nov 2026). */
 	.imed-assistant-fab {
-		width: 70px;
-		height: 70px;
-		inset-block-end: 16px;
-		inset-inline-end: 16px;
+		width: 52px;
+		height: 52px;
+		padding: 3px;
+		inset-block-end: 12px;
+		inset-inline-end: 12px;
+	}
+	.imed-assistant-fab__hint {
+		display: none !important;
 	}
 	.imed-assistant-panel {
 		inset: 0;

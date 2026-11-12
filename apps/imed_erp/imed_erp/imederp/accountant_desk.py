@@ -53,10 +53,15 @@ def short(name):
 
 
 def rows_of(doctype, filters, fields, order_by="creation desc"):
+	# Asked first, not found out by an error: a refused get_list also leaves "Insufficient Permission for ..." in
+	# the messages, and the desk showed it as a box over his own screen (seen 11 Nov 2026, Material Request).
+	if not frappe.has_permission(doctype, "read"):
+		return None  # not his to see: the tile is left out
 	try:
 		return frappe.get_list(doctype, filters=filters, fields=fields, order_by=order_by, limit_page_length=0)
 	except frappe.PermissionError:
-		return None  # not his to see: the tile is left out
+		frappe.clear_last_message()
+		return None
 
 
 def describe(key, rows):

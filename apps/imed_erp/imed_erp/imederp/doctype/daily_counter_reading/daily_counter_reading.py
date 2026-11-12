@@ -12,7 +12,8 @@
 # cancels them. One per library a day, and a day is not started while an earlier one waits for its evening readings.
 #
 # Printed is not sold: the screen sets the sheets printed against those the day's sales sold, the paper those sales
-# took out of the store, and the sheets recorded as damaged. The counters move no stock: the paper of a sheet leaves
+# took out of the store, and the sheets recorded as damaged. The sheets the library says were spoiled at the machines
+# leave its paper store when the day is closed (paper_use.issue_spoiled). The counters themselves move no stock: the paper of a sheet leaves
 # the store once, with the sale that sold it (paper_use.py); what was printed and not sold shows as waste here, and
 # as a shortage at the next stock count.
 
@@ -91,6 +92,14 @@ class DailyCounterReading(Document):
 		self.variance = self.total_consumed - self.sold_sheets
 		self.paper_issued = cint(paper_issued(self.branch, self.reading_date))
 		self.damaged_sheets = cint(damaged_sheets(self.branch, self.reading_date))
+		# What the library says was spoiled at the machines (the user, 11 Nov 2026: "nowhere to record spoiled
+		# paper"): sheets the counters counted, so never more than they printed.
+		self.spoiled_sheets = cint(self.spoiled_sheets)
+		if self.spoiled_sheets < 0 or self.spoiled_sheets > max(self.total_consumed, 0):
+			frappe.throw(
+				_("Spoiled sheets ({0}) cannot be more than the sheets printed ({1}).").format(self.spoiled_sheets, max(self.total_consumed, 0)),
+				title=_("Spoiled Sheets"),
+			)
 		self.set_cost()
 
 	def set_cost(self):
@@ -225,8 +234,20 @@ class DailyCounterReading(Document):
 			reading.insert()
 			reading.submit()
 			row.db_set("printer_reading", reading.name)
+		# The counters themselves move no stock; the sheets said to be spoiled do: they are thrown away at once.
+		self.issue_spoiled_paper()
+
+	def issue_spoiled_paper(self):
+		from imed_erp.imederp.paper_use import issue_spoiled
+
+		entry = issue_spoiled(self)
+		if entry:
+			self.db_set("spoiled_entry", entry)
 
 	def on_cancel(self):
+		from imed_erp.imederp.paper_use import cancel_spoiled
+
+		cancel_spoiled(self)
 		for row in self.machines:
 			if row.printer_reading and frappe.db.get_value("Printer Reading", row.printer_reading, "docstatus") == 1:
 				reading = frappe.get_doc("Printer Reading", row.printer_reading)

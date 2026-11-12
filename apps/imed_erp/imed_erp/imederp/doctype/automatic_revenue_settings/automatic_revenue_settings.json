@@ -1,0 +1,129 @@
+{
+ "actions": [],
+ "creation": "2026-11-11 18:00:00.000000",
+ "description": "Whether what the studio (XStudio) and the libraries (their own sales system) took in is written to the ledger by itself, and from which day. Off until switched on here.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "studio_section",
+  "post_studio",
+  "studio_from",
+  "column_break_studio",
+  "studio_note",
+  "libraries_section",
+  "post_libraries",
+  "libraries_from",
+  "column_break_libraries",
+  "libraries_note",
+  "status_section",
+  "last_run_at",
+  "last_message"
+ ],
+ "fields": [
+  {
+   "fieldname": "studio_section",
+   "fieldtype": "Section Break",
+   "label": "Studio (XStudio)"
+  },
+  {
+   "fieldname": "post_studio",
+   "fieldtype": "Check",
+   "label": "Post the Studio's Payments",
+   "default": "0"
+  },
+  {
+   "fieldname": "studio_from",
+   "fieldtype": "Date",
+   "label": "From",
+   "depends_on": "post_studio",
+   "mandatory_depends_on": "post_studio",
+   "description": "Bookings on this day or after, and packages bought on it or after."
+  },
+  {
+   "fieldname": "column_break_studio",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "studio_note",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted\">What XStudio says was paid on a booking or a package goes into the studio's cash box as the studio's revenue. An amount XStudio lowers later is not reversed here: it is listed below for the accountant.</p>"
+  },
+  {
+   "fieldname": "libraries_section",
+   "fieldtype": "Section Break",
+   "label": "Libraries (their sales system)"
+  },
+  {
+   "fieldname": "post_libraries",
+   "fieldtype": "Check",
+   "label": "Post the Libraries' Sales",
+   "default": "0"
+  },
+  {
+   "fieldname": "libraries_from",
+   "fieldtype": "Date",
+   "label": "From",
+   "depends_on": "post_libraries",
+   "mandatory_depends_on": "post_libraries",
+   "description": "Sales and returns dated this day or after."
+  },
+  {
+   "fieldname": "column_break_libraries",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "libraries_note",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted\">One entry a library a day: its sales less its returns, into the library's cash box as its revenue; a day that changes later is corrected by the difference. Switch it on only if the same sales are not also entered here by hand.</p>"
+  },
+  {
+   "fieldname": "status_section",
+   "fieldtype": "Section Break",
+   "label": "Last Run"
+  },
+  {
+   "fieldname": "last_run_at",
+   "fieldtype": "Datetime",
+   "label": "Last Run At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_message",
+   "fieldtype": "Small Text",
+   "label": "What It Did",
+   "read_only": 1
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-11-11 18:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "ImedERP",
+ "name": "Automatic Revenue Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Super Admin",
+   "write": 1
+  },
+  {
+   "create": 1,
+   "read": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

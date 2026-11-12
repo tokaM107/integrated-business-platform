@@ -63,3 +63,13 @@ def owner_lands_on_dashboard():
 				frappe.cache.hdel("home_page", user)
 				changed = True
 	return changed
+
+
+def boot_session(bootinfo):
+	"""The addresses that name a screen of the system (every dashboard and page, allowed to this user or not), so
+	the desk can tell "a screen that is not mine" from any other address and send the person to their own first
+	screen instead of an empty page with "Not permitted" (public/js/imed_home.js, not_mine_goes_home). Names only:
+	nothing of a screen's content, and the server still refuses the screen itself."""
+	slug = lambda name: (name or "").strip().lower().replace(" ", "-")
+	names = frappe.get_all("Workspace", filters={"public": 1}, pluck="name") + frappe.get_all("Page", pluck="name")
+	bootinfo.imed_screens = sorted({slug(n) for n in names})
