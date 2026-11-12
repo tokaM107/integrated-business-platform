@@ -17,6 +17,14 @@ class TestOwnerCover(IntegrationTestCase):
 		self.assertEqual(owner_cover.state(1000, 1000), "yellow")
 		self.assertEqual(owner_cover.state(999, 1000), "red")  # does not cover them
 		self.assertEqual(owner_cover.state(0, 0), "none")
+		self.assertEqual(owner_cover.state(5000, 0), "none")  # no fixed expenses recorded: no colour, never green
+
+	def test_the_fixed_expenses_are_found_by_name_word_or_category(self):
+		names = {a.account_name for a in owner_cover.fixed_accounts()}
+		for expected in ("الإيجار", "المرافق", "الرواتب والأجور"):
+			if frappe.db.exists("Account", {"account_name": expected, "company": owner_cover.COMPANY}):
+				self.assertIn(expected, names)
+		self.assertFalse(any(n in ("الخامات والمستهلكات", "التسويق", "الصيانة") for n in names))
 
 	def test_seven_months_this_one_never_below_the_last_three(self):
 		out = owner_cover.cover()

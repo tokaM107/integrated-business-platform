@@ -802,7 +802,11 @@
 		const pounds = `<small>${esc(__("ج"))}</small>`;
 		let body = "";
 		if (b.key === "studio" || b.key === "halls") {
-			const money = b.key === "studio" ? a.paid : a.value;
+			// The money that came in today: the ledger's revenue of the business (the halls' Sparkle payments are posted
+			// on the day they were paid; the studio's XStudio payments once Automatic Revenue Settings posts them).
+			// Only while the ledger has none, the booking system's own figure for today's bookings (the owner, 12 Nov
+			// 2026: "the studio's and the halls' money does not show although the bookings do").
+			const money = Number(b.revenue) || (b.key === "studio" ? a.paid : a.value);
 			body = `<div class="imed-td-big">${big(money)} ${pounds}</div>
 				<div class="imed-td-sub">${esc(__("{0} حجوزات", [number(a.bookings)]))} · ${esc(hours_text(a.hours))}</div>`;
 		} else if (b.key === "libraries") {
@@ -1279,15 +1283,16 @@
 					<span><i style="background:${COVER_TONE.green}"></i>${esc(__("عدّى المصاريف الثابتة"))}</span>
 					<span><i style="background:${COVER_TONE.yellow}"></i>${esc(__("مغطّيها على القد"))}</span>
 					<span><i style="background:${COVER_TONE.red}"></i>${esc(__("مغطّاهاش"))}</span>
+					${cover.months.some((m) => m.state === "none" && m.income) ? `<span><i style="background:${COVER_TONE.none}"></i>${esc(__("مفيش مصاريف ثابتة متسجلة"))}</span>` : ""}
 					<span><i class="is-line"></i>${esc(__("المصاريف الثابتة"))}</span>
 				</div>
 				${cover_chart(cover.months, c)}
 				${
 					items
-						? `<div class="imed-cover__items"><small>${esc(__("المصاريف الثابتة لشهر {0}", [cover.detail.month]))}</small>${items}</div>`
+						? `<div class="imed-cover__items"><small>${esc(cover.detail.source === "planned" ? __("المصاريف الثابتة كل شهر ({0})", [whole(cover.monthly, c)]) : __("المصاريف الثابتة لشهر {0}", [cover.detail.month]))}</small>${items}</div>`
 						: `<p class="imed-cover__sub">${esc(__("مفيش مصاريف ثابتة متسجلة لسه."))}</p>`
 				}
-				${cover.now.estimated ? `<p class="imed-cover__note">${esc(__("مصاريف الشهر ده الثابتة متقدّرة من متوسط آخر ٣ شهور، لحد ما فواتيره تتسجل."))}</p>` : ""}
+				${cover.detail.source === "planned" ? `<p class="imed-cover__note">${esc(__("المصاريف الثابتة من قايمة المصروفات المتكررة (اللي بتتدفع كل شهر)، أو اللي اتسجل في الحسابات لو أكتر. تتعدل من المصروفات المتكررة."))}</p>` : cover.now.estimated ? `<p class="imed-cover__note">${esc(__("مصاريف الشهر ده الثابتة متقدّرة من متوسط آخر ٣ شهور، لحد ما فواتيره تتسجل."))}</p>` : ""}
 			</section>`);
 	}
 
