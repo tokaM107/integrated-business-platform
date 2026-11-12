@@ -143,6 +143,16 @@ def by_account(start, end, accounts):
 	)
 
 
+def planned():
+	"""The fixed expenses paid every month, as the owner and the accountant keep them in Recurring Expense (the
+	owner, 12 Nov 2026: salaries 70,000, the centre's and the studio's rent 46,000, Azarita's 15,000, electricity
+	10,000, Mawasah's rent 7,500, internet 3,500, water and gas about 1,000): each enabled bill and its amount."""
+	return [
+		{"label": r.title or r.expense_category, "value": flt(r.amount, 2)}
+		for r in frappe.get_all("Recurring Expense", filters={"enabled": 1, "amount": [">", 0]}, fields=["title", "expense_category", "amount"], order_by="amount desc")
+	]
+
+
 def cover(today=None):
 	today = getdate(today or nowdate())
 	this_month = get_first_day(today)
@@ -150,39 +160,47 @@ def cover(today=None):
 	accounts = fixed_accounts()
 	income = by_month(first, today, root_type="Income")
 	fixed = by_month(first, today, accounts=[a.name for a in accounts])
+	bills = planned()
+	monthly = flt(sum(b["value"] for b in bills), 2)
 	months = []
 	for i in range(MONTHS_BACK + 1):
 		month = get_first_day(add_months(first, i))
 		key = str(month)
+		posted = flt(fixed.get(key, 0), 2)
 		months.append(
 			frappe._dict(
 				month=key,
 				label=AR_MONTHS[month.month - 1],
 				income=flt(-income.get(key, 0), 2),
-				fixed=flt(fixed.get(key, 0), 2),
+				posted=posted,
+				# What a month's fixed expenses are: what the ledger holds, or the monthly bills when more (bills not
+				# all entered every month, so the ledger alone made a month look covered).
+				fixed=max(posted, monthly),
 				current=month == this_month,
 			)
 		)
-	# This month's fixed expenses: what was posted, or the average of the last three months that had any.
-	past = [m.fixed for m in months[:-1] if m.fixed > 0][-3:]
-	expected = flt(sum(past) / len(past), 2) if past else 0.0
 	now = months[-1]
-	now.posted = now.fixed
-	now.fixed = max(now.fixed, expected)
+	if not monthly:
+		# No monthly bills listed: this month's is what was posted or the average of the last three months.
+		past = [m.fixed for m in months[:-1] if m.fixed > 0][-3:]
+		now.fixed = max(now.fixed, flt(sum(past) / len(past), 2) if past else 0.0)
 	now.estimated = now.fixed > now.posted
 	for m in months:
 		m.state = state(m.income, m.fixed)
 		m.ratio = flt(m.income / m.fixed * 100, 0) if m.fixed > 0 else None
-	# The fixed expenses item by item: this month's if all were posted, else the last full month's.
-	detail_month = now if not now.estimated else next((m for m in reversed(months[:-1]) if m.fixed > 0), now)
-	start = getdate(detail_month.month)
-	end = min(get_last_day(start), today)
+	if bills:
+		detail = {"month": None, "items": bills, "source": "planned"}
+	else:
+		detail_month = now if not now.estimated else next((m for m in reversed(months[:-1]) if m.fixed > 0), now)
+		start = getdate(detail_month.month)
+		detail = {"month": detail_month.label, "items": breakdown(start, min(get_last_day(start), today), accounts), "source": "ledger"}
 	return {
 		"currency": frappe.get_cached_value("Company", COMPANY, "default_currency") or "EGP",
 		"months": months,
 		"now": now,
+		"monthly": monthly,
 		"left": flt(now.income - now.fixed, 2),
-		"detail": {"month": detail_month.label, "items": breakdown(start, end, accounts)},
+		"detail": detail,
 		"limits": {"green": int(GREEN_FROM * 100), "yellow": int(YELLOW_FROM * 100)},
 	}
 

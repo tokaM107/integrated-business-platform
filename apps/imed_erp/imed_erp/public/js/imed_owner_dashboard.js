@@ -1289,10 +1289,10 @@
 				${cover_chart(cover.months, c)}
 				${
 					items
-						? `<div class="imed-cover__items"><small>${esc(__("المصاريف الثابتة لشهر {0}", [cover.detail.month]))}</small>${items}</div>`
+						? `<div class="imed-cover__items"><small>${esc(cover.detail.source === "planned" ? __("المصاريف الثابتة كل شهر ({0})", [whole(cover.monthly, c)]) : __("المصاريف الثابتة لشهر {0}", [cover.detail.month]))}</small>${items}</div>`
 						: `<p class="imed-cover__sub">${esc(__("مفيش مصاريف ثابتة متسجلة لسه."))}</p>`
 				}
-				${cover.now.estimated ? `<p class="imed-cover__note">${esc(__("مصاريف الشهر ده الثابتة متقدّرة من متوسط آخر ٣ شهور، لحد ما فواتيره تتسجل."))}</p>` : ""}
+				${cover.detail.source === "planned" ? `<p class="imed-cover__note">${esc(__("المصاريف الثابتة من قايمة المصروفات المتكررة (اللي بتتدفع كل شهر)، أو اللي اتسجل في الحسابات لو أكتر. تتعدل من المصروفات المتكررة."))}</p>` : cover.now.estimated ? `<p class="imed-cover__note">${esc(__("مصاريف الشهر ده الثابتة متقدّرة من متوسط آخر ٣ شهور، لحد ما فواتيره تتسجل."))}</p>` : ""}
 			</section>`);
 	}
 
