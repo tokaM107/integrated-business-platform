@@ -103,13 +103,18 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 					<h2>${esc(desk.library_name || desk.library)}</h2>
 					<span class="imed-library__hero-meta">${icon("calendar")}${esc(long_day())}<i></i>${icon("warehouse")}${esc(store_name(desk.store))}</span>
 				</div>
-				<span class="imed-library__hero-state tone-${state.tone}">${esc(state.text)}</span>
+				${
+					// While the day's counters are still to be read this is the way to them (it looked like a button
+					// and did nothing: the user, 11 Nov 2026); once the day is closed it only says so.
+					counted && counted.docstatus === 1
+						? `<span class="imed-library__hero-state tone-${state.tone}">${esc(state.text)}</span>`
+						: `<button type="button" class="imed-library__hero-state is-action tone-${state.tone}" data-action="counters">${esc(state.text)}</button>`
+				}
 			</section>
 			<div class="imed-library__tiles">
 				${tile("counters", "teal", "gauge", __("عدادات النهارده"), counted ? (counted.docstatus === 1 ? __("اتسجلت النهارده ✓") : __("سجّل آخر اليوم")) : __("سجّل الصبح"))}
-				${tile("used", "orange", "package-minus", __("حاجة خلصت"), __("إزازة حبر، كرتونة ورق…"))}
 				${tile("count", "blue", "clipboard-list", __("رصيد المخزون"), __("اكتب اللي عندنا دلوقتي"))}
-				${tile("ask", "violet", "send", __("اطلب حاجة"), __("حبر، ورق…"))}
+				${tile("ask", "violet", "send", __("اطلب من المخزن"), __("حبر، ورق… هيتبعت طلب للموافقة"))}
 			</div>
 			${counters_card()}
 			<div class="imed-library__cards">
@@ -175,6 +180,8 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 							: { fieldname: `n${i}`, fieldtype: "Data", label: __("المكنة عطلت؟ اكتب إيه اللي حصل (لو فيه)") }
 					);
 				});
+				// Paper that came out spoiled (a jam, a bad print) is said once, for the day, while the day is closed.
+				if (!morning) fields.push({ fieldname: "spoiled", fieldtype: "Int", label: __("ورق باظ النهارده؟ اكتب كام ورقة (لو فيه)"), default: 0 });
 				const d = new frappe.ui.Dialog({
 					title: morning ? __("عدادات الصبح") : __("عدادات آخر اليوم"),
 					fields,
@@ -186,7 +193,7 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 							readings[m.machine] = v[`m${i}`];
 							if (v[`n${i}`]) notes[m.machine] = v[`n${i}`];
 						});
-						frappe.xcall(`${API}.save_counters`, { phase: now.phase, readings: JSON.stringify(readings), notes: JSON.stringify(notes) }).then((r) => {
+						frappe.xcall(`${API}.save_counters`, { phase: now.phase, readings: JSON.stringify(readings), notes: JSON.stringify(notes), spoiled: v.spoiled || 0 }).then((r) => {
 							d.hide();
 							done(morning ? __("عدادات الصبح اتسجلت. آخر اليوم سجّل تاني.") : __("اليوم اتقفل: اتطبع {0} ورقة.", [qty(r.sheets)]));
 						});
@@ -196,23 +203,6 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 				d.$wrapper.find("input[data-fieldtype='Int']").attr("inputmode", "numeric");
 				d.show();
 			});
-		},
-		used() {
-			const d = new frappe.ui.Dialog({
-				title: __("حاجة خلصت"),
-				fields: [
-					{ fieldname: "item_code", fieldtype: "Select", label: __("إيه اللي خلص؟"), options: options(), reqd: 1 },
-					{ fieldname: "qty", fieldtype: "Float", label: __("كام؟ (بالوحدة اللي جنب الاسم)"), default: 1, reqd: 1 },
-				],
-				primary_action_label: __("تمام"),
-				primary_action(v) {
-					frappe.xcall(`${API}.used_up`, v).then(() => {
-						d.hide();
-						done(__("اتسجل، واتخصم من المخزن."));
-					});
-				},
-			});
-			d.show();
 		},
 		count() {
 			const d = new frappe.ui.Dialog({
@@ -235,10 +225,13 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 		},
 		ask() {
 			const d = new frappe.ui.Dialog({
-				title: __("اطلب حاجة"),
+				title: __("اطلب من المخزن"),
 				fields: [
 					{ fieldname: "item_code", fieldtype: "Select", label: __("محتاجين إيه؟"), options: options(), reqd: 1 },
-					{ fieldname: "qty", fieldtype: "Float", label: __("كام؟ (بالوحدة اللي جنب الاسم)"), default: 1, reqd: 1 },
+					// What is left puts the store's balance right: nobody records what finishes day by day, everyone
+					// asks for more (library_desk.py, note_what_is_left). Asked first, while they look at the shelf.
+					{ fieldname: "left", fieldtype: "Float", label: __("فاضل عندك منه كام؟ (بالوحدة اللي جنب الاسم)"), reqd: 1, description: __("لو خلص خالص اكتب 0") },
+					{ fieldname: "qty", fieldtype: "Float", label: __("محتاج كام؟ (بنفس الوحدة)"), default: 1, reqd: 1 },
 					{ fieldname: "note", fieldtype: "Small Text", label: __("ملاحظة (لو فيه)") },
 				],
 				primary_action_label: __("ابعت الطلب"),

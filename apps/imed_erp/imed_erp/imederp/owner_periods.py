@@ -384,6 +384,32 @@ def get_requests():
 	return requests()
 
 
+@frappe.whitelist()
+def get_request(name):
+	"""One request, in the owner's words (the user, 11 Nov 2026: the request opened ERPNext's own form, "a strange
+	page the owner will not understand"): who asked, for which library, what and how much, where it stands, and
+	whether the decision is the owner's (a purchase waiting for approval: material_issue.approve / reject)."""
+	check_owner()
+	from imed_erp.imederp import material_issue
+	from imed_erp.imederp.library_desk import UNIT_NAMES
+
+	doc = frappe.get_doc("Material Request", name)
+	state = doc.get("custom_approval_status") or doc.status
+	return {
+		"name": doc.name,
+		"store": frappe.get_cached_value("Warehouse", doc.set_warehouse, "warehouse_name") or doc.set_warehouse,
+		"date": doc.transaction_date,
+		"by": frappe.utils.get_fullname(doc.owner),
+		"kind": doc.material_request_type,
+		"items": [{"name": i.item_name, "qty": flt(i.qty, 2), "unit": UNIT_NAMES.get(i.uom, i.uom) or ""} for i in doc.items],
+		"state": state,
+		"status": doc.status,
+		"reason": doc.get("custom_rejection_reason"),
+		"decided_by": frappe.utils.get_fullname(doc.custom_approved_by) if doc.get("custom_approved_by") else None,
+		"can_decide": state == material_issue.PENDING and material_issue.is_purchase_request(doc),
+	}
+
+
 def requests(limit=15):
 	"""The libraries' requests for supplies still open (owner, 9 Nov 2026: the owner sees them at once): the newest
 	first, each with its library's store, what and how much, and where it stands."""

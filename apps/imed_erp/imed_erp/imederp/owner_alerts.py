@@ -2,6 +2,8 @@
 #
 #   stock_requested      a branch asked the main warehouse for materials (material_issue.request_approval): which
 #                        warehouse they are for, and what was asked for
+#   library_did          a library recorded its counters (morning, then the day closed with the sheets printed) or
+#                        counted its store (library_desk.py); in the system's bell too
 #   send_daily_summary   every day at 10 pm (hooks.py: scheduler_events): the day's revenue and the number of
 #                        bookings held that day, the total and business by business
 #
@@ -55,6 +57,18 @@ def stock_requested(doc):
 			notification_service.notify(
 				"owner_stock_request", [user], {"warehouse": warehouses, "items": items, "request": doc.name}
 			)
+
+
+def library_did(words, document=None):
+	"""Tell the owner what a library just did on its own screen (the user, 11 Nov 2026: "everything reaches the
+	owner: the counters, the requests and so on"). `words` is a function that returns the sentence: it is called
+	once an owner, in that owner's language. Never stops the library's own action: a failure is logged."""
+	try:
+		for user in owners():
+			with language_of(user):
+				notification_service.notify("owner_library_activity", [user], {"subject": words()}, document=document)
+	except Exception:
+		frappe.log_error(title="Owner alert: library activity failed")
 
 
 def bookings_by_business(date):

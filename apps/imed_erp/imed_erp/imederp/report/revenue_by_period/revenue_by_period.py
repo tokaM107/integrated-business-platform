@@ -150,7 +150,7 @@ def get_chart(periods, data):
 			"datasets": [{"name": data[0]["business"], "values": [data[0][key] for key, *_rest in periods]}],
 		},
 		"type": "bar",
-		"colors": ["#0f766e"],
+		"colors": ["#0d9276"],
 		"fieldtype": "Currency",
 	}
 

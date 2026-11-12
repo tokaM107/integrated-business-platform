@@ -12,7 +12,7 @@
 
 import frappe
 from frappe import _
-from frappe.utils import flt
+from frappe.utils import cint, flt
 
 from imed_erp.imederp.doctype.book_edition.book_edition import LIBRARY_PAPER_STORE, PAPER
 from imed_erp.imederp.doctype.expense.expense import get_approvers
@@ -149,6 +149,64 @@ def block_cancel_of_paper_issue(doc, method=None):
 		frappe.throw(
 			_("{0} is the paper used for Sales Invoice {1}. Cancel the invoice instead.").format(doc.name, doc.sales_invoice_no)
 		)
+
+
+def issue_spoiled(day):
+	"""The sheets a library says were spoiled at the machines leave its paper store when the day is closed (the
+	user, 11 Nov 2026: "spoiled paper is thrown away at once, so it must come off"). Posted like a sale's paper:
+	in the system's name, and when the store shows fewer sheets the issue waits as a draft for the accountant;
+	closing the day is never refused for paper. Returns the Stock Entry's name, or None."""
+	sheets = cint(day.spoiled_sheets)
+	if sheets <= 0:
+		return None
+	company = frappe.get_cached_value("Cost Center", day.branch, "company")
+	abbr = frappe.get_cached_value("Company", company, "abbr")
+	store = LIBRARY_PAPER_STORE.get((day.branch or "").removesuffix(f" - {abbr}"))
+	if not store:
+		return None
+	store = f"{store} - {abbr}"
+	posting_time = frappe.utils.nowtime()
+	issue = frappe.get_doc(
+		{
+			"doctype": "Stock Entry",
+			"stock_entry_type": "Material Issue",
+			"company": company,
+			"posting_date": day.reading_date,
+			"posting_time": posting_time,
+			"set_posting_time": 1,
+			"remarks": _("Paper spoiled at the machines on {0} ({1}).").format(frappe.format_value(day.reading_date, {"fieldtype": "Date"}), day.name),
+			"items": [{"item_code": PAPER, "qty": sheets, "s_warehouse": store, "cost_center": day.branch, "expense_account": paper_expense_account(company)}],
+		}
+	)
+	issue.flags.from_paper_use = True
+	enough = on_hand(store, day.reading_date, posting_time) >= sheets
+	if not enough:
+		issue.set_posting_time = 0
+	with as_administrator():
+		issue.insert()
+		if enough:
+			issue.submit()
+	if not enough:
+		message = _("{0} has fewer sheets than the {1} spoiled on {2}. The paper issue {3} is saved as a draft for the accountant.").format(
+			store, sheets, frappe.format_value(day.reading_date, {"fieldtype": "Date"}), issue.name
+		)
+		notify("paper_issue_pending", get_approvers(), {"subject": message}, document=("Stock Entry", issue.name))
+	return issue.name
+
+
+def cancel_spoiled(day):
+	"""Cancelling the day takes its spoiled paper's issue back with it (a draft is deleted)."""
+	name = day.get("spoiled_entry")
+	if not name or not frappe.db.exists("Stock Entry", name):
+		return
+	issue = frappe.get_doc("Stock Entry", name)
+	issue.flags.ignore_permissions = True
+	issue.flags.from_paper_use = True
+	if issue.docstatus == 1:
+		issue.cancel()
+	elif issue.docstatus == 0:
+		day.db_set("spoiled_entry", None)
+		frappe.delete_doc("Stock Entry", name, ignore_permissions=True)
 
 
 def paper_expense_account(company):

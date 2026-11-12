@@ -7,10 +7,12 @@
 #                the day's counters in two steps, a number a machine: the morning's (a Daily Counter Reading saved
 #                as a draft) and the evening's (the same day, submitted). The day's own rules check both.
 #   used_up      takes the finished items off the library's store (a Stock Entry, Material Issue, posted by the
-#                system: the account has no right on stock entries)
+#                system: the account has no right on stock entries). Not on the screen since 11 Nov 2026: what was
+#                used is worked out when the library asks for more (ask_for's "left") or counts its store.
 #   count        the quantities the library holds now (a Stock Count, as a library manager would make it)
 #   ask_for      a stock request: from the store that supplies the branches (Raghad approves), or a purchase
-#                request when the library's store is that store itself (Mawasah)
+#                request when the library's store is that store itself (Mawasah); with it, what the library still
+#                holds of the item, which puts the store's balance right (a Stock Count of that item)
 
 from __future__ import annotations
 
@@ -224,19 +226,44 @@ def count(quantities):
 	).insert()
 	doc.submit()
 	frappe.clear_messages()
+	tell_owner_count(mine, doc, rows)
 	return {"count": doc.name, "items": {r["item_code"]: flt(on_hand(r["item_code"], mine.store) / screen_unit(r["item_code"])[1], 2) for r in rows}}
 
 
+def note_what_is_left(mine, item_code, left):
+	"""What the library says it still holds of an item, written while it asks for more: a Stock Count of that one
+	item, so what was used since the last count leaves the store by itself. Nobody enters "something finished" day
+	by day (the user, 11 Nov 2026: "they will be lazy; they ask when the stock runs low"), but everyone asks, so the
+	request is where the store's balance is put right. Returns the count's name, or None when nothing changed or
+	the item cannot be counted yet (no price for a first count): the request itself is never held back by this."""
+	if left in (None, ""):
+		return None
+	left = flt(left)
+	if left < 0:
+		frappe.throw(_("A quantity cannot be negative."))
+	factor = screen_unit(item_code)[1]
+	held = on_hand(item_code, mine.store)
+	if abs(flt(left * factor, 3) - flt(held, 3)) < 0.001:
+		return None
+	from imed_erp.imederp.doctype.stock_count.stock_count import first_rate
+
+	if not held and not first_rate(item_code):
+		return None
+	return count({item_code: left})["count"]
+
+
 @frappe.whitelist(methods=["POST"])
-def ask_for(item_code, qty, note=None):
+def ask_for(item_code, qty, note=None, left=None):
 	"""A stock request: to the store that supplies the branches, for Raghad's approval; a purchase request when the
-	library's store is that store itself (Mawasah)."""
+	library's store is that store itself (Mawasah). With "left" (what the library still holds of the item) the
+	store's balance is put right first (note_what_is_left)."""
 	check_staff()
 	mine = my_library()
 	check_item(item_code, mine.library)
 	qty = flt(qty)
 	if qty <= 0:
 		frappe.throw(_("How many do you need?"))
+	counted = note_what_is_left(mine, item_code, left)
 	unit, factor = screen_unit(item_code)
 	from imed_erp.imederp.material_issue import is_supplying_warehouse
 
@@ -264,7 +291,7 @@ def ask_for(item_code, qty, note=None):
 	# Pending Approval: Raghad approves a transfer; the owner a purchase, which the accountant then buys (10 Nov 2026).
 	request_approval(doc.name)
 	frappe.clear_messages()  # ERPNext's own notes ("Item rates have been updated...") mean nothing to the library
-	return {"request": doc.name, "type": doc.material_request_type}
+	return {"request": doc.name, "type": doc.material_request_type, "count": counted}
 
 
 def open_day(library):
@@ -300,9 +327,10 @@ def counters_today():
 
 
 @frappe.whitelist(methods=["POST"])
-def save_counters(phase, readings, notes=None):
+def save_counters(phase, readings, notes=None, spoiled=None):
 	"""The numbers the counters show, a machine each. Morning: the day is opened, a note says why a counter went up
-	since last night's. Evening: the day is closed, a note says what broke down."""
+	since last night's. Evening: the day is closed, a note says what broke down, and `spoiled` how many sheets came
+	out spoiled that day (the day's Spoiled Sheets)."""
 	check_staff()
 	mine = my_library()
 	readings = json.loads(readings) if isinstance(readings, str) else (readings or {})
@@ -327,10 +355,48 @@ def save_counters(phase, readings, notes=None):
 			note = (notes.get(row.machine) or "").strip()
 			if note:
 				row.fault, row.fault_note = 1, note
+		doc.spoiled_sheets = cint(spoiled)
 		doc.save()
 		doc.submit()
 	frappe.clear_messages()  # "no paper price" and the like are for the accountant, not the library
+	tell_owner_counters(mine, doc, phase)
 	return {"day": doc.name, "phase": "evening" if phase == "morning" else "done", "sheets": cint(doc.total_consumed)}
+
+
+def library_label(mine):
+	return (mine.library or "").rsplit(" - ", 1)[0]
+
+
+def tell_owner_counters(mine, doc, phase):
+	"""The owner hears of the day's counters: the morning's, then the day closed with what was printed."""
+	from imed_erp.imederp import owner_alerts
+
+	library, sheets = library_label(mine), cint(doc.total_consumed)
+	faults = "، ".join(f"{r.machine}: {r.fault_note}" for r in doc.machines if r.get("fault") and r.get("fault_note"))
+
+	def words():
+		if phase == "morning":
+			return _("{0}: the morning counters were recorded.").format(library)
+		text = _("{0}: the day is closed, {1} sheets printed.").format(library, f"{sheets:,}")
+		if cint(doc.get("spoiled_sheets")):
+			text += " " + _("{0} sheets spoiled.").format(f"{cint(doc.spoiled_sheets):,}")
+		return f"{text} {_('Broke down: {0}').format(faults)}" if faults else text
+
+	owner_alerts.library_did(words, document=("Daily Counter Reading", doc.name) if phase != "morning" else None)
+
+
+def tell_owner_count(mine, doc, rows):
+	"""The owner hears of a count of the library's store, with what was counted."""
+	from imed_erp.imederp import owner_alerts
+
+	library = library_label(mine)
+	parts = []
+	for r in rows:
+		unit, factor = screen_unit(r["item_code"])
+		unit = UNIT_NAMES.get(unit, unit)  # "Nos" says nothing: a bottle is a bottle
+		parts.append(f"{frappe.db.get_value('Item', r['item_code'], 'item_name')} {flt(r['counted_qty'] / factor, 2):g}{(' ' + unit) if unit else ''}")
+	items = "، ".join(parts)
+	owner_alerts.library_did(lambda: _("{0}: counted its store: {1}").format(library, items), document=("Stock Count", doc.name))
 
 
 def is_staff_only(user=None):

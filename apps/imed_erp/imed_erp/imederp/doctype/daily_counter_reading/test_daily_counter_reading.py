@@ -21,7 +21,9 @@ from imed_erp.imederp.sales_cancellation import cancel_with_reason
 
 # Linked records already exist on the site (the libraries' machines come from setup_library.py); without this list
 # Frappe builds ERPNext's "_Test ..." records and commits them to the site.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Printer Reading", "Printing Machine", "User"]
+# "Stock Entry": the day links the issue of its spoiled paper (spoiled_entry); without it ERPNext would build and
+# commit its own _Test records for everything a Stock Entry links to (docs/known-issues.md).
+IGNORE_TEST_RECORD_DEPENDENCIES = ["Cost Center", "Daily Counter Reading", "Printer Reading", "Printing Machine", "Stock Entry", "User"]
 
 AZARITA = "مكتبة الأزاريطة - MMG"
 MAWASAH = "مكتبة المواساة - MMG"
@@ -159,6 +161,19 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		before = frappe.db.count("Stock Ledger Entry")
 		self.sheet({first: 1500, second: 800, third: 300}, openings={first: 1000, second: 500, third: 100})
 		self.assertEqual(frappe.db.count("Stock Ledger Entry"), before)
+
+	def test_spoiled_sheets_leave_the_paper_store_with_the_day_and_come_back_with_it(self):
+		"""Spoiled paper is thrown away at once (the user, 11 Nov 2026): closing the day takes it off the store."""
+		first, second, third = sorted(self.machines)
+		day = self.sheet({first: 1500, second: 800, third: 300}, openings={first: 1000, second: 500, third: 100}, spoiled_sheets=40)
+		entry = frappe.get_doc("Stock Entry", day.reload().spoiled_entry)
+		self.assertEqual((entry.stock_entry_type, entry.items[0].item_code, entry.items[0].qty, entry.items[0].cost_center), ("Material Issue", "A4-PAPER", 40, AZARITA))
+		# Submitted when the store holds the paper; a draft for the accountant when it does not. Never refused.
+		self.assertIn(entry.docstatus, (0, 1))
+		day.cancel()
+		self.assertFalse(frappe.db.exists("Stock Entry", {"name": entry.name, "docstatus": ["<", 2]}))
+		# More spoiled than printed is refused.
+		self.assertRaises(frappe.ValidationError, self.sheet, {first: 1600}, date="2026-10-08", openings={first: 1500}, spoiled_sheets=500)
 
 	def test_every_machine_once_a_day(self):
 		first, second, third = sorted(self.machines)

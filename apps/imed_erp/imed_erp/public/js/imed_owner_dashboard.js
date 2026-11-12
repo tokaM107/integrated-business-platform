@@ -70,7 +70,26 @@
 					<div class="imed-dash-welcome__date"><span>${esc(today)}</span></div>
 				</div>
 				<p class="imed-dash-welcome__note"></p>
+				<button type="button" class="imed-dash-welcome__bell" title="${esc(__("Notifications"))}" aria-label="${esc(__("Notifications"))}">${frappe.utils.icon("bell", "md")}</button>
 			</div>`).insertBefore($page.find(".imed-slot-top").first().length ? $page.find(".imed-slot-top").first() : $editor);
+		setup_bell($page.find(".imed-dash-welcome__bell"));
+	}
+
+	// The bell facing the date: it opens the sidebar's own notifications (no second list), and shows a dot while
+	// the sidebar's counter shows one.
+	function setup_bell($bell) {
+		const sidebar_item = () => $(".body-sidebar .sidebar-notification").first();
+		$bell.on("click", (e) => {
+			e.stopPropagation();
+			const $item = sidebar_item();
+			if ($item.length) $item.trigger("click");
+			else frappe.set_route("List", "Notification Log");
+		});
+		const count = $(".body-sidebar .sidebar-notification-count").get(0);
+		if (!count) return;
+		const refresh = () => $bell.toggleClass("has-unseen", !count.classList.contains("hidden") && !!count.textContent.trim());
+		refresh();
+		new MutationObserver(refresh).observe(count, { attributes: true, childList: true, characterData: true, subtree: true });
 	}
 
 	function mark_headers($page) {
@@ -129,11 +148,11 @@
 					});
 				}
 			}
-			// On a site with no ledger entry at all, each money card says "no records yet" next to its zero
+			// On a site with no ledger entry at all, each money card says "no records yet" under its name
 			// (decision of 1 Nov 2026); the badge is put back whenever Frappe redraws the card.
 			const is_ledger_card = LEDGER_CARDS.some((label) => __(label) === title);
 			if (ledger_empty && is_ledger_card && !$card.find(".imed-dash-norecords").length) {
-				$card.find(".widget-label, .widget-title").first().append(`<span class="imed-dash-norecords">${esc(__("no records yet"))}</span>`);
+				$card.find(".widget-title").first().append(`<span class="imed-dash-norecords">${esc(__("no records yet"))}</span>`);
 			}
 			// A negative amount (cash short, a month at a loss) shows in red; it changes when the card reloads.
 			const value = $card.find(".number").first().text();
@@ -995,7 +1014,7 @@
 	}
 
 	// The Epson set's four colours on one tile: what each holds, the one that finished most this month first.
-	const EPSON_DOTS = { "INK-EPSON-BK": "#1f2937", "INK-EPSON-C": "#06b6d4", "INK-EPSON-M": "#db2777", "INK-EPSON-Y": "#eab308" };
+	const EPSON_DOTS = { "INK-EPSON-BK": "#1f2937", "INK-EPSON-C": "#2563eb", "INK-EPSON-M": "#dc2626", "INK-EPSON-Y": "#eab308" };
 	function epson_tile(colours, i) {
 		if (!colours.length) return "";
 		const first = colours[0];
@@ -1061,7 +1080,7 @@
 					rows.length
 						? `<ul class="imed-req">${rows
 								.map(
-									(r, i) => `<li style="--i:${i}"><a href="/desk/material-request/${encodeURIComponent(r.name)}">
+									(r, i) => `<li style="--i:${i}"><a href="#" data-request="${esc(r.name)}">
 										<span class="imed-req__store">${esc(r.store)}<small>${esc(frappe.datetime.str_to_user(r.transaction_date))}</small></span>
 										<span class="imed-req__items">${r.items.map((it) => `<span><b>${qty(it.qty)}${it.unit ? " " + esc(it.unit) : ""}</b> ${esc(it.name)}</span>`).join("")}</span>
 										<span class="imed-req__state">${esc(state(r))}</span>
@@ -1071,7 +1090,84 @@
 						: `<p class="imed-sec__empty">${esc(__("No open request."))}</p>`
 				}
 			</section>`);
+		$slot.off("click.request").on("click.request", "[data-request]", function (e) {
+			e.preventDefault();
+			open_request($(this).attr("data-request"));
+		});
+		// A request reached from a notification (imed_home.js sends the owner here instead of ERPNext's form).
+		if (window.imed_request_to_open) {
+			const name = window.imed_request_to_open;
+			window.imed_request_to_open = null;
+			open_request(name);
+		}
 	}
+
+	// A request in the owner's words, in a box over the dashboard: ERPNext's own Material Request form says nothing
+	// to the owner (the user, 11 Nov 2026). A purchase waiting for the owner is approved or rejected from here.
+	const REQUEST_STATES = {
+		"Pending Approval": ["orange", __("Waiting for approval")],
+		Approved: ["green", __("Approved")],
+		Rejected: ["red", __("Rejected")],
+		Pending: ["blue", __("Not done yet")],
+		"Partially Ordered": ["blue", __("Partly bought")],
+		Ordered: ["green", __("Bought")],
+		"Partially Received": ["blue", __("Partly received")],
+		Received: ["green", __("Received")],
+		Transferred: ["green", __("Received")],
+		Draft: ["gray", __("Draft")],
+	};
+	function open_request(name) {
+		if (!name) return;
+		frappe.xcall("imed_erp.imederp.owner_periods.get_request", { name }).then((r) => {
+			const [tone, words] = REQUEST_STATES[r.state] || REQUEST_STATES[r.status] || ["gray", __(r.state || r.status)];
+			const kind = r.kind === "Purchase" ? __("To be bought") : __("From the main store");
+			const waits = r.state === "Pending Approval" && !r.can_decide ? `<p class="imed-rq__note">${esc(__("The store's keeper approves this one."))}</p>` : "";
+			const d = new frappe.ui.Dialog({
+				title: __("Request from {0}", [r.store]),
+				fields: [
+					{
+						fieldtype: "HTML",
+						options: `<div class="imed-rq">
+								<div class="imed-rq__meta"><span>${frappe.utils.icon("calendar", "sm")}${esc(frappe.datetime.str_to_user(r.date))}</span><span>${frappe.utils.icon("user", "sm")}${esc(r.by)}</span><span>${frappe.utils.icon("package", "sm")}${esc(kind)}</span></div>
+								<ul class="imed-rq__items">${r.items.map((it) => `<li><span>${esc(it.name)}</span><b>${qty(it.qty)}${it.unit ? " " + esc(it.unit) : ""}</b></li>`).join("")}</ul>
+								<div class="imed-rq__state"><span class="indicator-pill ${tone}">${esc(words)}</span>${r.decided_by && r.state !== "Pending Approval" ? `<small>${esc(r.decided_by)}</small>` : ""}</div>
+								${r.reason ? `<p class="imed-rq__note">${esc(r.reason)}</p>` : ""}
+								${waits}
+							</div>`,
+					},
+				],
+			});
+			const reload = () => {
+				boxes_at = 0;
+				add_boxes(page_now());
+			};
+			if (r.can_decide) {
+				d.set_primary_action(__("Approve"), () => {
+					frappe.xcall("imed_erp.imederp.material_issue.approve", { name }).then(() => {
+						d.hide();
+						frappe.show_alert({ message: __("Approved: the accountant buys it."), indicator: "green" });
+						reload();
+					});
+				});
+				d.set_secondary_action_label(__("Reject"));
+				d.set_secondary_action(() => {
+					frappe.prompt([{ fieldname: "reason", fieldtype: "Small Text", label: __("Why?"), reqd: 1 }], (v) => {
+						frappe.xcall("imed_erp.imederp.material_issue.reject", { name, reason: v.reason }).then(() => {
+							d.hide();
+							frappe.show_alert({ message: __("Rejected."), indicator: "red" });
+							reload();
+						});
+					}, __("Reject the request"), __("Reject"));
+				});
+			}
+			d.show();
+		});
+	}
+	$(document).on("imed-open-request", (e, name) => {
+		if (!on_dashboard()) return;
+		window.imed_request_to_open = null;
+		open_request(name);
+	});
 
 	function fetch_once(state, method, done) {
 		if (!is_owner()) return;

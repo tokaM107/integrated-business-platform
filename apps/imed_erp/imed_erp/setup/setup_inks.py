@@ -22,8 +22,9 @@ PAPER_GROUP = "ورق"
 BINDING_GROUP = "خامات تجليد"
 # An Epson set is four colours, and one runs out before another (owner, 9 Nov 2026): each colour is its own item,
 # a quarter of the set's price, so the owner sees which finishes first. The set itself (INK-EPSON) is disabled
-# while nothing was ever counted of it.
-EPSON_COLOURS = [("INK-EPSON-BK", "حبر إبسون أسود"), ("INK-EPSON-C", "حبر إبسون سماوي"), ("INK-EPSON-M", "حبر إبسون ماجنتا"), ("INK-EPSON-Y", "حبر إبسون أصفر")]
+# while nothing was ever counted of it. The colours carry everyday names (the user, 11 Nov 2026: red, yellow, blue
+# and black, not magenta and cyan); a site set up before that is renamed by patches/v1/rename_epson_inks.py.
+EPSON_COLOURS = [("INK-EPSON-BK", "حبر إبسون أسود"), ("INK-EPSON-C", "حبر إبسون أزرق"), ("INK-EPSON-M", "حبر إبسون أحمر"), ("INK-EPSON-Y", "حبر إبسون أصفر")]
 INKS = [
 	# code, name, group, the settings' field that holds its price, the part of that price one piece costs
 	("INK-RISO", "حبر ريزو (إزازة)", INK_GROUP, "riso_ink_price", 1),

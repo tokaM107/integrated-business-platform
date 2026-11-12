@@ -143,26 +143,10 @@
   {
    "child": 1,
    "collapsible": 1,
-   "label": "Daily Counters",
-   "link_type": "DocType",
-   "type": "Link",
-   "link_to": "Daily Counter Reading"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "label": "Daily Printing",
+   "label": "Printing and Counters",
    "link_type": "Report",
    "type": "Link",
    "link_to": "Daily Printing"
-  },
-  {
-   "child": 1,
-   "collapsible": 1,
-   "label": "Paper Counters",
-   "link_type": "DocType",
-   "type": "Link",
-   "link_to": "Printer Reading"
   },
   {
    "collapsible": 1,
@@ -604,7 +588,7 @@
    "link_to": "Platform Fee Schedule"
   }
  ],
- "modified": "2026-11-10 12:00:00.000000",
+ "modified": "2026-11-11 15:30:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "ImedERP",

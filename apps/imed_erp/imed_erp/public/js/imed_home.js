@@ -286,9 +286,65 @@
 			frappe.set_route("imed-accountant");
 		}
 	}
+	// Anyone who opens the address of a screen that is not theirs (a link to the Owner Dashboard sent to the
+	// accountant, or kept by the browser from the account signed in before) goes to their own first screen, instead
+	// of Frappe's "Not permitted" box on an empty page (the user, 11 Nov 2026). Only one-part addresses (a dashboard
+	// or a page); lists, forms and reports keep Frappe's own refusal. Nothing is opened here: the server still
+	// refuses the screen, this only chooses where the person stands afterwards.
+	function not_mine_goes_home() {
+		const route = frappe.get_route ? frappe.get_route() : [];
+		if (route.length !== 1 || !route[0]) return;
+		const part = route[0];
+		if ((frappe.boot.allowed_pages || []).includes(part)) return;
+		const mine = (frappe.boot.workspaces?.pages || []).map((p) => frappe.router.slug(p.name));
+		if (mine.includes(part)) return;
+		// Only an address that names a dashboard or a page of the system (imederp/home_screen.py boot_session):
+		// any other one-part address is left to Frappe.
+		if (!(frappe.boot.imed_screens || []).includes(part)) return;
+		const landing = landing_route();
+		const target = landing && landing.replace(/^\/desk\//, "");
+		if (!target || target === part) return;
+		frappe.route_flags.replace_route = true;
+		frappe.set_route(target);
+		// Frappe's refusal for the screen left behind arrives a moment later: it is not about the screen shown now.
+		let tries = 0;
+		const hide = setInterval(() => {
+			const $box = $(".msgprint-dialog.show, .modal.show").filter((i, el) => $(el).find(".msgprint").length);
+			if ($box.length && frappe.msg_dialog) frappe.msg_dialog.hide();
+			if (++tries > 12) clearInterval(hide);
+		}, 150);
+	}
+	// The owner's account (Super Admin; not Administrator, who maintains the system): ERPNext's own dashboards
+	// (Buying, Stock...: English charts, a sidebar of another module, "not permitted" on their reports) and its
+	// Material Request form are not for the owner (the user, 11 Nov 2026: "a strange page the owner will not
+	// understand; the sidebar changed and there is no way back"). A dashboard of ERPNext takes the owner back to
+	// the Owner Dashboard; a request (opened from a notification) opens there in the owner's own box.
+	function owner_home_only() {
+		const roles = frappe.user_roles || [];
+		if (!roles.includes("Super Admin") || frappe.session.user === "Administrator") return;
+		const route = frappe.get_route ? frappe.get_route() : [];
+		const home = frappe.router.slug("Owner Dashboard");
+		if (route[0] === "Workspaces" && route[route.length - 1] !== "Owner Dashboard") {
+			frappe.route_flags.replace_route = true;
+			frappe.set_route(home);
+		} else if (route[0] === "Form" && route[1] === "Material Request" && route[2] && !String(route[2]).startsWith("new-")) {
+			window.imed_request_to_open = route[2];
+			frappe.route_flags.replace_route = true;
+			frappe.set_route(home).then(() => setTimeout(() => $(document).trigger("imed-open-request", [route[2]]), 600));
+		} else if (route[0] === "Workspaces" && route[route.length - 1] === "Owner Dashboard") {
+			// Back on the dashboard from a screen of another module: its own sidebar comes back with it (Frappe
+			// keeps the last module's, so the owner stood on the dashboard with the Stock sidebar beside it).
+			const sidebar = frappe.app && frappe.app.sidebar;
+			if (sidebar && sidebar.setup && frappe.boot.workspace_sidebar_item?.imederp && (sidebar.sidebar_title || "").toLowerCase() !== "imederp") {
+				sidebar.setup("ImedERP");
+			}
+		}
+	}
 	const home_only = () => {
 		library_home_only();
 		accountant_home_only();
+		owner_home_only();
+		not_mine_goes_home();
 	};
 	// Frappe fires neither event alone for every page: a page the user may not open fires no page-change.
 	$(document).on("page-change", home_only);

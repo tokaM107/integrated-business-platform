@@ -54,11 +54,13 @@ app_include_js = [
 web_include_css = [asset("css/imed_fonts.css"), asset("css/imed_web.css")]
 # web_include_js = "/assets/imed_erp/js/imed_erp.js"
 
-# Branding: logo on the home screen and the login page, and the browser tab icon.
-app_logo_url = "/assets/imed_erp/images/imed-mark.svg"
+# Branding: logo on the home screen and the login page, and the browser tab icon. Since 10 Nov 2026 the owner's
+# monogram (MM, Mohamed Mamdouh): mm-icon.png is the monogram on a white rounded square (it reads on a dark
+# browser tab and on the green sidebar), mm-logo.png the monogram alone (the sign-in page, see imed_web.css).
+app_logo_url = "/assets/imed_erp/images/mm-icon.png"
 website_context = {
-	"favicon": "/assets/imed_erp/images/imed-mark.svg",
-	"splash_image": "/assets/imed_erp/images/imed-mark.svg",
+	"favicon": "/assets/imed_erp/images/mm-icon.png",
+	"splash_image": "/assets/imed_erp/images/mm-icon.png",
 }
 
 # include custom scss in every website theme (without file extension ".scss")
@@ -432,6 +434,7 @@ _custom_fields = [
 	"imed_erp.imederp.sales_cancellation.make_custom_fields",
 	"imed_erp.imederp.edition_sales.make_custom_fields",
 	"imed_erp.imederp.xstudio.fields.make_custom_fields",
+	"imed_erp.imederp.revenue_posting.make_custom_fields",
 ]
 after_install = [*_custom_fields]
 after_migrate = [
@@ -447,6 +450,8 @@ boot_session = [
 	"imed_erp.imederp.booking_rules.boot_session",
 	# The accountant's desk is not offered what is not his (imederp/accountant_desk.py).
 	"imed_erp.imederp.accountant_desk.boot_session",
+	# Which addresses name a screen, so a screen that is not the user's sends them to their own (imederp/home_screen.py).
+	"imed_erp.imederp.home_screen.boot_session",
 ]
 
 # Scheduled Tasks
@@ -461,6 +466,9 @@ scheduler_events = {
 			# The halls' bookings and payments, read from Sparkle (imederp/sparkle/sync.py, owner, 5 Nov 2026).
 			"imed_erp.imederp.sparkle.sync.run_scheduled",
 		],
+		# What the studio (XStudio) and the libraries (their sales system) took in, written to the ledger by itself
+		# when Automatic Revenue Settings says so (imederp/revenue_posting.py); after the syncs above.
+		"5-59/15 * * * *": ["imed_erp.imederp.revenue_posting.run"],
 		# 10 pm, the site's time: the day's revenue and bookings to the owner's phone (imederp/owner_alerts.py).
 		"0 22 * * *": ["imed_erp.imederp.owner_alerts.send_daily_summary"],
 	},
