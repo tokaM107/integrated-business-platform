@@ -339,6 +339,8 @@ def stock(today=None):
 				"week_ago": flt(before / factor, 2),
 				"change": flt((now - before) / factor, 2),
 				"used_week": flt(used / factor, 2),
+				# What the library used today (the owner, 15 Nov 2026): its counters' paper and the ink it took off.
+				"used_today": flt(used_between(item.name, store, today, today) / factor, 2),
 				"days_left": cint(now / (used / WEEK)) if used > 0 else None,
 				# Never counted nor moved in this store: not "ran out", "not counted yet".
 				"counted": 1 if frappe.db.exists("Stock Ledger Entry", {"item_code": item.name, "warehouse": store, "is_cancelled": 0}) else 0,

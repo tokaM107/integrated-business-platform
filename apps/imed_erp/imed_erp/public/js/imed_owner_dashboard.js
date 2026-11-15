@@ -1014,6 +1014,7 @@
 				<span class="imed-stock__qty"><b class="imed-pd-num" data-to="${Number(s.qty) || 0}" data-dec="${s.qty % 1 ? 1 : 0}">${qty(s.qty)}</b>${unit}</span>
 				<span class="imed-stock__trend is-${dir}" title="${esc(__("A week ago: {0}", [qty(s.week_ago)]))}">${frappe.utils.icon(arrow, "xs")}<span>${dir === "flat" ? esc(__("No change this week")) : `${qty(Math.abs(s.change))}${unit} ${esc(dir === "up" ? __("more than last week") : __("less than last week"))}`}</span></span>
 				<span class="imed-stock__lasts">${frappe.utils.icon(low ? "triangle-alert" : "clock", "xs")}<span>${lasts}</span></span>
+				<span class="imed-stock__today">${frappe.utils.icon("sun", "xs")}<span>${s.used_today ? esc(__("اتصرف النهارده {0}", [`${qty(s.used_today)}${unit}`])) : esc(__("ما اتصرفش حاجة النهارده"))}</span></span>
 			</a>`;
 	}
 

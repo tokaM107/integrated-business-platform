@@ -8563,3 +8563,19 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome.is-v2 .imed-das
 		margin-inline-end: -48px;
 	}
 }
+
+/* §48 Each supply's use today on the owner's stock tiles (the owner, 15 Nov 2026: "how much paper and ink they used
+   today"), under how long it lasts. */
+.imed-stock__today {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+.imed-stock__today .icon {
+	width: 14px;
+	height: 14px;
+	stroke: var(--imed-amber-500, #d97706);
+}
