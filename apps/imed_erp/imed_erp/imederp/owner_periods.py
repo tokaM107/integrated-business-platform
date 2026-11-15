@@ -310,12 +310,22 @@ def stock(today=None):
 		"Item", filters={"item_group": ["in", groups or [""]], "disabled": 0, "is_stock_item": 1}, fields=["name", "item_name", "item_group"], order_by="item_group desc, item_name"
 	)
 	result = []
-	for store in library_stores():
+	# The center's store last (the owner, 15 Nov 2026: the dearer ink is kept at the center, and the owner keeps that
+	# store himself): every ink, and any other supply it ever held. He counts it and sends from it (center_store.py).
+	from imed_erp.imederp.center_store import center_items, center_store
+
+	center = center_store()
+	for store in [*library_stores(), *([center] if center else [])]:
 		rows, colours = [], []
+		is_center = store == center
+		if is_center:
+			held = {i.name for i in center_items(store)}
 		# Only the inks of the machines the store's library has (Azarita: Riso, no Epson).
-		library = store_library(store)
+		library = None if is_center else store_library(store)
 		kinds = set(frappe.get_all("Printing Machine", filters={"cost_center": library, "disabled": 0}, pluck="machine_type")) if library else None
 		for item in items:
+			if is_center and item.name not in held:
+				continue
 			if kinds is not None and machine_of(item.name) and machine_of(item.name) not in kinds:
 				continue
 			unit, factor = screen_unit(item.name)
@@ -339,6 +349,8 @@ def stock(today=None):
 				"week_ago": flt(before / factor, 2),
 				"change": flt((now - before) / factor, 2),
 				"used_week": flt(used / factor, 2),
+				# What the library used today (the owner, 15 Nov 2026): its counters' paper and the ink it took off.
+				"used_today": flt(used_between(item.name, store, today, today) / factor, 2),
 				"days_left": cint(now / (used / WEEK)) if used > 0 else None,
 				# Never counted nor moved in this store: not "ran out", "not counted yet".
 				"counted": 1 if frappe.db.exists("Stock Ledger Entry", {"item_code": item.name, "warehouse": store, "is_cancelled": 0}) else 0,
@@ -352,7 +364,7 @@ def stock(today=None):
 			# The colour that finished most this month first.
 			colours.sort(key=lambda c: (-c["finished_month"], c["qty"]))
 		result.append(
-			{"store": store, "name": frappe.get_cached_value("Warehouse", store, "warehouse_name") or store, "items": rows, "epson": colours}
+			{"store": store, "name": frappe.get_cached_value("Warehouse", store, "warehouse_name") or store, "items": rows, "epson": colours, "center": 1 if is_center else 0}
 		)
 	return result
 

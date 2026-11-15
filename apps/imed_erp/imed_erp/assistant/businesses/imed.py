@@ -58,6 +58,44 @@ class OwnerBandTool:
 		return out
 
 
+class LibraryDayTool:
+	"""A library's supplies and use on a day (the owner, 15 Nov 2026: "ask how much paper a library has, how much paper
+	and ink it used today"): imederp.library_day, refused by that service to anyone but the owner."""
+
+	name = "library_supplies_day"
+
+	def spec(self, context: RequestContext) -> dict[str, Any]:
+		from imed_erp.imederp import library_day
+
+		# The libraries by the site's own names (nothing of the business is written in the assistant's code).
+		names = "، ".join(lib.rsplit(" - ", 1)[0] for lib in library_day.libraries()) or "-"
+		return {
+			"name": self.name,
+			"description": (
+				"A library's paper and ink on a given day, as the library records them daily: what its store holds now "
+				"(paper in boxes and sheets, ink in bottles), what it used that day, the sheets printed on each machine "
+				"(morning and evening counters, spoiled sheets) and its last stock count. Use it for any question about "
+				f"a library's paper, ink, stock, consumption or printing. The libraries: {names}. The center's store "
+				"(السنتر) comes too: the ink it holds, used and sent on to the libraries that day. The owner's alone."
+			),
+			"input_schema": {
+				"type": "object",
+				"properties": {
+					"library": {"type": "string", "description": "Part of the library's name, as the description lists them, or \"سنتر\" for the center's store; leave it out for every library and the center."},
+					"date": {"type": "string", "description": "The day as YYYY-MM-DD; leave it out for today."},
+				},
+				"additionalProperties": False,
+			},
+		}
+
+	def run(self, arguments: dict, context: RequestContext) -> Any:
+		if not context.all_companies:
+			raise frappe.PermissionError("A library's supplies are the owner's to read.")
+		from imed_erp.imederp import library_day
+
+		return library_day.day_report(arguments.get("library"), arguments.get("date"))
+
+
 class ImedIntegration:
 	key = "imed"
 
@@ -82,7 +120,7 @@ class ImedIntegration:
 		return list(self._surface.workspaces)
 
 	def tools(self, context: RequestContext) -> list[Tool]:
-		return [OwnerBandTool()] if context.all_companies else []
+		return [OwnerBandTool(), LibraryDayTool()] if context.all_companies else []
 
 	def prompt_notes(self, context: RequestContext) -> str:
 		return NOTES
