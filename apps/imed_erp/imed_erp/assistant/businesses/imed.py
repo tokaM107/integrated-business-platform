@@ -75,12 +75,13 @@ class LibraryDayTool:
 				"A library's paper and ink on a given day, as the library records them daily: what its store holds now "
 				"(paper in boxes and sheets, ink in bottles), what it used that day, the sheets printed on each machine "
 				"(morning and evening counters, spoiled sheets) and its last stock count. Use it for any question about "
-				f"a library's paper, ink, stock, consumption or printing. The libraries: {names}. The owner's alone."
+				f"a library's paper, ink, stock, consumption or printing. The libraries: {names}. The center's store "
+				"(السنتر) comes too: the ink it holds, used and sent on to the libraries that day. The owner's alone."
 			),
 			"input_schema": {
 				"type": "object",
 				"properties": {
-					"library": {"type": "string", "description": "Part of the library's name, as the description lists them; leave it out for every library."},
+					"library": {"type": "string", "description": "Part of the library's name, as the description lists them, or \"سنتر\" for the center's store; leave it out for every library and the center."},
 					"date": {"type": "string", "description": "The day as YYYY-MM-DD; leave it out for today."},
 				},
 				"additionalProperties": False,

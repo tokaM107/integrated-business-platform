@@ -8,13 +8,31 @@
 #   on hand     what the store holds now, in the unit the library counts it in (paper in boxes, ink in bottles)
 #   counted     the store's last count (Stock Count) and when it was
 #
+# The center's store too (the owner, 15 Nov 2026: one ink, the cheaper, is kept at Mawasah's library; the other, the
+# dearer, at the center, مخزن سنتر Imed — أدوات مكتبية): what it holds of each ink, what it used that day, what it sent
+# on to the libraries that day, its last count. Every ink, whichever machine it is for.
+#
 # Read as the owner (or the system's manager): each library's own store, never another's; nothing is written.
 import frappe
 from frappe import _
 from frappe.utils import cint, flt, getdate, nowdate
 
+from imed_erp.imederp.business_figures import company
 from imed_erp.imederp.owner_periods import library_stores, store_library, used_between
 from imed_erp.imederp.owner_yesterday import check_owner
+
+CENTER_STORE = "مخزن سنتر Imed — أدوات مكتبية"
+CENTER_WORDS = ("سنتر", "center", "centre", "imed")
+INK_GROUP = "أحبار"
+
+
+def center_store():
+	return frappe.db.get_value("Warehouse", {"company": company(), "is_group": 0, "warehouse_name": CENTER_STORE})
+
+
+def asks_center(asked):
+	text = str(asked or "").strip().lower()
+	return bool(text) and any(w in text for w in CENTER_WORDS)
 
 
 def libraries():
@@ -32,6 +50,8 @@ def find_library(asked):
 	known = libraries()
 	if not asked:
 		return known
+	if asks_center(asked):
+		return {}
 	words = {"azarita": "الأزاريطة", "azareeta": "الأزاريطة", "mawasah": "المواساة", "mowasah": "المواساة", "mawasa": "المواساة"}
 	text = str(asked).strip().lower()
 	text = words.get(text, text).replace("أ", "ا").replace("إ", "ا")
@@ -71,11 +91,31 @@ def counters(library, day):
 	}
 
 
-def supplies(library, store, day):
+def sent_between(item_code, store, start, end):
+	"""What a store sent on to another (a Material Transfer): moved, not used."""
+	return -flt(
+		frappe.db.sql(
+			"""select coalesce(sum(sle.actual_qty), 0) from `tabStock Ledger Entry` sle join `tabStock Entry` se on se.name = sle.voucher_no
+			where sle.item_code = %s and sle.warehouse = %s and sle.is_cancelled = 0 and sle.actual_qty < 0 and sle.voucher_type = 'Stock Entry'
+			and se.stock_entry_type = 'Material Transfer' and sle.posting_date between %s and %s""",
+			(item_code, store, start, end),
+		)[0][0]
+	)
+
+
+def center_items(store):
+	"""The center's supplies: every ink, and any other supply it ever held."""
+	from imed_erp.imederp.library_desk import supply_items
+
+	held = set(frappe.get_all("Stock Ledger Entry", filters={"warehouse": store, "is_cancelled": 0}, pluck="item_code", distinct=True))
+	return [i for i in supply_items() if i.name in held or frappe.db.get_value("Item", i.name, "item_group") == INK_GROUP]
+
+
+def supplies(library, store, day, items=None, sent=False):
 	from imed_erp.imederp.library_desk import UNIT_NAMES, screen_unit, supply_items
 
 	rows = []
-	for item in supply_items(library):
+	for item in supply_items(library) if items is None else items:
 		unit, factor = screen_unit(item.name)
 		on_hand = flt(frappe.db.get_value("Bin", {"item_code": item.name, "warehouse": store}, "actual_qty"))
 		used = used_between(item.name, store, day, day)
@@ -85,6 +125,8 @@ def supplies(library, store, day):
 			"on_hand": flt(on_hand / factor, 2),
 			"used_that_day": flt(used / factor, 2),
 		}
+		if sent:
+			row["sent_to_libraries_that_day"] = flt(sent_between(item.name, store, day, day) / factor, 2)
 		if factor > 1:  # paper: the sheets as well as the boxes
 			row["on_hand_sheets"] = flt(on_hand, 0)
 			row["used_that_day_sheets"] = flt(used, 0)
@@ -110,6 +152,18 @@ def day_report(library=None, day=None):
 				"counters": counters(lib, day),
 				"supplies": supplies(lib, store, day),
 				"last_stock_count": last_count(store),
+			}
+		)
+	center = center_store()
+	if center and (not library or asks_center(library)):
+		out.append(
+			{
+				"store": center.rsplit(" - ", 1)[0],
+				"kind": "center",
+				"day": str(day),
+				"note": _("The center's store: no counters of its own; what it sends on to the libraries is moved, not used."),
+				"supplies": supplies(None, center, day, items=center_items(center), sent=True),
+				"last_stock_count": last_count(center),
 			}
 		)
 	return out
