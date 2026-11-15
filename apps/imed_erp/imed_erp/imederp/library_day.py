@@ -17,17 +17,11 @@ import frappe
 from frappe import _
 from frappe.utils import cint, flt, getdate, nowdate
 
-from imed_erp.imederp.business_figures import company
+from imed_erp.imederp.center_store import INK_GROUP, center_items, center_store  # noqa: F401 (INK_GROUP: the tests)
 from imed_erp.imederp.owner_periods import library_stores, store_library, used_between
 from imed_erp.imederp.owner_yesterday import check_owner
 
-CENTER_STORE = "مخزن سنتر Imed — أدوات مكتبية"
 CENTER_WORDS = ("سنتر", "center", "centre", "imed")
-INK_GROUP = "أحبار"
-
-
-def center_store():
-	return frappe.db.get_value("Warehouse", {"company": company(), "is_group": 0, "warehouse_name": CENTER_STORE})
 
 
 def asks_center(asked):
@@ -101,14 +95,6 @@ def sent_between(item_code, store, start, end):
 			(item_code, store, start, end),
 		)[0][0]
 	)
-
-
-def center_items(store):
-	"""The center's supplies: every ink, and any other supply it ever held."""
-	from imed_erp.imederp.library_desk import supply_items
-
-	held = set(frappe.get_all("Stock Ledger Entry", filters={"warehouse": store, "is_cancelled": 0}, pluck="item_code", distinct=True))
-	return [i for i in supply_items() if i.name in held or frappe.db.get_value("Item", i.name, "item_group") == INK_GROUP]
 
 
 def supplies(library, store, day, items=None, sent=False):

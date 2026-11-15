@@ -1049,8 +1049,15 @@
 		const stores = boxes.stock || [];
 		const html = stores
 			.map(
-				(st) => `<div class="imed-stock-store">
-						<h3>${frappe.utils.icon("store", "sm")}<span>${esc(st.name)}</span></h3>
+				(st) => `<div class="imed-stock-store ${st.center ? "is-center" : ""}">
+						<h3>${frappe.utils.icon("store", "sm")}<span>${esc(st.name)}</span>${
+							st.center
+								? `<span class="imed-stock-store__acts">
+									<button type="button" class="btn btn-default btn-xs" data-center="count">${frappe.utils.icon("clipboard-list", "xs")}<span>${esc(__("Count the center"))}</span></button>
+									<button type="button" class="btn btn-primary btn-xs" data-center="send">${frappe.utils.icon("send", "xs")}<span>${esc(__("Send to a library"))}</span></button>
+								</span>`
+								: ""
+						}</h3>
 						<div class="imed-stock-grid">${st.items.map((s, i) => stock_tile(s, i)).join("")}${epson_tile(st.epson || [], st.items.length)}</div>
 					</div>`
 			)
@@ -1060,6 +1067,63 @@
 				${html || `<p class="imed-sec__empty">${esc(__("No supplies are set up."))}</p>`}
 			</section>`);
 		count_up($slot);
+		$slot.off("click.imedcenter").on("click.imedcenter", "[data-center]", (e) => {
+			e.preventDefault();
+			center_dialog($(e.currentTarget).attr("data-center"));
+		});
+	}
+
+	// ---- The center's store, kept by the owner himself (the owner, 15 Nov 2026): he counts it, and sends from it to
+	// a library (center_store.py). ----
+	function center_dialog(what) {
+		frappe.xcall("imed_erp.imederp.center_store.get_center").then((c) => {
+			const reload = () => {
+				boxes_at = 0;
+				add_boxes(page_now());
+			};
+			if (what === "count") {
+				const d = new frappe.ui.Dialog({
+					title: __("What the center holds now"),
+					fields: [
+						{ fieldtype: "HTML", options: `<p class="text-muted">${esc(__("Enter what you count of each; leave empty what you did not count."))}</p>` },
+						...c.items.map((it) => ({ fieldname: it.item_code, fieldtype: "Float", label: it.item_name, description: __("Now on the system: {0}", [qty(it.qty)]) })),
+					],
+					primary_action_label: __("Save the count"),
+					primary_action(v) {
+						frappe.xcall("imed_erp.imederp.center_store.count", { quantities: v }).then(() => {
+							d.hide();
+							frappe.show_alert({ message: __("The center's count is saved."), indicator: "green" });
+							reload();
+						});
+					},
+				});
+				d.show();
+				return;
+			}
+			const held = Object.fromEntries(c.items.map((it) => [it.item_code, it.qty]));
+			const d = new frappe.ui.Dialog({
+				title: __("Send from the center to a library"),
+				fields: [
+					{ fieldname: "item_code", fieldtype: "Select", label: __("Which supply"), reqd: 1, options: c.items.map((it) => ({ value: it.item_code, label: `${it.item_name} — ${__("the center holds {0}", [qty(it.qty)])}` })) },
+					{ fieldname: "library", fieldtype: "Select", label: __("To which library"), reqd: 1, options: c.libraries.map((l) => ({ value: l.library, label: l.name })) },
+					{ fieldname: "qty", fieldtype: "Float", label: __("How many to send"), reqd: 1 },
+					{ fieldname: "received_by", fieldtype: "Data", label: __("Received at the library by"), reqd: 1 },
+				],
+				primary_action_label: __("Send it"),
+				primary_action(v) {
+					if (flt(v.qty) > flt(held[v.item_code])) {
+						frappe.msgprint(__("The center holds only {0}. Count it first.", [qty(held[v.item_code])]));
+						return;
+					}
+					frappe.xcall("imed_erp.imederp.center_store.send", v).then((r) => {
+						d.hide();
+						frappe.show_alert({ message: __("Sent. The center has {0} left.", [qty(r.left)]), indicator: "green" });
+						reload();
+					});
+				},
+			});
+			d.show();
+		});
 	}
 
 	// ---- The libraries' requests for supplies, still open, the newest first ----

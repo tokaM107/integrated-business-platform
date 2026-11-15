@@ -139,6 +139,9 @@ class IntegrationTestOwnerStockByStore(IntegrationTestCase):
 				frappe.get_doc({"doctype": "Printing Machine", "machine_name": "_Test Epson", "machine_type": "Epson", "cost_center": LIBRARY, "warehouse": STORE}).insert()
 			if not frappe.db.exists("Item", colour):
 				frappe.get_doc({"doctype": "Item", "item_code": colour, "item_name": "حبر إبسون أسود", "item_group": "أحبار", "stock_uom": "Nos", "is_stock_item": 1, "valuation_rate": 375}).insert()
+			# Set up with no price yet (setup_inks.py before the settings have one): the first count needs a price.
+			if not frappe.db.get_value("Item", colour, "valuation_rate"):
+				frappe.db.set_value("Item", colour, "valuation_rate", 375)
 			frappe.set_user(ACCOUNT)
 			desk.count({colour: 2, INK: 3})
 			desk.used_up(colour, 1)

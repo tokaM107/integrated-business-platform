@@ -8579,3 +8579,25 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome.is-v2 .imed-das
 	height: 14px;
 	stroke: var(--imed-amber-500, #d97706);
 }
+
+/* §49 The center's store, kept by the owner (15 Nov 2026): its count and "send to a library", beside its name. */
+.imed-stock-store__acts {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-inline-start: auto;
+}
+.imed-stock-store__acts .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+@media (max-width: 640px) {
+	.imed-stock-store.is-center h3 {
+		flex-wrap: wrap;
+	}
+	.imed-stock-store.is-center .imed-stock-store__acts {
+		margin-inline-start: 0;
+		width: 100%;
+	}
+}
