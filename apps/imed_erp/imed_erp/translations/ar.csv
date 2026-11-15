@@ -2427,3 +2427,29 @@ Studio package {0} ({1}): paid in XStudio.,باقة استوديو {0} ({1}): م
 Dated today: its own day ({0}) is closed.,اتسجّل بتاريخ النهارده لأن يومه ({0}) مقفول.
 {0}: say from which day.,{0}: اكتب من أنهي يوم.
 Automatic Posting Of,تسجيل تلقائي لـ
+Count the center,جرد السنتر
+Send to a library,ابعت لمكتبة
+What the center holds now,اللي في السنتر دلوقتي
+Enter what you count of each; leave empty what you did not count.,اكتب اللي عدّيته من كل صنف، وسيب فاضي اللي ما عدّيتوش.
+Now on the system: {0},على السيستم دلوقتي: {0}
+Save the count,احفظ الجرد
+The center's count is saved.,اتحفظ جرد السنتر.
+Send from the center to a library,ابعت من السنتر لمكتبة
+Which supply,أنهي صنف
+the center holds {0},في السنتر {0}
+To which library,لأنهي مكتبة
+How many to send,هتبعت كام
+Send it,ابعت
+The center holds only {0}. Count it first.,السنتر فيه {0} بس. اعمل جرد الأول.
+Sent. The center has {0} left.,اتبعت. فاضل في السنتر {0}.
+The center's store ({0}) is not set up.,مخزن السنتر ({0}) مش متجهز.
+{0} is not one of the center's supplies.,{0} مش من خامات السنتر.
+"{0} has no price in the system yet. Enter it in Printing Cost Settings, then count again.",{0} مالوش سعر على السيستم لسه. دخّله في إعدادات تكلفة الطباعة وبعدين اعمل الجرد تاني.
+Choose the library to send to.,اختار المكتبة اللي هتبعت لها.
+How many to send?,هتبعت كام؟
+The center holds {0} of {1}. Count it first.,السنتر فيه {0} من {1}. اعمل جرد الأول.
+Sent from the center to {0} by {1}.,اتبعت من السنتر لـ{0} عن طريق {1}.
+The center's store: no counters of its own; what it sends on to the libraries is moved, not used.,مخزن السنتر: مالوش عدادات؛ اللي بيتبعت منه للمكتبات بيتنقل مش بيتصرف.
+Received at the library by,استلمه في المكتبة
+Who received it at the library?,مين استلمه في المكتبة؟
+{0} goes to a printing machine: send it from a stock entry, with its machine.,{0} بيتصرف على ماكينة طباعة: ابعته من إذن صرف ومعاه الماكينة.

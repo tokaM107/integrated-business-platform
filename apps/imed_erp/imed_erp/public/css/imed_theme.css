@@ -8563,3 +8563,41 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome.is-v2 .imed-das
 		margin-inline-end: -48px;
 	}
 }
+
+/* §48 Each supply's use today on the owner's stock tiles (the owner, 15 Nov 2026: "how much paper and ink they used
+   today"), under how long it lasts. */
+.imed-stock__today {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+.imed-stock__today .icon {
+	width: 14px;
+	height: 14px;
+	stroke: var(--imed-amber-500, #d97706);
+}
+
+/* §49 The center's store, kept by the owner (15 Nov 2026): its count and "send to a library", beside its name. */
+.imed-stock-store__acts {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-inline-start: auto;
+}
+.imed-stock-store__acts .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+@media (max-width: 640px) {
+	.imed-stock-store.is-center h3 {
+		flex-wrap: wrap;
+	}
+	.imed-stock-store.is-center .imed-stock-store__acts {
+		margin-inline-start: 0;
+		width: 100%;
+	}
+}
