@@ -5221,6 +5221,23 @@ a.imed-ov-lib:hover {
 [data-theme="dark"] .imed-library__counters td.is-printed {
 	color: var(--imed-teal-300);
 }
+/* The ink each machine used, read from its counters (15 Nov 2026), beside the sheets it printed. */
+.imed-library__counters td.is-ink {
+	color: var(--imed-amber-700, #b45309);
+	font-weight: 800;
+	white-space: nowrap;
+}
+[data-theme="dark"] .imed-library__counters td.is-ink {
+	color: var(--imed-amber-300, #fcd34d);
+}
+/* Five columns on a phone: tighter cells. */
+@media (max-width: 480px) {
+	.imed-library__counters th,
+	.imed-library__counters td {
+		padding-inline: 6px;
+		font-size: 13px;
+	}
+}
 
 /* ------------------------------------------------------------------ */
 /* 36. A library's daily sales, as its system prints them             */

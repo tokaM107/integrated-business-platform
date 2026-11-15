@@ -87,6 +87,13 @@ class DailyCounterReading(Document):
 	def set_totals(self):
 		# PRN-02: what the counters went up by, against the printing and copying the library sold that day.
 		self.total_consumed = sum(cint(row.consumed) for row in self.machines)
+		# The ink each machine used, read from its counters as the paper is (the owner, 15 Nov 2026). Like the paper,
+		# it moves no stock: the store's ink follows the library's counts and what it says is finished.
+		from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import ink_used
+
+		for row in self.machines:
+			kind = row.machine_type or frappe.db.get_value("Printing Machine", row.machine, "machine_type")
+			row.ink_used = ink_used(kind, row.consumed)
 		self.total_gap = sum(cint(row.gap) for row in self.machines)
 		self.sold_sheets = cint(sheets_sold(self.branch, self.reading_date))
 		self.variance = self.total_consumed - self.sold_sheets
