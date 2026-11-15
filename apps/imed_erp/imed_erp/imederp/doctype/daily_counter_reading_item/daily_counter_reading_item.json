@@ -10,6 +10,7 @@
   "opening_reading",
   "closing_reading",
   "consumed",
+  "ink_used",
   "gap",
   "gap_note",
   "fault",
@@ -61,6 +62,14 @@
    "read_only": 1,
    "in_list_view": 1,
    "columns": 2
+  },
+  {
+   "fieldname": "ink_used",
+   "fieldtype": "Float",
+   "label": "Ink Used",
+   "precision": "3",
+   "read_only": 1,
+   "description": "Sheets printed over the sheets one ink prints (Printing Cost Settings): a Riso ink in bottles, an Epson in sets."
   },
   {
    "fieldname": "gap",
@@ -119,7 +128,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-10-22 11:00:00.000000",
+ "modified": "2026-11-15 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "ImedERP",
  "name": "Daily Counter Reading Item",

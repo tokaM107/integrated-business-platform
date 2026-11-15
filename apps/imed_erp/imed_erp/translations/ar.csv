@@ -2453,3 +2453,5 @@ The center's store: no counters of its own; what it sends on to the libraries is
 Received at the library by,استلمه في المكتبة
 Who received it at the library?,مين استلمه في المكتبة؟
 {0} goes to a printing machine: send it from a stock entry, with its machine.,{0} بيتصرف على ماكينة طباعة: ابعته من إذن صرف ومعاه الماكينة.
+Not known for {0}: enter the sheets one ink prints on the owner's prices page.,مش معروف لـ{0}: المالك يدخّل عدد الورق اللي بيطبعه الحبر في صفحة الأسعار.
+Ink Used,الحبر المستخدم

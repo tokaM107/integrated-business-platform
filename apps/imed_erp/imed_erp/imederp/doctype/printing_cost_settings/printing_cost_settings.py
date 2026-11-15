@@ -67,3 +67,28 @@ def get_rates():
     return frappe._dict(
         {f: flt(settings.get(f) if settings.get(f) is not None else meta.get_field(f).default) for f in RATES}
     )
+
+
+# The ink the counters read, as they read the paper (the owner, 15 Nov 2026): a machine's sheets printed over the
+# sheets one ink prints. A Riso ink in bottles, an Epson in sets of its four colours.
+INK_UNITS = {"Riso": "إزازة", "Epson": "طقم"}
+
+
+def sheets_per_ink(machine_type):
+    """The sheets one ink of a machine type prints: the owner's figure, else its price over its ink per sheet (both
+    saved), else 0 (not known)."""
+    if machine_type not in INK_PACKS:
+        return 0
+    price_field, sheets_field = INK_PACKS[machine_type]
+    settings = frappe.get_cached_doc("Printing Cost Settings")
+    sheets = cint(settings.get(sheets_field))
+    if sheets > 0:
+        return sheets
+    price, per_sheet = flt(settings.get(price_field)), flt(settings.get(MACHINE_INK[machine_type]))
+    return cint(price / per_sheet) if price and per_sheet else 0
+
+
+def ink_used(machine_type, sheets):
+    """The ink a machine used printing `sheets`, in its unit (bottles, sets); 0 when not known."""
+    per = sheets_per_ink(machine_type)
+    return flt(cint(sheets) / per, 3) if per and cint(sheets) > 0 else 0

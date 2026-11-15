@@ -124,9 +124,11 @@ def get_desk():
 		readings = frappe.get_all(
 			"Daily Counter Reading Item",
 			filters={"parent": counter.name, "parenttype": "Daily Counter Reading"},
-			fields=["machine", "opening_reading", "closing_reading", "consumed", "fault"],
+			fields=["machine", "opening_reading", "closing_reading", "consumed", "fault", "ink_used", "machine_type"],
 			order_by="idx",
 		)
+	from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import INK_UNITS
+
 	requests = frappe.get_all(
 		"Material Request",
 		filters={"owner": frappe.session.user, "docstatus": ("<", 2)},
@@ -142,7 +144,9 @@ def get_desk():
 		"counter_today": counter,
 		"counter_date": str(counter.reading_date) if counter else None,
 		"counter_rows": [
-			{"machine": r.machine, "morning": cint(r.opening_reading), "evening": cint(r.closing_reading) if counter.docstatus == 1 else None, "printed": cint(r.consumed) if counter.docstatus == 1 else None, "fault": cint(r.fault)}
+			{"machine": r.machine, "morning": cint(r.opening_reading), "evening": cint(r.closing_reading) if counter.docstatus == 1 else None, "printed": cint(r.consumed) if counter.docstatus == 1 else None, "fault": cint(r.fault),
+			 # The ink it used, read from its counters (the owner, 15 Nov 2026): in its unit, once the evening is in.
+			 "ink": flt(r.ink_used, 3) if counter.docstatus == 1 else None, "ink_unit": INK_UNITS.get(r.machine_type, "")}
 			for r in readings
 		],
 		"requests": requests,

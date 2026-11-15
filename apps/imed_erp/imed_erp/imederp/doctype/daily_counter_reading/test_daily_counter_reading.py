@@ -266,6 +266,40 @@ class IntegrationTestDailyCounterReading(IntegrationTestCase):
 		sheet = self.sheet({first: 1050, second: 500, third: 100}, date=DAY, openings={first: 1000, second: 500, third: 100})
 		self.assertEqual((sheet.sold_sheets, sheet.variance), (50, 0))
 
+	# ---------- The ink the counters read, as they read the paper (the owner, 15 Nov 2026) ----------
+
+	def yields(self, riso, epson, riso_price=0, epson_price=0):
+		for field, value in (("riso_sheets_per_ink", riso), ("epson_sheets_per_set", epson), ("riso_ink_price", riso_price), ("epson_ink_set_price", epson_price)):
+			frappe.db.set_single_value("Printing Cost Settings", field, value)
+		frappe.clear_document_cache("Printing Cost Settings", "Printing Cost Settings")
+
+	def test_each_machine_s_ink_is_read_from_its_counters(self):
+		from imed_erp.imederp.library_day import counters
+
+		self.yields(riso=20000, epson=10000)
+		first, second, third = sorted(self.machines)  # Epson, Riso, Riso
+		self.sheet({first: 2000, second: 4500, third: 1100}, date=DAY, openings={first: 1000, second: 500, third: 100})
+		day = counters(AZARITA, DAY)
+		ink = {m["machine"]: (m["ink_used"], m["ink_unit"]) for m in day["machines"]}
+		self.assertEqual(ink, {first: (0.1, "طقم"), second: (0.2, "إزازة"), third: (0.05, "إزازة")})
+		self.assertEqual(day["ink_used_by_counters"], {"Epson (طقم)": 0.1, "Riso (إزازة)": 0.25})
+		self.assertEqual(day["ink_note"], "")
+		# Like the paper, the counters' ink moves no stock.
+		self.assertFalse(frappe.db.exists("Stock Ledger Entry", {"posting_date": DAY, "item_code": ["like", "INK-%"], "is_cancelled": 0}))
+
+	def test_the_ink_not_known_says_so(self):
+		from imed_erp.imederp.library_day import counters
+
+		self.yields(riso=0, epson=0)
+		first, second, third = sorted(self.machines)
+		sheet = self.sheet({first: 2000, second: 4500, third: 1100}, date=DAY, openings={first: 1000, second: 500, third: 100})
+		self.assertEqual([row.ink_used for row in sheet.machines], [0, 0, 0])
+		day = counters(AZARITA, DAY)
+		self.assertIn("Epson", day["ink_note"])
+		self.assertIn("Riso", day["ink_note"])
+		# The morning only: no ink yet.
+		frappe.db.delete("Daily Counter Reading", {"branch": AZARITA})
+
 	# ---------- PRN-08/09: the variance in money ----------
 
 	def ink(self, machine):

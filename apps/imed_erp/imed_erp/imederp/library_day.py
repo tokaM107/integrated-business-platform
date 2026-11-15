@@ -68,18 +68,39 @@ def counters(library, day):
 	machines = frappe.get_all(
 		"Daily Counter Reading Item",
 		filters={"parent": d.name},
-		fields=["machine", "opening_reading", "closing_reading", "consumed", "fault"],
+		fields=["machine", "opening_reading", "closing_reading", "consumed", "fault", "ink_used", "machine_type"],
 		order_by="idx",
 	)
+	from imed_erp.imederp.doctype.printing_cost_settings.printing_cost_settings import INK_UNITS, sheets_per_ink
+
+	closed = d.docstatus == 1
+	# The ink the counters read, as they read the paper (the owner, 15 Nov 2026): each machine's sheets over the
+	# sheets one ink prints; together by kind (Riso in bottles, Epson in sets).
+	ink = {}
+	for m in machines:
+		if closed and m.machine_type in INK_UNITS:
+			label = f"{m.machine_type} ({INK_UNITS[m.machine_type]})"
+			ink[label] = flt(ink.get(label, 0) + flt(m.ink_used), 3)
+	unknown = sorted({m.machine_type for m in machines if m.machine_type in INK_UNITS and not sheets_per_ink(m.machine_type)})
 	return {
-		"state": "closed" if d.docstatus == 1 else "morning_only",
-		"note": "" if d.docstatus == 1 else _("Only the morning's counters are recorded; the evening's are not yet."),
+		"state": "closed" if closed else "morning_only",
+		"note": "" if closed else _("Only the morning's counters are recorded; the evening's are not yet."),
 		"sheets_printed": cint(d.total_consumed),
 		"paper_taken_from_store_sheets": cint(d.paper_issued),
 		"spoiled_sheets": cint(d.spoiled_sheets),
 		"sold_sheets": cint(d.sold_sheets),
+		"ink_used_by_counters": ink if closed else None,
+		"ink_note": _("Not known for {0}: enter the sheets one ink prints on the owner's prices page.").format(", ".join(unknown)) if unknown else "",
 		"machines": [
-			{"machine": m.machine, "morning": cint(m.opening_reading), "evening": cint(m.closing_reading) if d.docstatus == 1 else None, "printed": cint(m.consumed), "fault": bool(m.fault)}
+			{
+				"machine": m.machine,
+				"morning": cint(m.opening_reading),
+				"evening": cint(m.closing_reading) if closed else None,
+				"printed": cint(m.consumed),
+				"ink_used": flt(m.ink_used, 3) if closed else None,
+				"ink_unit": INK_UNITS.get(m.machine_type, ""),
+				"fault": bool(m.fault),
+			}
 			for m in machines
 		],
 	}

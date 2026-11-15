@@ -74,7 +74,8 @@ class LibraryDayTool:
 			"description": (
 				"A library's paper and ink on a given day, as the library records them daily: what its store holds now "
 				"(paper in boxes and sheets, ink in bottles), what it used that day, the sheets printed on each machine "
-				"(morning and evening counters, spoiled sheets) and its last stock count. Use it for any question about "
+				"(morning and evening counters, spoiled sheets), the ink each machine used read from its counters "
+				"(Riso in bottles, Epson in sets) and its last stock count. Use it for any question about "
 				f"a library's paper, ink, stock, consumption or printing. The libraries: {names}. The center's store "
 				"(السنتر) comes too: the ink it holds, used and sent on to the libraries that day. The owner's alone."
 			),
