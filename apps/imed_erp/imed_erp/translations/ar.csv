@@ -2455,3 +2455,5 @@ Who received it at the library?,مين استلمه في المكتبة؟
 {0} goes to a printing machine: send it from a stock entry, with its machine.,{0} بيتصرف على ماكينة طباعة: ابعته من إذن صرف ومعاه الماكينة.
 Not known for {0}: enter the sheets one ink prints on the owner's prices page.,مش معروف لـ{0}: المالك يدخّل عدد الورق اللي بيطبعه الحبر في صفحة الأسعار.
 Ink Used,الحبر المستخدم
+The library had not sent this invoice's time when it was read,المكتبة مكانتش بعتت وقت الفاتورة دي لما اتقرت
+"Read again from the library: what was not read before (the invoice's time) came in; nothing read before changed.","اتقرت تاني من المكتبة: وصل اللي مكانش بيتقرا قبل كده (وقت الفاتورة)؛ ومفيش حاجة من اللي اتقرا قبل كده اتغيرت."

@@ -90,6 +90,23 @@ class TestLibraryMappers(IntegrationTestCase):
 		document["TxtOrderTime"] = "not a time"
 		self.assertEqual(str(mappers.map_document("stock", document, settings())[0]["reg_date"]), "2026-11-03 00:00:00")
 
+	def test_a_document_read_again_with_only_what_was_not_read_then_is_not_a_change(self):
+		"""The time (a head's key) and an item's group (a line's key) read since: added only. A value changed, a line
+		gone or a line added: a change."""
+		old = sale()
+		new = sale()
+		new["TxtOrderTime"] = "2026-10-24 18:05:41"
+		new["lines"][0]["TxtProductCategoryName"] = "كتب"
+		new["lines"].reverse()  # the lines matched by their id, not their order
+		self.assertTrue(mappers.only_added("stock", old, new))
+		self.assertFalse(mappers.only_added("stock", old, sale(status="3")))
+		self.assertFalse(mappers.only_added("stock", old, sale(lines=old["lines"][:1])))
+		self.assertFalse(mappers.only_added("stock", sale(lines=old["lines"][:1]), old))
+		changed = sale()
+		changed["lines"][1]["TxtProductQtyOutRefStockSub"] = "2"
+		self.assertFalse(mappers.only_added("stock", old, changed))
+		self.assertFalse(mappers.only_added("stock", None, new))
+
 	def test_a_held_and_a_cancelled_document_are_not_final(self):
 		held, _ = mappers.map_document("stock", sale(status="1"), settings())
 		cancelled, _ = mappers.map_document("stock", sale(status="3"), settings())
@@ -176,6 +193,18 @@ class TestLibraryReceive(IntegrationTestCase):
 		sync.import_batch(self.batch(sale(status="3")))
 		doc = self.doc("tanmya:azarita:stock:90001")
 		self.assertEqual((doc.is_final, doc.is_cancelled), (0, 1))
+
+	def test_an_invoice_read_again_with_its_time_takes_it_and_is_noted_not_listed_as_changed(self):
+		"""Read before the connector read the time: the day alone. Read again in full: at its time, and the log
+		Completed with a note (a full re-read brings the time to every older invoice without thousands of changes)."""
+		sync.import_batch(self.batch(sale(when="2026-10-24 00:00:00")))
+		self.assertEqual(str(self.doc("tanmya:azarita:stock:90001").reg_date), "2026-10-24 00:00:00")
+		again = sale(when="2026-10-24 00:00:00")
+		again["TxtOrderTime"] = "2026-10-24 18:05:41.230000"
+		log = sync.import_batch(self.batch(again))
+		self.assertEqual(self.counts(log), ("Completed", 1, 0, 1, 0, 0, 0))
+		self.assertEqual([r.kind for r in log.errors], ["Note"])
+		self.assertEqual(str(self.doc("tanmya:azarita:stock:90001").reg_date), "2026-10-24 18:05:41")
 
 	def test_a_bad_document_fails_alone(self):
 		bad = sale(external_id="90002")

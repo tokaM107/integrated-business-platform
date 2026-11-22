@@ -60,6 +60,31 @@ def day_and_time(day, saved_at=None):
 	return base.replace(hour=t.hour, minute=t.minute, second=t.second, microsecond=0)
 
 
+def only_added(family, old, new):
+	"""True when everything read before is unchanged in the document read now: each key of the old payload holds the
+	same value, each old line is still there (by its id) with its values. What differs is only what was not read
+	then: a column the connector's query reads since (the invoice's time, 4 Nov 2026; the item's group, 9 Nov 2026).
+	Anything else (a value changed, a line gone) is False: a change in the library."""
+	if not isinstance(old, dict):
+		return False
+	line_id = c.FAMILIES[family]["line_id"]
+	for key, value in old.items():
+		if str(key).startswith("_"):
+			continue
+		if key != "lines":
+			if key not in new or new[key] != value:
+				return False
+			continue
+		now = {str(line.get(line_id)): line for line in new.get("lines") or []}
+		if len(now) != len(new.get("lines") or []) or len(value or []) != len(now):
+			return False
+		for line in value or []:
+			fresh = now.get(str(line.get(line_id)))
+			if fresh is None or any(k not in fresh or fresh[k] != v for k, v in line.items()):
+				return False
+	return True
+
+
 def kind_of(family, document, operation_map):
 	spec = c.FAMILIES[family]
 	if "kind" in spec:
