@@ -135,14 +135,17 @@
 			.catch(() => listview.page.main.find(".imed-lib-band-wrap").remove());
 	}
 
-	// The day with its weekday and, under it, the time the cashier saved the invoice (mappers.day_and_time). A
-	// document read before the time was sent stays at 00:00: its day alone.
+	// The day with its weekday and, under it, the exact time the cashier saved the invoice, to the second
+	// (mappers.day_and_time). A document read before the library sent its time stays at 00:00: a dash says so, until
+	// the connector reads it again in full (REREAD_ALL.bat).
 	function day(value) {
 		const d = frappe.datetime.str_to_obj(value);
 		if (!d || isNaN(d)) return esc(value);
 		const lang = frappe.boot.lang || "en";
 		const has_time = d.getHours() || d.getMinutes() || d.getSeconds();
-		const time = has_time ? `<i dir="ltr">${esc(d.toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit" }))}</i>` : "";
+		const time = has_time
+			? `<i dir="ltr">${esc(d.toLocaleTimeString(lang, { hour: "numeric", minute: "2-digit", second: "2-digit" }))}</i>`
+			: `<i class="is-none" title="${esc(__("The library had not sent this invoice's time when it was read"))}">--:--</i>`;
 		return `<span class="imed-lib-day"><b>${esc(d.toLocaleDateString(lang, { day: "numeric", month: "short", year: "numeric" }))}</b><small>${esc(d.toLocaleDateString(lang, { weekday: "long" }))}${time}</small></span>`;
 	}
 

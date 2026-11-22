@@ -13,6 +13,8 @@ a document held then issued, or issued then cancelled, is updated.
   python tanmya_connector.py --config config.json --dry-run  read and write batch_*.json, post nothing
   python tanmya_connector.py --config config.json --from-json batch.json   post a saved batch (tests)
   python tanmya_connector.py --config config.json --check                  only check the config, read nothing
+  python tanmya_connector.py --config config.json --reread-all             once (REREAD_ALL.bat): every document
+      again, whatever its date, so the older ones take what the query reads since (the invoice's time, 4 Nov 2026)
 
 Each PC names its library in config.json ("library": "pc1"): the ERP keys every document on it, so the first
 library (Db2BDoctorNew) and PC1 (Db2BDoctor) never share a document. A live run is refused while the config holds
@@ -139,6 +141,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--from-json")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--reread-all", action="store_true", help="once: read every document again, whatever its date")
     args = ap.parse_args()
     cfg = load(args.config)
     state = load(STATE) if os.path.exists(STATE) else {}
@@ -158,6 +161,9 @@ def main():
 
     conn = connect(cfg)
     since_date = (dt.date.today() - dt.timedelta(days=int(cfg.get("reread_days", 7)))).isoformat()
+    if args.reread_all:
+        # Every document from the first: the ERP skips the unchanged ones and takes what was not read then.
+        since_date = "1900-01-01"
     documents = []
     for family in cfg["queries"]:
         documents += read_family(conn, cfg, family, int(state.get(family, 0)), since_date)

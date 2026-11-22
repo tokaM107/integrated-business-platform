@@ -4067,6 +4067,13 @@ a.imed-ov-lib:hover {
 [data-theme="dark"] .imed-lib-day small i {
 	color: var(--imed-teal-200);
 }
+/* An invoice read before the library sent its time: a muted dash in place of the time */
+.imed-lib-day small i.is-none,
+[data-theme="dark"] .imed-lib-day small i.is-none {
+	background: var(--control-bg);
+	color: var(--text-muted);
+	font-weight: 600;
+}
 
 /* The filter card: the quick filters on their own line at the top, then the boxes */
 [data-page-route="List/Library Sales Document/List"] .page-form {
