@@ -4067,6 +4067,13 @@ a.imed-ov-lib:hover {
 [data-theme="dark"] .imed-lib-day small i {
 	color: var(--imed-teal-200);
 }
+/* An invoice read before the library sent its time: a muted dash in place of the time */
+.imed-lib-day small i.is-none,
+[data-theme="dark"] .imed-lib-day small i.is-none {
+	background: var(--control-bg);
+	color: var(--text-muted);
+	font-weight: 600;
+}
 
 /* The filter card: the quick filters on their own line at the top, then the boxes */
 [data-page-route="List/Library Sales Document/List"] .page-form {
@@ -5220,6 +5227,23 @@ a.imed-ov-lib:hover {
 }
 [data-theme="dark"] .imed-library__counters td.is-printed {
 	color: var(--imed-teal-300);
+}
+/* The ink each machine used, read from its counters (15 Nov 2026), beside the sheets it printed. */
+.imed-library__counters td.is-ink {
+	color: var(--imed-amber-700, #b45309);
+	font-weight: 800;
+	white-space: nowrap;
+}
+[data-theme="dark"] .imed-library__counters td.is-ink {
+	color: var(--imed-amber-300, #fcd34d);
+}
+/* Five columns on a phone: tighter cells. */
+@media (max-width: 480px) {
+	.imed-library__counters th,
+	.imed-library__counters td {
+		padding-inline: 6px;
+		font-size: 13px;
+	}
 }
 
 /* ------------------------------------------------------------------ */
@@ -8561,5 +8585,43 @@ body[data-route="Workspaces/Owner Dashboard"] .imed-dash-welcome.is-v2 .imed-das
 	}
 	.imed-dash-welcome.is-v2 .imed-dash-welcome__note {
 		margin-inline-end: -48px;
+	}
+}
+
+/* §48 Each supply's use today on the owner's stock tiles (the owner, 15 Nov 2026: "how much paper and ink they used
+   today"), under how long it lasts. */
+.imed-stock__today {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--text-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+.imed-stock__today .icon {
+	width: 14px;
+	height: 14px;
+	stroke: var(--imed-amber-500, #d97706);
+}
+
+/* §49 The center's store, kept by the owner (15 Nov 2026): its count and "send to a library", beside its name. */
+.imed-stock-store__acts {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-inline-start: auto;
+}
+.imed-stock-store__acts .btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+@media (max-width: 640px) {
+	.imed-stock-store.is-center h3 {
+		flex-wrap: wrap;
+	}
+	.imed-stock-store.is-center .imed-stock-store__acts {
+		margin-inline-start: 0;
+		width: 100%;
 	}
 }

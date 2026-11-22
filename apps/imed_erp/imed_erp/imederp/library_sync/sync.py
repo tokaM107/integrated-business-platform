@@ -5,6 +5,7 @@
 #   new import_key                 inserted
 #   known, same payload hash       skipped
 #   known, different hash          updated (the library is the source of truth), listed as Changed in Source
+#   known, only keys not read then updated, noted only (the time, the items' groups: a column the query reads since)
 #   unknown operation code         imported as kind Other and listed for review
 #   a row that cannot be mapped    fails alone, with the key it lacks; the others go on
 import json
@@ -15,7 +16,7 @@ from frappe.utils import cint, now_datetime
 
 from imed_erp.imederp.doctype.integration_import_log.integration_import_log import ImportRun
 from imed_erp.imederp.library_sync import contract as c
-from imed_erp.imederp.library_sync.mappers import MappingError, map_document
+from imed_erp.imederp.library_sync.mappers import MappingError, map_document, only_added
 
 # The connector's own user holds Library Connector and nothing else (setup/setup_library_connector.py). Only it (and
 # the system's manager) writes the mirrored documents: not the accountant, whose Accounts Manager could otherwise make
@@ -121,13 +122,22 @@ def import_one(run, row_no, family, external_id, document, settings):
 	fields["source_payload"] = json.dumps({k: v for k, v in document.items() if not str(k).startswith("_")}, ensure_ascii=False, default=str)
 	if existing:
 		doc = frappe.get_doc("Library Sales Document", existing.name)
+		try:
+			before = json.loads(doc.source_payload or "null")
+		except ValueError:
+			before = None
 		doc.update(fields)
 		doc.set("lines", [])
 		for line in lines:
 			doc.append("lines", line)
 		doc.save(ignore_permissions=True)
 		run.updated()
-		run.changed(row_no, external_id, _("Changed in the library system after it was read; the copy here now follows it."))
+		# Read again with what the connector did not read then (its time, its items' groups), nothing read before
+		# changed: a note, not a change to look at (a full re-read brings the time to the older invoices).
+		if only_added(family, before, document):
+			run.note(row_no, external_id, _("Read again from the library: what was not read before (the invoice's time) came in; nothing read before changed."))
+		else:
+			run.changed(row_no, external_id, _("Changed in the library system after it was read; the copy here now follows it."))
 	else:
 		doc = frappe.get_doc({"doctype": "Library Sales Document", **fields})
 		for line in lines:

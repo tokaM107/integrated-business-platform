@@ -16,6 +16,8 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 	const page = frappe.ui.make_app_page({ parent: wrapper, title: __("مكتبتي"), single_column: true });
 	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
 	const qty = (v) => (Number(v) || 0).toLocaleString("ar-EG");
+	// A part of a bottle or a set: two decimals at most (0.35 إزازة).
+	const ink_qty = (v) => (Number(v) || 0).toLocaleString("ar-EG", { maximumFractionDigits: 2 });
 	const $body = $(`<div class="imed-library"></div>`).appendTo(page.main);
 	let desk = null;
 
@@ -57,13 +59,21 @@ frappe.pages["imed-library"].on_page_load = function (wrapper) {
 		const title = other_day ? __("عدادات يوم {0}", [frappe.datetime.str_to_user(desk.counter_date)]) : __("عدادات النهارده");
 		const total = rows.reduce((sum, r) => sum + (Number(r.printed) || 0), 0);
 		const cell = (v, cls = "") => `<td class="${cls}">${v == null ? `<span class="imed-library__wait">${esc(__("لسه"))}</span>` : esc(qty(v))}</td>`;
+		// The ink each machine used, read from its counters as the paper is (the owner, 15 Nov 2026).
+		const ink = (r) =>
+			r.ink == null
+				? `<td><span class="imed-library__wait">${esc(__("لسه"))}</span></td>`
+				: `<td class="is-ink">${r.ink ? `${esc(ink_qty(r.ink))} ${esc(r.ink_unit || "")}` : "—"}</td>`;
+		const ink_total = {};
+		rows.forEach((r) => r.ink && r.ink_unit && (ink_total[r.ink_unit] = (ink_total[r.ink_unit] || 0) + r.ink));
+		const ink_words = Object.entries(ink_total).map(([unit, n]) => `${ink_qty(n)} ${unit}`).join(" + ") || "—";
 		const body = rows.length
 			? `<table class="imed-library__counters">
-					<thead><tr><th>${esc(__("المكنة"))}</th><th>${esc(__("الصبح"))}</th><th>${esc(__("آخر اليوم"))}</th><th>${esc(__("اتطبع"))}</th></tr></thead>
+					<thead><tr><th>${esc(__("المكنة"))}</th><th>${esc(__("الصبح"))}</th><th>${esc(__("آخر اليوم"))}</th><th>${esc(__("اتطبع"))}</th><th>${esc(__("الحبر"))}</th></tr></thead>
 					<tbody>${rows
-						.map((r) => `<tr><td class="imed-library__machine">${icon("printer")}<span>${esc(r.machine)}</span>${r.fault ? `<span class="imed-library__badge tone-red">${esc(__("عطلت"))}</span>` : ""}</td>${cell(r.morning)}${cell(r.evening)}${cell(r.printed, "is-printed")}</tr>`)
+						.map((r) => `<tr><td class="imed-library__machine">${icon("printer")}<span>${esc(r.machine)}</span>${r.fault ? `<span class="imed-library__badge tone-red">${esc(__("عطلت"))}</span>` : ""}</td>${cell(r.morning)}${cell(r.evening)}${cell(r.printed, "is-printed")}${ink(r)}</tr>`)
 						.join("")}</tbody>
-					${done ? `<tfoot><tr><td colspan="3">${esc(__("اتطبع النهارده كله"))}</td><td class="is-printed">${esc(qty(total))} ${esc(__("ورقة"))}</td></tr></tfoot>` : ""}
+					${done ? `<tfoot><tr><td colspan="3">${esc(__("اتطبع النهارده كله"))}</td><td class="is-printed">${esc(qty(total))} ${esc(__("ورقة"))}</td><td class="is-ink">${esc(ink_words)}</td></tr></tfoot>` : ""}
 				</table>`
 			: `<p class="imed-library__empty">${icon("gauge")}${esc(__("لسه متسجلتش عدادات الصبح. دوس على «عدادات النهارده» فوق."))}</p>`;
 		return `<section class="imed-library__card imed-library__card--wide">
